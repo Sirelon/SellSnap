@@ -1,5 +1,6 @@
 package com.sirelon.aicalories.features.seller.auth.data
 
+import com.sirelon.aicalories.features.seller.ad.publish_success.AdvertStatus
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -48,6 +49,6 @@ internal data class AdvertPriceRequest(
 
 internal data class PostAdvertResult(
     val id: Long,
-    val status: String,
+    val status: AdvertStatus,
     val url: String?,
 )
