@@ -344,6 +344,8 @@
     <!-- Publish Success Screen -->
     <string name="publish_success_title">Опубліковано! 🎉</string>
     <string name="publish_success_subtitle">Ваше оголошення тепер активне. Перші перегляди з\'являться за 10-15 хвилин.</string>
+    <string name="publish_success_subtitle_new">Відправлено на модерацію. Оголошення стане активним після перевірки.</string>
+    <string name="publish_success_subtitle_limited">Оголошення готове, але потребує придбання пакету на OLX для активації.</string>
     <string name="publish_success_listing_url_label">Посилання на оголошення</string>
     <string name="publish_success_status_label">Статус</string>
     <string name="publish_success_status_new">На модерації</string>

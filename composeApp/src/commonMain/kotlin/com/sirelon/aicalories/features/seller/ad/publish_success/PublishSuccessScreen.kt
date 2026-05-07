@@ -71,6 +71,8 @@ import com.sirelon.aicalories.generated.resources.publish_success_status_new_cap
 import com.sirelon.aicalories.generated.resources.publish_success_status_unknown
 import com.sirelon.aicalories.generated.resources.publish_success_status_unknown_caption
 import com.sirelon.aicalories.generated.resources.publish_success_subtitle
+import com.sirelon.aicalories.generated.resources.publish_success_subtitle_limited
+import com.sirelon.aicalories.generated.resources.publish_success_subtitle_new
 import com.sirelon.aicalories.generated.resources.publish_success_title
 import com.sirelon.aicalories.generated.resources.publish_success_total_time_caption
 import com.sirelon.aicalories.generated.resources.publish_success_total_time_label
@@ -142,7 +144,7 @@ fun PublishSuccessScreen(
                 verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.xl6),
             ) {
                 SuccessHero()
-                AnimatedTitle()
+                AnimatedTitle(status = data.status)
                 ListingSummaryCard(
                     title = data.title,
                     priceFormatted = data.priceFormatted,
@@ -304,7 +306,7 @@ private fun SuccessHero(modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun AnimatedTitle(modifier: Modifier = Modifier) {
+private fun AnimatedTitle(status: AdvertStatus, modifier: Modifier = Modifier) {
     var entered by remember { mutableStateOf(false) }
     val alpha by animateFloatAsState(
         targetValue = if (entered) 1f else 0f,
@@ -322,9 +324,14 @@ private fun AnimatedTitle(modifier: Modifier = Modifier) {
         entered = true
     }
 
+    val subtitle = when (status) {
+        AdvertStatus.New -> stringResource(Res.string.publish_success_subtitle_new)
+        AdvertStatus.Limited -> stringResource(Res.string.publish_success_subtitle_limited)
+        AdvertStatus.Unknown -> stringResource(Res.string.publish_success_subtitle)
+    }
     TitleWithSubtitle(
         title = stringResource(Res.string.publish_success_title),
-        subtitle = stringResource(Res.string.publish_success_subtitle),
+        subtitle = subtitle,
         modifier = modifier.graphicsLayer {
             this.alpha = alpha
             translationY = offsetY.toPx()
