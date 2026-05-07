@@ -1,5 +1,6 @@
 package com.sirelon.aicalories.features.seller.auth.data
 
+import com.sirelon.aicalories.features.seller.ad.publish_success.AdvertStatus
 import com.sirelon.aicalories.features.seller.auth.data.response.PostAdvertRootResponse
 import com.sirelon.aicalories.features.seller.auth.data.response.OlxUserResponse
 import com.sirelon.aicalories.features.seller.auth.domain.OlxApiError
@@ -89,7 +90,7 @@ class OlxApiClient(
 
         return PostAdvertResult(
             id = advertId,
-            status = advert.status ?: "",
+            status = AdvertStatus.from(advert.status ?: ""),
             url = advert.url,
         )
     }

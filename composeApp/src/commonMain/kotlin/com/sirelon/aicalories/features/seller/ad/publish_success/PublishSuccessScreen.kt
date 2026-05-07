@@ -63,10 +63,16 @@ import com.sirelon.aicalories.generated.resources.ic_camera
 import com.sirelon.aicalories.generated.resources.ic_circle_check_big
 import com.sirelon.aicalories.generated.resources.publish_success_create_another
 import com.sirelon.aicalories.generated.resources.publish_success_listing_url_label
-import com.sirelon.aicalories.generated.resources.publish_success_status_active
-import com.sirelon.aicalories.generated.resources.publish_success_status_caption
 import com.sirelon.aicalories.generated.resources.publish_success_status_label
+import com.sirelon.aicalories.generated.resources.publish_success_status_limited
+import com.sirelon.aicalories.generated.resources.publish_success_status_limited_caption
+import com.sirelon.aicalories.generated.resources.publish_success_status_new
+import com.sirelon.aicalories.generated.resources.publish_success_status_new_caption
+import com.sirelon.aicalories.generated.resources.publish_success_status_unknown
+import com.sirelon.aicalories.generated.resources.publish_success_status_unknown_caption
 import com.sirelon.aicalories.generated.resources.publish_success_subtitle
+import com.sirelon.aicalories.generated.resources.publish_success_subtitle_limited
+import com.sirelon.aicalories.generated.resources.publish_success_subtitle_new
 import com.sirelon.aicalories.generated.resources.publish_success_title
 import com.sirelon.aicalories.generated.resources.publish_success_total_time_caption
 import com.sirelon.aicalories.generated.resources.publish_success_total_time_label
@@ -138,7 +144,7 @@ fun PublishSuccessScreen(
                 verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.xl6),
             ) {
                 SuccessHero()
-                AnimatedTitle()
+                AnimatedTitle(status = data.status)
                 ListingSummaryCard(
                     title = data.title,
                     priceFormatted = data.priceFormatted,
@@ -149,11 +155,12 @@ fun PublishSuccessScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing.m),
                 ) {
+                    val (statusValue, statusCaption) = advertStatusText(data.status)
                     StatMiniCard(
                         modifier = Modifier.weight(1f),
-                        value = stringResource(Res.string.publish_success_status_active),
+                        value = statusValue,
                         label = stringResource(Res.string.publish_success_status_label),
-                        caption = stringResource(Res.string.publish_success_status_caption),
+                        caption = statusCaption,
                     )
                     StatMiniCard(
                         modifier = Modifier.weight(1f),
@@ -166,6 +173,16 @@ fun PublishSuccessScreen(
             }
         }
     }
+}
+
+@Composable
+private fun advertStatusText(status: AdvertStatus): Pair<String, String> = when (status) {
+    AdvertStatus.New -> stringResource(Res.string.publish_success_status_new) to
+            stringResource(Res.string.publish_success_status_new_caption)
+    AdvertStatus.Limited -> stringResource(Res.string.publish_success_status_limited) to
+            stringResource(Res.string.publish_success_status_limited_caption)
+    AdvertStatus.Unknown -> stringResource(Res.string.publish_success_status_unknown) to
+            stringResource(Res.string.publish_success_status_unknown_caption)
 }
 
 @Composable
@@ -289,7 +306,7 @@ private fun SuccessHero(modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun AnimatedTitle(modifier: Modifier = Modifier) {
+private fun AnimatedTitle(status: AdvertStatus, modifier: Modifier = Modifier) {
     var entered by remember { mutableStateOf(false) }
     val alpha by animateFloatAsState(
         targetValue = if (entered) 1f else 0f,
@@ -307,9 +324,14 @@ private fun AnimatedTitle(modifier: Modifier = Modifier) {
         entered = true
     }
 
+    val subtitle = when (status) {
+        AdvertStatus.New -> stringResource(Res.string.publish_success_subtitle_new)
+        AdvertStatus.Limited -> stringResource(Res.string.publish_success_subtitle_limited)
+        AdvertStatus.Unknown -> stringResource(Res.string.publish_success_subtitle)
+    }
     TitleWithSubtitle(
         title = stringResource(Res.string.publish_success_title),
-        subtitle = stringResource(Res.string.publish_success_subtitle),
+        subtitle = subtitle,
         modifier = modifier.graphicsLayer {
             this.alpha = alpha
             translationY = offsetY.toPx()

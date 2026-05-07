@@ -350,10 +350,16 @@
     <!-- Publish Success Screen -->
     <string name="publish_success_title">Published! 🎉</string>
     <string name="publish_success_subtitle">Your listing is now live. First views should appear within 10–15 minutes.</string>
+    <string name="publish_success_subtitle_new">Submitted for moderation. Your listing will go live after review.</string>
+    <string name="publish_success_subtitle_limited">Your listing is ready but requires a packet on OLX to activate.</string>
     <string name="publish_success_listing_url_label">Listing link</string>
-    <string name="publish_success_status_active">Active</string>
     <string name="publish_success_status_label">Status</string>
-    <string name="publish_success_status_caption">Under review · up to 2 min</string>
+    <string name="publish_success_status_new">Under review</string>
+    <string name="publish_success_status_new_caption">Will go live after moderation</string>
+    <string name="publish_success_status_limited">Limited</string>
+    <string name="publish_success_status_limited_caption">Buy a packet on OLX to activate your listing</string>
+    <string name="publish_success_status_unknown">Pending</string>
+    <string name="publish_success_status_unknown_caption">Check your listing on OLX</string>
     <string name="publish_success_total_time_label">Total time</string>
     <string name="publish_success_total_time_caption">From photo to publish</string>
     <string name="publish_success_view_on_olx">View on OLX</string>

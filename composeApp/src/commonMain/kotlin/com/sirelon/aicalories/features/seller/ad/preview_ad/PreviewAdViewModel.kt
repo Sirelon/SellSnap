@@ -262,6 +262,7 @@ class PreviewAdViewModel(
                 priceFormatted = "₴ ${formatPrice(s.price)}",
                 primaryImageUrl = s.images.firstOrNull(),
                 totalElapsedMs = adFlowTimerStore.totalElapsedMs(),
+                status = data.status,
             )
             postEffect(PreviewAdEffect.PublishSuccess(successData))
         } catch (error: Throwable) {

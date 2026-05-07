@@ -344,10 +344,16 @@
     <!-- Publish Success Screen -->
     <string name="publish_success_title">Опубліковано! 🎉</string>
     <string name="publish_success_subtitle">Ваше оголошення тепер активне. Перші перегляди з\'являться за 10-15 хвилин.</string>
+    <string name="publish_success_subtitle_new">Відправлено на модерацію. Оголошення стане активним після перевірки.</string>
+    <string name="publish_success_subtitle_limited">Оголошення готове, але потребує придбання пакету на OLX для активації.</string>
     <string name="publish_success_listing_url_label">Посилання на оголошення</string>
-    <string name="publish_success_status_active">Активне</string>
     <string name="publish_success_status_label">Статус</string>
-    <string name="publish_success_status_caption">На модерації · до 2 хв</string>
+    <string name="publish_success_status_new">На модерації</string>
+    <string name="publish_success_status_new_caption">Стане активним після перевірки</string>
+    <string name="publish_success_status_limited">Обмежене</string>
+    <string name="publish_success_status_limited_caption">Придбайте пакет на OLX, щоб активувати оголошення</string>
+    <string name="publish_success_status_unknown">Очікує</string>
+    <string name="publish_success_status_unknown_caption">Перевірте ваше оголошення на OLX</string>
     <string name="publish_success_total_time_label">Загальний час</string>
     <string name="publish_success_total_time_caption">Від фото до публікації</string>
     <string name="publish_success_view_on_olx">Переглянути на OLX</string>
