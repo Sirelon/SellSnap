@@ -27,14 +27,17 @@ import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.json.Json
 
 class OlxApiClientTest {
+
+    private val testJson = Json { ignoreUnknownKeys = true; isLenient = true; explicitNulls = false }
 
     @Test
     fun `getAuthenticatedUser attaches bearer token and version header`() = runBlocking {
         var authorizationHeader: String? = null
         var versionHeader: String? = null
-        val tokenStore = OlxTokenStore(InMemoryOlxKeyValueStore()).apply {
+        val tokenStore = OlxTokenStore(InMemoryOlxKeyValueStore(), testJson).apply {
             write(
                 OlxTokens(
                     accessToken = "active-token",
@@ -64,13 +67,18 @@ class OlxApiClientTest {
                 )
             },
         )
+        val errorParser = OlxRemoteErrorParser(testJson)
         val apiClient = OlxApiClient(
-            createOlxAuthorizedHttpClient(
+            httpClient = createOlxAuthorizedHttpClient(
                 authRefreshClient = createOlxHttpClient(holder.engine),
                 credentialsProvider = TestCredentialsProvider(),
                 tokenStore = tokenStore,
+                authSessionStore = OlxAuthSessionStore(InMemoryOlxKeyValueStore(), testJson),
+                errorParser = errorParser,
                 engine = holder.engine,
             ),
+            json = testJson,
+            errorParser = errorParser,
         )
         apiClient.getAuthenticatedUser()
 
@@ -80,7 +88,7 @@ class OlxApiClientTest {
 
     @Test
     fun `getAuthenticatedUser maps olx user response fields`() = runBlocking {
-        val tokenStore = OlxTokenStore(InMemoryOlxKeyValueStore()).apply {
+        val tokenStore = OlxTokenStore(InMemoryOlxKeyValueStore(), testJson).apply {
             write(
                 OlxTokens(
                     accessToken = "active-token",
@@ -111,13 +119,18 @@ class OlxApiClientTest {
                 headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
             )
         }
+        val errorParser2 = OlxRemoteErrorParser(testJson)
         val apiClient = OlxApiClient(
-            createOlxAuthorizedHttpClient(
+            httpClient = createOlxAuthorizedHttpClient(
                 authRefreshClient = createOlxHttpClient(engine),
                 credentialsProvider = TestCredentialsProvider(),
                 tokenStore = tokenStore,
+                authSessionStore = OlxAuthSessionStore(InMemoryOlxKeyValueStore(), testJson),
+                errorParser = errorParser2,
                 engine = engine,
             ),
+            json = testJson,
+            errorParser = errorParser2,
         )
 
         val user = apiClient.getAuthenticatedUser()
@@ -187,7 +200,7 @@ class OlxApiClientTest {
                 else -> error("Unexpected request: ${request.url}")
             }
         }
-        val tokenStore = OlxTokenStore(InMemoryOlxKeyValueStore()).apply {
+        val tokenStore = OlxTokenStore(InMemoryOlxKeyValueStore(), testJson).apply {
             write(
                 OlxTokens(
                     accessToken = "stale-token",
@@ -200,13 +213,18 @@ class OlxApiClientTest {
             )
         }
         val holder = createRepository(tokenStore = tokenStore, engine = engine)
+        val errorParser3 = OlxRemoteErrorParser(testJson)
         val apiClient = OlxApiClient(
-            createOlxAuthorizedHttpClient(
+            httpClient = createOlxAuthorizedHttpClient(
                 authRefreshClient = createOlxHttpClient(engine),
                 credentialsProvider = TestCredentialsProvider(),
                 tokenStore = tokenStore,
+                authSessionStore = OlxAuthSessionStore(InMemoryOlxKeyValueStore(), testJson),
+                errorParser = errorParser3,
                 engine = engine,
             ),
+            json = testJson,
+            errorParser = errorParser3,
         )
 
         apiClient.getAuthenticatedUser()
@@ -250,7 +268,7 @@ class OlxApiClientTest {
                 else -> error("Unexpected request: ${request.url}")
             }
         }
-        val tokenStore = OlxTokenStore(InMemoryOlxKeyValueStore()).apply {
+        val tokenStore = OlxTokenStore(InMemoryOlxKeyValueStore(), testJson).apply {
             write(
                 OlxTokens(
                     accessToken = "stale-token",
@@ -262,13 +280,18 @@ class OlxApiClientTest {
                 ),
             )
         }
+        val errorParser4 = OlxRemoteErrorParser(testJson)
         val apiClient = OlxApiClient(
-            createOlxAuthorizedHttpClient(
+            httpClient = createOlxAuthorizedHttpClient(
                 authRefreshClient = createOlxHttpClient(engine),
                 credentialsProvider = TestCredentialsProvider(),
                 tokenStore = tokenStore,
+                authSessionStore = OlxAuthSessionStore(InMemoryOlxKeyValueStore(), testJson),
+                errorParser = errorParser4,
                 engine = engine,
             ),
+            json = testJson,
+            errorParser = errorParser4,
         )
 
         assertFailsWith<OlxApiException> {
@@ -280,7 +303,7 @@ class OlxApiClientTest {
 
     @Test
     fun `remote error parser keeps status detail when error response is empty`() {
-        val exception = OlxRemoteErrorParser.parse(HttpStatusCode.BadGateway, "")
+        val exception = OlxRemoteErrorParser(testJson).parse(HttpStatusCode.BadGateway, "")
 
         val error = assertIs<OlxApiError.Unknown>(exception.error)
         assertTrue(error.userMessage.contains("HTTP 502"))
@@ -297,9 +320,10 @@ class OlxApiClientTest {
                 httpClient = createOlxHttpClient(engine),
                 credentialsProvider = TestCredentialsProvider(),
                 tokenStore = tokenStore,
-                authSessionStore = OlxAuthSessionStore(InMemoryOlxKeyValueStore()),
+                authSessionStore = OlxAuthSessionStore(InMemoryOlxKeyValueStore(), testJson),
                 redirectHandler = TestRedirectHandler(),
                 guestModeStore = GuestModeStore(InMemoryOlxKeyValueStore()),
+                errorParser = OlxRemoteErrorParser(testJson),
             ),
         )
     }

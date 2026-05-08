@@ -2,7 +2,9 @@ package com.sirelon.aicalories.features.seller.location.data
 
 import com.sirelon.aicalories.features.auth.data.InMemoryOlxKeyValueStore
 import com.sirelon.aicalories.features.seller.auth.data.OlxApiClient
+import com.sirelon.aicalories.features.seller.auth.data.OlxAuthSessionStore
 import com.sirelon.aicalories.features.seller.auth.data.OlxCredentialsProvider
+import com.sirelon.aicalories.features.seller.auth.data.OlxRemoteErrorParser
 import com.sirelon.aicalories.features.seller.auth.data.OlxTokenStore
 import com.sirelon.aicalories.features.seller.auth.data.createOlxAuthorizedHttpClient
 import com.sirelon.aicalories.features.seller.auth.data.createOlxHttpClient
@@ -20,12 +22,15 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.json.Json
 
 class LocationRepositoryTest {
 
+    private val testJson = Json { ignoreUnknownKeys = true; isLenient = true; explicitNulls = false }
+
     @Test
     fun `fetchUserLocation persists valid olx location`() = runBlocking {
-        val store = LocationStore(InMemoryOlxKeyValueStore())
+        val store = LocationStore(InMemoryOlxKeyValueStore(), testJson)
         val repository = LocationRepository(
             locationProvider = TestLocationProvider(DeviceLocation(latitude = 50.45, longitude = 30.52)),
             olxApiClient = createApiClient(
@@ -72,7 +77,7 @@ class LocationRepositoryTest {
     @Test
     fun `fetchUserLocation does not overwrite saved location when device location is missing`() = runBlocking {
         val saved = OlxLocation(1, "Kyiv", 10, "Pechersk")
-        val store = LocationStore(InMemoryOlxKeyValueStore()).apply {
+        val store = LocationStore(InMemoryOlxKeyValueStore(), testJson).apply {
             write(saved)
         }
         val repository = LocationRepository(
@@ -88,7 +93,7 @@ class LocationRepositoryTest {
     }
 
     private suspend fun createApiClient(engine: MockEngine): OlxApiClient {
-        val tokenStore = OlxTokenStore(InMemoryOlxKeyValueStore()).apply {
+        val tokenStore = OlxTokenStore(InMemoryOlxKeyValueStore(), testJson).apply {
             write(
                 OlxTokens(
                     accessToken = "active-token",
@@ -100,13 +105,18 @@ class LocationRepositoryTest {
                 ),
             )
         }
+        val errorParser = OlxRemoteErrorParser(testJson)
         return OlxApiClient(
-            createOlxAuthorizedHttpClient(
+            httpClient = createOlxAuthorizedHttpClient(
                 authRefreshClient = createOlxHttpClient(engine),
                 credentialsProvider = TestCredentialsProvider(),
                 tokenStore = tokenStore,
+                authSessionStore = OlxAuthSessionStore(InMemoryOlxKeyValueStore(), testJson),
+                errorParser = errorParser,
                 engine = engine,
             ),
+            json = testJson,
+            errorParser = errorParser,
         )
     }
 

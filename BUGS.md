@@ -28,15 +28,15 @@ Scope: seller / OLX flow only. Agile screens are intentionally excluded.
 
 ## Auth / token handling
 
-### 5. Callback bridge is a global mutable singleton with no consumed-flag
-- **Where:** `composeApp/src/commonMain/kotlin/com/sirelon/aicalories/features/seller/auth/data/OlxAuthCallbackBridge.kt`
-- **What:** `cachedUrl` and `listener` are bare `var`s on an object. Today the cache is cleared after consumption, but there's no protection against (a) Android re-delivering a stale intent with an already-consumed code, (b) a previous screen leaving a stale listener attached, or (c) concurrent calls from `MainActivity.onNewIntent` and the WebView interceptor.
-- **Fix:** Track a "consumed" set (or a hash of the URL) so identical callbacks aren't replayed. Wrap mutations in `atomicfu` `AtomicReference` or a `Mutex`. Clear `listener` on screen teardown.
+### 5. ~~Callback bridge is a global mutable singleton with no consumed-flag~~ ✅ FIXED (SIR-43)
+- **Where:** `OlxAuthCallbackBridge.kt`
+- **What:** Android intent replay could re-deliver an already-consumed OAuth callback URL.
+- **Fix applied:** `seenUrls: MutableStateFlow<Set<String>>` tracks published URLs; `publishCallback` uses `compareAndSet` to atomically suppress duplicates.
 
-### 6. Two refresh paths can disagree on cleanup
-- **Where:** `OlxAuthRepository.refreshIfNeeded` (`OlxAuthRepository.kt:94–100`) and the Ktor `Auth { bearer { refreshTokens { … } } }` block in `OlxHttpClientFactory.kt:54–73` both clear the token store on terminal errors.
-- **What:** Two independent paths handle refresh failure. They roughly agree today (clear store on `InvalidGrant` / `InvalidToken`), but the duplication invites drift.
-- **Fix:** Extract a single `handleRefreshFailure(error)` helper used from both paths.
+### 6. ~~Two refresh paths can disagree on cleanup~~ ✅ FIXED (SIR-43)
+- **Where:** `OlxAuthRepository.refreshIfNeeded` and the Ktor `Auth { bearer { refreshTokens { … } } }` block.
+- **What:** Explicit refresh and bearer auto-refresh had separate terminal-failure cleanup paths.
+- **Fix applied:** Both paths now call `handleTerminalRefreshFailure(...)`, clearing token and pending auth session state for terminal OLX refresh failures.
 
 ### 7. Privacy / Terms URLs are placeholder garbage
 - **Where:** `composeApp/src/commonMain/kotlin/com/sirelon/aicalories/features/seller/auth/presentation/SellerAuthViewModel.kt:24` and `:29`
@@ -50,10 +50,10 @@ Scope: seller / OLX flow only. Agile screens are intentionally excluded.
 - **What:** `categoriesFlow` is shared into `GlobalScope` with `SharingStarted.Lazily`. The coroutine outlives any caller, can't be cancelled, and ties testing to `GlobalScope`.
 - **Fix:** Inject an external `CoroutineScope` (data-layer application scope) via Koin and share within it. Consider `SharingStarted.WhileSubscribed(stopTimeout = 5_000)` to release memory when no consumer is active.
 
-### 9. `OlxAuthCallbackBridge` mutable state without sync
+### 9. ~~`OlxAuthCallbackBridge` mutable state without sync~~ ✅ FIXED (SIR-43)
 - **Where:** Same file as #5.
-- **What:** Fields are `var`; `onNewUri` is racy under concurrent calls (Android intent + WebView redirect can plausibly fire in the same window).
-- **Fix:** Use `atomicfu` or wrap mutations in a `Mutex`. Tied to bug #5.
+- **What:** Duplicate callback delivery could race when Android intent and WebView redirect publish the same URL close together.
+- **Fix applied:** Callback replay uses `MutableSharedFlow`; consumed callback URLs are guarded by a `MutableStateFlow` compare-and-set loop, and replay-cache reset remains mutex-protected.
 
 ### 10. OLX HTTP base URL leaks through `SupabaseConfig`
 - **Where:** `OlxHttpClientFactory.kt:105` — `defaultRequest.url(SupabaseConfig.OLX_API_BASE_URL)`.

@@ -96,11 +96,7 @@ class OlxAuthRepository(
         tokenStore.write(refreshedTokens)
         refreshedTokens
     }.onFailure { error ->
-        val olxError = (error as? OlxApiException)?.error
-        if (olxError is OlxApiError.InvalidGrant || olxError is OlxApiError.InvalidToken) {
-            tokenStore.clear()
-            authSessionStore.clear()
-        }
+        handleTerminalRefreshFailure(error, tokenStore, authSessionStore)
     }
 
     suspend fun requireAccessToken(forceRefresh: Boolean = false): Result<String> {
@@ -230,5 +226,17 @@ class OlxAuthRepository(
             scope = scope,
             issuedAtEpochSeconds = issuedAtEpochSeconds,
         )
+    }
+}
+
+internal suspend fun handleTerminalRefreshFailure(
+    error: Throwable,
+    tokenStore: OlxTokenStore,
+    authSessionStore: OlxAuthSessionStore,
+) {
+    val olxError = (error as? OlxApiException)?.error
+    if (olxError is OlxApiError.InvalidGrant || olxError is OlxApiError.InvalidToken) {
+        tokenStore.clear()
+        authSessionStore.clear()
     }
 }
