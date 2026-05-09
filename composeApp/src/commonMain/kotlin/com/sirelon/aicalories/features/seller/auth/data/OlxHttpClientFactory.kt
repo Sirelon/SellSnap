@@ -42,6 +42,7 @@ fun createOlxAuthorizedHttpClient(
     authRefreshClient: HttpClient,
     credentialsProvider: OlxCredentialsProvider,
     tokenStore: OlxTokenStore,
+    authSessionStore: OlxAuthSessionStore,
     errorParser: OlxRemoteErrorParser,
     engine: HttpClientEngine? = null,
 ): HttpClient {
@@ -62,15 +63,14 @@ fun createOlxAuthorizedHttpClient(
                         )
                         if (refreshedTokens == null) {
                             tokenStore.clear()
+                            authSessionStore.clear()
                             null
                         } else {
                             tokenStore.write(refreshedTokens)
                             refreshedTokens.toBearerTokens()
                         }
                     } catch (exception: OlxApiException) {
-                        if (exception.error.isTerminalRefreshFailure()) {
-                            tokenStore.clear()
-                        }
+                        handleTerminalRefreshFailure(exception, tokenStore, authSessionStore)
                         throw exception
                     }
                 }
@@ -144,11 +144,6 @@ private fun OlxTokens.toBearerTokens(): BearerTokens = BearerTokens(
     accessToken = accessToken,
     refreshToken = refreshToken ?: "",
 )
-
-private fun OlxApiError.isTerminalRefreshFailure(): Boolean = when (this) {
-    is OlxApiError.InvalidGrant, is OlxApiError.InvalidToken -> true
-    else -> false
-}
 
 @Serializable
 private class RefreshTokenResponse(

@@ -30,6 +30,7 @@ val sellerAuthModule = module {
             authRefreshClient = get(olxHttpClientQualifier),
             credentialsProvider = get(),
             tokenStore = get(),
+            authSessionStore = get(),
             errorParser = get(),
         )
     }
