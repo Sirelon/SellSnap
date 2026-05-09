@@ -1,4 +1,4 @@
-package com.sirelon.aicalories.datastore
+package com.sirelon.sellsnap.datastore
 
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory

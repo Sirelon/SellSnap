@@ -1,8 +1,8 @@
-package com.sirelon.aicalories.features.seller.location.data
+package com.sirelon.sellsnap.features.seller.location.data
 
-import com.sirelon.aicalories.datastore.KeyValueStore
-import com.sirelon.aicalories.datastore.createKeyValueStore
-import com.sirelon.aicalories.features.seller.location.OlxLocation
+import com.sirelon.sellsnap.datastore.KeyValueStore
+import com.sirelon.sellsnap.datastore.createKeyValueStore
+import com.sirelon.sellsnap.features.seller.location.OlxLocation
 import kotlinx.serialization.json.Json
 
 class LocationStore internal constructor(

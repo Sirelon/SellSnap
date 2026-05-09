@@ -1,4 +1,4 @@
-package com.sirelon.aicalories.designsystem.screens
+package com.sirelon.sellsnap.designsystem.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -12,8 +12,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
-import com.sirelon.aicalories.designsystem.AppDimens
-import com.sirelon.aicalories.designsystem.AppTheme
+import com.sirelon.sellsnap.designsystem.AppDimens
+import com.sirelon.sellsnap.designsystem.AppTheme
 
 // TODO: make design better
 @Composable

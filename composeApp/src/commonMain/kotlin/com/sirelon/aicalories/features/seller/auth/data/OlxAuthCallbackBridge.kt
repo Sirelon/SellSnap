@@ -1,4 +1,4 @@
-package com.sirelon.aicalories.features.seller.auth.data
+package com.sirelon.sellsnap.features.seller.auth.data
 
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.BufferOverflow

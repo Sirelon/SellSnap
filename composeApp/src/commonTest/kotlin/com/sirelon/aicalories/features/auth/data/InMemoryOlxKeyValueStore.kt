@@ -1,6 +1,6 @@
-package com.sirelon.aicalories.features.auth.data
+package com.sirelon.sellsnap.features.auth.data
 
-import com.sirelon.aicalories.datastore.KeyValueStore
+import com.sirelon.sellsnap.datastore.KeyValueStore
 
 internal class InMemoryOlxKeyValueStore : KeyValueStore {
     private val data = mutableMapOf<String, String>()

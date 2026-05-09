@@ -1,4 +1,4 @@
-package com.sirelon.aicalories.common
+package com.sirelon.sellsnap.common
 
 enum class MeasureUnit {
     Grams, Kcal;

@@ -1,9 +1,9 @@
-package com.sirelon.aicalories.features.seller.categories.data
+package com.sirelon.sellsnap.features.seller.categories.data
 
-import com.sirelon.aicalories.features.seller.auth.data.OlxApiClient
-import com.sirelon.aicalories.features.seller.categories.domain.CategoriesMapper
-import com.sirelon.aicalories.features.seller.categories.domain.OlxAttribute
-import com.sirelon.aicalories.features.seller.categories.domain.OlxCategory
+import com.sirelon.sellsnap.features.seller.auth.data.OlxApiClient
+import com.sirelon.sellsnap.features.seller.categories.domain.CategoriesMapper
+import com.sirelon.sellsnap.features.seller.categories.domain.OlxAttribute
+import com.sirelon.sellsnap.features.seller.categories.domain.OlxCategory
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharedFlow

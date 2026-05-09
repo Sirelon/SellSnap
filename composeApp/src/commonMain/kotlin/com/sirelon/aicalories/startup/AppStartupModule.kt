@@ -1,4 +1,4 @@
-package com.sirelon.aicalories.startup
+package com.sirelon.sellsnap.startup
 
 import org.koin.core.module.dsl.singleOf
 import org.koin.core.module.dsl.viewModelOf

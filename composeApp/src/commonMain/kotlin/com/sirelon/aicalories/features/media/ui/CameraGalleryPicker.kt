@@ -1,4 +1,4 @@
-package com.sirelon.aicalories.features.media.ui
+package com.sirelon.sellsnap.features.media.ui
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
@@ -20,11 +20,11 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
-import com.sirelon.aicalories.designsystem.AppDimens
-import com.sirelon.aicalories.designsystem.AppTheme
-import com.sirelon.aicalories.generated.resources.Res
-import com.sirelon.aicalories.generated.resources.source_camera
-import com.sirelon.aicalories.generated.resources.source_gallery
+import com.sirelon.sellsnap.designsystem.AppDimens
+import com.sirelon.sellsnap.designsystem.AppTheme
+import com.sirelon.sellsnap.generated.resources.Res
+import com.sirelon.sellsnap.generated.resources.source_camera
+import com.sirelon.sellsnap.generated.resources.source_gallery
 import org.jetbrains.compose.resources.stringResource
 
 private val PILL_HEIGHT = 52.dp

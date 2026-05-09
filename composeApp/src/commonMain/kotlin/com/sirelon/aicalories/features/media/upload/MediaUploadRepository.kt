@@ -1,10 +1,10 @@
-package com.sirelon.aicalories.features.media.upload
+package com.sirelon.sellsnap.features.media.upload
 
 import com.mohamedrejeb.calf.io.KmpFile
 import com.mohamedrejeb.calf.io.getName
 import com.mohamedrejeb.calf.io.getPath
 import com.mohamedrejeb.calf.io.readByteArray
-import com.sirelon.aicalories.supabase.SupabaseClient
+import com.sirelon.sellsnap.supabase.SupabaseClient
 import io.github.jan.supabase.storage.UploadStatus
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emitAll

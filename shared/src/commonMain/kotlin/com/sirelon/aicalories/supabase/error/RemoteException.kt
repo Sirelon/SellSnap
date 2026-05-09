@@ -1,4 +1,4 @@
-package com.sirelon.aicalories.supabase.error
+package com.sirelon.sellsnap.supabase.error
 
 /**
  * Represents an error returned by a remote server (e.g. Supabase).

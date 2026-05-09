@@ -73,7 +73,7 @@ val olxRedirectUri =
 
 kotlin {
     androidLibrary {
-        namespace = "com.sirelon.aicalories.shared"
+        namespace = "com.sirelon.sellsnap.shared"
         compileSdk = libs.versions.android.compileSdk.get().toInt()
         minSdk = libs.versions.android.minSdk.get().toInt()
         compilerOptions {
@@ -131,7 +131,7 @@ kotlin {
 }
 
 buildkonfig {
-    packageName = "com.sirelon.aicalories.supabase"
+    packageName = "com.sirelon.sellsnap.supabase"
     exposeObjectWithName = "SupabaseConfig"
 
     defaultConfigs {

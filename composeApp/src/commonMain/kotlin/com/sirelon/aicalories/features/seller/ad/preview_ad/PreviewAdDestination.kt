@@ -1,4 +1,4 @@
-package com.sirelon.aicalories.features.seller.ad.preview_ad
+package com.sirelon.sellsnap.features.seller.ad.preview_ad
 
 import kotlinx.serialization.Serializable
 

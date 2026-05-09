@@ -1,4 +1,4 @@
-package com.sirelon.aicalories.designsystem
+package com.sirelon.sellsnap.designsystem
 
 fun formatPrice(value: Float): String {
     val intValue = value.toLong().coerceAtLeast(0L)

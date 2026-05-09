@@ -1,4 +1,4 @@
-package com.sirelon.aicalories.designsystem.utils
+package com.sirelon.sellsnap.designsystem.utils
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Balance
@@ -16,8 +16,8 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material.icons.filled.Whatshot
-import com.sirelon.aicalories.designsystem.ChipData
-import com.sirelon.aicalories.designsystem.ChipStyle
+import com.sirelon.sellsnap.designsystem.ChipData
+import com.sirelon.sellsnap.designsystem.ChipStyle
 import kotlin.random.Random
 
 object RandomData {

@@ -1,4 +1,4 @@
-package com.sirelon.aicalories.designsystem.pager
+package com.sirelon.sellsnap.designsystem.pager
 
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
@@ -13,7 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import com.sirelon.aicalories.designsystem.AppDimens
+import com.sirelon.sellsnap.designsystem.AppDimens
 
 @Composable
 fun PageDots(

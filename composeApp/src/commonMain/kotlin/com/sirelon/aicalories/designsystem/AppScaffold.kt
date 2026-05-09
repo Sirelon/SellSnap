@@ -1,4 +1,4 @@
-package com.sirelon.aicalories.designsystem
+package com.sirelon.sellsnap.designsystem
 
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets

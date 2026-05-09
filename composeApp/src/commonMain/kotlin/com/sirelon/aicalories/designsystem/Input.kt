@@ -1,4 +1,4 @@
-package com.sirelon.aicalories.designsystem
+package com.sirelon.sellsnap.designsystem
 
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -18,9 +18,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.VisualTransformation
-import com.sirelon.aicalories.generated.resources.Res
-import com.sirelon.aicalories.generated.resources.character_count_range
-import com.sirelon.aicalories.generated.resources.min_characters
+import com.sirelon.sellsnap.generated.resources.Res
+import com.sirelon.sellsnap.generated.resources.character_count_range
+import com.sirelon.sellsnap.generated.resources.min_characters
 import org.jetbrains.compose.resources.stringResource
 
 @Composable

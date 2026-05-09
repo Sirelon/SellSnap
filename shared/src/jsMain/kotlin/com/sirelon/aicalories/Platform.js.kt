@@ -1,4 +1,4 @@
-package com.sirelon.aicalories
+package com.sirelon.sellsnap
 
 class JsPlatform: Platform {
     override val name: String = "Web with Kotlin/JS"

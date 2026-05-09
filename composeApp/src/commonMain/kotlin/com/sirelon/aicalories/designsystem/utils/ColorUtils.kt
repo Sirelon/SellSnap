@@ -1,4 +1,4 @@
-package com.sirelon.aicalories.designsystem.utils
+package com.sirelon.sellsnap.designsystem.utils
 
 import androidx.compose.ui.graphics.Color
 import kotlin.math.abs

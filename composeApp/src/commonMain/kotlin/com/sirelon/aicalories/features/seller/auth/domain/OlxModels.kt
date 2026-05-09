@@ -1,4 +1,4 @@
-package com.sirelon.aicalories.features.seller.auth.domain
+package com.sirelon.sellsnap.features.seller.auth.domain
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

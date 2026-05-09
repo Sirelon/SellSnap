@@ -1,4 +1,4 @@
-package com.sirelon.aicalories.designsystem
+package com.sirelon.sellsnap.designsystem
 
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.darkColorScheme

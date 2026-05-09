@@ -1,4 +1,4 @@
-package com.sirelon.aicalories.designsystem
+package com.sirelon.sellsnap.designsystem
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.fillMaxWidth

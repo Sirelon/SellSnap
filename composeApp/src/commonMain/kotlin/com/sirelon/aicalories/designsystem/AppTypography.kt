@@ -1,4 +1,4 @@
-package com.sirelon.aicalories.designsystem
+package com.sirelon.sellsnap.designsystem
 
 import androidx.compose.material3.Typography
 import androidx.compose.runtime.Composable
@@ -8,9 +8,9 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
-import com.sirelon.aicalories.generated.resources.Res
-import com.sirelon.aicalories.generated.resources.inter_variable
-import com.sirelon.aicalories.generated.resources.manrope_variable
+import com.sirelon.sellsnap.generated.resources.Res
+import com.sirelon.sellsnap.generated.resources.inter_variable
+import com.sirelon.sellsnap.generated.resources.manrope_variable
 import org.jetbrains.compose.resources.Font
 
 val ManropeFontFamily: FontFamily

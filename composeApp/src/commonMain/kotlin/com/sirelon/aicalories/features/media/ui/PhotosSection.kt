@@ -1,4 +1,4 @@
-package com.sirelon.aicalories.features.media.ui
+package com.sirelon.sellsnap.features.media.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -17,16 +17,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.text.font.FontWeight
 import com.mohamedrejeb.calf.io.KmpFile
-import com.sirelon.aicalories.designsystem.AppDimens
-import com.sirelon.aicalories.designsystem.AppTheme
-import com.sirelon.aicalories.designsystem.buttons.AppButton
-import com.sirelon.aicalories.designsystem.buttons.AppButtonDefaults
-import com.sirelon.aicalories.designsystem.buttons.AppIconButton
-import com.sirelon.aicalories.features.media.upload.UploadingItem
-import com.sirelon.aicalories.generated.resources.Res
-import com.sirelon.aicalories.generated.resources.add_photos_title
-import com.sirelon.aicalories.generated.resources.photos_count_format
-import com.sirelon.aicalories.generated.resources.take_photo
+import com.sirelon.sellsnap.designsystem.AppDimens
+import com.sirelon.sellsnap.designsystem.AppTheme
+import com.sirelon.sellsnap.designsystem.buttons.AppButton
+import com.sirelon.sellsnap.designsystem.buttons.AppButtonDefaults
+import com.sirelon.sellsnap.designsystem.buttons.AppIconButton
+import com.sirelon.sellsnap.features.media.upload.UploadingItem
+import com.sirelon.sellsnap.generated.resources.Res
+import com.sirelon.sellsnap.generated.resources.add_photos_title
+import com.sirelon.sellsnap.generated.resources.photos_count_format
+import com.sirelon.sellsnap.generated.resources.take_photo
 import org.jetbrains.compose.resources.stringResource
 
 @Composable

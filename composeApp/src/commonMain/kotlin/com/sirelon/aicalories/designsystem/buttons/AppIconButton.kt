@@ -1,4 +1,4 @@
-package com.sirelon.aicalories.designsystem.buttons
+package com.sirelon.sellsnap.designsystem.buttons
 
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -7,7 +7,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.Painter
-import com.sirelon.aicalories.designsystem.AppDimens
+import com.sirelon.sellsnap.designsystem.AppDimens
 
 @Composable
 fun AppIconButton(

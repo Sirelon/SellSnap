@@ -1,4 +1,4 @@
-package com.sirelon.aicalories.designsystem.screens
+package com.sirelon.sellsnap.designsystem.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -16,10 +16,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import coil3.compose.AsyncImage
-import com.sirelon.aicalories.designsystem.AppDimens
-import com.sirelon.aicalories.designsystem.pager.PageDots
-import com.sirelon.aicalories.generated.resources.Res
-import com.sirelon.aicalories.generated.resources.ic_x
+import com.sirelon.sellsnap.designsystem.AppDimens
+import com.sirelon.sellsnap.designsystem.pager.PageDots
+import com.sirelon.sellsnap.generated.resources.Res
+import com.sirelon.sellsnap.generated.resources.ic_x
 import org.jetbrains.compose.resources.painterResource
 
 @Composable

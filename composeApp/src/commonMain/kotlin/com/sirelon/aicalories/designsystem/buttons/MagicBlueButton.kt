@@ -1,4 +1,4 @@
-package com.sirelon.aicalories.designsystem.buttons
+package com.sirelon.sellsnap.designsystem.buttons
 
 import androidx.compose.animation.animateColor
 import androidx.compose.animation.core.EaseOut
@@ -53,8 +53,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.sp
-import com.sirelon.aicalories.designsystem.AppDimens
-import com.sirelon.aicalories.designsystem.AppTheme
+import com.sirelon.sellsnap.designsystem.AppDimens
+import com.sirelon.sellsnap.designsystem.AppTheme
 import kotlin.math.min
 
 @Composable

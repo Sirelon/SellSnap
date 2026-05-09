@@ -1,6 +1,6 @@
-package com.sirelon.aicalories.startup
+package com.sirelon.sellsnap.startup
 
-import com.sirelon.aicalories.datastore.createKeyValueStore
+import com.sirelon.sellsnap.datastore.createKeyValueStore
 
 class AppStartupStore {
     private val store = createKeyValueStore("app_startup")

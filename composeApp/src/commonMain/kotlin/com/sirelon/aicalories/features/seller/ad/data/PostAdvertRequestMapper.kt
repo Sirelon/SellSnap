@@ -1,15 +1,15 @@
-package com.sirelon.aicalories.features.seller.ad.data
+package com.sirelon.sellsnap.features.seller.ad.data
 
-import com.sirelon.aicalories.features.seller.ad.preview_ad.OlxAttributeState
-import com.sirelon.aicalories.features.seller.auth.data.AdvertAttributeRequest
-import com.sirelon.aicalories.features.seller.auth.data.AdvertContactRequest
-import com.sirelon.aicalories.features.seller.auth.data.AdvertImageRequest
-import com.sirelon.aicalories.features.seller.auth.data.AdvertLocationRequest
-import com.sirelon.aicalories.features.seller.auth.data.AdvertPriceRequest
-import com.sirelon.aicalories.features.seller.auth.data.PostAdvertRequest
-import com.sirelon.aicalories.features.seller.categories.domain.AttributeInputType
-import com.sirelon.aicalories.features.seller.categories.domain.OlxCategory
-import com.sirelon.aicalories.features.seller.location.OlxLocation
+import com.sirelon.sellsnap.features.seller.ad.preview_ad.OlxAttributeState
+import com.sirelon.sellsnap.features.seller.auth.data.AdvertAttributeRequest
+import com.sirelon.sellsnap.features.seller.auth.data.AdvertContactRequest
+import com.sirelon.sellsnap.features.seller.auth.data.AdvertImageRequest
+import com.sirelon.sellsnap.features.seller.auth.data.AdvertLocationRequest
+import com.sirelon.sellsnap.features.seller.auth.data.AdvertPriceRequest
+import com.sirelon.sellsnap.features.seller.auth.data.PostAdvertRequest
+import com.sirelon.sellsnap.features.seller.categories.domain.AttributeInputType
+import com.sirelon.sellsnap.features.seller.categories.domain.OlxCategory
+import com.sirelon.sellsnap.features.seller.location.OlxLocation
 import kotlin.math.roundToInt
 
 internal object PostAdvertRequestMapper {

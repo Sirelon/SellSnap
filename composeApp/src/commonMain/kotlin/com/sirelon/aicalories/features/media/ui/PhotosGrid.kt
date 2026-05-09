@@ -1,4 +1,4 @@
-package com.sirelon.aicalories.features.media.ui
+package com.sirelon.sellsnap.features.media.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -37,15 +37,15 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.mohamedrejeb.calf.io.KmpFile
-import com.sirelon.aicalories.designsystem.AppAsyncImage
-import com.sirelon.aicalories.designsystem.AppDimens
-import com.sirelon.aicalories.designsystem.AppTheme
-import com.sirelon.aicalories.designsystem.UploadStatusIndicator
-import com.sirelon.aicalories.features.media.upload.UploadingItem
-import com.sirelon.aicalories.generated.resources.Res
-import com.sirelon.aicalories.generated.resources.add_photo_cd
-import com.sirelon.aicalories.generated.resources.add_photo_label
-import com.sirelon.aicalories.generated.resources.remove_photo_cd
+import com.sirelon.sellsnap.designsystem.AppAsyncImage
+import com.sirelon.sellsnap.designsystem.AppDimens
+import com.sirelon.sellsnap.designsystem.AppTheme
+import com.sirelon.sellsnap.designsystem.UploadStatusIndicator
+import com.sirelon.sellsnap.features.media.upload.UploadingItem
+import com.sirelon.sellsnap.generated.resources.Res
+import com.sirelon.sellsnap.generated.resources.add_photo_cd
+import com.sirelon.sellsnap.generated.resources.add_photo_label
+import com.sirelon.sellsnap.generated.resources.remove_photo_cd
 import org.jetbrains.compose.resources.stringResource
 
 const val MAX_PHOTOS: Int = 5

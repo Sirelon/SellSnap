@@ -1,3 +1,3 @@
-package com.sirelon.aicalories.platform
+package com.sirelon.sellsnap.platform
 
 expect fun openUrl(url: String)

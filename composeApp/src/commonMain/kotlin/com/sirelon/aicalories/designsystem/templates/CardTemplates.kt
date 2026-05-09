@@ -1,4 +1,4 @@
-package com.sirelon.aicalories.designsystem.templates
+package com.sirelon.sellsnap.designsystem.templates
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -10,9 +10,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
-import com.sirelon.aicalories.designsystem.AppCard
-import com.sirelon.aicalories.designsystem.AppDimens
-import com.sirelon.aicalories.designsystem.AppTheme
+import com.sirelon.sellsnap.designsystem.AppCard
+import com.sirelon.sellsnap.designsystem.AppDimens
+import com.sirelon.sellsnap.designsystem.AppTheme
 
 @Composable
 fun CardWithTitle(

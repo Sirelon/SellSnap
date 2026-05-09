@@ -1,4 +1,4 @@
-package com.sirelon.aicalories.designsystem
+package com.sirelon.sellsnap.designsystem
 
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat

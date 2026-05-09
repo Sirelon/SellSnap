@@ -1,7 +1,7 @@
-package com.sirelon.aicalories.features.seller.profile.presentation
+package com.sirelon.sellsnap.features.seller.profile.presentation
 
-import com.sirelon.aicalories.features.seller.auth.domain.OlxUser
-import com.sirelon.aicalories.features.seller.location.OlxLocation
+import com.sirelon.sellsnap.features.seller.auth.domain.OlxUser
+import com.sirelon.sellsnap.features.seller.location.OlxLocation
 
 interface ProfileContract {
     data class ProfileState(

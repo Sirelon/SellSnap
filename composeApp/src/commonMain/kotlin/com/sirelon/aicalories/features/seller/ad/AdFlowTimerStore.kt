@@ -1,4 +1,4 @@
-package com.sirelon.aicalories.features.seller.ad
+package com.sirelon.sellsnap.features.seller.ad
 
 import kotlin.time.Duration
 import kotlin.time.TimeMark

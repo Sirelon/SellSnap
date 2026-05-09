@@ -1,4 +1,4 @@
-package com.sirelon.aicalories
+package com.sirelon.sellsnap
 
 class Greeting {
     private val platform = getPlatform()
