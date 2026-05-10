@@ -9,6 +9,9 @@ sealed interface AdDestination {
     data object GenerateAd : AdDestination
 
     @Serializable
+    data object WhisperDemo : AdDestination
+
+    @Serializable
     data class PreviewAd(val advertisement: AdvertisementWithAttributes) : AdDestination
 
     @Serializable

@@ -19,6 +19,8 @@
 	</array>
 	<key>NSCameraUsageDescription</key>
 	<string>SellSnap needs camera access to capture photos for your OLX listing.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>SellSnap needs microphone access to record audio for speech-to-text transcription.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>SellSnap uses your location to suggest the nearest city for your OLX advertisement.</string>
 </dict>

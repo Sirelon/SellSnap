@@ -22,6 +22,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FlashOn
+import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
@@ -89,6 +90,7 @@ private const val MAX_PROMPT_CHARS = 120
 fun GenerateAdScreen(
     openAdPreview: (AdvertisementWithAttributes) -> Unit,
     onProfileClick: () -> Unit,
+    onWhisperClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val viewModel: GenerateAdViewModel = koinViewModel()
@@ -153,6 +155,7 @@ fun GenerateAdScreen(
                     }
                 },
                 onProfileClick = onProfileClick,
+                onWhisperClick = onWhisperClick,
                 modifier = modifier,
             )
         }
@@ -173,6 +176,7 @@ private fun GenerateAdScreenContent(
     onRemovePhoto: (KmpFile) -> Unit,
     onSubmitClick: () -> Unit,
     onProfileClick: () -> Unit,
+    onWhisperClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
@@ -184,6 +188,7 @@ private fun GenerateAdScreenContent(
                 profileName = state.profileName,
                 avatarUrl = state.profileAvatarUrl,
                 onProfileClick = onProfileClick,
+                onWhisperClick = onWhisperClick,
             )
         },
         bottomBar = {
@@ -288,6 +293,7 @@ private fun SlimHeader(
     profileName: String?,
     avatarUrl: String?,
     onProfileClick: () -> Unit,
+    onWhisperClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -334,25 +340,45 @@ private fun SlimHeader(
                 overflow = TextOverflow.Ellipsis,
             )
         }
-        IconButton(onClick = onProfileClick) {
-            Box(
-                modifier = Modifier
-                    .size(AppDimens.Size.xl8)
-                    .clip(CircleShape)
-                    .background(AppTheme.colors.surfaceHigh),
-                contentAlignment = Alignment.Center,
-            ) {
-                if (!avatarUrl.isNullOrBlank()) {
-                    AppAsyncImage(
-                        model = avatarUrl,
-                        modifier = Modifier.fillMaxSize(),
-                    )
-                } else {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing.s),
+        ) {
+            IconButton(onClick = onWhisperClick) {
+                Box(
+                    modifier = Modifier
+                        .size(AppDimens.Size.xl8)
+                        .clip(CircleShape)
+                        .background(AppTheme.colors.surfaceHigh),
+                    contentAlignment = Alignment.Center,
+                ) {
                     Icon(
-                        painter = painterResource(Res.drawable.ic_user),
-                        contentDescription = null,
+                        imageVector = Icons.Default.Mic,
+                        contentDescription = "Whisper PoC",
                         tint = AppTheme.colors.onSurface,
                     )
+                }
+            }
+            IconButton(onClick = onProfileClick) {
+                Box(
+                    modifier = Modifier
+                        .size(AppDimens.Size.xl8)
+                        .clip(CircleShape)
+                        .background(AppTheme.colors.surfaceHigh),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    if (!avatarUrl.isNullOrBlank()) {
+                        AppAsyncImage(
+                            model = avatarUrl,
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    } else {
+                        Icon(
+                            painter = painterResource(Res.drawable.ic_user),
+                            contentDescription = null,
+                            tint = AppTheme.colors.onSurface,
+                        )
+                    }
                 }
             }
         }
@@ -583,6 +609,7 @@ private fun GenerateAdScreenEmptyPreview() {
             onRemovePhoto = {},
             onSubmitClick = {},
             onProfileClick = {},
+            onWhisperClick = {},
         )
     }
 }
@@ -602,6 +629,7 @@ private fun GenerateAdScreenWithPromptPreview() {
             onRemovePhoto = {},
             onSubmitClick = {},
             onProfileClick = {},
+            onWhisperClick = {},
         )
     }
 }

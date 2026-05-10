@@ -8,6 +8,7 @@ import com.sirelon.aicalories.features.seller.auth.di.sellerAuthModule
 import com.sirelon.aicalories.features.seller.categories.categoriesModule
 import com.sirelon.aicalories.features.seller.openai.OpenAIClient
 import com.sirelon.aicalories.features.seller.profile.di.profileModule
+import com.sirelon.aicalories.features.seller.whisper.di.whisperModule
 import com.sirelon.aicalories.network.ApiTokenProvider
 import com.sirelon.aicalories.network.createHttpClient
 import com.sirelon.aicalories.network.createOpenAI
@@ -31,6 +32,7 @@ val appModule = module {
         generateAdModule,
         previewAdModule,
         profileModule,
+        whisperModule,
         appStartupModule,
         categoriesModule,
     )
