@@ -154,7 +154,8 @@ class WhisperViewModel(
                 openAI.transcription(
                     request = TranscriptionRequest(
                         audio = source,
-                        model = ModelId("whisper-1"),
+                        model = ModelId(InspectionTranscriptionProfile.model),
+                        prompt = InspectionTranscriptionProfile.prompt,
                     ),
                 ).text
             }.onSuccess { text ->

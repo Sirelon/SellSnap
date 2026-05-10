@@ -31,8 +31,6 @@ import kotlin.time.Duration.Companion.seconds
 
 private const val REALTIME_HOST = "api.openai.com"
 private const val REALTIME_PATH = "/v1/realtime"
-private const val REALTIME_TRANSCRIPTION_MODEL = "gpt-realtime-whisper"
-
 sealed interface RealtimeTranscriptionEvent {
     data object Connected : RealtimeTranscriptionEvent
     data class Delta(val text: String) : RealtimeTranscriptionEvent
@@ -167,7 +165,8 @@ private fun sessionUpdateEvent(): String =
                                 put(
                                     "transcription",
                                     buildJsonObject {
-                                        put("model", REALTIME_TRANSCRIPTION_MODEL)
+                                        put("model", InspectionTranscriptionProfile.model)
+                                        put("prompt", InspectionTranscriptionProfile.prompt)
                                     },
                                 )
                                 put("turn_detection", null)
