@@ -10,7 +10,7 @@
 			<key>CFBundleTypeRole</key>
 			<string>Editor</string>
 			<key>CFBundleURLName</key>
-			<string>com.sirelon.aicalories.olx</string>
+			<string>com.sirelon.sellsnap.olx</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>selolxai</string>

@@ -1,3 +1,3 @@
-package com.sirelon.aicalories.features.media
+package com.sirelon.sellsnap.features.media
 
 actual fun imageFormatConverter(): ImageFormatConverter = PassthroughImageFormatConverter()

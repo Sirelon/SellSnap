@@ -1,4 +1,4 @@
-package com.sirelon.aicalories.features.media
+package com.sirelon.sellsnap.features.media
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
@@ -12,7 +12,7 @@ import com.mohamedrejeb.calf.io.getName
 import com.mohamedrejeb.calf.picker.FilePickerFileType
 import com.mohamedrejeb.calf.picker.FilePickerSelectionMode
 import com.mohamedrejeb.calf.picker.rememberFilePickerLauncher
-import com.sirelon.aicalories.camera.rememberCameraCaptureLauncher
+import com.sirelon.sellsnap.camera.rememberCameraCaptureLauncher
 
 data class PhotoPickerUiState(
     val files: List<KmpFile> = emptyList(),

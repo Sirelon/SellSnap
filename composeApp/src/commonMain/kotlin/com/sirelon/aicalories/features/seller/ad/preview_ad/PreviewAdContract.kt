@@ -1,11 +1,11 @@
-package com.sirelon.aicalories.features.seller.ad.preview_ad
+package com.sirelon.sellsnap.features.seller.ad.preview_ad
 
-import com.sirelon.aicalories.features.seller.ad.publish_success.PublishSuccessData
-import com.sirelon.aicalories.features.seller.categories.domain.OlxAttribute
-import com.sirelon.aicalories.features.seller.categories.domain.OlxAttributeValue
-import com.sirelon.aicalories.features.seller.categories.domain.OlxCategory
-import com.sirelon.aicalories.features.seller.categories.domain.ValidationError
-import com.sirelon.aicalories.features.seller.location.OlxLocation
+import com.sirelon.sellsnap.features.seller.ad.publish_success.PublishSuccessData
+import com.sirelon.sellsnap.features.seller.categories.domain.OlxAttribute
+import com.sirelon.sellsnap.features.seller.categories.domain.OlxAttributeValue
+import com.sirelon.sellsnap.features.seller.categories.domain.OlxCategory
+import com.sirelon.sellsnap.features.seller.categories.domain.ValidationError
+import com.sirelon.sellsnap.features.seller.location.OlxLocation
 import kotlin.jvm.JvmInline
 
 data class OlxAttributeState(

@@ -1,7 +1,7 @@
-package com.sirelon.aicalories.features.seller.auth.data
+package com.sirelon.sellsnap.features.seller.auth.data
 
-import com.sirelon.aicalories.features.seller.auth.domain.OlxAuthCallback
-import com.sirelon.aicalories.platform.PlatformTargets
+import com.sirelon.sellsnap.features.seller.auth.domain.OlxAuthCallback
+import com.sirelon.sellsnap.platform.PlatformTargets
 import io.ktor.http.Url
 
 class DefaultOlxRedirectHandler : OlxRedirectHandler {

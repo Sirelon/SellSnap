@@ -1,8 +1,8 @@
-package com.sirelon.aicalories.features.seller.location.data
+package com.sirelon.sellsnap.features.seller.location.data
 
-import com.sirelon.aicalories.features.seller.auth.data.OlxApiClient
-import com.sirelon.aicalories.features.seller.location.LocationProvider
-import com.sirelon.aicalories.features.seller.location.OlxLocation
+import com.sirelon.sellsnap.features.seller.auth.data.OlxApiClient
+import com.sirelon.sellsnap.features.seller.location.LocationProvider
+import com.sirelon.sellsnap.features.seller.location.OlxLocation
 
 class LocationRepository(
     private val locationProvider: LocationProvider,

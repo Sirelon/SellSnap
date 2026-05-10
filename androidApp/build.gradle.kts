@@ -5,11 +5,11 @@ plugins {
 
 val composeAppProject = project(":composeApp")
 android {
-    namespace = "com.sirelon.aicalories"
+    namespace = "com.sirelon.sellsnap"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
 
     defaultConfig {
-        applicationId = "com.sirelon.aicalories"
+        applicationId = "com.sirelon.sellsnap"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 1

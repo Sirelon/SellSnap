@@ -1,8 +1,8 @@
-package com.sirelon.aicalories.features.seller.auth.data
+package com.sirelon.sellsnap.features.seller.auth.data
 
-import com.sirelon.aicalories.features.seller.auth.domain.OlxApiError
-import com.sirelon.aicalories.features.seller.auth.domain.OlxApiException
-import com.sirelon.aicalories.features.seller.auth.domain.OlxTokens
+import com.sirelon.sellsnap.features.seller.auth.domain.OlxApiError
+import com.sirelon.sellsnap.features.seller.auth.domain.OlxApiException
+import com.sirelon.sellsnap.features.seller.auth.domain.OlxTokens
 import io.ktor.client.HttpClient
 import io.ktor.client.HttpClientConfig
 import io.ktor.client.call.body

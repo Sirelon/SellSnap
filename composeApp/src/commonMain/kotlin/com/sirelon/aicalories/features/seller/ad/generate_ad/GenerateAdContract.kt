@@ -1,8 +1,8 @@
-package com.sirelon.aicalories.features.seller.ad.generate_ad
+package com.sirelon.sellsnap.features.seller.ad.generate_ad
 
 import com.mohamedrejeb.calf.io.KmpFile
-import com.sirelon.aicalories.features.media.upload.UploadingItem
-import com.sirelon.aicalories.features.seller.ad.AdvertisementWithAttributes
+import com.sirelon.sellsnap.features.media.upload.UploadingItem
+import com.sirelon.sellsnap.features.seller.ad.AdvertisementWithAttributes
 
 interface GenerateAdContract {
 

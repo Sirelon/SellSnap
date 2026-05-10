@@ -1,12 +1,12 @@
-package com.sirelon.aicalories.startup
+package com.sirelon.sellsnap.startup
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.sirelon.aicalories.features.seller.ad.AdFlowTimerStore
-import com.sirelon.aicalories.features.seller.auth.data.OlxApiClient
-import com.sirelon.aicalories.features.seller.auth.data.OlxAuthRepository
-import com.sirelon.aicalories.features.seller.auth.domain.SellerSessionMode
-import com.sirelon.aicalories.navigation.AppDestination
+import com.sirelon.sellsnap.features.seller.ad.AdFlowTimerStore
+import com.sirelon.sellsnap.features.seller.auth.data.OlxApiClient
+import com.sirelon.sellsnap.features.seller.auth.data.OlxAuthRepository
+import com.sirelon.sellsnap.features.seller.auth.domain.SellerSessionMode
+import com.sirelon.sellsnap.navigation.AppDestination
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow

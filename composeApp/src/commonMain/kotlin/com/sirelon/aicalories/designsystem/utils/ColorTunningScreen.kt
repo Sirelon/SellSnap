@@ -1,4 +1,4 @@
-package com.sirelon.aicalories.designsystem.utils
+package com.sirelon.sellsnap.designsystem.utils
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box

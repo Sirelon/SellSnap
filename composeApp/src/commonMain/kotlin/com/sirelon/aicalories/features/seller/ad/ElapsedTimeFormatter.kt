@@ -1,14 +1,14 @@
-package com.sirelon.aicalories.features.seller.ad
+package com.sirelon.sellsnap.features.seller.ad
 
 import androidx.compose.runtime.Composable
-import com.sirelon.aicalories.generated.resources.Res
-import com.sirelon.aicalories.generated.resources.time_duration_minutes
-import com.sirelon.aicalories.generated.resources.time_duration_minutes_seconds
-import com.sirelon.aicalories.generated.resources.time_duration_seconds
-import com.sirelon.aicalories.generated.resources.time_unit_minute_one
-import com.sirelon.aicalories.generated.resources.time_unit_minute_other
-import com.sirelon.aicalories.generated.resources.time_unit_second_one
-import com.sirelon.aicalories.generated.resources.time_unit_second_other
+import com.sirelon.sellsnap.generated.resources.Res
+import com.sirelon.sellsnap.generated.resources.time_duration_minutes
+import com.sirelon.sellsnap.generated.resources.time_duration_minutes_seconds
+import com.sirelon.sellsnap.generated.resources.time_duration_seconds
+import com.sirelon.sellsnap.generated.resources.time_unit_minute_one
+import com.sirelon.sellsnap.generated.resources.time_unit_minute_other
+import com.sirelon.sellsnap.generated.resources.time_unit_second_one
+import com.sirelon.sellsnap.generated.resources.time_unit_second_other
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 

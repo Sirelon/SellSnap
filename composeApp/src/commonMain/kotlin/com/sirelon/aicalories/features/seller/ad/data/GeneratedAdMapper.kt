@@ -1,7 +1,7 @@
-package com.sirelon.aicalories.features.seller.ad.data
+package com.sirelon.sellsnap.features.seller.ad.data
 
-import com.sirelon.aicalories.features.seller.ad.Advertisement
-import com.sirelon.aicalories.features.seller.openai.response.OpenAIGeneratedAd
+import com.sirelon.sellsnap.features.seller.ad.Advertisement
+import com.sirelon.sellsnap.features.seller.openai.response.OpenAIGeneratedAd
 
 internal class GeneratedAdMapper {
 

@@ -1,4 +1,4 @@
-package com.sirelon.aicalories.designsystem.buttons
+package com.sirelon.sellsnap.designsystem.buttons
 
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -34,8 +34,8 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.sirelon.aicalories.designsystem.AppDimens
-import com.sirelon.aicalories.designsystem.AppTheme
+import com.sirelon.sellsnap.designsystem.AppDimens
+import com.sirelon.sellsnap.designsystem.AppTheme
 
 /**
  * Shared shape + height tokens for every [AppButton] variant — matches the

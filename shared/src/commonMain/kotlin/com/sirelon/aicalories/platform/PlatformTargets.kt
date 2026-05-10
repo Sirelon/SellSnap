@@ -1,4 +1,4 @@
-package com.sirelon.aicalories.platform
+package com.sirelon.sellsnap.platform
 
 import io.github.jan.supabase.CurrentPlatformTarget
 import io.github.jan.supabase.PlatformTarget

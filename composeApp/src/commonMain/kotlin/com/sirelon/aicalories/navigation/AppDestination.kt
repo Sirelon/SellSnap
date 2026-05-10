@@ -1,4 +1,4 @@
-package com.sirelon.aicalories.navigation
+package com.sirelon.sellsnap.navigation
 
 import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.Serializable

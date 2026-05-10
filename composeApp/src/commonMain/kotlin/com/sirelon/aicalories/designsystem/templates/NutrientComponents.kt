@@ -1,4 +1,4 @@
-package com.sirelon.aicalories.designsystem.templates
+package com.sirelon.sellsnap.designsystem.templates
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -9,9 +9,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import com.sirelon.aicalories.common.MeasureUnit
-import com.sirelon.aicalories.common.shortName
-import com.sirelon.aicalories.designsystem.AppTheme
+import com.sirelon.sellsnap.common.MeasureUnit
+import com.sirelon.sellsnap.common.shortName
+import com.sirelon.sellsnap.designsystem.AppTheme
 
 @Immutable
 data class MacroStats(

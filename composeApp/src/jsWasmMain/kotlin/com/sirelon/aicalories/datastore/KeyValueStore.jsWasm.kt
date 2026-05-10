@@ -1,4 +1,4 @@
-package com.sirelon.aicalories.datastore
+package com.sirelon.sellsnap.datastore
 
 actual fun createKeyValueStore(name: String): KeyValueStore = InMemoryKeyValueStore()
 

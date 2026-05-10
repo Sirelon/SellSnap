@@ -1,4 +1,4 @@
-package com.sirelon.aicalories.features.media.ui
+package com.sirelon.sellsnap.features.media.ui
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -31,14 +31,14 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.graphics.Shape
 import com.mohamedrejeb.calf.io.KmpFile
-import com.sirelon.aicalories.generated.resources.Res
-import com.sirelon.aicalories.generated.resources.*
+import com.sirelon.sellsnap.generated.resources.Res
+import com.sirelon.sellsnap.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
-import com.sirelon.aicalories.designsystem.AppAsyncImage
-import com.sirelon.aicalories.designsystem.AppDimens
-import com.sirelon.aicalories.designsystem.AppTheme
-import com.sirelon.aicalories.designsystem.UploadStatusIndicator
-import com.sirelon.aicalories.features.media.upload.UploadingItem
+import com.sirelon.sellsnap.designsystem.AppAsyncImage
+import com.sirelon.sellsnap.designsystem.AppDimens
+import com.sirelon.sellsnap.designsystem.AppTheme
+import com.sirelon.sellsnap.designsystem.UploadStatusIndicator
+import com.sirelon.sellsnap.features.media.upload.UploadingItem
 
 @Composable
 fun PhotosGridComponent(

@@ -1,4 +1,4 @@
-package com.sirelon.aicalories.features.seller.openai.response
+package com.sirelon.sellsnap.features.seller.openai.response
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

@@ -1,4 +1,4 @@
-package com.sirelon.aicalories
+package com.sirelon.sellsnap
 
 import androidx.compose.ui.window.ComposeUIViewController
 

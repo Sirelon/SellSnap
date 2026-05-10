@@ -1,4 +1,4 @@
-package com.sirelon.aicalories
+package com.sirelon.sellsnap
 
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
@@ -15,15 +15,15 @@ import androidx.navigation3.ui.NavDisplay
 import coil3.ImageLoader
 import coil3.compose.setSingletonImageLoaderFactory
 import com.mohamedrejeb.calf.picker.coil.KmpFileFetcher
-import com.sirelon.aicalories.designsystem.AppTheme
-import com.sirelon.aicalories.designsystem.screens.LoadingOverlay
-import com.sirelon.aicalories.di.appModule
-import com.sirelon.aicalories.di.networkModule
-import com.sirelon.aicalories.features.seller.ad.AdRootScreen
-import com.sirelon.aicalories.features.seller.auth.presentation.SellerLandingScreenRoute
-import com.sirelon.aicalories.features.seller.onboarding.OnboardingScreen
-import com.sirelon.aicalories.navigation.AppDestination
-import com.sirelon.aicalories.startup.AppNavigationViewModel
+import com.sirelon.sellsnap.designsystem.AppTheme
+import com.sirelon.sellsnap.designsystem.screens.LoadingOverlay
+import com.sirelon.sellsnap.di.appModule
+import com.sirelon.sellsnap.di.networkModule
+import com.sirelon.sellsnap.features.seller.ad.AdRootScreen
+import com.sirelon.sellsnap.features.seller.auth.presentation.SellerLandingScreenRoute
+import com.sirelon.sellsnap.features.seller.onboarding.OnboardingScreen
+import com.sirelon.sellsnap.navigation.AppDestination
+import com.sirelon.sellsnap.startup.AppNavigationViewModel
 import org.koin.compose.KoinApplication
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.dsl.koinConfiguration

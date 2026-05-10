@@ -1,4 +1,4 @@
-package com.sirelon.aicalories.camera
+package com.sirelon.sellsnap.camera
 
 import android.content.Context
 import android.net.Uri

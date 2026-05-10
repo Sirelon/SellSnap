@@ -1,4 +1,4 @@
-package com.sirelon.aicalories.features.seller.location
+package com.sirelon.sellsnap.features.seller.location
 
 import kotlinx.cinterop.useContents
 import kotlinx.coroutines.suspendCancellableCoroutine

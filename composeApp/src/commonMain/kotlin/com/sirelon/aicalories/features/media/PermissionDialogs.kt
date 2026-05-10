@@ -1,21 +1,21 @@
-package com.sirelon.aicalories.features.media
+package com.sirelon.sellsnap.features.media
 
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import com.sirelon.aicalories.generated.resources.Res
-import com.sirelon.aicalories.generated.resources.camera_rationale_message
-import com.sirelon.aicalories.generated.resources.camera_rationale_title
-import com.sirelon.aicalories.generated.resources.camera_settings_message_android
-import com.sirelon.aicalories.generated.resources.camera_settings_message_ios
-import com.sirelon.aicalories.generated.resources.camera_settings_title
-import com.sirelon.aicalories.generated.resources.cancel
-import com.sirelon.aicalories.generated.resources.not_now
-import com.sirelon.aicalories.generated.resources.open_settings
-import com.sirelon.aicalories.generated.resources.retry
-import com.sirelon.aicalories.platform.PlatformTargets
+import com.sirelon.sellsnap.generated.resources.Res
+import com.sirelon.sellsnap.generated.resources.camera_rationale_message
+import com.sirelon.sellsnap.generated.resources.camera_rationale_title
+import com.sirelon.sellsnap.generated.resources.camera_settings_message_android
+import com.sirelon.sellsnap.generated.resources.camera_settings_message_ios
+import com.sirelon.sellsnap.generated.resources.camera_settings_title
+import com.sirelon.sellsnap.generated.resources.cancel
+import com.sirelon.sellsnap.generated.resources.not_now
+import com.sirelon.sellsnap.generated.resources.open_settings
+import com.sirelon.sellsnap.generated.resources.retry
+import com.sirelon.sellsnap.platform.PlatformTargets
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 

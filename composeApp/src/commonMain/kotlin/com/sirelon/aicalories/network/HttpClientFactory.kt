@@ -1,4 +1,4 @@
-package com.sirelon.aicalories.network
+package com.sirelon.sellsnap.network
 
 import com.aallam.openai.api.http.Timeout
 import com.aallam.openai.client.OpenAI

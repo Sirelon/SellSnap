@@ -1,6 +1,6 @@
-package com.sirelon.aicalories.config
+package com.sirelon.sellsnap.config
 
-import com.sirelon.aicalories.supabase.SupabaseConfig
+import com.sirelon.sellsnap.supabase.SupabaseConfig
 
 object AppConfig {
     val olxClientId: String

@@ -1,4 +1,4 @@
-package com.sirelon.aicalories
+package com.sirelon.sellsnap
 
 import android.content.Intent
 import android.os.Build
@@ -9,14 +9,14 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewLightDark
-import com.sirelon.aicalories.datastore.initAndroidKeyValueStore
-import com.sirelon.aicalories.designsystem.AppTheme
-import com.sirelon.aicalories.features.seller.ad.publish_success.PublishSuccessData
-import com.sirelon.aicalories.features.seller.ad.publish_success.PublishSuccessScreen
-import com.sirelon.aicalories.features.seller.auth.data.OlxAuthCallbackBridge
-import com.sirelon.aicalories.features.seller.auth.presentation.SellerAuthContract
-import com.sirelon.aicalories.features.seller.auth.presentation.SellerLandingScreen
-import com.sirelon.aicalories.platform.initAndroidUrlOpener
+import com.sirelon.sellsnap.datastore.initAndroidKeyValueStore
+import com.sirelon.sellsnap.designsystem.AppTheme
+import com.sirelon.sellsnap.features.seller.ad.publish_success.PublishSuccessData
+import com.sirelon.sellsnap.features.seller.ad.publish_success.PublishSuccessScreen
+import com.sirelon.sellsnap.features.seller.auth.data.OlxAuthCallbackBridge
+import com.sirelon.sellsnap.features.seller.auth.presentation.SellerAuthContract
+import com.sirelon.sellsnap.features.seller.auth.presentation.SellerLandingScreen
+import com.sirelon.sellsnap.platform.initAndroidUrlOpener
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

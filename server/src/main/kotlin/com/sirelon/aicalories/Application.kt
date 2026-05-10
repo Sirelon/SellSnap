@@ -1,4 +1,4 @@
-package com.sirelon.aicalories
+package com.sirelon.sellsnap
 
 import io.ktor.server.application.*
 import io.ktor.server.engine.*

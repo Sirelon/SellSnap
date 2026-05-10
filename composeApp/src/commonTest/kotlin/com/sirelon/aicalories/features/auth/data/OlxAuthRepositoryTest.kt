@@ -1,18 +1,18 @@
-package com.sirelon.aicalories.features.auth.data
+package com.sirelon.sellsnap.features.auth.data
 
-import com.sirelon.aicalories.features.seller.auth.data.OlxAuthRepository
-import com.sirelon.aicalories.features.seller.auth.data.OlxAuthSessionStore
-import com.sirelon.aicalories.features.seller.auth.data.OlxCredentialsProvider
-import com.sirelon.aicalories.features.seller.auth.data.GuestModeStore
-import com.sirelon.aicalories.features.seller.auth.data.OlxRedirectHandler
-import com.sirelon.aicalories.features.seller.auth.data.OlxRemoteErrorParser
-import com.sirelon.aicalories.features.seller.auth.data.OlxTokenStore
-import com.sirelon.aicalories.features.seller.auth.data.createOlxHttpClient
+import com.sirelon.sellsnap.features.seller.auth.data.OlxAuthRepository
+import com.sirelon.sellsnap.features.seller.auth.data.OlxAuthSessionStore
+import com.sirelon.sellsnap.features.seller.auth.data.OlxCredentialsProvider
+import com.sirelon.sellsnap.features.seller.auth.data.GuestModeStore
+import com.sirelon.sellsnap.features.seller.auth.data.OlxRedirectHandler
+import com.sirelon.sellsnap.features.seller.auth.data.OlxRemoteErrorParser
+import com.sirelon.sellsnap.features.seller.auth.data.OlxTokenStore
+import com.sirelon.sellsnap.features.seller.auth.data.createOlxHttpClient
 import kotlinx.serialization.json.Json
-import com.sirelon.aicalories.features.seller.auth.domain.OlxApiError
-import com.sirelon.aicalories.features.seller.auth.domain.OlxApiException
-import com.sirelon.aicalories.features.seller.auth.domain.OlxAuthCallback
-import com.sirelon.aicalories.features.seller.auth.domain.OlxTokens
+import com.sirelon.sellsnap.features.seller.auth.domain.OlxApiError
+import com.sirelon.sellsnap.features.seller.auth.domain.OlxApiException
+import com.sirelon.sellsnap.features.seller.auth.domain.OlxAuthCallback
+import com.sirelon.sellsnap.features.seller.auth.domain.OlxTokens
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
 import io.ktor.http.ContentType
@@ -204,7 +204,7 @@ class OlxAuthRepositoryTest {
     }
 
     private class TestRedirectHandler : OlxRedirectHandler {
-        override fun buildRedirectUri(platform: com.sirelon.aicalories.platform.PlatformTargets): String {
+        override fun buildRedirectUri(platform: com.sirelon.sellsnap.platform.PlatformTargets): String {
             return "selolxai://olx-auth/callback"
         }
 

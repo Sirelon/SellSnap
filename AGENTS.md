@@ -214,7 +214,7 @@ Most features use some combination of:
   - environment variables
   - `local.properties`
 - BuildKonfig object:
-  - package: `com.sirelon.aicalories.supabase`
+  - package: `com.sirelon.sellsnap.supabase`
   - object: `SupabaseConfig`
 - Keys currently resolved:
   - `OPENAI_KEY` / `openai.key`
@@ -236,7 +236,7 @@ Most features use some combination of:
 - Do not remove the `copyComposeResourcesToAndroidAssets` workaround if you encounter it elsewhere in the file/history.
 - `copyAndroidMainComposeResourcesToAndroidAssets` may be disabled intentionally to avoid build failures.
 - `compose.resources` generates public resources class:
-  - package `com.sirelon.aicalories.generated.resources`
+  - package `com.sirelon.sellsnap.generated.resources`
 - Android resources are enabled for the KMP library target.
 - In this workspace, `./gradlew` may fail because `gradle/wrapper/gradle-wrapper.jar` is missing.
 - If that happens, rerun builds with a local Gradle binary that matches `gradle/wrapper/gradle-wrapper.properties` (currently `9.4.1`).

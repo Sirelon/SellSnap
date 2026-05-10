@@ -1,9 +1,9 @@
-package com.sirelon.aicalories.features.seller.categories.domain
+package com.sirelon.sellsnap.features.seller.categories.domain
 
-import com.sirelon.aicalories.features.seller.categories.data.response.OlxAttributeResponse
-import com.sirelon.aicalories.features.seller.categories.data.response.OlxAttributeValidationResponse
-import com.sirelon.aicalories.features.seller.categories.data.response.OlxAttributeValueResponse
-import com.sirelon.aicalories.features.seller.categories.data.response.OlxCategoryResponse
+import com.sirelon.sellsnap.features.seller.categories.data.response.OlxAttributeResponse
+import com.sirelon.sellsnap.features.seller.categories.data.response.OlxAttributeValidationResponse
+import com.sirelon.sellsnap.features.seller.categories.data.response.OlxAttributeValueResponse
+import com.sirelon.sellsnap.features.seller.categories.data.response.OlxCategoryResponse
 
 class CategoriesMapper {
 

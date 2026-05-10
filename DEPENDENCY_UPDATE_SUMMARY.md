@@ -3,7 +3,7 @@
 **Date**: December 25, 2025
 **Strategy**: Balanced (Kotlin 2.3.0 + latest stable dependencies)
 **Total Dependencies Updated**: 8
-**Project**: AICalories - Kotlin Multiplatform
+**Project**: SellSnap - Kotlin Multiplatform
 **Platforms**: Android, iOS, Desktop (JVM), Web (WASM + JS), Server (Ktor)
 
 ---

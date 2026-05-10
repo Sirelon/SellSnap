@@ -1,6 +1,6 @@
-package com.sirelon.aicalories.features.seller.auth.data
+package com.sirelon.sellsnap.features.seller.auth.data
 
-import com.sirelon.aicalories.features.seller.ad.publish_success.AdvertStatus
+import com.sirelon.sellsnap.features.seller.ad.publish_success.AdvertStatus
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 

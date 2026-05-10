@@ -1,4 +1,4 @@
-package com.sirelon.aicalories.features.seller.categories.domain
+package com.sirelon.sellsnap.features.seller.categories.domain
 
 import kotlinx.serialization.Serializable
 

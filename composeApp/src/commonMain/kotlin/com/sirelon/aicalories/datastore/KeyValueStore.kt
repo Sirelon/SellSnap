@@ -1,4 +1,4 @@
-package com.sirelon.aicalories.datastore
+package com.sirelon.sellsnap.datastore
 
 interface KeyValueStore {
     suspend fun getString(key: String): String?

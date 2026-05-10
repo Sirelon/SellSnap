@@ -29,14 +29,14 @@ plugins {
 compose {
     resources {
         publicResClass = true
-        packageOfResClass = "com.sirelon.aicalories.generated.resources"
+        packageOfResClass = "com.sirelon.sellsnap.generated.resources"
         generateResClass = always
     }
 }
 
 kotlin {
     android {
-        namespace = "com.sirelon.aicalories.composeapp"
+        namespace = "com.sirelon.sellsnap.composeapp"
         compileSdk = libs.versions.android.compileSdk.get().toInt()
         minSdk = libs.versions.android.minSdk.get().toInt()
         androidResources.enable = true
@@ -59,7 +59,7 @@ kotlin {
         iosTarget.binaries.framework {
             baseName = "ComposeApp"
             isStatic = true
-            binaryOptions["bundleId"] = "com.sirelon.aicalories"
+            binaryOptions["bundleId"] = "com.sirelon.sellsnap"
         }
     }
     
@@ -184,11 +184,11 @@ kotlin {
 
 compose.desktop {
     application {
-        mainClass = "com.sirelon.aicalories.MainKt"
+        mainClass = "com.sirelon.sellsnap.MainKt"
 
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-            packageName = "com.sirelon.aicalories"
+            packageName = "com.sirelon.sellsnap"
             packageVersion = "1.0.0"
             macOS {
                 iconFile.set(project.file("src/jvmMain/resources/icons/app-icon.icns"))

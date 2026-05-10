@@ -1,4 +1,4 @@
-package com.sirelon.aicalories.platform
+package com.sirelon.sellsnap.platform
 
 import kotlinx.browser.window
 

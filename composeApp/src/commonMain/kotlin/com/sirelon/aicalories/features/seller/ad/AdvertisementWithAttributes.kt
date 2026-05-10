@@ -1,6 +1,6 @@
-package com.sirelon.aicalories.features.seller.ad
+package com.sirelon.sellsnap.features.seller.ad
 
-import com.sirelon.aicalories.features.seller.categories.domain.OlxAttributeValue
+import com.sirelon.sellsnap.features.seller.categories.domain.OlxAttributeValue
 import kotlinx.serialization.Serializable
 
 @Serializable

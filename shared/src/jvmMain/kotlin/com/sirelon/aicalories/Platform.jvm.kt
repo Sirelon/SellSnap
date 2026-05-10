@@ -1,4 +1,4 @@
-package com.sirelon.aicalories
+package com.sirelon.sellsnap
 
 class JVMPlatform: Platform {
     override val name: String = "Java ${System.getProperty("java.version")}"
