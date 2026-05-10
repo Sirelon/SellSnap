@@ -8,6 +8,7 @@ import io.ktor.client.plugins.DefaultRequest
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logging
+import io.ktor.client.plugins.websocket.WebSockets
 import io.ktor.client.request.header
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
@@ -42,6 +43,10 @@ fun createHttpClient(tokenProvider: ApiTokenProvider): HttpClient =
         }
     }
 
+fun createRealtimeHttpClient(): HttpClient =
+    HttpClient {
+        install(WebSockets)
+    }
 
 fun createOpenAI(tokenProvider: ApiTokenProvider): OpenAI = OpenAI(
     config = OpenAIConfig(

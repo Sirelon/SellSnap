@@ -27,6 +27,7 @@ import com.sirelon.sellsnap.features.seller.categories.domain.OlxCategory
 import com.sirelon.sellsnap.features.seller.categories.presentation.CategoryPickerSheet
 import com.sirelon.sellsnap.navigation.BottomSheetSceneStrategy
 import com.sirelon.sellsnap.features.seller.profile.ui.ProfileScreenRoute
+import com.sirelon.sellsnap.features.seller.whisper.WhisperDemoScreenRoute
 import com.sirelon.sellsnap.platform.openUrl
 
 
@@ -82,6 +83,13 @@ fun AdRootScreen(
                 GenerateAdScreen(
                     openAdPreview = { navBackStack.add(AdDestination.PreviewAd(it)) },
                     onProfileClick = { navBackStack.add(AdDestination.Profile()) },
+                    onWhisperClick = { navBackStack.add(AdDestination.WhisperDemo) },
+                )
+            }
+
+            entry<AdDestination.WhisperDemo> {
+                WhisperDemoScreenRoute(
+                    onBack = { navBackStack.removeAt(navBackStack.lastIndex) },
                 )
             }
 

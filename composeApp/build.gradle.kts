@@ -147,6 +147,7 @@ kotlin {
             implementation(libs.ktor.client.contentNegotiation)
             implementation(libs.ktor.serialization.kotlinx.json)
             implementation(libs.ktor.client.logging)
+            implementation(libs.ktor.client.websockets)
             implementation(projects.shared)
             implementation(libs.androidx.navigation3.runtime)
 
@@ -159,6 +160,7 @@ kotlin {
             implementation(libs.calf.filepicker.coil)
             implementation(libs.calf.permissions)
             implementation(libs.calf.permissions.location)
+            implementation(libs.calf.permissions.microphone)
             implementation("com.aallam.openai:openai-client:4.1.0")
         }
         commonTest.dependencies {
