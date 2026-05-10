@@ -1,4 +1,4 @@
-package com.sirelon.aicalories.audio
+package com.sirelon.sellsnap.audio
 
 interface AudioRecorder {
     fun startRecording()

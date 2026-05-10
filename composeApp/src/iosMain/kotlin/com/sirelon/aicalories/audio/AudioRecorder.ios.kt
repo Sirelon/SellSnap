@@ -1,4 +1,4 @@
-package com.sirelon.aicalories.audio
+package com.sirelon.sellsnap.audio
 
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.addressOf

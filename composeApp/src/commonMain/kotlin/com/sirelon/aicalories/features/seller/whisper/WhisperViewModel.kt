@@ -1,13 +1,13 @@
-package com.sirelon.aicalories.features.seller.whisper
+package com.sirelon.sellsnap.features.seller.whisper
 
 import androidx.lifecycle.viewModelScope
 import com.aallam.openai.api.audio.TranscriptionRequest
 import com.aallam.openai.api.file.FileSource
 import com.aallam.openai.api.model.ModelId
 import com.aallam.openai.client.OpenAI
-import com.sirelon.aicalories.audio.AudioRecorder
-import com.sirelon.aicalories.audio.LiveAudioRecorder
-import com.sirelon.aicalories.features.common.presentation.BaseViewModel
+import com.sirelon.sellsnap.audio.AudioRecorder
+import com.sirelon.sellsnap.audio.LiveAudioRecorder
+import com.sirelon.sellsnap.features.common.presentation.BaseViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.launch

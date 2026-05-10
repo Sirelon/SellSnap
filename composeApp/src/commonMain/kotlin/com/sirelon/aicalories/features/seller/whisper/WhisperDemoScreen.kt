@@ -1,4 +1,4 @@
-package com.sirelon.aicalories.features.seller.whisper
+package com.sirelon.sellsnap.features.seller.whisper
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -28,11 +28,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mohamedrejeb.calf.permissions.Permission
 import com.mohamedrejeb.calf.permissions.RecordAudio
-import com.sirelon.aicalories.designsystem.AppDimens
-import com.sirelon.aicalories.designsystem.AppTheme
-import com.sirelon.aicalories.designsystem.ObserveAsEvents
-import com.sirelon.aicalories.features.media.PermissionDialogs
-import com.sirelon.aicalories.features.media.rememberPermissionController
+import com.sirelon.sellsnap.designsystem.AppDimens
+import com.sirelon.sellsnap.designsystem.AppTheme
+import com.sirelon.sellsnap.designsystem.ObserveAsEvents
+import com.sirelon.sellsnap.features.media.PermissionDialogs
+import com.sirelon.sellsnap.features.media.rememberPermissionController
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable

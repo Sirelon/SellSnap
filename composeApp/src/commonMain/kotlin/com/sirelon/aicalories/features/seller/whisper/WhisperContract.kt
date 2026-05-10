@@ -1,4 +1,4 @@
-package com.sirelon.aicalories.features.seller.whisper
+package com.sirelon.sellsnap.features.seller.whisper
 
 interface WhisperContract {
     data class State(

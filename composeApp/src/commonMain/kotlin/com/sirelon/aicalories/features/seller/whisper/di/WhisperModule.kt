@@ -1,10 +1,10 @@
-package com.sirelon.aicalories.features.seller.whisper.di
+package com.sirelon.sellsnap.features.seller.whisper.di
 
-import com.sirelon.aicalories.audio.createAudioRecorder
-import com.sirelon.aicalories.audio.createLiveAudioRecorder
-import com.sirelon.aicalories.features.seller.whisper.RealtimeTranscriptionClient
-import com.sirelon.aicalories.features.seller.whisper.WhisperViewModel
-import com.sirelon.aicalories.network.createRealtimeHttpClient
+import com.sirelon.sellsnap.audio.createAudioRecorder
+import com.sirelon.sellsnap.audio.createLiveAudioRecorder
+import com.sirelon.sellsnap.features.seller.whisper.RealtimeTranscriptionClient
+import com.sirelon.sellsnap.features.seller.whisper.WhisperViewModel
+import com.sirelon.sellsnap.network.createRealtimeHttpClient
 import org.koin.core.qualifier.named
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module

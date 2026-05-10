@@ -1,4 +1,4 @@
-package com.sirelon.aicalories.audio
+package com.sirelon.sellsnap.audio
 
 import android.Manifest
 import android.media.AudioFormat

@@ -1,6 +1,6 @@
-package com.sirelon.aicalories.features.seller.whisper
+package com.sirelon.sellsnap.features.seller.whisper
 
-import com.sirelon.aicalories.network.ApiTokenProvider
+import com.sirelon.sellsnap.network.ApiTokenProvider
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.websocket.webSocket
 import io.ktor.client.request.header
