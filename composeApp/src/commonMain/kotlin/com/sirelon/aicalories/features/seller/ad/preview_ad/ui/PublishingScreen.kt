@@ -1,4 +1,4 @@
-package com.sirelon.aicalories.features.seller.ad.preview_ad.ui
+package com.sirelon.sellsnap.features.seller.ad.preview_ad.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -17,13 +17,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.PreviewLightDark
-import com.sirelon.aicalories.designsystem.AppDimens
-import com.sirelon.aicalories.designsystem.AppScaffold
-import com.sirelon.aicalories.designsystem.AppTheme
-import com.sirelon.aicalories.designsystem.PulsingCircles
-import com.sirelon.aicalories.generated.resources.Res
-import com.sirelon.aicalories.generated.resources.ic_share_2
-import com.sirelon.aicalories.generated.resources.publishing
+import com.sirelon.sellsnap.designsystem.AppDimens
+import com.sirelon.sellsnap.designsystem.AppScaffold
+import com.sirelon.sellsnap.designsystem.AppTheme
+import com.sirelon.sellsnap.designsystem.PulsingCircles
+import com.sirelon.sellsnap.generated.resources.Res
+import com.sirelon.sellsnap.generated.resources.ic_share_2
+import com.sirelon.sellsnap.generated.resources.publishing
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 

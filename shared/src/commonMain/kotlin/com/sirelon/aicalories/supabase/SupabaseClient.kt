@@ -1,4 +1,4 @@
-package com.sirelon.aicalories.supabase
+package com.sirelon.sellsnap.supabase
 
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.Auth

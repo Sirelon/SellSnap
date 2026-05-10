@@ -1,4 +1,4 @@
-package com.sirelon.aicalories.features.seller.ad
+package com.sirelon.sellsnap.features.seller.ad
 
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
@@ -17,17 +17,17 @@ import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.scene.DialogSceneStrategy
 import androidx.navigation3.scene.SinglePaneSceneStrategy
 import androidx.navigation3.ui.NavDisplay
-import com.sirelon.aicalories.designsystem.screens.ImagesPreview
-import com.sirelon.aicalories.features.seller.ad.generate_ad.GenerateAdScreen
-import com.sirelon.aicalories.features.seller.ad.preview_ad.PreviewAdScreen
-import com.sirelon.aicalories.features.seller.ad.publish_success.PublishSuccessScreen
-import com.sirelon.aicalories.features.seller.auth.data.OlxAuthCallbackBridge
-import com.sirelon.aicalories.features.seller.auth.presentation.OlxAuthDialogScreen
-import com.sirelon.aicalories.features.seller.categories.domain.OlxCategory
-import com.sirelon.aicalories.features.seller.categories.presentation.CategoryPickerSheet
-import com.sirelon.aicalories.navigation.BottomSheetSceneStrategy
-import com.sirelon.aicalories.features.seller.profile.ui.ProfileScreenRoute
-import com.sirelon.aicalories.platform.openUrl
+import com.sirelon.sellsnap.designsystem.screens.ImagesPreview
+import com.sirelon.sellsnap.features.seller.ad.generate_ad.GenerateAdScreen
+import com.sirelon.sellsnap.features.seller.ad.preview_ad.PreviewAdScreen
+import com.sirelon.sellsnap.features.seller.ad.publish_success.PublishSuccessScreen
+import com.sirelon.sellsnap.features.seller.auth.data.OlxAuthCallbackBridge
+import com.sirelon.sellsnap.features.seller.auth.presentation.OlxAuthDialogScreen
+import com.sirelon.sellsnap.features.seller.categories.domain.OlxCategory
+import com.sirelon.sellsnap.features.seller.categories.presentation.CategoryPickerSheet
+import com.sirelon.sellsnap.navigation.BottomSheetSceneStrategy
+import com.sirelon.sellsnap.features.seller.profile.ui.ProfileScreenRoute
+import com.sirelon.sellsnap.platform.openUrl
 
 
 @Composable

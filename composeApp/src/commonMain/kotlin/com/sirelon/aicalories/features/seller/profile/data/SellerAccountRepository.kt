@@ -1,12 +1,12 @@
-package com.sirelon.aicalories.features.seller.profile.data
+package com.sirelon.sellsnap.features.seller.profile.data
 
-import com.sirelon.aicalories.features.seller.auth.data.OlxApiClient
-import com.sirelon.aicalories.features.seller.auth.data.OlxAuthRepository
-import com.sirelon.aicalories.features.seller.auth.domain.OlxAuthorizationRequest
-import com.sirelon.aicalories.features.seller.auth.domain.OlxSessionState
-import com.sirelon.aicalories.features.seller.auth.domain.OlxUser
-import com.sirelon.aicalories.features.seller.location.OlxLocation
-import com.sirelon.aicalories.features.seller.location.data.LocationRepository
+import com.sirelon.sellsnap.features.seller.auth.data.OlxApiClient
+import com.sirelon.sellsnap.features.seller.auth.data.OlxAuthRepository
+import com.sirelon.sellsnap.features.seller.auth.domain.OlxAuthorizationRequest
+import com.sirelon.sellsnap.features.seller.auth.domain.OlxSessionState
+import com.sirelon.sellsnap.features.seller.auth.domain.OlxUser
+import com.sirelon.sellsnap.features.seller.location.OlxLocation
+import com.sirelon.sellsnap.features.seller.location.data.LocationRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow

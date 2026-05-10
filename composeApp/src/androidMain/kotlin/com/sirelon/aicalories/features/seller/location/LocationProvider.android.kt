@@ -1,4 +1,4 @@
-package com.sirelon.aicalories.features.seller.location
+package com.sirelon.sellsnap.features.seller.location
 
 import android.Manifest
 import android.content.Context

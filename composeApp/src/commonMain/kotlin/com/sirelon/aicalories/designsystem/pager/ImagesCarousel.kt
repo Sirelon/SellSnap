@@ -1,4 +1,4 @@
-package com.sirelon.aicalories.designsystem.pager
+package com.sirelon.sellsnap.designsystem.pager
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -21,11 +21,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
-import com.sirelon.aicalories.designsystem.AppAsyncImage
-import com.sirelon.aicalories.designsystem.AppDimens
-import com.sirelon.aicalories.designsystem.AppTheme
-import com.sirelon.aicalories.generated.resources.Res
-import com.sirelon.aicalories.generated.resources.img_seller_empty_photo
+import com.sirelon.sellsnap.designsystem.AppAsyncImage
+import com.sirelon.sellsnap.designsystem.AppDimens
+import com.sirelon.sellsnap.designsystem.AppTheme
+import com.sirelon.sellsnap.generated.resources.Res
+import com.sirelon.sellsnap.generated.resources.img_seller_empty_photo
 import org.jetbrains.compose.resources.painterResource
 
 private val PhotoCarouselShape = RoundedCornerShape(

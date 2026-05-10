@@ -1,12 +1,12 @@
-package com.sirelon.aicalories.features.seller.auth.data
+package com.sirelon.sellsnap.features.seller.auth.data
 
-import com.sirelon.aicalories.features.seller.auth.domain.OlxAuthCallback
-import com.sirelon.aicalories.features.seller.auth.domain.OlxLaunchResult
-import com.sirelon.aicalories.features.seller.auth.domain.OlxPendingAuthSession
-import com.sirelon.aicalories.features.seller.auth.domain.OlxTokens
-import com.sirelon.aicalories.datastore.KeyValueStore
-import com.sirelon.aicalories.datastore.createKeyValueStore
-import com.sirelon.aicalories.platform.PlatformTargets
+import com.sirelon.sellsnap.features.seller.auth.domain.OlxAuthCallback
+import com.sirelon.sellsnap.features.seller.auth.domain.OlxLaunchResult
+import com.sirelon.sellsnap.features.seller.auth.domain.OlxPendingAuthSession
+import com.sirelon.sellsnap.features.seller.auth.domain.OlxTokens
+import com.sirelon.sellsnap.datastore.KeyValueStore
+import com.sirelon.sellsnap.datastore.createKeyValueStore
+import com.sirelon.sellsnap.platform.PlatformTargets
 import kotlinx.serialization.json.Json
 
 interface OlxCredentialsProvider {

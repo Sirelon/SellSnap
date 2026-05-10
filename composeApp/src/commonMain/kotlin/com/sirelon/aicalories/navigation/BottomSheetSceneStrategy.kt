@@ -1,4 +1,4 @@
-package com.sirelon.aicalories.navigation
+package com.sirelon.sellsnap.navigation
 
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
@@ -16,7 +16,7 @@ import androidx.navigation3.scene.OverlayScene
 import androidx.navigation3.scene.Scene
 import androidx.navigation3.scene.SceneStrategy
 import androidx.navigation3.scene.SceneStrategyScope
-import com.sirelon.aicalories.designsystem.AppTheme
+import com.sirelon.sellsnap.designsystem.AppTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 class BottomSheetScene<T : Any>(

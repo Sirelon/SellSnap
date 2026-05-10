@@ -1,6 +1,6 @@
-package com.sirelon.aicalories.features.seller.categories.presentation
+package com.sirelon.sellsnap.features.seller.categories.presentation
 
-import com.sirelon.aicalories.features.seller.categories.domain.OlxCategory
+import com.sirelon.sellsnap.features.seller.categories.domain.OlxCategory
 
 data class CategoryDisplayItem(
     val category: OlxCategory,

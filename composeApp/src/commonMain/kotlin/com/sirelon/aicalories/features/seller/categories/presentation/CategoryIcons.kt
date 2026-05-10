@@ -1,16 +1,16 @@
-package com.sirelon.aicalories.features.seller.categories.presentation
+package com.sirelon.sellsnap.features.seller.categories.presentation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.painter.Painter
-import com.sirelon.aicalories.generated.resources.Res
-import com.sirelon.aicalories.generated.resources.ic_baby
-import com.sirelon.aicalories.generated.resources.ic_dumbbell
-import com.sirelon.aicalories.generated.resources.ic_home
-import com.sirelon.aicalories.generated.resources.ic_meh
-import com.sirelon.aicalories.generated.resources.ic_palette
-import com.sirelon.aicalories.generated.resources.ic_shirt
-import com.sirelon.aicalories.generated.resources.ic_smartphone
-import com.sirelon.aicalories.generated.resources.ic_tree_pine
+import com.sirelon.sellsnap.generated.resources.Res
+import com.sirelon.sellsnap.generated.resources.ic_baby
+import com.sirelon.sellsnap.generated.resources.ic_dumbbell
+import com.sirelon.sellsnap.generated.resources.ic_home
+import com.sirelon.sellsnap.generated.resources.ic_meh
+import com.sirelon.sellsnap.generated.resources.ic_palette
+import com.sirelon.sellsnap.generated.resources.ic_shirt
+import com.sirelon.sellsnap.generated.resources.ic_smartphone
+import com.sirelon.sellsnap.generated.resources.ic_tree_pine
 import org.jetbrains.compose.resources.painterResource
 
 @Composable

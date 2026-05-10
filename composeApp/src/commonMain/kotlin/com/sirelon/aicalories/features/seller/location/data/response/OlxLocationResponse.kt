@@ -1,4 +1,4 @@
-package com.sirelon.aicalories.features.seller.location.data.response
+package com.sirelon.sellsnap.features.seller.location.data.response
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

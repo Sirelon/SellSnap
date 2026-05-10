@@ -1,4 +1,4 @@
-package com.sirelon.aicalories.camera
+package com.sirelon.sellsnap.camera
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember

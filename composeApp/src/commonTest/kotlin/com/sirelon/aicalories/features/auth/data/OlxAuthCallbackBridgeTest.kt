@@ -1,6 +1,6 @@
-package com.sirelon.aicalories.features.auth.data
+package com.sirelon.sellsnap.features.auth.data
 
-import com.sirelon.aicalories.features.seller.auth.data.OlxAuthCallbackBridge
+import com.sirelon.sellsnap.features.seller.auth.data.OlxAuthCallbackBridge
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull

@@ -1,4 +1,4 @@
-package com.sirelon.aicalories.features.seller.ad.preview_ad.ui
+package com.sirelon.sellsnap.features.seller.ad.preview_ad.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -16,16 +16,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.PreviewLightDark
-import com.sirelon.aicalories.designsystem.AppAsyncImage
-import com.sirelon.aicalories.designsystem.AppDimens
-import com.sirelon.aicalories.designsystem.AppTheme
-import com.sirelon.aicalories.designsystem.buttons.AppButton
-import com.sirelon.aicalories.designsystem.buttons.AppButtonDefaults
-import com.sirelon.aicalories.generated.resources.Res
-import com.sirelon.aicalories.generated.resources.publish_confirm_back
-import com.sirelon.aicalories.generated.resources.publish_confirm_subtitle
-import com.sirelon.aicalories.generated.resources.publish_confirm_title
-import com.sirelon.aicalories.generated.resources.publish_confirm_yes
+import com.sirelon.sellsnap.designsystem.AppAsyncImage
+import com.sirelon.sellsnap.designsystem.AppDimens
+import com.sirelon.sellsnap.designsystem.AppTheme
+import com.sirelon.sellsnap.designsystem.buttons.AppButton
+import com.sirelon.sellsnap.designsystem.buttons.AppButtonDefaults
+import com.sirelon.sellsnap.generated.resources.Res
+import com.sirelon.sellsnap.generated.resources.publish_confirm_back
+import com.sirelon.sellsnap.generated.resources.publish_confirm_subtitle
+import com.sirelon.sellsnap.generated.resources.publish_confirm_title
+import com.sirelon.sellsnap.generated.resources.publish_confirm_yes
 import org.jetbrains.compose.resources.stringResource
 
 @Composable

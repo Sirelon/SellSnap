@@ -1,4 +1,4 @@
-package com.sirelon.aicalories.features.seller.ad.publish_success
+package com.sirelon.sellsnap.features.seller.ad.publish_success
 
 import kotlinx.serialization.Serializable
 

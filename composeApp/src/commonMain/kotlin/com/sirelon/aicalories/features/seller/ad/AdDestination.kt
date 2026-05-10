@@ -1,6 +1,6 @@
-package com.sirelon.aicalories.features.seller.ad
+package com.sirelon.sellsnap.features.seller.ad
 
-import com.sirelon.aicalories.features.seller.ad.publish_success.PublishSuccessData
+import com.sirelon.sellsnap.features.seller.ad.publish_success.PublishSuccessData
 import kotlinx.serialization.Serializable
 
 sealed interface AdDestination {

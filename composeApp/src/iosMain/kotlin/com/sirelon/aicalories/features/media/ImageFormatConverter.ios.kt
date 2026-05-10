@@ -1,4 +1,4 @@
-package com.sirelon.aicalories.features.media
+package com.sirelon.sellsnap.features.media
 
 import com.mohamedrejeb.calf.io.KmpFile
 import com.mohamedrejeb.calf.io.getName

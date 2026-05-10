@@ -1,11 +1,11 @@
-package com.sirelon.aicalories.features.seller.profile.presentation
+package com.sirelon.sellsnap.features.seller.profile.presentation
 
 import androidx.lifecycle.viewModelScope
-import com.sirelon.aicalories.features.common.presentation.BaseViewModel
-import com.sirelon.aicalories.features.seller.profile.data.SellerAccountRepository
-import com.sirelon.aicalories.features.seller.profile.presentation.ProfileContract.ProfileEffect
-import com.sirelon.aicalories.features.seller.profile.presentation.ProfileContract.ProfileEvent
-import com.sirelon.aicalories.features.seller.profile.presentation.ProfileContract.ProfileState
+import com.sirelon.sellsnap.features.common.presentation.BaseViewModel
+import com.sirelon.sellsnap.features.seller.profile.data.SellerAccountRepository
+import com.sirelon.sellsnap.features.seller.profile.presentation.ProfileContract.ProfileEffect
+import com.sirelon.sellsnap.features.seller.profile.presentation.ProfileContract.ProfileEvent
+import com.sirelon.sellsnap.features.seller.profile.presentation.ProfileContract.ProfileState
 import kotlinx.coroutines.launch
 
 class ProfileViewModel(

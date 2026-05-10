@@ -1,4 +1,4 @@
-package com.sirelon.aicalories.features.seller.auth.presentation
+package com.sirelon.sellsnap.features.seller.auth.presentation
 
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
@@ -12,10 +12,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import com.sirelon.aicalories.features.seller.auth.data.OlxConfig
-import com.sirelon.aicalories.generated.resources.Res
-import com.sirelon.aicalories.generated.resources.continue_with_olx
-import com.sirelon.aicalories.generated.resources.ic_x
+import com.sirelon.sellsnap.features.seller.auth.data.OlxConfig
+import com.sirelon.sellsnap.generated.resources.Res
+import com.sirelon.sellsnap.generated.resources.continue_with_olx
+import com.sirelon.sellsnap.generated.resources.ic_x
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 

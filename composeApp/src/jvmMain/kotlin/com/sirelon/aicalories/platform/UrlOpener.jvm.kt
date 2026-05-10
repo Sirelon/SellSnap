@@ -1,4 +1,4 @@
-package com.sirelon.aicalories.platform
+package com.sirelon.sellsnap.platform
 
 import java.awt.Desktop
 import java.net.URI

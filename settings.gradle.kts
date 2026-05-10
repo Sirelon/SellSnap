@@ -1,4 +1,4 @@
-rootProject.name = "AICalories"
+rootProject.name = "SellSnap"
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 pluginManagement {

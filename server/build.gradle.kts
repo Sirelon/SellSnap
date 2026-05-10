@@ -6,10 +6,10 @@ plugins {
     application
 }
 
-group = "com.sirelon.aicalories"
+group = "com.sirelon.sellsnap"
 version = "1.0.0"
 application {
-    mainClass.set("com.sirelon.aicalories.ApplicationKt")
+    mainClass.set("com.sirelon.sellsnap.ApplicationKt")
     
     val isDevelopment: Boolean = project.ext.has("development")
     applicationDefaultJvmArgs = listOf("-Dio.ktor.development=$isDevelopment")

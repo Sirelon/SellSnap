@@ -1,13 +1,13 @@
-package com.sirelon.aicalories.features.seller.auth.data
+package com.sirelon.sellsnap.features.seller.auth.data
 
-import com.sirelon.aicalories.features.seller.auth.domain.OlxApiError
-import com.sirelon.aicalories.features.seller.auth.domain.OlxApiException
-import com.sirelon.aicalories.features.seller.auth.domain.OlxAuthCallback
-import com.sirelon.aicalories.features.seller.auth.domain.OlxAuthorizationRequest
-import com.sirelon.aicalories.features.seller.auth.domain.OlxPendingAuthSession
-import com.sirelon.aicalories.features.seller.auth.domain.OlxSessionState
-import com.sirelon.aicalories.features.seller.auth.domain.OlxTokens
-import com.sirelon.aicalories.features.seller.auth.domain.SellerSessionMode
+import com.sirelon.sellsnap.features.seller.auth.domain.OlxApiError
+import com.sirelon.sellsnap.features.seller.auth.domain.OlxApiException
+import com.sirelon.sellsnap.features.seller.auth.domain.OlxAuthCallback
+import com.sirelon.sellsnap.features.seller.auth.domain.OlxAuthorizationRequest
+import com.sirelon.sellsnap.features.seller.auth.domain.OlxPendingAuthSession
+import com.sirelon.sellsnap.features.seller.auth.domain.OlxSessionState
+import com.sirelon.sellsnap.features.seller.auth.domain.OlxTokens
+import com.sirelon.sellsnap.features.seller.auth.domain.SellerSessionMode
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.post

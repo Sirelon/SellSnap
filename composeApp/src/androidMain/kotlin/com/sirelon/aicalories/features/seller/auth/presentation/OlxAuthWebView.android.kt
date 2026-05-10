@@ -1,4 +1,4 @@
-package com.sirelon.aicalories.features.seller.auth.presentation
+package com.sirelon.sellsnap.features.seller.auth.presentation
 
 import android.webkit.WebResourceRequest
 import android.webkit.WebView

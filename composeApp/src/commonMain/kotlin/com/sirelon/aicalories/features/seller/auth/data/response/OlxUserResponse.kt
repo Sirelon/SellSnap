@@ -1,6 +1,6 @@
-package com.sirelon.aicalories.features.seller.auth.data.response
+package com.sirelon.sellsnap.features.seller.auth.data.response
 
-import com.sirelon.aicalories.features.seller.auth.domain.OlxUser
+import com.sirelon.sellsnap.features.seller.auth.domain.OlxUser
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 

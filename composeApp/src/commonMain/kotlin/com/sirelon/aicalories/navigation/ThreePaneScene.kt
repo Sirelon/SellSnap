@@ -1,4 +1,4 @@
-package com.sirelon.aicalories.navigation
+package com.sirelon.sellsnap.navigation
 
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
@@ -15,7 +15,7 @@ import androidx.navigation3.scene.SceneStrategy
 import androidx.navigation3.scene.SceneStrategyScope
 import androidx.window.core.layout.WindowSizeClass
 import androidx.window.core.layout.WindowSizeClass.Companion.WIDTH_DP_MEDIUM_LOWER_BOUND
-import com.sirelon.aicalories.designsystem.AppTheme
+import com.sirelon.sellsnap.designsystem.AppTheme
 
 class ThreePaneScene<T : Any>(
     override val key: Any,

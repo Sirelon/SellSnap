@@ -1,4 +1,4 @@
-package com.sirelon.aicalories.datastore
+package com.sirelon.sellsnap.datastore
 
 import platform.Foundation.NSDocumentDirectory
 import platform.Foundation.NSFileManager

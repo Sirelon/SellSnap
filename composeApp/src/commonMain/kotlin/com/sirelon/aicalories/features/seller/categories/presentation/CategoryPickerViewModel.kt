@@ -1,15 +1,15 @@
-package com.sirelon.aicalories.features.seller.categories.presentation
+package com.sirelon.sellsnap.features.seller.categories.presentation
 
 import androidx.lifecycle.viewModelScope
-import com.sirelon.aicalories.features.common.presentation.BaseViewModel
-import com.sirelon.aicalories.features.seller.categories.data.CategoriesRepository
-import com.sirelon.aicalories.features.seller.categories.domain.OlxCategory
-import com.sirelon.aicalories.features.seller.categories.presentation.CategoryPickerContract.CategoryPickerEvent
-import com.sirelon.aicalories.features.seller.categories.presentation.CategoryPickerContract.CategoryPickerEvent.NavigateTo
-import com.sirelon.aicalories.features.seller.categories.presentation.CategoryPickerContract.CategoryPickerEvent.NavigateToIndex
-import com.sirelon.aicalories.features.seller.categories.presentation.CategoryPickerContract.CategoryPickerEvent.Reset
-import com.sirelon.aicalories.features.seller.categories.presentation.CategoryPickerContract.CategoryPickerEvent.Search
-import com.sirelon.aicalories.features.seller.categories.presentation.CategoryPickerContract.CategoryPickerState
+import com.sirelon.sellsnap.features.common.presentation.BaseViewModel
+import com.sirelon.sellsnap.features.seller.categories.data.CategoriesRepository
+import com.sirelon.sellsnap.features.seller.categories.domain.OlxCategory
+import com.sirelon.sellsnap.features.seller.categories.presentation.CategoryPickerContract.CategoryPickerEvent
+import com.sirelon.sellsnap.features.seller.categories.presentation.CategoryPickerContract.CategoryPickerEvent.NavigateTo
+import com.sirelon.sellsnap.features.seller.categories.presentation.CategoryPickerContract.CategoryPickerEvent.NavigateToIndex
+import com.sirelon.sellsnap.features.seller.categories.presentation.CategoryPickerContract.CategoryPickerEvent.Reset
+import com.sirelon.sellsnap.features.seller.categories.presentation.CategoryPickerContract.CategoryPickerEvent.Search
+import com.sirelon.sellsnap.features.seller.categories.presentation.CategoryPickerContract.CategoryPickerState
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 

@@ -1,7 +1,7 @@
-package com.sirelon.aicalories.designsystem.utils
+package com.sirelon.sellsnap.designsystem.utils
 
 import androidx.compose.ui.graphics.Color
-import com.sirelon.aicalories.designsystem.AppColors
+import com.sirelon.sellsnap.designsystem.AppColors
 
 object ThemesFactory {
 

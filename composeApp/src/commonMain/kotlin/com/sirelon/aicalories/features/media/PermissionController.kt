@@ -1,4 +1,4 @@
-package com.sirelon.aicalories.features.media
+package com.sirelon.sellsnap.features.media
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -10,7 +10,7 @@ import com.mohamedrejeb.calf.permissions.Permission
 import com.mohamedrejeb.calf.permissions.PermissionStatus
 import com.mohamedrejeb.calf.permissions.isGranted
 import com.mohamedrejeb.calf.permissions.rememberPermissionState
-import com.sirelon.aicalories.platform.PlatformTargets
+import com.sirelon.sellsnap.platform.PlatformTargets
 
 data class PermissionUiState(
     val hasPermission: Boolean = false,

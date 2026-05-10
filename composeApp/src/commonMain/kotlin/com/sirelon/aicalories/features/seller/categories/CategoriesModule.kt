@@ -1,10 +1,10 @@
-package com.sirelon.aicalories.features.seller.categories
+package com.sirelon.sellsnap.features.seller.categories
 
-import com.sirelon.aicalories.di.applicationScopeQualifier
-import com.sirelon.aicalories.features.seller.categories.data.CategoriesRepository
-import com.sirelon.aicalories.features.seller.categories.domain.AttributeValidator
-import com.sirelon.aicalories.features.seller.categories.domain.CategoriesMapper
-import com.sirelon.aicalories.features.seller.categories.presentation.CategoryPickerViewModel
+import com.sirelon.sellsnap.di.applicationScopeQualifier
+import com.sirelon.sellsnap.features.seller.categories.data.CategoriesRepository
+import com.sirelon.sellsnap.features.seller.categories.domain.AttributeValidator
+import com.sirelon.sellsnap.features.seller.categories.domain.CategoriesMapper
+import com.sirelon.sellsnap.features.seller.categories.presentation.CategoryPickerViewModel
 import org.koin.core.module.dsl.factoryOf
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module

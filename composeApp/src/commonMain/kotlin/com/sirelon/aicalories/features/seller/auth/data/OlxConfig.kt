@@ -1,6 +1,6 @@
-package com.sirelon.aicalories.features.seller.auth.data
+package com.sirelon.sellsnap.features.seller.auth.data
 
-import com.sirelon.aicalories.config.AppConfig
+import com.sirelon.sellsnap.config.AppConfig
 
 object OlxConfig {
     const val apiVersion = "2.0"

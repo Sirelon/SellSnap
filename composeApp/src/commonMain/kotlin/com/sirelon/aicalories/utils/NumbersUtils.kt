@@ -1,4 +1,4 @@
-package com.sirelon.aicalories.utils
+package com.sirelon.sellsnap.utils
 
 import kotlin.math.round
 

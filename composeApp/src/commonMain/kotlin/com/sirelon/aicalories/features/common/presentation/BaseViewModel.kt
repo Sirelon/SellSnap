@@ -1,4 +1,4 @@
-package com.sirelon.aicalories.features.common.presentation
+package com.sirelon.sellsnap.features.common.presentation
 
 import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.channels.Channel

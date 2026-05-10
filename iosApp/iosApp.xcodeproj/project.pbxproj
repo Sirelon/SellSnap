@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXFileReference section */
-		B84C507A1C2DE7D835D0359B /* AICalories.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AICalories.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B84C507A1C2DE7D835D0359B /* SellSnap.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SellSnap.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -59,7 +59,7 @@
 		C36D900A9E2E48E57D558E80 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				B84C507A1C2DE7D835D0359B /* AICalories.app */,
+				B84C507A1C2DE7D835D0359B /* SellSnap.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -87,7 +87,7 @@
 			packageProductDependencies = (
 			);
 			productName = iosApp;
-			productReference = B84C507A1C2DE7D835D0359B /* AICalories.app */;
+			productReference = B84C507A1C2DE7D835D0359B /* SellSnap.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */

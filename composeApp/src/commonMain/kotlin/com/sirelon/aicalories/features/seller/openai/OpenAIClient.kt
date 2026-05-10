@@ -1,4 +1,4 @@
-package com.sirelon.aicalories.features.seller.openai
+package com.sirelon.sellsnap.features.seller.openai
 
 import com.aallam.openai.api.model.ModelId
 import com.aallam.openai.api.response.Response
@@ -7,17 +7,17 @@ import com.aallam.openai.api.response.ResponseInput
 import com.aallam.openai.api.response.ResponseInputItem
 import com.aallam.openai.api.response.ResponseRequest
 import com.aallam.openai.client.OpenAI
-import com.sirelon.aicalories.features.seller.ad.Advertisement
-import com.sirelon.aicalories.features.seller.ad.data.GeneratedAdMapper
-import com.sirelon.aicalories.features.seller.categories.domain.AttributeInputType
-import com.sirelon.aicalories.features.seller.categories.domain.OlxAttribute
-import com.sirelon.aicalories.features.seller.categories.domain.OlxAttributeValue
-import com.sirelon.aicalories.features.seller.openai.requests.OpenAIAttributeOptionRequest
-import com.sirelon.aicalories.features.seller.openai.requests.OpenAIAttributeRequest
-import com.sirelon.aicalories.features.seller.openai.requests.OpenAIAttributesRequest
-import com.sirelon.aicalories.features.seller.openai.response.OpenAIAttributeSuggestionResponse
-import com.sirelon.aicalories.features.seller.openai.response.OpenAIAttributeSuggestionsResponse
-import com.sirelon.aicalories.features.seller.openai.response.OpenAIGeneratedAd
+import com.sirelon.sellsnap.features.seller.ad.Advertisement
+import com.sirelon.sellsnap.features.seller.ad.data.GeneratedAdMapper
+import com.sirelon.sellsnap.features.seller.categories.domain.AttributeInputType
+import com.sirelon.sellsnap.features.seller.categories.domain.OlxAttribute
+import com.sirelon.sellsnap.features.seller.categories.domain.OlxAttributeValue
+import com.sirelon.sellsnap.features.seller.openai.requests.OpenAIAttributeOptionRequest
+import com.sirelon.sellsnap.features.seller.openai.requests.OpenAIAttributeRequest
+import com.sirelon.sellsnap.features.seller.openai.requests.OpenAIAttributesRequest
+import com.sirelon.sellsnap.features.seller.openai.response.OpenAIAttributeSuggestionResponse
+import com.sirelon.sellsnap.features.seller.openai.response.OpenAIAttributeSuggestionsResponse
+import com.sirelon.sellsnap.features.seller.openai.response.OpenAIGeneratedAd
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
