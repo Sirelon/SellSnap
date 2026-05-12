@@ -20,13 +20,12 @@ class ProfileViewModel(
             .onEach { user ->
                 setState {
                     it.copy(
-                        isLoading = false,
                         user = user,
-                        isAuthenticating = user != null,
                     )
                 }
             }
             .launchIn(viewModelScope)
+        refresh()
     }
 
     override fun initialState(): ProfileState = ProfileState()
@@ -63,10 +62,17 @@ class ProfileViewModel(
     private fun refresh() {
         viewModelScope.launch {
             setState { it.copy(isLoading = true, errorMessage = null) }
-            accountRepository.refreshProfile()
+            val profileResult = accountRepository.refreshProfile()
             val location = accountRepository.savedLocation()
+            profileResult.onFailure { error ->
+                showError(error.message ?: "Failed to load your profile.")
+            }
             setState {
-                it.copy(location = location,)
+                it.copy(
+                    isLoading = false,
+                    user = profileResult.getOrNull(),
+                    location = location,
+                )
             }
         }
     }
