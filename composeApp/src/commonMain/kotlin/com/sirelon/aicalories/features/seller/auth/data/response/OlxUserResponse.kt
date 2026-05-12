@@ -5,6 +5,12 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
+internal class OlxUserRootResponse(
+    @SerialName("data")
+    val data: OlxUserResponse?,
+)
+
+@Serializable
 internal class OlxUserResponse(
     @SerialName("id")
     val id: Long?,

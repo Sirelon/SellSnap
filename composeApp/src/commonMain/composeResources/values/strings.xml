@@ -312,10 +312,10 @@
     <string name="publish_confirm_subtitle">Your ad will pop up on OLX within 1–2 minutes.</string>
     <string name="publish_confirm_yes">Yep, publish</string>
     <string name="publish_confirm_back">Wait, let me edit</string>
-    <string name="preview_back_info_title">Heading back?</string>
-    <string name="preview_back_info_message">You\'ll go back to the generate screen — handy if you want to swap photos or regenerate.</string>
-    <string name="preview_back_info_stay">Never mind</string>
-    <string name="preview_back_info_leave">Yep, go back</string>
+    <string name="preview_back_info_title">Discard this draft?</string>
+    <string name="preview_back_info_message">This ad isn\'t published yet. Leave now and we\'ll toss the draft — you\'ll start fresh on the generate screen.</string>
+    <string name="preview_back_info_stay">Keep editing</string>
+    <string name="preview_back_info_leave">Discard draft</string>
     <string name="publishing">Going live…</string>
     <string name="copy">Copy</string>
     <string name="copy_pill_default">Copy</string>

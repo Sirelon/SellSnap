@@ -314,10 +314,10 @@
     <string name="publish_confirm_subtitle">Ваше оголошення з\'явиться на OLX за 1–2 хвилини.</string>
     <string name="publish_confirm_yes">Так, публікуємо</string>
     <string name="publish_confirm_back">Стоп, ще треба підправити</string>
-    <string name="preview_back_info_title">Повертаємось?</string>
-    <string name="preview_back_info_message">Ви повернетесь на екран генерації — зручно, якщо хочете поміняти фото або згенерувати все наново.</string>
-    <string name="preview_back_info_stay">Скасувати</string>
-    <string name="preview_back_info_leave">Так, повернутись</string>
+    <string name="preview_back_info_title">Викинути цю чернетку?</string>
+    <string name="preview_back_info_message">Оголошення ще не опубліковане. Якщо вийти зараз, чернетка зникне — і ви повернетеся на екран генерації, щоб почати спочатку.</string>
+    <string name="preview_back_info_stay">Продовжити редагування</string>
+    <string name="preview_back_info_leave">Видалити чернетку</string>
     <string name="publishing">Публікуємо…</string>
     <string name="copy">Копіювати</string>
     <string name="copy_pill_default">Копіювати</string>
