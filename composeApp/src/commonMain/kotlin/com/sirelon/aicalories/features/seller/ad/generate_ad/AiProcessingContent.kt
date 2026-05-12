@@ -37,6 +37,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.PreviewLightDark
@@ -46,6 +47,8 @@ import com.sirelon.sellsnap.designsystem.AppCard
 import com.sirelon.sellsnap.designsystem.AppDimens
 import com.sirelon.sellsnap.designsystem.AppTheme
 import com.sirelon.sellsnap.designsystem.PulsingCircles
+import com.sirelon.sellsnap.designsystem.performStepFeedback
+import com.sirelon.sellsnap.designsystem.performSuccessFeedback
 import com.sirelon.sellsnap.designsystem.templates.TitleWithSubtitle
 import com.sirelon.sellsnap.generated.resources.Res
 import com.sirelon.sellsnap.generated.resources.ai_analyzing_photo
@@ -234,6 +237,16 @@ private fun ProcessingStepsList(
     val activeSubtitle = stringResource(Res.string.ai_processing_status_in_progress)
     val completeSubtitle = stringResource(Res.string.ai_processing_status_done)
     val clampedCompletedSteps = completedSteps.coerceAtLeast(0)
+    val hapticFeedback = LocalHapticFeedback.current
+
+    LaunchedEffect(clampedCompletedSteps) {
+        if (clampedCompletedSteps <= 0) return@LaunchedEffect
+        if (clampedCompletedSteps >= steps.size) {
+            hapticFeedback.performSuccessFeedback()
+        } else {
+            hapticFeedback.performStepFeedback()
+        }
+    }
 
     AppCard(modifier = modifier) {
         Column(

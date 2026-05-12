@@ -22,6 +22,7 @@ import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
@@ -36,6 +37,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.sirelon.sellsnap.designsystem.AppDimens
 import com.sirelon.sellsnap.designsystem.AppTheme
+import com.sirelon.sellsnap.designsystem.performStepFeedback
 
 /**
  * Shared shape + height tokens for every [AppButton] variant — matches the
@@ -70,6 +72,7 @@ fun AppButton(
     enabled: Boolean = true,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
+    val hapticFeedback = LocalHapticFeedback.current
     val isPressed by interactionSource.collectIsPressedAsState()
 
     val pressScale by animateFloatAsState(
@@ -113,7 +116,10 @@ fun AppButton(
             ),
     ) {
         Button(
-            onClick = onClick,
+            onClick = {
+                hapticFeedback.performStepFeedback()
+                onClick()
+            },
             enabled = enabled,
             interactionSource = interactionSource,
             modifier = Modifier
