@@ -19,12 +19,11 @@ class ProfileViewModel(
             .user
             .onEach { user ->
                 setState {
-                    it.copy(
-                        user = user,
-                    )
+                    it.copy(user = user)
                 }
             }
             .launchIn(viewModelScope)
+
         refresh()
     }
 
@@ -62,18 +61,27 @@ class ProfileViewModel(
     private fun refresh() {
         viewModelScope.launch {
             setState { it.copy(isLoading = true, errorMessage = null) }
-            val profileResult = accountRepository.refreshProfile()
-            val location = accountRepository.savedLocation()
-            profileResult.onFailure { error ->
-                showError(error.message ?: "Failed to load your profile.")
+            runCatching {
+                val profileResult = accountRepository.refreshProfile()
+                val location = accountRepository.savedLocation()
+                profileResult to location
             }
-            setState {
-                it.copy(
-                    isLoading = false,
-                    user = profileResult.getOrNull(),
-                    location = location,
-                )
-            }
+                .onSuccess { (profileResult, location) ->
+                    profileResult.onFailure { error ->
+                        showError(error.message ?: "Failed to refresh profile.")
+                    }
+                    setState {
+                        it.copy(
+                            isLoading = false,
+                            user = profileResult.getOrNull(),
+                            location = location,
+                        )
+                    }
+                }
+                .onFailure { error ->
+                    showError(error.message ?: "Failed to refresh profile.")
+                    setState { it.copy(isLoading = false) }
+                }
         }
     }
 
