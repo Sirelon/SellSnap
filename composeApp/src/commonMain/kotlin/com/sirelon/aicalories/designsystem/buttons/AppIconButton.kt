@@ -6,8 +6,10 @@ import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.graphics.painter.Painter
 import com.sirelon.sellsnap.designsystem.AppDimens
+import com.sirelon.sellsnap.designsystem.performStepFeedback
 
 @Composable
 fun AppIconButton(
@@ -15,8 +17,13 @@ fun AppIconButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val hapticFeedback = LocalHapticFeedback.current
+
     FilledTonalIconButton(
-        onClick = onClick,
+        onClick = {
+            hapticFeedback.performStepFeedback()
+            onClick()
+        },
         modifier = modifier.size(AppDimens.Size.xl8 + AppDimens.Size.xl7),
         shape = RoundedCornerShape(AppDimens.BorderRadius.xl4),
     ) {

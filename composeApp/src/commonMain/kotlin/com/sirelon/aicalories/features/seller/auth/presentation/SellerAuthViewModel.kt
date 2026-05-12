@@ -31,6 +31,15 @@ class SellerAuthViewModel(
                 // TODO: correct path
                 postEffect(SellerAuthContract.SellerAuthEffect.LaunchBrowser("https:google.com"))
             }
+
+            SellerAuthContract.SellerAuthEvent.OlxAuthDismissed -> {
+                setState {
+                    it.copy(
+                        status = SellerAuthContract.SellerAuthStatus.Idle,
+                        errorMessage = null,
+                    )
+                }
+            }
         }
     }
 

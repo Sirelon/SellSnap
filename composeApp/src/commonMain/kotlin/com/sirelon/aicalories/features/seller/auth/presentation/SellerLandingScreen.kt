@@ -103,12 +103,18 @@ fun SellerLandingScreenRoute(openHome: () -> Unit) {
 
     webViewUrl?.let { url ->
         Dialog(
-            onDismissRequest = { webViewUrl = null },
+            onDismissRequest = {
+                webViewUrl = null
+                viewModel.onEvent(SellerAuthContract.SellerAuthEvent.OlxAuthDismissed)
+            },
             properties = DialogProperties(usePlatformDefaultWidth = false),
         ) {
             OlxAuthDialogScreen(
                 url = url,
-                onDismiss = { webViewUrl = null },
+                onDismiss = {
+                    webViewUrl = null
+                    viewModel.onEvent(SellerAuthContract.SellerAuthEvent.OlxAuthDismissed)
+                },
                 onCallbackReceived = { callbackUrl ->
                     webViewUrl = null
                     viewModel.onCallbackReceived(callbackUrl)

@@ -57,9 +57,11 @@ class OlxApiClientTest {
                 respond(
                     content = """
                         {
-                          "id": 77,
-                          "email": "seller@example.com",
-                          "name": "Seller"
+                          "data": {
+                            "id": 77,
+                            "email": "seller@example.com",
+                            "name": "Seller"
+                          }
                         }
                     """.trimIndent(),
                     status = HttpStatusCode.OK,
@@ -104,15 +106,17 @@ class OlxApiClientTest {
             respond(
                 content = """
                     {
-                      "id": 77,
-                      "email": "seller@example.com",
-                      "status": "confirmed",
-                      "name": "Seller",
-                      "phone": "+380501112233",
-                      "created_at": "2026-01-01T10:00:00+02:00",
-                      "last_login_at": "2026-04-28T11:00:00+02:00",
-                      "avatar": "https://example.com/avatar.png",
-                      "is_business": true
+                      "data": {
+                        "id": 77,
+                        "email": "seller@example.com",
+                        "status": "confirmed",
+                        "name": "Seller",
+                        "phone": "+380501112233",
+                        "created_at": "2026-01-01T10:00:00+02:00",
+                        "last_login_at": "2026-04-28T11:00:00+02:00",
+                        "avatar": "https://example.com/avatar.png",
+                        "is_business": true
+                      }
                     }
                 """.trimIndent(),
                 status = HttpStatusCode.OK,
@@ -170,9 +174,11 @@ class OlxApiClientTest {
                         respond(
                             content = """
                                 {
-                                  "id": 88,
-                                  "email": "seller@example.com",
-                                  "name": "Seller"
+                                  "data": {
+                                    "id": 88,
+                                    "email": "seller@example.com",
+                                    "name": "Seller"
+                                  }
                                 }
                             """.trimIndent(),
                             status = HttpStatusCode.OK,
