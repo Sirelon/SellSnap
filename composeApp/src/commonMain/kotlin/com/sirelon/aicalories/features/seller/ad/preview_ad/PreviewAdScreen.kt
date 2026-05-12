@@ -231,10 +231,14 @@ fun PreviewAdScreen(
         modifier = Modifier.fillMaxSize(),
         backStack = navBackStack,
         onBack = {
-            if (navBackStack.lastOrNull() is PreviewAdDestination.Content) {
-                navBackStack.add(PreviewAdDestination.BackInfo)
-            } else if (navBackStack.size > 1) {
-                navBackStack.removeAt(navBackStack.lastIndex)
+            when (navBackStack.lastOrNull()) {
+                is PreviewAdDestination.Content -> navBackStack.add(PreviewAdDestination.BackInfo)
+                is PreviewAdDestination.Publishing -> Unit
+                else -> {
+                    if (navBackStack.size > 1) {
+                        navBackStack.removeAt(navBackStack.lastIndex)
+                    }
+                }
             }
         },
         sceneStrategies = sceneStrategies,
