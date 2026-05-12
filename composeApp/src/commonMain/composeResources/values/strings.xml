@@ -312,10 +312,10 @@
     <string name="publish_confirm_subtitle">Your listing will go live on OLX within 1–2 minutes.</string>
     <string name="publish_confirm_yes">Yes, publish</string>
     <string name="publish_confirm_back">Back to editing</string>
-    <string name="preview_back_info_title">Leave preview?</string>
-    <string name="preview_back_info_message">You\'ll return to the generate screen. Use this if you need to update photos or regenerate details.</string>
-    <string name="preview_back_info_stay">Stay in preview</string>
-    <string name="preview_back_info_leave">Back to generate</string>
+    <string name="preview_back_info_title">Leave unpublished ad?</string>
+    <string name="preview_back_info_message">This advertisement has not been published yet. Leaving now will discard the generated draft and return you to the generate screen.</string>
+    <string name="preview_back_info_stay">Keep editing</string>
+    <string name="preview_back_info_leave">Discard draft</string>
     <string name="publishing">Publishing…</string>
     <string name="copy">Copy</string>
     <string name="copy_pill_default">Copy</string>
