@@ -18,6 +18,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -222,6 +223,7 @@ private fun Color.isSpecified(): Boolean = this != Color.Unspecified
  *                       to emulate the CSS `inset 0 1px 0 rgba(...)` used by
  *                       the `magic` variant.
  */
+@Immutable
 data class AppButtonStyle(
     val backgroundColor: Color,
     val contentColor: Color,

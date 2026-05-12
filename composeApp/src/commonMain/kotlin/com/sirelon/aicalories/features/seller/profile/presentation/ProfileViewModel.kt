@@ -6,6 +6,8 @@ import com.sirelon.sellsnap.features.seller.profile.data.SellerAccountRepository
 import com.sirelon.sellsnap.features.seller.profile.presentation.ProfileContract.ProfileEffect
 import com.sirelon.sellsnap.features.seller.profile.presentation.ProfileContract.ProfileEvent
 import com.sirelon.sellsnap.features.seller.profile.presentation.ProfileContract.ProfileState
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
 class ProfileViewModel(
@@ -13,6 +15,15 @@ class ProfileViewModel(
 ) : BaseViewModel<ProfileState, ProfileEvent, ProfileEffect>() {
 
     init {
+        accountRepository
+            .user
+            .onEach { user ->
+                setState {
+                    it.copy(user = user)
+                }
+            }
+            .launchIn(viewModelScope)
+
         refresh()
     }
 
@@ -50,15 +61,27 @@ class ProfileViewModel(
     private fun refresh() {
         viewModelScope.launch {
             setState { it.copy(isLoading = true, errorMessage = null) }
-            val user = accountRepository.refreshProfile().getOrNull()
-            val location = accountRepository.savedLocation()
-            setState {
-                it.copy(
-                    isLoading = false,
-                    user = user,
-                    location = location,
-                )
+            runCatching {
+                val profileResult = accountRepository.refreshProfile()
+                val location = accountRepository.savedLocation()
+                profileResult to location
             }
+                .onSuccess { (profileResult, location) ->
+                    profileResult.onFailure { error ->
+                        showError(error.message ?: "Failed to refresh profile.")
+                    }
+                    setState {
+                        it.copy(
+                            isLoading = false,
+                            user = profileResult.getOrNull(),
+                            location = location,
+                        )
+                    }
+                }
+                .onFailure { error ->
+                    showError(error.message ?: "Failed to refresh profile.")
+                    setState { it.copy(isLoading = false) }
+                }
         }
     }
 
