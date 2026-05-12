@@ -1,43 +1,43 @@
 <resources>
     <!-- OnBoarding & Authentication -->
-    <string name="welcome_to_sellsnap">Welcome to SellSnap</string>
-    <string name="welcome_subtitle">Create OLX listings in seconds with AI</string>
-    <string name="why_connect_olx">Why connect to OLX?</string>
-    <string name="benefit_publish">Publish ads directly to OLX</string>
-    <string name="benefit_sync">Keep your listings in sync automatically</string>
-    <string name="benefit_manage">Manage all your ads in one place</string>
-    <string name="continue_as_guest">Continue as Guest</string>
-    <string name="guest_description">You can create ads and copy the content. You\'ll need to post them to OLX manually.</string>
+    <string name="welcome_to_sellsnap">Hey, welcome to SellSnap 👋</string>
+    <string name="welcome_subtitle">Photo in, listing out — AI does the typing.</string>
+    <string name="why_connect_olx">Why hook up your OLX account?</string>
+    <string name="benefit_publish">Post straight to OLX — no copy-paste</string>
+    <string name="benefit_sync">Your listings stay in sync, hands-free</string>
+    <string name="benefit_manage">Every ad lives in one tidy spot</string>
+    <string name="continue_as_guest">Try without an account</string>
+    <string name="guest_description">You can build the ad and copy the text — you\'ll just need to paste it into OLX yourself.</string>
     <string name="guest_mode_banner_title">Guest mode</string>
-    <string name="guest_mode_banner_message">You need an account to post on OLX. Copy the title, description, and price below, then paste them into OLX to publish.</string>
-    <string name="guest_connect_olx_cta">Connect OLX to publish</string>
-    <string name="guest_copy_hint">Use the copy buttons next to the title, description, and price when you\'re ready to paste this ad into OLX.</string>
+    <string name="guest_mode_banner_message">Want to go live? You\'ll need an OLX account. For now, copy the title, description, and price below and paste them into OLX.</string>
+    <string name="guest_connect_olx_cta">Connect OLX to post in one tap</string>
+    <string name="guest_copy_hint">Tap the copy buttons next to the title, description, and price — then paste them into OLX when you\'re ready.</string>
     <string name="continue_with_olx">Continue with OLX</string>
-    <string name="terms_privacy_prefix">By continuing, you agree to our </string>
+    <string name="terms_privacy_prefix">By continuing, you\'re cool with our </string>
     <string name="terms_of_service">Terms of Service</string>
     <string name="privacy_policy">Privacy Policy</string>
     <string name="step_format">Step %1$s of %2$s</string>
     <string name="or_divider">or</string>
 
     <!-- Onboarding Screen Steps -->
-    <string name="onboarding_step1_title">Snap a photo</string>
-    <string name="onboarding_step1_subtitle">Take a picture of anything you want to sell. Our AI will handle the rest!</string>
-    <string name="onboarding_step2_title">AI writes your ad</string>
-    <string name="onboarding_step2_subtitle">Get a catchy title, a compelling description, and a smart price estimate — in seconds.</string>
-    <string name="onboarding_step3_title">Publish to OLX</string>
-    <string name="onboarding_step3_subtitle">Publish to OLX with one tap and reach thousands of buyers instantly!</string>
-    <string name="onboarding_step3_pill">PUBLISHED</string>
+    <string name="onboarding_step1_title">Snap it 📸</string>
+    <string name="onboarding_step1_subtitle">Point, shoot, done. Anything you want to sell — we\'ll take it from there.</string>
+    <string name="onboarding_step2_title">AI does the writing ✍️</string>
+    <string name="onboarding_step2_subtitle">A title, a description, and a fair price — ready before your coffee cools.</string>
+    <string name="onboarding_step3_title">Publish in a tap 🚀</string>
+    <string name="onboarding_step3_subtitle">One tap and you\'re live on OLX. Buyers, meet your stuff.</string>
+    <string name="onboarding_step3_pill">LIVE</string>
 
     <!-- Generate Ad Screen -->
-    <string name="turn_stuff_into_olx_listings">Turn your stuff into OLX listings instantly</string>
-    <string name="snap_photo_ad_desc">Snap a photo and let AI write the perfect ad for you</string>
-    <string name="describe_your_item">Describe your item</string>
-    <string name="describe_item_placeholder">Brand, condition, accessories, defects…</string>
+    <string name="turn_stuff_into_olx_listings">Got stuff to sell? Snap it. We\'ll list it.</string>
+    <string name="snap_photo_ad_desc">Snap a photo. AI handles the words.</string>
+    <string name="describe_your_item">Tell us about it</string>
+    <string name="describe_item_placeholder">Brand, condition, extras, scuffs…</string>
     <string name="sellsnap_title">SellSnap</string>
-    <string name="tips_for_better_photos">Tips for better photos</string>
-    <string name="tip_lighting">Good lighting gives better results</string>
-    <string name="tip_angles">Shoot from multiple angles</string>
-    <string name="tip_defects">Show any defects clearly</string>
+    <string name="tips_for_better_photos">Photo tips 📷</string>
+    <string name="tip_lighting">Good light = better results</string>
+    <string name="tip_angles">Shoot from a few angles</string>
+    <string name="tip_defects">Don\'t hide the scratches — buyers love honesty</string>
     <string name="add_photo">Add Photo</string>
     <string name="take_photo">Take Photo</string>
 
@@ -55,25 +55,25 @@
     <!-- Preview Ad Screen -->
     <string name="publish_to_olx">Publish to OLX</string>
     <string name="publish_on_olx">Publish on OLX</string>
-    <string name="publish_errors">Publish · %1$d errors</string>
-    <string name="banner_ready_in">Ready in %1$s — review and edit before publishing.</string>
-    <string name="validation_all_valid">All good — every required field is filled in.</string>
-    <string name="validation_fields_remaining">%1$d fields remaining</string>
-    <string name="validation_error_title_too_short">Title: at least 10 characters</string>
-    <string name="validation_error_desc_too_short">Description: at least 30 characters</string>
-    <string name="validation_error_no_category">Select a category</string>
-    <string name="validation_error_no_location">Add your location</string>
+    <string name="publish_errors">Publish · %1$d to fix</string>
+    <string name="banner_ready_in">Done in %1$s — give it a read before going live.</string>
+    <string name="validation_all_valid">Looks great — you\'re all set ✨</string>
+    <string name="validation_fields_remaining">%1$d to fill in</string>
+    <string name="validation_error_title_too_short">Title needs 10+ characters</string>
+    <string name="validation_error_desc_too_short">Description needs 30+ characters</string>
+    <string name="validation_error_no_category">Pick a category</string>
+    <string name="validation_error_no_location">Add a location</string>
     <string name="validation_errors_more">…and %1$d more</string>
     <string name="character_count">%1$d characters</string>
-    <string name="min_characters">Type at least %1$d characters</string>
+    <string name="min_characters">At least %1$d characters, please</string>
     <string name="character_count_range">%1$d/%2$d</string>
     <string name="discount_percentage">%1$d%% off</string>
-    <string name="original_price">Original: €%1$s</string>
+    <string name="original_price">Was: €%1$s</string>
     <string name="change_button">Change</string>
 
     <!-- AI Processing -->
-    <string name="creating_your_ad">Creating Your Ad</string>
-    <string name="ai_processing_message">AI is crafting your listing right now…</string>
+    <string name="creating_your_ad">Cooking up your ad…</string>
+    <string name="ai_processing_message">AI is doing its thing…</string>
 
     <!-- Capacity Result Screen -->
     <string name="capacity_result_title">Capacity result</string>
@@ -169,12 +169,12 @@
     <string name="profile_field_last_login_at">Last login</string>
     <string name="profile_screen_title">Profile</string>
     <string name="profile_guest_title">Guest profile</string>
-    <string name="profile_guest_description">Connect OLX to publish listings from SellSnap and see your account details here.</string>
+    <string name="profile_guest_description">Hook up OLX to publish from SellSnap — your account details will land here too.</string>
     <string name="profile_olx_account">OLX account</string>
     <string name="profile_location_title">Selling location</string>
-    <string name="profile_location_subtitle">Used as the default location for future OLX listings.</string>
+    <string name="profile_location_subtitle">We\'ll use this as the default spot for your next listings.</string>
     <string name="profile_logout">Log out</string>
-    <string name="profile_not_provided">Not provided</string>
+    <string name="profile_not_provided">Not set</string>
     <string name="profile_value_yes">Yes</string>
     <string name="profile_value_no">No</string>
     <string name="from_note">From note</string>
@@ -188,8 +188,8 @@
     <string name="back">Back</string>
 
     <!-- Permission Dialogs -->
-    <string name="camera_permission_title">Camera Permission</string>
-    <string name="camera_permission_message">We need camera access to photograph items for your listings.</string>
+    <string name="camera_permission_title">Camera access</string>
+    <string name="camera_permission_message">We need the camera to snap your stuff for your listings.</string>
 
     <!-- Estimation -->
     <string name="estimation">Estimation</string>
@@ -258,112 +258,112 @@
     <string name="capture_meal">Capture meal</string>
 
     <!-- Generate Ad Screen -->
-    <string name="generating">Generating…</string>
-    <string name="generate_ad_with_ai">Generate Ad with AI</string>
+    <string name="generating">Working on it…</string>
+    <string name="generate_ad_with_ai">Generate ad with AI</string>
     <string name="generate_with_ai">Generate with AI</string>
-    <string name="add_photos_to_continue">Add photos to continue</string>
-    <string name="new_listing">New Listing</string>
-    <string name="new_listing_subtitle">Add 1–8 photos — AI takes care of the rest.</string>
-    <string name="welcome_greeting">Welcome</string>
-    <string name="ai_hint_label">AI hint (optional)</string>
-    <string name="ai_hint_placeholder">e.g., Nike Air Max 90, size 42, worn 2 months</string>
-    <string name="get_started">Get Started</string>
+    <string name="add_photos_to_continue">Pop in a photo first</string>
+    <string name="new_listing">New listing</string>
+    <string name="new_listing_subtitle">Drop in 1–8 photos. We\'ll handle the rest.</string>
+    <string name="welcome_greeting">Hey 👋</string>
+    <string name="ai_hint_label">Give the AI a hint (optional)</string>
+    <string name="ai_hint_placeholder">e.g. Nike Air Max 90, size 42, worn for 2 months</string>
+    <string name="get_started">Let\'s go</string>
     <string name="next">Next</string>
 
     <!-- AI Processing -->
-    <string name="ai_creating_ad_title">Creating Your Ad</string>
-    <string name="ai_analyzing_photo">Our AI is looking at your photos and crafting the perfect title, description, and price…</string>
+    <string name="ai_creating_ad_title">Cooking up your ad</string>
+    <string name="ai_analyzing_photo">We\'re studying your photos and writing the perfect title, description, and price…</string>
     <string name="ai_step_uploading_photos">Uploading photos</string>
-    <string name="ai_step_analyzing_image">Analyzing image</string>
-    <string name="ai_step_preparing_guest_ad">Preparing your ad copy</string>
-    <string name="ai_step_generating_title">Generating title</string>
-    <string name="ai_step_writing_description">Writing description</string>
-    <string name="ai_step_calculating_price">Calculating price</string>
-    <string name="ai_processing_status_in_progress">In progress…</string>
-    <string name="ai_processing_status_done">Done</string>
-    <string name="ai_processing_tip_connect_olx_faster">Tip: connect OLX to auto-fill the final ad details and finish your next listing up to 5× faster.</string>
-    <string name="ai_processing_tip_good_lighting">Tip: well-lit photos give cleaner AI results.</string>
-    <string name="ai_processing_tip_capture_details">Tip: include close-ups of important details and signs of wear.</string>
-    <string name="ai_processing_tip_keep_background_clean">Tip: a clean background helps the item stand out.</string>
+    <string name="ai_step_analyzing_image">Looking at your photos</string>
+    <string name="ai_step_preparing_guest_ad">Putting it all together</string>
+    <string name="ai_step_generating_title">Crafting a title</string>
+    <string name="ai_step_writing_description">Writing the description</string>
+    <string name="ai_step_calculating_price">Finding a fair price</string>
+    <string name="ai_processing_status_in_progress">Working on it…</string>
+    <string name="ai_processing_status_done">Done ✓</string>
+    <string name="ai_processing_tip_connect_olx_faster">Pro tip: connect OLX and your next listing flies out 5× faster.</string>
+    <string name="ai_processing_tip_good_lighting">Pro tip: good light = cleaner AI results.</string>
+    <string name="ai_processing_tip_capture_details">Pro tip: close-ups of details and wear help us write better copy.</string>
+    <string name="ai_processing_tip_keep_background_clean">Pro tip: a clean background makes your item pop.</string>
 
     <!-- Permission Dialogs -->
-    <string name="camera_rationale_title">Camera access needed</string>
-    <string name="camera_rationale_message">We use the camera to photograph items for your OLX listings. Please allow access to continue.</string>
-    <string name="camera_settings_title">Allow camera access in settings</string>
-    <string name="camera_settings_message_ios">Camera access is blocked. Go to Settings → Privacy → Camera and enable SellSnap.</string>
-    <string name="camera_settings_message_android">Camera access is blocked. Open the app settings and enable the camera permission.</string>
+    <string name="camera_rationale_title">Mind if we use the camera?</string>
+    <string name="camera_rationale_message">We use it to snap your items for OLX listings. Allow access to keep going.</string>
+    <string name="camera_settings_title">Turn on the camera in settings</string>
+    <string name="camera_settings_message_ios">Camera\'s blocked. Head to Settings → Privacy → Camera and switch SellSnap on.</string>
+    <string name="camera_settings_message_android">Camera\'s blocked. Open app settings and switch the camera permission on.</string>
     <string name="not_now">Not now</string>
     <string name="open_settings">Open settings</string>
     <string name="cancel">Cancel</string>
 
     <!-- Attributes -->
     <string name="ad_attributes_label">Details</string>
-    <string name="attr_select_placeholder">Select…</string>
+    <string name="attr_select_placeholder">Pick one…</string>
     <string name="confirm">Confirm</string>
-    <string name="error_attr_required">This field is required</string>
-    <string name="error_attr_must_be_numeric">Must be a number</string>
-    <string name="error_attr_below_minimum">Must be at least %1$s</string>
-    <string name="error_attr_above_maximum">Must be at most %1$s</string>
-    <string name="error_attr_invalid_selection">Invalid selection</string>
-    <string name="error_attr_multiple_values_not_allowed">Only one value allowed</string>
+    <string name="error_attr_required">We need this one</string>
+    <string name="error_attr_must_be_numeric">Numbers only here</string>
+    <string name="error_attr_below_minimum">Minimum is %1$s</string>
+    <string name="error_attr_above_maximum">Maximum is %1$s</string>
+    <string name="error_attr_invalid_selection">That option doesn\'t work</string>
+    <string name="error_attr_multiple_values_not_allowed">Just one, please</string>
 
     <!-- Preview Ad Screen -->
-    <string name="publish_confirm_title">Publish now?</string>
-    <string name="publish_confirm_subtitle">Your listing will go live on OLX within 1–2 minutes.</string>
-    <string name="publish_confirm_yes">Yes, publish</string>
-    <string name="publish_confirm_back">Back to editing</string>
-    <string name="preview_back_info_title">Leave preview?</string>
-    <string name="preview_back_info_message">You\'ll return to the generate screen. Use this if you need to update photos or regenerate details.</string>
-    <string name="preview_back_info_stay">Stay in preview</string>
-    <string name="preview_back_info_leave">Back to generate</string>
-    <string name="publishing">Publishing…</string>
+    <string name="publish_confirm_title">Ready to go live?</string>
+    <string name="publish_confirm_subtitle">Your ad will pop up on OLX within 1–2 minutes.</string>
+    <string name="publish_confirm_yes">Yep, publish</string>
+    <string name="publish_confirm_back">Wait, let me edit</string>
+    <string name="preview_back_info_title">Heading back?</string>
+    <string name="preview_back_info_message">You\'ll go back to the generate screen — handy if you want to swap photos or regenerate.</string>
+    <string name="preview_back_info_stay">Never mind</string>
+    <string name="preview_back_info_leave">Yep, go back</string>
+    <string name="publishing">Going live…</string>
     <string name="copy">Copy</string>
     <string name="copy_pill_default">Copy</string>
-    <string name="copy_pill_copied">Copied</string>
-    <string name="error_pill_default">Error</string>
+    <string name="copy_pill_copied">Copied ✓</string>
+    <string name="error_pill_default">Oops</string>
     <string name="ad_title_label">Title</string>
     <string name="ad_description_label">Description</string>
-    <string name="ad_your_price">Your Price</string>
-    <string name="ad_price_ai_estimated_range">AI estimated range: %1$s – %2$s ₴</string>
+    <string name="ad_your_price">Your price</string>
+    <string name="ad_price_ai_estimated_range">AI suggests: %1$s – %2$s ₴</string>
     <string name="ad_category_label">Category</string>
     <string name="ad_location_label">Location</string>
-    <string name="location_detecting">Detecting location…</string>
-    <string name="location_not_available">Location not available</string>
-    <string name="location_rationale_title">Location access needed</string>
-    <string name="location_rationale_message">We need your location to suggest the nearest city for your OLX listing.</string>
-    <string name="location_settings_title">Allow location access in settings</string>
-    <string name="location_settings_message_android">Location access is blocked. Open the app settings and enable the location permission.</string>
-    <string name="location_settings_message_ios">Location access is blocked. Go to Settings → Privacy → Location Services and enable SellSnap.</string>
-    <string name="select_category">Select Category</string>
+    <string name="location_detecting">Finding you…</string>
+    <string name="location_not_available">Can\'t find your spot</string>
+    <string name="location_rationale_title">We need your location</string>
+    <string name="location_rationale_message">To suggest the closest city for your listing, we need a peek at your location.</string>
+    <string name="location_settings_title">Turn on location in settings</string>
+    <string name="location_settings_message_android">Location\'s blocked. Open app settings and switch it on for SellSnap.</string>
+    <string name="location_settings_message_ios">Location\'s blocked. Head to Settings → Privacy → Location Services and toggle SellSnap on.</string>
+    <string name="select_category">Pick a category</string>
     <string name="subcategory_count">%d subcategories</string>
 
     <!-- Error Messages -->
-    <string name="error_location_fetch_failed">Couldn\'t detect your location.</string>
-    <string name="error_publish_missing_category_or_location">Category or location is missing — please fill them in before publishing.</string>
-    <string name="error_publish_missing_contact_name">Your OLX profile is missing a name. Please update your profile and try again.</string>
-    <string name="error_category_suggestion_failed">Couldn\'t load a category suggestion.</string>
-    <string name="error_attributes_load_failed">Couldn\'t load attribute details.</string>
+    <string name="error_location_fetch_failed">Couldn\'t find your location.</string>
+    <string name="error_publish_missing_category_or_location">Almost there — add a category and location before going live.</string>
+    <string name="error_publish_missing_contact_name">Your OLX profile is missing a name. Pop in there, add one, and we\'ll try again.</string>
+    <string name="error_category_suggestion_failed">Couldn\'t pull a category suggestion.</string>
+    <string name="error_attributes_load_failed">Couldn\'t load the details.</string>
     <string name="error_user_profile_fetch_failed">Couldn\'t load your profile.</string>
-    <string name="error_publish_failed">Publishing failed. Please try again.</string>
-    <string name="error_generate_ad_failed">Ad generation failed. Please try again.</string>
+    <string name="error_publish_failed">Publishing didn\'t go through. Give it another shot.</string>
+    <string name="error_generate_ad_failed">Couldn\'t generate the ad. Try again?</string>
 
     <!-- Publish Success Screen -->
-    <string name="publish_success_title">Published! 🎉</string>
-    <string name="publish_success_subtitle">Your listing is now live. First views should appear within 10–15 minutes.</string>
-    <string name="publish_success_subtitle_new">Submitted for moderation. Your listing will go live after review.</string>
-    <string name="publish_success_subtitle_limited">Your listing is ready but requires a packet on OLX to activate.</string>
+    <string name="publish_success_title">You\'re live! 🎉</string>
+    <string name="publish_success_subtitle">Your listing is up on OLX. First views should roll in within 10–15 minutes.</string>
+    <string name="publish_success_subtitle_new">Off to moderation — your listing goes live after a quick review.</string>
+    <string name="publish_success_subtitle_limited">Listing\'s ready! You\'ll just need an OLX packet to activate it.</string>
     <string name="publish_success_listing_url_label">Listing link</string>
     <string name="publish_success_status_label">Status</string>
     <string name="publish_success_status_new">Under review</string>
-    <string name="publish_success_status_new_caption">Will go live after moderation</string>
+    <string name="publish_success_status_new_caption">Goes live after moderation</string>
     <string name="publish_success_status_limited">Limited</string>
-    <string name="publish_success_status_limited_caption">Buy a packet on OLX to activate your listing</string>
+    <string name="publish_success_status_limited_caption">Grab a packet on OLX to activate it</string>
     <string name="publish_success_status_unknown">Pending</string>
-    <string name="publish_success_status_unknown_caption">Check your listing on OLX</string>
+    <string name="publish_success_status_unknown_caption">Check it out on OLX</string>
     <string name="publish_success_total_time_label">Total time</string>
-    <string name="publish_success_total_time_caption">From photo to publish</string>
-    <string name="publish_success_view_on_olx">View on OLX</string>
-    <string name="publish_success_create_another">Create another</string>
+    <string name="publish_success_total_time_caption">From snap to live</string>
+    <string name="publish_success_view_on_olx">See it on OLX</string>
+    <string name="publish_success_create_another">Sell something else</string>
     <string name="time_unit_seconds">%1$ds</string>
     <string name="time_unit_minutes_seconds">%1$dm %2$ds</string>
     <string name="time_duration_seconds">%1$d %2$s</string>
@@ -385,11 +385,11 @@
     <string name="risk_factor_hint">0.0 to 1.0 (20%% risk = 0.2)</string>
 
     <!-- Category Picker Sheet -->
-    <string name="category_picker_search_placeholder">Search category</string>
+    <string name="category_picker_search_placeholder">Search categories</string>
     <string name="category_picker_all">All</string>
     <string name="category_picker_reset">Reset</string>
-    <string name="category_picker_select">Select</string>
-    <string name="category_picker_select_with_name">Select · %1$s</string>
-    <string name="category_picker_selected_label">SELECTED</string>
-    <string name="category_picker_select_label">SELECT</string>
+    <string name="category_picker_select">Pick this</string>
+    <string name="category_picker_select_with_name">Pick · %1$s</string>
+    <string name="category_picker_selected_label">PICKED</string>
+    <string name="category_picker_select_label">PICK</string>
 </resources>
