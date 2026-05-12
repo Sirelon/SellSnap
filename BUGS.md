@@ -38,10 +38,10 @@ Scope: seller / OLX flow only. Agile screens are intentionally excluded.
 - **What:** Explicit refresh and bearer auto-refresh had separate terminal-failure cleanup paths.
 - **Fix applied:** Both paths now call `handleTerminalRefreshFailure(...)`, clearing token and pending auth session state for terminal OLX refresh failures.
 
-### 7. Privacy / Terms URLs are placeholder garbage
-- **Where:** `composeApp/src/commonMain/kotlin/com/sirelon/aicalories/features/seller/auth/presentation/SellerAuthViewModel.kt:24` and `:29`
-- **What:** Both post `LaunchBrowser("https:google.com")` — note the missing `//`. Resolves to a malformed URI on every platform; users tapping the buttons see a browser error.
-- **Fix:** Replace with the real URLs, or hide the buttons until URLs are decided.
+### 7. Privacy / Terms URLs are hosted on GitHub Pages
+- **Where:** `composeApp/src/commonMain/kotlin/com/sirelon/aicalories/features/seller/auth/presentation/SellerAuthViewModel.kt`
+- **What changed:** Terms and Privacy now launch hosted GitHub Pages URLs instead of the old malformed `https:google.com` placeholders.
+- **Watch:** Keep the page content and app data flows in sync when OLX, OpenAI, Supabase, location, camera, or microphone behavior changes.
 
 ## Concurrency
 
