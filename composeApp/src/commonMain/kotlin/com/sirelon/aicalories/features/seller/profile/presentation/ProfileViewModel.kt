@@ -29,9 +29,18 @@ class ProfileViewModel(
             .launchIn(viewModelScope)
 
         refresh()
-    }
 
-    override fun initialState(): ProfileState = ProfileState()
+            runCatching {
+                accountRepository.refreshProfile()
+                accountRepository.savedLocation()
+                .onSuccess { location ->
+                    setState { it.copy(location = location) }
+                }
+                .onFailure { error ->
+                    showError(error.message ?: "Failed to refresh profile.")
+                }
+
+            setState { it.copy(isLoading = false) }
 
     override fun onEvent(event: ProfileEvent) {
         when (event) {
