@@ -1,5 +1,6 @@
 package com.sirelon.sellsnap.features.seller.ad.preview_ad
 
+import androidx.compose.runtime.Immutable
 import com.sirelon.sellsnap.features.seller.ad.publish_success.PublishSuccessData
 import com.sirelon.sellsnap.features.seller.categories.domain.OlxAttribute
 import com.sirelon.sellsnap.features.seller.categories.domain.OlxAttributeValue
@@ -8,6 +9,7 @@ import com.sirelon.sellsnap.features.seller.categories.domain.ValidationError
 import com.sirelon.sellsnap.features.seller.location.OlxLocation
 import kotlin.jvm.JvmInline
 
+@Immutable
 data class OlxAttributeState(
     val attribute: OlxAttribute,
     val selectedValues: List<OlxAttributeValue> = emptyList(),
@@ -16,6 +18,7 @@ data class OlxAttributeState(
 
 interface PreviewAdContract {
 
+    @Immutable
     data class PreviewAdState(
         val categoryLabel: String,
         val selectedCategory: OlxCategory? = null,

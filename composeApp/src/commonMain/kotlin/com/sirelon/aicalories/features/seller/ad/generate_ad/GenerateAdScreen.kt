@@ -136,23 +136,13 @@ fun GenerateAdScreen(
                 onPromptChanged = {
                     viewModel.onEvent(GenerateAdContract.GenerateAdEvent.PromptChanged(it))
                 },
-                onTakePhotoClick = {
-                    if (!state.isLoading) {
-                        photoPicker.captureWithCamera()
-                    }
-                },
-                onUploadClick = {
-                    if (!state.isLoading) {
-                        photoPicker.pickFromGallery()
-                    }
-                },
+                onTakePhotoClick = { photoPicker.captureWithCamera() },
+                onUploadClick = { photoPicker.pickFromGallery() },
                 onRemovePhoto = { file ->
                     viewModel.onEvent(GenerateAdContract.GenerateAdEvent.RemovePhoto(file))
                 },
                 onSubmitClick = {
-                    if (state.canSubmit) {
-                        viewModel.onEvent(GenerateAdContract.GenerateAdEvent.Submit)
-                    }
+                    viewModel.onEvent(GenerateAdContract.GenerateAdEvent.Submit)
                 },
                 onProfileClick = onProfileClick,
                 onWhisperClick = onWhisperClick,
@@ -296,6 +286,7 @@ private fun SlimHeader(
     onWhisperClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val primaryBrush = rememberPrimaryBrush()
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -314,14 +305,7 @@ private fun SlimHeader(
                 modifier = Modifier
                     .size(AppDimens.Size.xl10)
                     .clip(CircleShape)
-                    .background(
-                        Brush.linearGradient(
-                            colors = listOf(
-                                AppTheme.colors.primaryBright,
-                                AppTheme.colors.primary,
-                            )
-                        )
-                    ),
+                    .background(primaryBrush),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
@@ -389,18 +373,12 @@ private fun SlimHeader(
 private fun SellerHeader(
     modifier: Modifier = Modifier
 ) {
+    val primaryBrush = rememberPrimaryBrush()
     Box(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(AppDimens.BorderRadius.xl11))
-            .background(
-                Brush.linearGradient(
-                    colors = listOf(
-                        AppTheme.colors.primaryBright,
-                        AppTheme.colors.primary,
-                    )
-                )
-            )
+            .background(primaryBrush)
             .padding(AppDimens.Spacing.xl6)
     ) {
         Box(
@@ -593,6 +571,15 @@ private fun TipItem(
             color = AppTheme.colors.onSurfaceMuted,
             fontWeight = FontWeight.Medium
         )
+    }
+}
+
+@Composable
+private fun rememberPrimaryBrush(): Brush {
+    val primaryBright = AppTheme.colors.primaryBright
+    val primary = AppTheme.colors.primary
+    return remember(primaryBright, primary) {
+        Brush.linearGradient(listOf(primaryBright, primary))
     }
 }
 

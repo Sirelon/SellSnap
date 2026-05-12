@@ -19,6 +19,7 @@ interface SellerAuthContract {
         data object ContinueAsGuestClicked : SellerAuthEvent
         data object OnTermsClicked : SellerAuthEvent
         data object OnPrivacyClicked : SellerAuthEvent
+        data object OlxAuthDismissed : SellerAuthEvent
     }
 
     sealed interface SellerAuthEffect {

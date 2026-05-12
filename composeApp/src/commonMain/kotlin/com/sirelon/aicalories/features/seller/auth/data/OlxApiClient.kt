@@ -2,7 +2,7 @@ package com.sirelon.sellsnap.features.seller.auth.data
 
 import com.sirelon.sellsnap.features.seller.ad.publish_success.AdvertStatus
 import com.sirelon.sellsnap.features.seller.auth.data.response.PostAdvertRootResponse
-import com.sirelon.sellsnap.features.seller.auth.data.response.OlxUserResponse
+import com.sirelon.sellsnap.features.seller.auth.data.response.OlxUserRootResponse
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxApiError
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxApiException
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxUser
@@ -37,7 +37,9 @@ class OlxApiClient(
         val response = httpClient.get("users/me")
         response.ensureSuccess()
 
-        return response.decodeBody<OlxUserResponse>("authenticated user").toDomain()
+        val user = response.decodeBody<OlxUserRootResponse>("authenticated user").data
+            ?: throw missingResponseData("authenticated user", "data")
+        return user.toDomain()
     }
 
     internal suspend fun loadCategories(): List<OlxCategoryResponse> {

@@ -34,6 +34,13 @@ compose {
     }
 }
 
+if (providers.gradleProperty("composeReports").orNull == "true") {
+    composeCompiler {
+        reportsDestination = layout.buildDirectory.dir("compose_compiler")
+        metricsDestination = layout.buildDirectory.dir("compose_compiler")
+    }
+}
+
 kotlin {
     android {
         namespace = "com.sirelon.sellsnap.composeapp"
