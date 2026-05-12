@@ -22,11 +22,12 @@ class ProfileViewModel(
                     it.copy(
                         isLoading = false,
                         user = user,
-                        isAuthenticating = user != null,
                     )
                 }
             }
             .launchIn(viewModelScope)
+
+        refresh()
     }
 
     override fun initialState(): ProfileState = ProfileState()
@@ -66,7 +67,10 @@ class ProfileViewModel(
             accountRepository.refreshProfile()
             val location = accountRepository.savedLocation()
             setState {
-                it.copy(location = location,)
+                it.copy(
+                    isLoading = false,
+                    location = location,
+                )
             }
         }
     }
