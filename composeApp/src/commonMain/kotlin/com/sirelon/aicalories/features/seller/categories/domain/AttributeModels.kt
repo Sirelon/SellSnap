@@ -1,7 +1,9 @@
 package com.sirelon.sellsnap.features.seller.categories.domain
 
+import androidx.compose.runtime.Immutable
 import kotlinx.serialization.Serializable
 
+@Immutable
 data class OlxAttribute(
     val code: String,
     val label: String,
@@ -18,6 +20,7 @@ sealed interface AttributeInputType {
     data object TextInput : AttributeInputType
 }
 
+@Immutable
 data class AttributeValidationRules(
     val required: Boolean,
     val numeric: Boolean,
@@ -26,6 +29,7 @@ data class AttributeValidationRules(
     val allowMultipleValues: Boolean,
 )
 
+@Immutable
 @Serializable
 data class OlxAttributeValue(
     val code: String,

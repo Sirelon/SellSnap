@@ -440,15 +440,16 @@ private fun ProfileAvatar(
     avatarUrl: String?,
     fallbackInitial: String?,
 ) {
+    val primaryBright = AppTheme.colors.primaryBright
+    val primary = AppTheme.colors.primary
+    val brush = remember(primaryBright, primary) {
+        Brush.linearGradient(listOf(primaryBright, primary))
+    }
     Box(
         modifier = Modifier
             .size(AppDimens.Size.xl14)
             .clip(CircleShape)
-            .background(
-                Brush.linearGradient(
-                    listOf(AppTheme.colors.primaryBright, AppTheme.colors.primary),
-                ),
-            ),
+            .background(brush),
         contentAlignment = Alignment.Center,
     ) {
         if (!avatarUrl.isNullOrBlank()) {

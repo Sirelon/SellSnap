@@ -1,7 +1,9 @@
 package com.sirelon.sellsnap.features.seller.categories.presentation
 
+import androidx.compose.runtime.Immutable
 import com.sirelon.sellsnap.features.seller.categories.domain.OlxCategory
 
+@Immutable
 data class CategoryDisplayItem(
     val category: OlxCategory,
     val parentChain: String = "",
@@ -9,6 +11,7 @@ data class CategoryDisplayItem(
 
 interface CategoryPickerContract {
 
+    @Immutable
     data class CategoryPickerState(
         val allCategories: List<OlxCategory> = emptyList(),
         val isLoading: Boolean = true,

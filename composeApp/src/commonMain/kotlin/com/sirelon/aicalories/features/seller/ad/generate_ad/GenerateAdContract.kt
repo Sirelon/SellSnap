@@ -1,11 +1,13 @@
 package com.sirelon.sellsnap.features.seller.ad.generate_ad
 
+import androidx.compose.runtime.Immutable
 import com.mohamedrejeb.calf.io.KmpFile
 import com.sirelon.sellsnap.features.media.upload.UploadingItem
 import com.sirelon.sellsnap.features.seller.ad.AdvertisementWithAttributes
 
 interface GenerateAdContract {
 
+    @Immutable
     data class GenerateAdState(
         val prompt: String = "",
         val isLoading: Boolean = false,
