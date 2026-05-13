@@ -1,5 +1,7 @@
 package com.sirelon.sellsnap.features.seller.ad
 
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
@@ -26,6 +28,7 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.scene.DialogSceneStrategy
+import androidx.navigation3.scene.Scene
 import androidx.navigation3.scene.SinglePaneSceneStrategy
 import androidx.navigation3.ui.NavDisplay
 import com.sirelon.sellsnap.designsystem.AppScaffold
@@ -67,6 +70,7 @@ fun AdRootScreen(
 
     // TODO: WHat is it???
     var pendingCategory by remember { mutableStateOf<OlxCategory?>(null) }
+    var isGeneratingAd by remember { mutableStateOf(false) }
     val sceneStrategies = remember {
         listOf(
             BottomSheetSceneStrategy<NavKey>(),
@@ -86,11 +90,13 @@ fun AdRootScreen(
         modifier = Modifier.fillMaxSize(),
         contentWindowInsets = WindowInsets(0.dp),
         bottomBar = {
-            selectedRootTab?.let { selected ->
-                SellerBottomNavigation(
-                    selectedTab = selected,
-                    onTabSelected = { switchRootTab(it) },
-                )
+            if (!isGeneratingAd) {
+                selectedRootTab?.let { selected ->
+                    SellerBottomNavigation(
+                        selectedTab = selected,
+                        onTabSelected = { switchRootTab(it) },
+                    )
+                }
             }
         },
     ) { padding ->
@@ -105,23 +111,36 @@ fun AdRootScreen(
                 backStack = navBackStack,
                 sceneStrategies = sceneStrategies,
                 transitionSpec = {
-                    slideInHorizontally(initialOffsetX = { it }) togetherWith
-                            slideOutHorizontally(targetOffsetX = { -it })
+                    if (isTopLevelTransition(initialState, targetState)) {
+                        fadeIn() togetherWith fadeOut()
+                    } else {
+                        slideInHorizontally(initialOffsetX = { it }) togetherWith
+                                slideOutHorizontally(targetOffsetX = { -it })
+                    }
                 },
                 popTransitionSpec = {
-                    slideInHorizontally(initialOffsetX = { -it }) togetherWith
-                            slideOutHorizontally(targetOffsetX = { it })
+                    if (isTopLevelTransition(initialState, targetState)) {
+                        fadeIn() togetherWith fadeOut()
+                    } else {
+                        slideInHorizontally(initialOffsetX = { -it }) togetherWith
+                                slideOutHorizontally(targetOffsetX = { it })
+                    }
                 },
                 entryDecorators = listOf(rememberSaveableStateHolderNavEntryDecorator<NavKey>()),
                 entryProvider = entryProvider<NavKey> {
-                    entry<AdDestination.GenerateAd> {
+                    entry<AdDestination.GenerateAd>(
+                        metadata = topLevelMetadata,
+                    ) {
                         GenerateAdScreen(
                             openAdPreview = { navBackStack.add(AdDestination.PreviewAd(it)) },
                             onWhisperClick = { navBackStack.add(AdDestination.WhisperDemo) },
+                            onLoadingChanged = { isGeneratingAd = it },
                         )
                     }
 
-                    entry<AdDestination.MyAdverts> {
+                    entry<AdDestination.MyAdverts>(
+                        metadata = topLevelMetadata,
+                    ) {
                         MyAdvertsScreenRoute(
                             onConnectOlxClick = onConnectOlxClick,
                             onCreateListingClick = { switchRootTab(SellerRootTab.GenerateAd) },
@@ -165,7 +184,9 @@ fun AdRootScreen(
                         )
                     }
 
-                    entry<AdDestination.Profile> { destination ->
+                    entry<AdDestination.Profile>(
+                        metadata = topLevelMetadata,
+                    ) { destination ->
                         ProfileScreenRoute(
                             onBack = if (destination.reason == null) {
                                 null
@@ -213,6 +234,15 @@ fun AdRootScreen(
         }
     }
 }
+
+private const val TOP_LEVEL_METADATA_KEY = "sellsnap.topLevel"
+private val topLevelMetadata: Map<String, Any> = mapOf(TOP_LEVEL_METADATA_KEY to true)
+
+private fun isTopLevelTransition(
+    initial: Scene<NavKey>,
+    target: Scene<NavKey>,
+): Boolean = initial.metadata[TOP_LEVEL_METADATA_KEY] == true &&
+        target.metadata[TOP_LEVEL_METADATA_KEY] == true
 
 private enum class SellerRootTab(val destination: AdDestination) {
     GenerateAd(AdDestination.GenerateAd),
