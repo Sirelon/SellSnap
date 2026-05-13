@@ -217,6 +217,12 @@ private fun GenerateAdScreenContent(
                 PageTitle()
             }
 
+            state.errorMessage?.let { errorMessage ->
+                item {
+                    ErrorMessageCard(message = errorMessage)
+                }
+            }
+
             item {
                 PhotosGrid(
                     files = state.uploads,
@@ -247,18 +253,27 @@ private fun GenerateAdScreenContent(
                     onValueChange = onPromptChanged,
                 )
             }
-
-            state.errorMessage?.let { errorMessage ->
-                item {
-                    Text(
-                        text = errorMessage,
-                        color = AppTheme.colors.error,
-                        fontSize = AppDimens.TextSize.xl2,
-                        fontWeight = FontWeight.Medium,
-                    )
-                }
-            }
         }
+    }
+}
+
+@Composable
+private fun ErrorMessageCard(
+    message: String,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(AppDimens.BorderRadius.xl3),
+        color = AppTheme.colors.error.copy(alpha = 0.12f),
+    ) {
+        Text(
+            text = message,
+            modifier = Modifier.padding(AppDimens.Spacing.xl3),
+            style = AppTheme.typography.body,
+            fontWeight = FontWeight.Medium,
+            color = AppTheme.colors.error,
+        )
     }
 }
 

@@ -43,6 +43,7 @@ import kotlinx.serialization.json.Json
 private const val GuestProcessingStepCount = 3
 private const val AuthenticatedProcessingStepCount = 5
 private const val GenerateAdSavedStateKey = "generate_ad_saved_state"
+private const val OpenAIRequestFailedPrefix = "OpenAI request failed:"
 
 class GenerateAdViewModel(
     private val mediaUploadHelper: MediaUploadHelper,
@@ -177,7 +178,11 @@ class GenerateAdViewModel(
                 postEffect(GenerateAdContract.GenerateAdEffect.OpenAdPreview(ad = it))
             }
             .catch { error ->
-                showError(getString(Res.string.error_generate_ad_failed))
+                val message = error.toGenerateAdErrorMessage(
+                    defaultMessage = getString(Res.string.error_generate_ad_failed),
+                )
+                setState { it.copy(isLoading = false) }
+                showError(message)
             }
             .onCompletion {
                 setState { it.copy(isLoading = false) }
@@ -312,6 +317,15 @@ class GenerateAdViewModel(
         setState { it.copy(errorMessage = message) }
         postEffect(GenerateAdContract.GenerateAdEffect.ShowMessage(message))
     }
+
+    private fun Throwable.toGenerateAdErrorMessage(defaultMessage: String): String =
+        message
+            ?.trim()
+            ?.takeIf { it.startsWith(OpenAIRequestFailedPrefix) }
+            ?.removePrefix(OpenAIRequestFailedPrefix)
+            ?.trim()
+            ?.takeIf { it.isNotEmpty() }
+            ?: defaultMessage
 
     private fun updateUpload(
         file: KmpFile,
