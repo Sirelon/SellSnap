@@ -173,9 +173,7 @@ fun PreviewAdScreen(
     showImagesPreview: (List<String>, Int) -> Unit,
     onNavigateToProfile: (String) -> Unit = {},
 ) {
-    val viewModel: PreviewAdViewModel = koinViewModel(
-        key = "preview-ad-${advertisement.hashCode()}",
-    ) { parametersOf(advertisement) }
+    val viewModel: PreviewAdViewModel = koinViewModel { parametersOf(advertisement) }
     val snackbarHostState = remember { SnackbarHostState() }
     val navBackStack = rememberNavBackStack(
         previewNavigationSavedStateConfiguration,

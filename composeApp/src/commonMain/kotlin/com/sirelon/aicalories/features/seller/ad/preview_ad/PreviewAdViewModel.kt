@@ -28,7 +28,6 @@ import com.sirelon.sellsnap.features.seller.categories.domain.AttributeInputType
 import com.sirelon.sellsnap.features.seller.categories.domain.AttributeValidationResult
 import com.sirelon.sellsnap.features.seller.categories.domain.AttributeValidator
 import com.sirelon.sellsnap.features.seller.categories.domain.OlxCategory
-import com.sirelon.sellsnap.features.seller.location.OlxLocation
 import com.sirelon.sellsnap.features.seller.location.data.LocationRepository
 import com.sirelon.sellsnap.generated.resources.Res
 import com.sirelon.sellsnap.generated.resources.error_attributes_load_failed
@@ -41,8 +40,10 @@ import com.sirelon.sellsnap.generated.resources.validation_error_desc_too_short
 import com.sirelon.sellsnap.generated.resources.validation_error_title_too_short
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
@@ -77,8 +78,22 @@ class PreviewAdViewModel(
     val descriptionState = TextFieldState(restoredSavedState.description ?: advertisement.description)
 
     private val selectedCategoryId = MutableStateFlow<Int?>(null)
+    private val publishSuccessData = MutableStateFlow(restoredSavedState.publishSuccessData)
 
     init {
+        combine(
+            state,
+            snapshotFlow { titleState.text.toString() },
+            snapshotFlow { descriptionState.text.toString() },
+            publishSuccessData,
+        ) { snapshot, title, description, successData ->
+            toSavedState(snapshot, title, description, successData)
+        }
+            .drop(1)
+            .distinctUntilChanged()
+            .onEach { savedStateHandle[PreviewAdSavedStateKey] = json.encodeToString(it) }
+            .launchIn(viewModelScope)
+
         viewModelScope.launch {
             val restoredCategoryId = restoredSavedState.selectedCategoryId
             if (restoredCategoryId != null) {
@@ -90,21 +105,10 @@ class PreviewAdViewModel(
             val savedLocation = restoredSavedState.location ?: locationRepository.getSavedLocation()
             if (savedLocation != null) {
                 setState { it.copy(location = savedLocation) }
-                persistCurrentState()
             }
 
             val isGuest = authRepository.currentSession().mode == SellerSessionMode.Guest
             setState { it.copy(isGuest = isGuest, isSessionResolved = true) }
-
-            snapshotFlow { titleState.text.toString() }
-                .distinctUntilChanged()
-                .onEach { persistCurrentState(title = it) }
-                .launchIn(viewModelScope)
-
-            snapshotFlow { descriptionState.text.toString() }
-                .distinctUntilChanged()
-                .onEach { persistCurrentState(description = it) }
-                .launchIn(viewModelScope)
 
             if (isGuest) return@launch
 
@@ -154,7 +158,6 @@ class PreviewAdViewModel(
                             }
                         )
                     }
-                    persistCurrentState()
                 }
                 .catch {
                     setState { state -> state.copy(attributeItems = emptyList()) }
@@ -188,7 +191,6 @@ class PreviewAdViewModel(
                         minPrice = it.minPrice.coerceAtMost(event.price),
                     )
                 }
-                persistCurrentState(price = event.price)
             }
 
             FetchLocation -> viewModelScope.launch {
@@ -223,7 +225,7 @@ class PreviewAdViewModel(
                 val updatedItems = currentState.attributeItems.toMutableList()
                 updatedItems[index] = item.copy(selectedValues = event.values, error = error)
                 currentState.copy(attributeItems = updatedItems)
-            }.also { persistCurrentState() }
+            }
         }
     }
 
@@ -232,7 +234,6 @@ class PreviewAdViewModel(
         try {
             val location = locationRepository.fetchUserLocation()
             setState { it.copy(location = location, locationLoading = false) }
-            persistCurrentState(location = location)
         } catch (e: Exception) {
             setState { it.copy(locationLoading = false) }
             postEffect(ShowMessage(getString(Res.string.error_location_fetch_failed)))
@@ -307,7 +308,7 @@ class PreviewAdViewModel(
                 totalElapsedMs = adFlowTimerStore.totalElapsedMs(),
                 status = data.status,
             )
-            persistCurrentState(publishSuccessData = successData)
+            publishSuccessData.value = successData
             postEffect(PreviewAdEffect.PublishSuccess(successData))
         } catch (error: Throwable) {
             val olxError = (error as? OlxApiException)?.error
@@ -335,7 +336,6 @@ class PreviewAdViewModel(
             )
         }
         selectedCategoryId.value = category.id
-        persistCurrentState(selectedCategoryId = category.id)
     }
 
     private fun readSavedState(): PreviewAdSavedState =
@@ -343,26 +343,23 @@ class PreviewAdViewModel(
             ?.let { runCatching { json.decodeFromString<PreviewAdSavedState>(it) }.getOrNull() }
             ?: PreviewAdSavedState()
 
-    private fun persistCurrentState(
-        title: String = titleState.text.toString(),
-        description: String = descriptionState.text.toString(),
-        price: Float = currentState().price,
-        selectedCategoryId: Int? = currentState().selectedCategory?.id,
-        location: OlxLocation? = currentState().location,
-        publishSuccessData: PublishSuccessData? = readSavedState().publishSuccessData,
-    ) {
-        val attributeValues = currentState().attributeItems
+    private fun toSavedState(
+        state: PreviewAdState,
+        title: String,
+        description: String,
+        successData: PublishSuccessData?,
+    ): PreviewAdSavedState {
+        val attributeValues = state.attributeItems
             .associate { it.attribute.code to it.selectedValues }
             .ifEmpty { readSavedState().attributeValues }
-        val savedState = PreviewAdSavedState(
+        return PreviewAdSavedState(
             title = title,
             description = description,
-            price = price,
-            selectedCategoryId = selectedCategoryId,
+            price = state.price,
+            selectedCategoryId = state.selectedCategory?.id,
             attributeValues = attributeValues,
-            location = location,
-            publishSuccessData = publishSuccessData,
+            location = state.location,
+            publishSuccessData = successData,
         )
-        savedStateHandle[PreviewAdSavedStateKey] = json.encodeToString(savedState)
     }
 }
