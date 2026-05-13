@@ -15,6 +15,9 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.TextFieldLineLimits
@@ -296,6 +299,7 @@ fun PreviewAdScreen(
 }
 
 @Composable
+@OptIn(ExperimentalFoundationApi::class)
 private fun PreviewAdContentRoute(
     viewModel: PreviewAdViewModel,
     snackbarHostState: SnackbarHostState,
@@ -347,10 +351,25 @@ private fun PreviewAdContentRoute(
         }
     }
     val isValid = validationErrors.isEmpty()
+    val firstInvalidAttributeCode = state.attributeItems
+        .firstOrNull { item ->
+            item.error != null || (item.attribute.validationRules.required && item.selectedValues.isEmpty())
+        }
+        ?.attribute
+        ?.code
 
     var showErrors by remember { mutableStateOf(false) }
+    var autoOpenAttributeCode by remember { mutableStateOf<String?>(null) }
+    var autoOpenAttributeRequest by remember { mutableStateOf(0) }
     val scrollState = rememberScrollState()
     val coroutineScope = rememberCoroutineScope()
+    val invalidAttributeBringIntoViewRequester = remember { BringIntoViewRequester() }
+
+    LaunchedEffect(autoOpenAttributeRequest) {
+        if (autoOpenAttributeRequest > 0) {
+            invalidAttributeBringIntoViewRequester.bringIntoView()
+        }
+    }
 
     AppScaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -385,8 +404,13 @@ private fun PreviewAdContentRoute(
                         onClick = {
                             if (!isValid) {
                                 showErrors = true
-                                coroutineScope.launch { scrollState.animateScrollTo(0) }
-                                // TODO(SIR-34): auto-open the first failing required attribute editor
+                                val attributeCode = firstInvalidAttributeCode
+                                if (attributeCode != null) {
+                                    autoOpenAttributeCode = attributeCode
+                                    autoOpenAttributeRequest += 1
+                                } else {
+                                    coroutineScope.launch { scrollState.animateScrollTo(0) }
+                                }
                             } else {
                                 onPublishConfirmationRequested()
                             }
@@ -433,6 +457,9 @@ private fun PreviewAdContentRoute(
                 titleState = viewModel.titleState,
                 descriptionState = viewModel.descriptionState,
                 locationPermissionController = if (state.isSessionResolved && !state.isGuest) locationPermissionController else null,
+                autoOpenAttributeCode = autoOpenAttributeCode,
+                autoOpenAttributeRequest = autoOpenAttributeRequest,
+                autoOpenAttributeModifier = Modifier.bringIntoViewRequester(invalidAttributeBringIntoViewRequester),
             )
             if (state.isSessionResolved && !state.isGuest) {
                 ValidationStatusCard(
@@ -656,6 +683,9 @@ private fun PreviewAdContent(
     descriptionState: TextFieldState,
     state: PreviewAdContract.PreviewAdState,
     onEvent: (PreviewAdEvent) -> Unit,
+    autoOpenAttributeCode: String?,
+    autoOpenAttributeRequest: Int,
+    autoOpenAttributeModifier: Modifier,
     locationPermissionController: PermissionController? = null,
 ) {
     val titleText = titleState.text.toString()
@@ -712,6 +742,9 @@ private fun PreviewAdContent(
                 AdAttributesCard(
                     items = state.attributeItems,
                     onEvent = onEvent,
+                    autoOpenAttributeCode = autoOpenAttributeCode,
+                    autoOpenAttributeRequest = autoOpenAttributeRequest,
+                    autoOpenAttributeModifier = autoOpenAttributeModifier,
                 )
             }
 
@@ -731,12 +764,13 @@ private fun PreviewAdContent(
 @Composable
 private fun PreviewSectionCard(
     label: String,
+    modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
     headerTrailing: (@Composable () -> Unit)? = null,
     content: @Composable () -> Unit,
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.large,
         onClick = {
             onClick?.invoke()
@@ -973,11 +1007,19 @@ private fun AdCategoryCard(categoryLabel: String, onChangeClick: () -> Unit) {
 private fun AdAttributesCard(
     items: List<OlxAttributeState>,
     onEvent: (PreviewAdEvent) -> Unit,
+    autoOpenAttributeCode: String?,
+    autoOpenAttributeRequest: Int,
+    autoOpenAttributeModifier: Modifier,
+    modifier: Modifier = Modifier,
 ) {
-    PreviewSectionCard(label = stringResource(Res.string.ad_attributes_label)) {
+    PreviewSectionCard(
+        label = stringResource(Res.string.ad_attributes_label),
+        modifier = modifier,
+    ) {
         Column {
             items.forEach { item ->
                 key(item.attribute.code) {
+                    val shouldAutoOpen = item.attribute.code == autoOpenAttributeCode
                     AttributeItem(
                         attribute = item.attribute,
                         selectedValues = item.selectedValues,
@@ -990,6 +1032,12 @@ private fun AdAttributesCard(
                             )
                         },
                         validationError = item.error,
+                        autoOpenRequest = if (shouldAutoOpen) {
+                            autoOpenAttributeRequest
+                        } else {
+                            0
+                        },
+                        modifier = if (shouldAutoOpen) autoOpenAttributeModifier else Modifier,
                     )
                 }
             }

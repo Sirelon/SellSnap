@@ -95,7 +95,7 @@ class PreviewAdViewModel(
                     setState { it.copy(attributes = attributes) }
                 }
                 .catch {
-                    postEffect(ShowMessage(it.message ?: getString(Res.string.error_category_suggestion_failed)))
+                    postEffect(ShowMessage(getString(Res.string.error_category_suggestion_failed)))
                 }
                 .launchIn(viewModelScope)
 
@@ -118,7 +118,7 @@ class PreviewAdViewModel(
                 }
                 .catch {
                     setState { state -> state.copy(attributeItems = emptyList()) }
-                    postEffect(ShowMessage(it.message ?: getString(Res.string.error_attributes_load_failed)))
+                    postEffect(ShowMessage(getString(Res.string.error_attributes_load_failed)))
                 }
                 .launchIn(viewModelScope)
         }
@@ -192,7 +192,7 @@ class PreviewAdViewModel(
             setState { it.copy(location = location, locationLoading = false) }
         } catch (e: Exception) {
             setState { it.copy(locationLoading = false) }
-            postEffect(ShowMessage(e.message ?: getString(Res.string.error_location_fetch_failed)))
+            postEffect(ShowMessage(getString(Res.string.error_location_fetch_failed)))
         }
     }
 
@@ -268,10 +268,9 @@ class PreviewAdViewModel(
         } catch (error: Throwable) {
             val olxError = (error as? OlxApiException)?.error
             if (olxError is OlxApiError.ValidationError && olxError.field.startsWith("contact.")) {
-                postEffect(PreviewAdEffect.NavigateToProfile(olxError.userMessage))
+                postEffect(PreviewAdEffect.NavigateToProfile(getString(Res.string.error_publish_missing_contact_name)))
             } else {
-                val failureMessage = error.message ?: getString(Res.string.error_publish_failed)
-                postEffect(PreviewAdEffect.PublishFailure(failureMessage))
+                postEffect(PreviewAdEffect.PublishFailure(getString(Res.string.error_publish_failed)))
             }
         }
     }
