@@ -15,14 +15,15 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
+import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
+import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.scene.DialogSceneStrategy
 import androidx.navigation3.scene.SinglePaneSceneStrategy
@@ -59,30 +60,18 @@ fun AdRootScreen(
     popToAdRoot: () -> Unit,
 ) {
 
-    val navBackStack = remember {
-        mutableStateListOf<AdDestination>(AdDestination.GenerateAd)
-//        mutableStateListOf<AdDestination>(
-//            AdDestination.PreviewAd(
-//                Advertisement(
-//                    title = "Test",
-//                    description = "Test",
-//                    suggestedPrice = 100.0f,
-//                    images = emptyList(),
-//                    minPrice = 20.0f,
-//                    maxPrice = 200.0f,
-//                    condition = AdCondition.NEW,
-//                )
-//            )
-//        )
-    }
+    val navBackStack = rememberNavBackStack(
+        adNavigationSavedStateConfiguration,
+        AdDestination.GenerateAd,
+    )
 
     // TODO: WHat is it???
     var pendingCategory by remember { mutableStateOf<OlxCategory?>(null) }
     val sceneStrategies = remember {
         listOf(
-            BottomSheetSceneStrategy<AdDestination>(),
-            DialogSceneStrategy<AdDestination>(),
-            SinglePaneSceneStrategy<AdDestination>(),
+            BottomSheetSceneStrategy<NavKey>(),
+            DialogSceneStrategy<NavKey>(),
+            SinglePaneSceneStrategy<NavKey>(),
         )
     }
 
@@ -123,8 +112,8 @@ fun AdRootScreen(
                     slideInHorizontally(initialOffsetX = { -it }) togetherWith
                             slideOutHorizontally(targetOffsetX = { it })
                 },
-                entryDecorators = listOf(rememberSaveableStateHolderNavEntryDecorator<AdDestination>()),
-                entryProvider = entryProvider {
+                entryDecorators = listOf(rememberSaveableStateHolderNavEntryDecorator<NavKey>()),
+                entryProvider = entryProvider<NavKey> {
                     entry<AdDestination.GenerateAd> {
                         GenerateAdScreen(
                             openAdPreview = { navBackStack.add(AdDestination.PreviewAd(it)) },
@@ -231,7 +220,7 @@ private enum class SellerRootTab(val destination: AdDestination) {
     Profile(AdDestination.Profile()),
 }
 
-private fun AdDestination?.toSellerRootTab(): SellerRootTab? = when (this) {
+private fun NavKey?.toSellerRootTab(): SellerRootTab? = when (this) {
     AdDestination.GenerateAd -> SellerRootTab.GenerateAd
     AdDestination.MyAdverts -> SellerRootTab.MyAdverts
     is AdDestination.Profile -> if (reason == null) SellerRootTab.Profile else null

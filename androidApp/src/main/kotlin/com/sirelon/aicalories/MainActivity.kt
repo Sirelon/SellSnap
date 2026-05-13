@@ -11,6 +11,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import com.sirelon.sellsnap.datastore.initAndroidKeyValueStore
 import com.sirelon.sellsnap.designsystem.AppTheme
+import com.sirelon.sellsnap.features.media.upload.initAndroidDraftMediaFileStore
 import com.sirelon.sellsnap.features.seller.ad.publish_success.PublishSuccessData
 import com.sirelon.sellsnap.features.seller.ad.publish_success.PublishSuccessScreen
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAuthCallbackBridge
@@ -26,6 +27,7 @@ class MainActivity : ComponentActivity() {
         }
         super.onCreate(savedInstanceState)
         initAndroidKeyValueStore(filesDir.absolutePath)
+        initAndroidDraftMediaFileStore(filesDir.absolutePath)
         initAndroidUrlOpener(this)
         publishOlxCallback(intent)
 

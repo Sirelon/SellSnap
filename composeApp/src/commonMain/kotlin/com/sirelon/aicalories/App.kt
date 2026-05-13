@@ -4,12 +4,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
+import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import coil3.ImageLoader
@@ -23,6 +23,7 @@ import com.sirelon.sellsnap.features.seller.ad.AdRootScreen
 import com.sirelon.sellsnap.features.seller.auth.presentation.SellerLandingScreenRoute
 import com.sirelon.sellsnap.features.seller.onboarding.OnboardingScreen
 import com.sirelon.sellsnap.navigation.AppDestination
+import com.sirelon.sellsnap.navigation.appNavigationSavedStateConfiguration
 import com.sirelon.sellsnap.startup.AppNavigationViewModel
 import org.koin.compose.KoinApplication
 import org.koin.compose.viewmodel.koinViewModel
@@ -48,10 +49,14 @@ fun App() {
             val navVm: AppNavigationViewModel = koinViewModel()
             val backStackList by navVm.backStack.collectAsStateWithLifecycle()
 
-            // Single stable SnapshotStateList kept in sync with the VM's backstack
-            val navBackStack = remember { mutableStateListOf<AppDestination>(AppDestination.Splash) }
+            val navBackStack = rememberNavBackStack(
+                appNavigationSavedStateConfiguration,
+                AppDestination.Splash,
+            )
             LaunchedEffect(backStackList) {
-                if (navBackStack.toList() != backStackList) {
+                val restoredFromSavedState = navBackStack.toList() != listOf(AppDestination.Splash)
+                val hasResolvedStartup = backStackList != listOf(AppDestination.Splash)
+                if ((hasResolvedStartup || !restoredFromSavedState) && navBackStack.toList() != backStackList) {
                     navBackStack.clear()
                     navBackStack.addAll(backStackList)
                 }
@@ -60,8 +65,8 @@ fun App() {
             NavDisplay(
                 modifier = Modifier.fillMaxSize(),
                 backStack = navBackStack,
-                entryDecorators = listOf(rememberSaveableStateHolderNavEntryDecorator<AppDestination>()),
-                entryProvider = entryProvider<AppDestination> {
+                entryDecorators = listOf(rememberSaveableStateHolderNavEntryDecorator<NavKey>()),
+                entryProvider = entryProvider<NavKey> {
 
                     entry<AppDestination.Splash> {
                         LoadingOverlay(isLoading = true) {}
