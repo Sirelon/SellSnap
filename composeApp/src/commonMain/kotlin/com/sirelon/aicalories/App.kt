@@ -25,7 +25,9 @@ import com.sirelon.sellsnap.features.seller.onboarding.OnboardingScreen
 import com.sirelon.sellsnap.navigation.AppDestination
 import com.sirelon.sellsnap.navigation.appNavigationSavedStateConfiguration
 import com.sirelon.sellsnap.startup.AppNavigationViewModel
+import com.sirelon.sellsnap.startup.AppThemeRepository
 import org.koin.compose.KoinApplication
+import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.dsl.koinConfiguration
 
@@ -45,7 +47,10 @@ fun App() {
             modules(appModule, networkModule)
         },
     ) {
-        AppTheme {
+        val themeRepository: AppThemeRepository = koinInject()
+        val themeMode by themeRepository.themeMode.collectAsStateWithLifecycle()
+
+        AppTheme(themeMode = themeMode) {
             val navVm: AppNavigationViewModel = koinViewModel()
             val backStackList by navVm.backStack.collectAsStateWithLifecycle()
 

@@ -173,6 +173,11 @@
     <string name="profile_olx_account">OLX account</string>
     <string name="profile_location_title">Selling location</string>
     <string name="profile_location_subtitle">We\'ll use this as the default spot for your next listings.</string>
+    <string name="profile_theme_title">Theme</string>
+    <string name="profile_theme_subtitle">Choose how SellSnap looks on this device.</string>
+    <string name="profile_theme_system">System</string>
+    <string name="profile_theme_light">Light</string>
+    <string name="profile_theme_dark">Dark</string>
     <string name="profile_logout">Log out</string>
     <string name="profile_not_provided">Not set</string>
     <string name="profile_value_yes">Yes</string>

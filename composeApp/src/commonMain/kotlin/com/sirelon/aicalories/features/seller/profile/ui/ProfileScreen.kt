@@ -19,6 +19,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -41,6 +43,7 @@ import com.sirelon.sellsnap.designsystem.AppCard
 import com.sirelon.sellsnap.designsystem.AppDimens
 import com.sirelon.sellsnap.designsystem.AppScaffold
 import com.sirelon.sellsnap.designsystem.AppTheme
+import com.sirelon.sellsnap.designsystem.AppThemeMode
 import com.sirelon.sellsnap.designsystem.Cell
 import com.sirelon.sellsnap.designsystem.ObserveAsEvents
 import com.sirelon.sellsnap.designsystem.buttons.AppButton
@@ -88,6 +91,11 @@ import com.sirelon.sellsnap.generated.resources.profile_logout
 import com.sirelon.sellsnap.generated.resources.profile_not_provided
 import com.sirelon.sellsnap.generated.resources.profile_olx_account
 import com.sirelon.sellsnap.generated.resources.profile_screen_title
+import com.sirelon.sellsnap.generated.resources.profile_theme_dark
+import com.sirelon.sellsnap.generated.resources.profile_theme_light
+import com.sirelon.sellsnap.generated.resources.profile_theme_subtitle
+import com.sirelon.sellsnap.generated.resources.profile_theme_system
+import com.sirelon.sellsnap.generated.resources.profile_theme_title
 import com.sirelon.sellsnap.generated.resources.profile_value_no
 import com.sirelon.sellsnap.generated.resources.profile_value_yes
 import com.sirelon.sellsnap.generated.resources.retry
@@ -238,6 +246,13 @@ private fun ProfileScreen(
                 onChangeLocation = onChangeLocation,
             )
 
+            ThemeCard(
+                themeMode = state.themeMode,
+                onThemeModeSelected = { themeMode ->
+                    onEvent(ProfileEvent.ThemeModeSelected(themeMode))
+                },
+            )
+
             state.errorMessage?.let { message ->
                 Text(
                     text = message,
@@ -349,6 +364,69 @@ private fun AccountCard(
         }
     }
 }
+
+@Composable
+private fun ThemeCard(
+    themeMode: AppThemeMode,
+    onThemeModeSelected: (AppThemeMode) -> Unit,
+) {
+    AppCard(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(vertical = AppDimens.Spacing.xl2),
+        ) {
+            Column(
+                modifier = Modifier.padding(
+                    horizontal = AppDimens.Spacing.xl5,
+                    vertical = AppDimens.Spacing.xl3,
+                ),
+                verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.xs),
+            ) {
+                Text(
+                    text = stringResource(Res.string.profile_theme_title),
+                    style = AppTheme.typography.title,
+                    color = AppTheme.colors.onSurface,
+                )
+                Text(
+                    text = stringResource(Res.string.profile_theme_subtitle),
+                    style = AppTheme.typography.body,
+                    color = AppTheme.colors.onSurfaceMuted,
+                )
+            }
+
+            AppThemeMode.entries.forEach { option ->
+                Cell(
+                    headline = {
+                        Text(
+                            text = stringResource(option.labelResource),
+                            style = AppTheme.typography.body,
+                            color = AppTheme.colors.onSurface,
+                        )
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    transparent = true,
+                    onClick = { onThemeModeSelected(option) },
+                    trailing = {
+                        RadioButton(
+                            selected = themeMode == option,
+                            onClick = null,
+                            colors = RadioButtonDefaults.colors(
+                                selectedColor = AppTheme.colors.primary,
+                                unselectedColor = AppTheme.colors.onSurfaceMuted,
+                            ),
+                        )
+                    },
+                )
+            }
+        }
+    }
+}
+
+private val AppThemeMode.labelResource
+    get() = when (this) {
+        AppThemeMode.System -> Res.string.profile_theme_system
+        AppThemeMode.Light -> Res.string.profile_theme_light
+        AppThemeMode.Dark -> Res.string.profile_theme_dark
+    }
 
 @Composable
 private fun LocationCard(
