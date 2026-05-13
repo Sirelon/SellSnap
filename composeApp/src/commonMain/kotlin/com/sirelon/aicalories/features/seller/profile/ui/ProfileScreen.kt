@@ -97,7 +97,7 @@ import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun ProfileScreenRoute(
-    onBack: () -> Unit,
+    onBack: (() -> Unit)?,
     onOpenOlxAuth: (String) -> Unit,
     onLogout: () -> Unit,
     reason: String? = null,
@@ -171,7 +171,7 @@ fun ProfileScreenRoute(
 private fun ProfileScreen(
     state: ProfileContract.ProfileState,
     snackbarHostState: SnackbarHostState,
-    onBack: () -> Unit,
+    onBack: (() -> Unit)?,
     onEvent: (ProfileEvent) -> Unit,
     onChangeLocation: () -> Unit,
     reason: String? = null,
@@ -183,11 +183,13 @@ private fun ProfileScreen(
             TopAppBar(
                 title = { Text(stringResource(Res.string.profile_screen_title)) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            painter = painterResource(Res.drawable.ic_arrow_left),
-                            contentDescription = stringResource(Res.string.back),
-                        )
+                    onBack?.let {
+                        IconButton(onClick = it) {
+                            Icon(
+                                painter = painterResource(Res.drawable.ic_arrow_left),
+                                contentDescription = stringResource(Res.string.back),
+                            )
+                        }
                     }
                 },
                 actions = {
