@@ -321,6 +321,7 @@ class GenerateAdViewModel(
     private fun Throwable.toGenerateAdErrorMessage(defaultMessage: String): String =
         message
             ?.trim()
+            ?.takeIf { it.startsWith(OpenAIRequestFailedPrefix) }
             ?.removePrefix(OpenAIRequestFailedPrefix)
             ?.trim()
             ?.takeIf { it.isNotEmpty() }
