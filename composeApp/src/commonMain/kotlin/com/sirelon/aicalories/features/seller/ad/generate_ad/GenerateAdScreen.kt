@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -38,6 +37,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -47,12 +47,12 @@ import androidx.navigationevent.compose.rememberNavigationEventState
 import com.mohamedrejeb.calf.io.KmpFile
 import com.mohamedrejeb.calf.permissions.Camera
 import com.mohamedrejeb.calf.permissions.Permission
-import com.sirelon.sellsnap.designsystem.AppAsyncImage
 import com.sirelon.sellsnap.designsystem.AppDimens
 import com.sirelon.sellsnap.designsystem.AppTheme
 import com.sirelon.sellsnap.designsystem.IconWithBackground
 import com.sirelon.sellsnap.designsystem.Input
 import com.sirelon.sellsnap.designsystem.ObserveAsEvents
+import com.sirelon.sellsnap.designsystem.performStepFeedback
 import com.sirelon.sellsnap.designsystem.buttons.AppButton
 import com.sirelon.sellsnap.designsystem.buttons.AppButtonDefaults
 import com.sirelon.sellsnap.features.media.PermissionDialogs
@@ -70,7 +70,6 @@ import com.sirelon.sellsnap.generated.resources.generate_with_ai
 import com.sirelon.sellsnap.generated.resources.ic_check
 import com.sirelon.sellsnap.generated.resources.ic_snap_logo
 import com.sirelon.sellsnap.generated.resources.ic_sparkles
-import com.sirelon.sellsnap.generated.resources.ic_user
 import com.sirelon.sellsnap.generated.resources.new_listing
 import com.sirelon.sellsnap.generated.resources.sellsnap_title
 import com.sirelon.sellsnap.generated.resources.snap_photo_ad_desc
@@ -89,7 +88,6 @@ private const val MAX_PROMPT_CHARS = 120
 @Composable
 fun GenerateAdScreen(
     openAdPreview: (AdvertisementWithAttributes) -> Unit,
-    onProfileClick: () -> Unit,
     onWhisperClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -122,6 +120,8 @@ fun GenerateAdScreen(
         }
     }
 
+    val hapticFeedback = LocalHapticFeedback.current
+
     AnimatedContent(state.isLoading) {
         if (it) {
             AiProcessingScreen(
@@ -142,9 +142,9 @@ fun GenerateAdScreen(
                     viewModel.onEvent(GenerateAdContract.GenerateAdEvent.RemovePhoto(file))
                 },
                 onSubmitClick = {
+                    hapticFeedback.performStepFeedback()
                     viewModel.onEvent(GenerateAdContract.GenerateAdEvent.Submit)
                 },
-                onProfileClick = onProfileClick,
                 onWhisperClick = onWhisperClick,
                 modifier = modifier,
             )
@@ -165,7 +165,6 @@ private fun GenerateAdScreenContent(
     onUploadClick: () -> Unit,
     onRemovePhoto: (KmpFile) -> Unit,
     onSubmitClick: () -> Unit,
-    onProfileClick: () -> Unit,
     onWhisperClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -176,8 +175,6 @@ private fun GenerateAdScreenContent(
         topBar = {
             SlimHeader(
                 profileName = state.profileName,
-                avatarUrl = state.profileAvatarUrl,
-                onProfileClick = onProfileClick,
                 onWhisperClick = onWhisperClick,
             )
         },
@@ -186,7 +183,6 @@ private fun GenerateAdScreenContent(
                 modifier = Modifier
                     .fillMaxWidth()
                     .imePadding()
-                    .navigationBarsPadding()
                     .padding(AppDimens.Spacing.xl3),
             ) {
                 MagicCtaBar(
@@ -281,8 +277,6 @@ private fun MagicCtaBar(
 @Composable
 private fun SlimHeader(
     profileName: String?,
-    avatarUrl: String?,
-    onProfileClick: () -> Unit,
     onWhisperClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -341,28 +335,6 @@ private fun SlimHeader(
                         contentDescription = "Whisper PoC",
                         tint = AppTheme.colors.onSurface,
                     )
-                }
-            }
-            IconButton(onClick = onProfileClick) {
-                Box(
-                    modifier = Modifier
-                        .size(AppDimens.Size.xl8)
-                        .clip(CircleShape)
-                        .background(AppTheme.colors.surfaceHigh),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    if (!avatarUrl.isNullOrBlank()) {
-                        AppAsyncImage(
-                            model = avatarUrl,
-                            modifier = Modifier.fillMaxSize(),
-                        )
-                    } else {
-                        Icon(
-                            painter = painterResource(Res.drawable.ic_user),
-                            contentDescription = null,
-                            tint = AppTheme.colors.onSurface,
-                        )
-                    }
                 }
             }
         }
@@ -595,7 +567,6 @@ private fun GenerateAdScreenEmptyPreview() {
             onUploadClick = {},
             onRemovePhoto = {},
             onSubmitClick = {},
-            onProfileClick = {},
             onWhisperClick = {},
         )
     }
@@ -615,7 +586,6 @@ private fun GenerateAdScreenWithPromptPreview() {
             onUploadClick = {},
             onRemovePhoto = {},
             onSubmitClick = {},
-            onProfileClick = {},
             onWhisperClick = {},
         )
     }

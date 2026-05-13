@@ -45,7 +45,7 @@ class OlxAuthRepositoryTest {
 
         assertContains(request.url, "response_type=code")
         assertContains(request.url, "client_id=test-client-id")
-        assertContains(request.url, "scope=read+write+v2")
+        assertContains(request.url, "scope=v2+read+write")
         assertContains(request.url, "redirect_uri=selolxai%3A%2F%2Folx-auth%2Fcallback")
         assertTrue(request.state.isNotBlank())
         assertEquals(savedSession?.state, request.state)

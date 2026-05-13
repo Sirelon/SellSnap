@@ -4,9 +4,13 @@ import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 
 internal fun HapticFeedback.performStepFeedback() {
-    performHapticFeedback(HapticFeedbackType.TextHandleMove)
+    performHapticFeedback(HapticFeedbackType.ToggleOn)
 }
 
 internal fun HapticFeedback.performSuccessFeedback() {
-    performHapticFeedback(HapticFeedbackType.LongPress)
+    performHapticFeedback(HapticFeedbackType.Confirm)
+}
+
+internal fun HapticFeedback.performErrorFeedback() {
+    performHapticFeedback(HapticFeedbackType.Reject)
 }

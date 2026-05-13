@@ -6,6 +6,7 @@ import com.sirelon.sellsnap.features.seller.ad.generate_ad.di.generateAdModule
 import com.sirelon.sellsnap.features.seller.ad.preview_ad.di.previewAdModule
 import com.sirelon.sellsnap.features.seller.auth.di.sellerAuthModule
 import com.sirelon.sellsnap.features.seller.categories.categoriesModule
+import com.sirelon.sellsnap.features.seller.my_ads.di.myAdvertsModule
 import com.sirelon.sellsnap.features.seller.openai.OpenAIClient
 import com.sirelon.sellsnap.features.seller.profile.di.profileModule
 import com.sirelon.sellsnap.features.seller.whisper.di.whisperModule
@@ -32,6 +33,7 @@ val appModule = module {
         generateAdModule,
         previewAdModule,
         profileModule,
+        myAdvertsModule,
         whisperModule,
         appStartupModule,
         categoriesModule,

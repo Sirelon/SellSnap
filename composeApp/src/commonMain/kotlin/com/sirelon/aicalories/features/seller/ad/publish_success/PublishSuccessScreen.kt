@@ -189,6 +189,15 @@ private fun advertStatusText(status: AdvertStatus): Pair<String, String> = when 
             stringResource(Res.string.publish_success_status_new_caption)
     AdvertStatus.Limited -> stringResource(Res.string.publish_success_status_limited) to
             stringResource(Res.string.publish_success_status_limited_caption)
+    AdvertStatus.Active,
+    AdvertStatus.RemovedByUser,
+    AdvertStatus.Outdated,
+    AdvertStatus.Unconfirmed,
+    AdvertStatus.Unpaid,
+    AdvertStatus.Moderated,
+    AdvertStatus.Blocked,
+    AdvertStatus.Disabled,
+    AdvertStatus.RemovedByModerator,
     AdvertStatus.Unknown -> stringResource(Res.string.publish_success_status_unknown) to
             stringResource(Res.string.publish_success_status_unknown_caption)
 }
@@ -335,6 +344,15 @@ private fun AnimatedTitle(status: AdvertStatus, modifier: Modifier = Modifier) {
     val subtitle = when (status) {
         AdvertStatus.New -> stringResource(Res.string.publish_success_subtitle_new)
         AdvertStatus.Limited -> stringResource(Res.string.publish_success_subtitle_limited)
+        AdvertStatus.Active,
+        AdvertStatus.RemovedByUser,
+        AdvertStatus.Outdated,
+        AdvertStatus.Unconfirmed,
+        AdvertStatus.Unpaid,
+        AdvertStatus.Moderated,
+        AdvertStatus.Blocked,
+        AdvertStatus.Disabled,
+        AdvertStatus.RemovedByModerator,
         AdvertStatus.Unknown -> stringResource(Res.string.publish_success_subtitle)
     }
     TitleWithSubtitle(

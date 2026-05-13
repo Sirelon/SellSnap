@@ -54,6 +54,7 @@ import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.PreviewLightDark
@@ -71,6 +72,8 @@ import com.sirelon.sellsnap.designsystem.AppCard
 import com.sirelon.sellsnap.designsystem.AppDimens
 import com.sirelon.sellsnap.designsystem.AppScaffold
 import com.sirelon.sellsnap.designsystem.AppTheme
+import com.sirelon.sellsnap.designsystem.performErrorFeedback
+import com.sirelon.sellsnap.designsystem.performSuccessFeedback
 import com.sirelon.sellsnap.designsystem.DigitOnlyInputTransformation
 import com.sirelon.sellsnap.designsystem.ErrorPill
 import com.sirelon.sellsnap.designsystem.ObserveAsEvents
@@ -365,6 +368,7 @@ private fun PreviewAdContentRoute(
         ?.attribute
         ?.code
 
+    val hapticFeedback = LocalHapticFeedback.current
     var showErrors by remember { mutableStateOf(false) }
     var autoOpenAttributeCode by remember { mutableStateOf<String?>(null) }
     var autoOpenAttributeRequest by remember { mutableStateOf(0) }
@@ -410,6 +414,7 @@ private fun PreviewAdContentRoute(
                         trailingIcon = painterResource(Res.drawable.ic_arrow_right),
                         onClick = {
                             if (!isValid) {
+                                hapticFeedback.performErrorFeedback()
                                 showErrors = true
                                 val attributeCode = firstInvalidAttributeCode
                                 if (attributeCode != null) {
@@ -419,6 +424,7 @@ private fun PreviewAdContentRoute(
                                     coroutineScope.launch { scrollState.animateScrollTo(0) }
                                 }
                             } else {
+                                hapticFeedback.performSuccessFeedback()
                                 onPublishConfirmationRequested()
                             }
                         },

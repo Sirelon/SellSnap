@@ -13,6 +13,9 @@ sealed interface AdDestination : NavKey {
     data object WhisperDemo : AdDestination
 
     @Serializable
+    data object MyAdverts : AdDestination
+
+    @Serializable
     data class PreviewAd(val advertisement: AdvertisementWithAttributes) : AdDestination
 
     @Serializable
