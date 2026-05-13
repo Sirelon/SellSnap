@@ -265,10 +265,9 @@ fun PreviewAdScreen(
                     rememberNavigationEventState(currentInfo = NavigationEventInfo.None)
                 NavigationBackHandler(
                     state = backHandlerState,
+                    isBackEnabled = navBackStack.lastOrNull() is PreviewAdDestination.Content,
                     onBackCompleted = {
-                        if (navBackStack.lastOrNull() !is PreviewAdDestination.BackInfo) {
-                            navBackStack.add(PreviewAdDestination.BackInfo)
-                        }
+                        navBackStack.add(PreviewAdDestination.BackInfo)
                     },
                 )
                 PreviewAdContentRoute(
