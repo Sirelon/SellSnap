@@ -13,6 +13,7 @@ import com.sirelon.sellsnap.features.seller.auth.data.createOlxHttpClient
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxApiError
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxAuthCallback
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxApiException
+import com.sirelon.sellsnap.features.seller.auth.domain.OlxAdvertStatus
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxTokens
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
@@ -305,6 +306,162 @@ class OlxApiClientTest {
         }
         assertEquals(1, refreshRequestCount)
         assertNull(tokenStore.read())
+    }
+
+    @Test
+    fun `getCurrentUserAdverts attaches auth headers paging params and maps adverts`() = runBlocking {
+        var authorizationHeader: String? = null
+        var versionHeader: String? = null
+        var offsetParameter: String? = null
+        var limitParameter: String? = null
+        val engine = MockEngine { request ->
+            authorizationHeader = request.headers[HttpHeaders.Authorization]
+            versionHeader = request.headers["Version"]
+            offsetParameter = request.url.parameters["offset"]
+            limitParameter = request.url.parameters["limit"]
+            respond(
+                content = """
+                    {
+                      "data": [
+                        {
+                          "id": 1001,
+                          "status": "active",
+                          "url": "https://www.olx.ua/d/uk/obyavlenie/bike-ID1001.html",
+                          "created_at": "2026-05-01T10:00:00+03:00",
+                          "valid_to": "2026-06-01T10:00:00+03:00",
+                          "title": "City bike",
+                          "images": [
+                            { "url": "https://example.com/bike.jpg" }
+                          ],
+                          "price": {
+                            "value": 1500,
+                            "currency": "UAH",
+                            "negotiable": false
+                          }
+                        },
+                        {
+                          "id": null,
+                          "title": "Missing identity"
+                        },
+                        {
+                          "id": 1002,
+                          "status": "limited",
+                          "url": null,
+                          "created_at": null,
+                          "valid_to": null,
+                          "title": null,
+                          "images": [
+                            { "url": "" },
+                            { "url": "https://example.com/phone.jpg" }
+                          ],
+                          "price": {
+                            "value": null,
+                            "currency": "UAH",
+                            "negotiable": null
+                          }
+                        }
+                      ]
+                    }
+                """.trimIndent(),
+                status = HttpStatusCode.OK,
+                headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
+            )
+        }
+        val tokenStore = OlxTokenStore(InMemoryOlxKeyValueStore(), testJson).apply {
+            write(
+                OlxTokens(
+                    accessToken = "active-token",
+                    refreshToken = "refresh-token",
+                    expiresInSeconds = 86_400,
+                    tokenType = "bearer",
+                    scope = "v2 read write",
+                    issuedAtEpochSeconds = 4_102_444_800,
+                ),
+            )
+        }
+        val errorParser = OlxRemoteErrorParser(testJson)
+        val apiClient = OlxApiClient(
+            httpClient = createOlxAuthorizedHttpClient(
+                authRefreshClient = createOlxHttpClient(engine),
+                credentialsProvider = TestCredentialsProvider(),
+                tokenStore = tokenStore,
+                authSessionStore = OlxAuthSessionStore(InMemoryOlxKeyValueStore(), testJson),
+                errorParser = errorParser,
+                engine = engine,
+            ),
+            json = testJson,
+            errorParser = errorParser,
+        )
+
+        val adverts = apiClient.getCurrentUserAdverts(offset = 50, limit = 25)
+
+        assertEquals("Bearer active-token", authorizationHeader)
+        assertEquals("2.0", versionHeader)
+        assertEquals("50", offsetParameter)
+        assertEquals("25", limitParameter)
+        assertEquals(2, adverts.size)
+        assertEquals(1001L, adverts[0].id)
+        assertEquals("City bike", adverts[0].title)
+        assertEquals(OlxAdvertStatus.Active, adverts[0].status)
+        assertEquals("https://www.olx.ua/d/uk/obyavlenie/bike-ID1001.html", adverts[0].url)
+        assertEquals("https://example.com/bike.jpg", adverts[0].primaryImageUrl)
+        assertEquals(1500f, adverts[0].price?.value)
+        assertEquals("UAH", adverts[0].price?.currency)
+        assertEquals(false, adverts[0].price?.negotiable)
+        assertEquals(1002L, adverts[1].id)
+        assertEquals("", adverts[1].title)
+        assertEquals(OlxAdvertStatus.Limited, adverts[1].status)
+        assertEquals("", adverts[1].url)
+        assertEquals("https://example.com/phone.jpg", adverts[1].primaryImageUrl)
+        assertNull(adverts[1].price)
+    }
+
+    @Test
+    fun `getCurrentUserAdverts surfaces olx api errors`() = runBlocking {
+        val engine = MockEngine {
+            respond(
+                content = """
+                    {
+                      "error": "insufficient_scope",
+                      "error_description": "Token does not include advert read scope"
+                    }
+                """.trimIndent(),
+                status = HttpStatusCode.Forbidden,
+                headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
+            )
+        }
+        val tokenStore = OlxTokenStore(InMemoryOlxKeyValueStore(), testJson).apply {
+            write(
+                OlxTokens(
+                    accessToken = "active-token",
+                    refreshToken = "refresh-token",
+                    expiresInSeconds = 86_400,
+                    tokenType = "bearer",
+                    scope = "v2 read write",
+                    issuedAtEpochSeconds = 4_102_444_800,
+                ),
+            )
+        }
+        val errorParser = OlxRemoteErrorParser(testJson)
+        val apiClient = OlxApiClient(
+            httpClient = createOlxAuthorizedHttpClient(
+                authRefreshClient = createOlxHttpClient(engine),
+                credentialsProvider = TestCredentialsProvider(),
+                tokenStore = tokenStore,
+                authSessionStore = OlxAuthSessionStore(InMemoryOlxKeyValueStore(), testJson),
+                errorParser = errorParser,
+                engine = engine,
+            ),
+            json = testJson,
+            errorParser = errorParser,
+        )
+
+        val exception = assertFailsWith<OlxApiException> {
+            apiClient.getCurrentUserAdverts(offset = 0, limit = 50)
+        }
+
+        assertIs<OlxApiError.InsufficientScope>(exception.error)
+        Unit
     }
 
     @Test

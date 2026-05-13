@@ -179,6 +179,36 @@
     <string name="profile_value_no">No</string>
     <string name="from_note">From note</string>
 
+    <!-- My OLX Ads -->
+    <string name="nav_my_ads">My ads</string>
+    <string name="my_ads_screen_title">My OLX ads</string>
+    <string name="my_ads_screen_subtitle">Published listings from your connected OLX account.</string>
+    <string name="my_ads_empty_title">No OLX ads yet</string>
+    <string name="my_ads_empty_description">Create your first listing in SellSnap and it will show up here after publishing.</string>
+    <string name="my_ads_create_listing">New listing</string>
+    <string name="my_ads_connect_title">Connect OLX to see your ads</string>
+    <string name="my_ads_connect_description">Your published OLX listings will appear here after you connect an account.</string>
+    <string name="my_ads_connect_action">Connect OLX</string>
+    <string name="my_ads_load_more">Load more</string>
+    <string name="my_ads_created_at">Created</string>
+    <string name="my_ads_valid_to">Valid to</string>
+    <string name="my_ads_untitled">Untitled OLX ad</string>
+    <string name="my_ads_price_not_set">Price not set</string>
+    <string name="my_ads_missing_url">This OLX listing does not have a public link yet.</string>
+    <string name="my_ads_load_failed">Couldn\'t load OLX ads.</string>
+    <string name="my_ads_status_active">Active</string>
+    <string name="my_ads_status_new">Under review</string>
+    <string name="my_ads_status_limited">Limited</string>
+    <string name="my_ads_status_removed_by_user">Removed</string>
+    <string name="my_ads_status_outdated">Expired</string>
+    <string name="my_ads_status_unconfirmed">Unconfirmed</string>
+    <string name="my_ads_status_unpaid">Unpaid</string>
+    <string name="my_ads_status_moderated">Moderated</string>
+    <string name="my_ads_status_blocked">Blocked</string>
+    <string name="my_ads_status_disabled">Disabled</string>
+    <string name="my_ads_status_removed_by_moderator">Removed by moderator</string>
+    <string name="my_ads_status_unknown">Pending</string>
+
     <!-- Navigation -->
     <string name="app_name">SellSnap</string>
     <string name="nav_analyze">Analyze</string>

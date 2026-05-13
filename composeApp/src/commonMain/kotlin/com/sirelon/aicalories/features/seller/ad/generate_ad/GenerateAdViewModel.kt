@@ -48,7 +48,6 @@ class GenerateAdViewModel(
                 setState {
                     it.copy(
                         profileName = user?.name?.takeIf { name -> name.isNotBlank() },
-                        profileAvatarUrl = user?.avatar,
                     )
                 }
             }

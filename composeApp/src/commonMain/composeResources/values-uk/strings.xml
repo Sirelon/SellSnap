@@ -173,6 +173,36 @@
     <string name="profile_value_no">Ні</string>
     <string name="from_note">З нотатки</string>
 
+    <!-- My OLX Ads -->
+    <string name="nav_my_ads">Мої оголошення</string>
+    <string name="my_ads_screen_title">Мої оголошення OLX</string>
+    <string name="my_ads_screen_subtitle">Опубліковані оголошення з підключеного акаунта OLX.</string>
+    <string name="my_ads_empty_title">Оголошень OLX ще немає</string>
+    <string name="my_ads_empty_description">Створіть перше оголошення в SellSnap — після публікації воно з\'явиться тут.</string>
+    <string name="my_ads_create_listing">Нове оголошення</string>
+    <string name="my_ads_connect_title">Підключіть OLX, щоб бачити оголошення</string>
+    <string name="my_ads_connect_description">Опубліковані оголошення OLX з\'являться тут після підключення акаунта.</string>
+    <string name="my_ads_connect_action">Підключити OLX</string>
+    <string name="my_ads_load_more">Завантажити ще</string>
+    <string name="my_ads_created_at">Створено</string>
+    <string name="my_ads_valid_to">Дійсне до</string>
+    <string name="my_ads_untitled">Оголошення OLX без назви</string>
+    <string name="my_ads_price_not_set">Ціну не вказано</string>
+    <string name="my_ads_missing_url">У цього оголошення OLX ще немає публічного посилання.</string>
+    <string name="my_ads_load_failed">Не вдалося завантажити оголошення OLX.</string>
+    <string name="my_ads_status_active">Активне</string>
+    <string name="my_ads_status_new">На перевірці</string>
+    <string name="my_ads_status_limited">Обмежене</string>
+    <string name="my_ads_status_removed_by_user">Видалене</string>
+    <string name="my_ads_status_outdated">Прострочене</string>
+    <string name="my_ads_status_unconfirmed">Не підтверджене</string>
+    <string name="my_ads_status_unpaid">Не оплачене</string>
+    <string name="my_ads_status_moderated">Після модерації</string>
+    <string name="my_ads_status_blocked">Заблоковане</string>
+    <string name="my_ads_status_disabled">Вимкнене</string>
+    <string name="my_ads_status_removed_by_moderator">Видалене модератором</string>
+    <string name="my_ads_status_unknown">Очікує</string>
+
     <!-- Photos Section -->
     <string name="photos_count_format">%1$d/%2$d фото</string>
     <string name="add_photo_cd">Додати фото</string>
