@@ -12,14 +12,17 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import com.sirelon.sellsnap.designsystem.AppDimens
 import com.sirelon.sellsnap.designsystem.AppScaffold
 import com.sirelon.sellsnap.designsystem.AppTheme
+import com.sirelon.sellsnap.designsystem.performStepFeedback
 import com.sirelon.sellsnap.designsystem.PulsingCircles
 import com.sirelon.sellsnap.generated.resources.Res
 import com.sirelon.sellsnap.generated.resources.ic_share_2
@@ -29,6 +32,11 @@ import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun PublishingScreen(modifier: Modifier = Modifier) {
+    val hapticFeedback = LocalHapticFeedback.current
+    LaunchedEffect(Unit) {
+        hapticFeedback.performStepFeedback()
+    }
+
     AppScaffold(modifier = modifier) {
         Box(
             modifier = Modifier
