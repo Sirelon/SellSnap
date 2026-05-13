@@ -38,6 +38,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -53,6 +54,7 @@ import com.sirelon.sellsnap.designsystem.AppTheme
 import com.sirelon.sellsnap.designsystem.IconWithBackground
 import com.sirelon.sellsnap.designsystem.Input
 import com.sirelon.sellsnap.designsystem.ObserveAsEvents
+import com.sirelon.sellsnap.designsystem.performStepFeedback
 import com.sirelon.sellsnap.designsystem.buttons.AppButton
 import com.sirelon.sellsnap.designsystem.buttons.AppButtonDefaults
 import com.sirelon.sellsnap.features.media.PermissionDialogs
@@ -122,6 +124,8 @@ fun GenerateAdScreen(
         }
     }
 
+    val hapticFeedback = LocalHapticFeedback.current
+
     AnimatedContent(state.isLoading) {
         if (it) {
             AiProcessingScreen(
@@ -142,6 +146,7 @@ fun GenerateAdScreen(
                     viewModel.onEvent(GenerateAdContract.GenerateAdEvent.RemovePhoto(file))
                 },
                 onSubmitClick = {
+                    hapticFeedback.performStepFeedback()
                     viewModel.onEvent(GenerateAdContract.GenerateAdEvent.Submit)
                 },
                 onProfileClick = onProfileClick,
