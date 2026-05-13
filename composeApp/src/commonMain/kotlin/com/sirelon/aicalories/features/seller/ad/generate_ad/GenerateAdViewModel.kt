@@ -1,8 +1,12 @@
 package com.sirelon.sellsnap.features.seller.ad.generate_ad
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.mohamedrejeb.calf.io.KmpFile
+import com.mohamedrejeb.calf.io.getName
 import com.sirelon.sellsnap.features.common.presentation.BaseViewModel
+import com.sirelon.sellsnap.features.media.upload.DraftMediaFileStore
+import com.sirelon.sellsnap.features.media.upload.DraftPhoto
 import com.sirelon.sellsnap.features.media.upload.MediaUploadHelper
 import com.sirelon.sellsnap.features.media.upload.MediaUploadUpdate
 import com.sirelon.sellsnap.features.media.upload.UploadedFile
@@ -20,6 +24,8 @@ import com.sirelon.sellsnap.generated.resources.error_selected_files_process_fai
 import com.sirelon.sellsnap.generated.resources.error_upload_file_failed
 import kotlinx.coroutines.flow.catch
 import org.jetbrains.compose.resources.getString
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
@@ -30,18 +36,27 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 
 private const val GuestProcessingStepCount = 3
 private const val AuthenticatedProcessingStepCount = 5
+private const val GenerateAdSavedStateKey = "generate_ad_saved_state"
 
 class GenerateAdViewModel(
     private val mediaUploadHelper: MediaUploadHelper,
+    private val draftMediaFileStore: DraftMediaFileStore,
     private val categoriesRepository: CategoriesRepository,
     private val openAi: OpenAIClient,
     private val accountRepository: SellerAccountRepository,
     private val authRepository: OlxAuthRepository,
     private val adFlowTimerStore: AdFlowTimerStore,
+    private val savedStateHandle: SavedStateHandle,
+    private val json: Json,
 ) : BaseViewModel<GenerateAdContract.GenerateAdState, GenerateAdContract.GenerateAdEvent, GenerateAdContract.GenerateAdEffect>() {
+
+    private val restoredSavedState = readSavedState()
 
     init {
         accountRepository.user
@@ -57,10 +72,14 @@ class GenerateAdViewModel(
         viewModelScope.launch {
             accountRepository.refreshProfile()
         }
-    }
 
-    override fun initialState(): GenerateAdContract.GenerateAdState =
-        GenerateAdContract.GenerateAdState()
+        state
+            .drop(1)
+            .map(::toSavedState)
+            .distinctUntilChanged()
+            .onEach { snapshot -> savedStateHandle[GenerateAdSavedStateKey] = json.encodeToString(snapshot) }
+            .launchIn(viewModelScope)
+    }
 
     override fun onEvent(event: GenerateAdContract.GenerateAdEvent) {
         when (event) {
@@ -82,12 +101,16 @@ class GenerateAdViewModel(
             is GenerateAdContract.GenerateAdEvent.UploadFilesResult -> onFileResult(event)
 
             is GenerateAdContract.GenerateAdEvent.RemovePhoto -> {
+                val removedPhoto = photoForFile(event.file)
                 setState { current ->
                     val updatedUploads = current.uploads - event.file
                     if (updatedUploads.isEmpty()) {
                         adFlowTimerStore.clear()
                     }
                     current.copy(uploads = updatedUploads)
+                }
+                removedPhoto?.let { photo ->
+                    viewModelScope.launch { draftMediaFileStore.delete(listOf(photo)) }
                 }
             }
         }
@@ -139,9 +162,7 @@ class GenerateAdViewModel(
                                 sellerPrompt = state.value.prompt
                             )
                         }
-                        .onEach {
-                            setState { it.copy(completedSteps = AuthenticatedProcessingStepCount) }
-                        }
+                        .onEach { setState { it.copy(completedSteps = AuthenticatedProcessingStepCount) } }
                         .map {
                             AdvertisementWithAttributes(
                                 advertisement = data.second,
@@ -196,12 +217,14 @@ class GenerateAdViewModel(
         viewModelScope.launch {
             mediaUploadHelper
                 .prepareFiles(selectionResult = event.result)
-                .onSuccess { files ->
-                    if (files.isNotEmpty() && currentState().uploads.isEmpty()) {
+                .mapCatching { files -> files.mapNotNull { draftMediaFileStore.persist(it) } }
+                .onSuccess { persistedFiles ->
+                    if (persistedFiles.isNotEmpty() && currentState().uploads.isEmpty()) {
                         adFlowTimerStore.markFlowStartedIfNeeded()
                     }
                     setState { current ->
-                        val newEntries = files
+                        val newEntries = persistedFiles
+                            .map { it.file }
                             .filter { file -> !current.uploads.containsKey(file) }
                             .associateWith { UploadingItem() }
                         current.copy(uploads = current.uploads + newEntries)
@@ -268,6 +291,7 @@ class GenerateAdViewModel(
     }
 
     private fun handleUploadFailure(file: KmpFile, message: String) {
+        val failedPhoto = photoForFile(file)
         setState { current ->
             val updatedUploads = current.uploads - file
             if (updatedUploads.isEmpty()) {
@@ -277,6 +301,9 @@ class GenerateAdViewModel(
                 errorMessage = message,
                 uploads = updatedUploads,
             )
+        }
+        failedPhoto?.let { photo ->
+            viewModelScope.launch { draftMediaFileStore.delete(listOf(photo)) }
         }
         postEffect(GenerateAdContract.GenerateAdEffect.ShowMessage(message))
     }
@@ -296,5 +323,45 @@ class GenerateAdViewModel(
                 uploads = current.uploads + (file to reducer(existing))
             )
         }
+    }
+
+    override fun initialState(): GenerateAdContract.GenerateAdState {
+        val uploads = restoredSavedState.photos.mapNotNull { photo ->
+            val file = draftMediaFileStore.restore(photo) ?: return@mapNotNull null
+            file to UploadingItem(
+                progress = if (photo.uploadedPath != null) 100.0 else 0.0,
+                uploadedFile = photo.uploadedPath?.let { UploadedFile(id = photo.uploadedId, path = it) },
+            )
+        }.toMap()
+        return GenerateAdContract.GenerateAdState(
+            prompt = restoredSavedState.prompt,
+            uploads = uploads,
+        )
+    }
+
+    private fun readSavedState(): GenerateAdSavedState =
+        savedStateHandle.get<String>(GenerateAdSavedStateKey)
+            ?.let { runCatching { json.decodeFromString<GenerateAdSavedState>(it) }.getOrNull() }
+            ?: GenerateAdSavedState()
+
+    private fun toSavedState(state: GenerateAdContract.GenerateAdState): GenerateAdSavedState {
+        val existingByPath = readSavedState().photos.associateBy { it.path }
+        val photos = state.uploads.mapNotNull { (file, item) ->
+            val path = draftMediaFileStore.stablePath(file) ?: return@mapNotNull null
+            val existing = existingByPath[path]
+            DraftPhoto(
+                id = existing?.id ?: path,
+                path = path,
+                displayName = existing?.displayName ?: file.getName(),
+                uploadedId = item.uploadedFile?.id ?: existing?.uploadedId,
+                uploadedPath = item.uploadedFile?.path ?: existing?.uploadedPath,
+            )
+        }
+        return GenerateAdSavedState(prompt = state.prompt, photos = photos)
+    }
+
+    private fun photoForFile(file: KmpFile): DraftPhoto? {
+        val path = draftMediaFileStore.stablePath(file) ?: return null
+        return readSavedState().photos.firstOrNull { it.path == path }
     }
 }

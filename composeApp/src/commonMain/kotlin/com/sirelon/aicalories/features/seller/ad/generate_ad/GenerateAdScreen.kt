@@ -30,6 +30,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -90,12 +91,18 @@ fun GenerateAdScreen(
     openAdPreview: (AdvertisementWithAttributes) -> Unit,
     onWhisperClick: () -> Unit,
     modifier: Modifier = Modifier,
+    onLoadingChanged: (Boolean) -> Unit = {},
 ) {
     val viewModel: GenerateAdViewModel = koinViewModel()
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val permissionController = rememberPermissionController(permission = Permission.Camera)
     val navigationEventState = rememberNavigationEventState(currentInfo = NavigationEventInfo.None)
+
+    DisposableEffect(state.isLoading) {
+        onLoadingChanged(state.isLoading)
+        onDispose { onLoadingChanged(false) }
+    }
 
     NavigationBackHandler(
         state = navigationEventState,
