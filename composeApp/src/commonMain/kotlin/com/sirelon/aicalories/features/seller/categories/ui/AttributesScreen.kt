@@ -18,12 +18,15 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.input.KeyboardType
 import com.sirelon.sellsnap.designsystem.AppChip
 import com.sirelon.sellsnap.designsystem.AppChipDefaults
@@ -56,6 +59,7 @@ fun AttributeItem(
     onSelectionChange: (List<OlxAttributeValue>) -> Unit,
     modifier: Modifier = Modifier,
     validationError: ValidationError? = null,
+    autoOpenRequest: Int = 0,
 ) {
     when (attribute.inputType) {
         AttributeInputType.SingleSelect -> AttributeSelectCell(
@@ -64,6 +68,7 @@ fun AttributeItem(
             multiSelect = false,
             onSelectionChange = onSelectionChange,
             validationError = validationError,
+            autoOpenRequest = autoOpenRequest,
             modifier = modifier,
         )
 
@@ -73,6 +78,7 @@ fun AttributeItem(
             multiSelect = true,
             onSelectionChange = onSelectionChange,
             validationError = validationError,
+            autoOpenRequest = autoOpenRequest,
             modifier = modifier,
         )
 
@@ -82,6 +88,7 @@ fun AttributeItem(
             onSelectionChange = onSelectionChange,
             keyboardType = KeyboardType.Number,
             validationError = validationError,
+            autoOpenRequest = autoOpenRequest,
             modifier = modifier,
         )
 
@@ -91,6 +98,7 @@ fun AttributeItem(
             onSelectionChange = onSelectionChange,
             keyboardType = KeyboardType.Text,
             validationError = validationError,
+            autoOpenRequest = autoOpenRequest,
             modifier = modifier,
         )
     }
@@ -103,11 +111,18 @@ private fun AttributeSelectCell(
     multiSelect: Boolean,
     onSelectionChange: (List<OlxAttributeValue>) -> Unit,
     validationError: ValidationError?,
+    autoOpenRequest: Int,
     modifier: Modifier = Modifier,
 ) {
     var showDialog by remember { mutableStateOf(false) }
     val label = buildAttributeLabel(attribute)
     val selectPlaceholder = stringResource(Res.string.attr_select_placeholder)
+
+    LaunchedEffect(autoOpenRequest) {
+        if (autoOpenRequest > 0) {
+            showDialog = true
+        }
+    }
 
     Column(modifier = modifier) {
         Cell(
@@ -183,12 +198,20 @@ private fun AttributeTextInputCell(
     onSelectionChange: (List<OlxAttributeValue>) -> Unit,
     keyboardType: KeyboardType,
     validationError: ValidationError?,
+    autoOpenRequest: Int,
     modifier: Modifier = Modifier,
 ) {
     var textValue by remember(attribute.code) {
         mutableStateOf(selectedValues.firstOrNull()?.label ?: "")
     }
+    val focusRequester = remember { FocusRequester() }
     val label = buildAttributeLabel(attribute)
+
+    LaunchedEffect(autoOpenRequest) {
+        if (autoOpenRequest > 0) {
+            focusRequester.requestFocus()
+        }
+    }
 
     val errorMessage = if (validationError != null) validationError.toMessage() else null
     val hintText = errorMessage ?: when {
@@ -205,6 +228,7 @@ private fun AttributeTextInputCell(
 
     Input(
         modifier = modifier
+            .focusRequester(focusRequester)
             .fillMaxWidth()
             .padding(horizontal = AppDimens.Spacing.xl3),
         value = textValue,

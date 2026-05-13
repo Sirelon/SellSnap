@@ -96,7 +96,7 @@ private fun commonOlxHttpClientConfig(): HttpClientConfig<*>.() -> Unit = {
         )
     }
     install(Logging) {
-        level = LogLevel.INFO
+        level = LogLevel.NONE
     }
     install(HttpTimeout) {
         requestTimeoutMillis = 90_000

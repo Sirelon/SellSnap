@@ -6,15 +6,15 @@ Scope: seller / OLX flow only. Agile screens are intentionally excluded.
 
 ## Security / privacy
 
-### 1. OAuth state logged in plaintext
+### 1. ~~OAuth state logged in plaintext~~ ✅ FIXED
 - **Where:** `composeApp/src/commonMain/kotlin/com/sirelon/aicalories/features/seller/auth/data/OlxAuthRepository.kt:46`
 - **What:** `println("URL: $url")` logs the entire authorization URL, which contains the `state` parameter (CSRF guard) and `client_id`.
-- **Fix:** Remove the `println`. If the URL is genuinely useful for debugging, gate it behind a debug-only flag or `Logger` and redact `state`.
+- **Fix applied:** Removed the plaintext auth URL `println`.
 
-### 2. Ktor `LogLevel.INFO` for OLX clients
+### 2. ~~Ktor `LogLevel.INFO` for OLX clients~~ ✅ FIXED
 - **Where:** `composeApp/src/commonMain/kotlin/com/sirelon/aicalories/features/seller/auth/data/OlxHttpClientFactory.kt:97`
 - **What:** `Logging { level = LogLevel.INFO }` emits request and response bodies, including `Authorization: Bearer …` headers and refresh tokens, on every authorized request.
-- **Fix:** Drop to `LogLevel.NONE` for release builds; pick `HEADERS` or `INFO` only in debug, and add a header sanitizer for `Authorization`.
+- **Fix applied:** OLX client logging now uses `LogLevel.NONE`.
 
 ### 3. OAuth `client_secret` shipped in client binary
 - **Where:** `OlxConfig` resolves `clientSecret` via BuildKonfig (`AppConfig.olxClientSecret`); used in `OlxAuthRepository.exchangeAuthorizationCode` and `OlxHttpClientFactory.refreshOlxBearerTokens`.
@@ -38,10 +38,10 @@ Scope: seller / OLX flow only. Agile screens are intentionally excluded.
 - **What:** Explicit refresh and bearer auto-refresh had separate terminal-failure cleanup paths.
 - **Fix applied:** Both paths now call `handleTerminalRefreshFailure(...)`, clearing token and pending auth session state for terminal OLX refresh failures.
 
-### 7. Privacy / Terms URLs are placeholder garbage
-- **Where:** `composeApp/src/commonMain/kotlin/com/sirelon/aicalories/features/seller/auth/presentation/SellerAuthViewModel.kt:24` and `:29`
-- **What:** Both post `LaunchBrowser("https:google.com")` — note the missing `//`. Resolves to a malformed URI on every platform; users tapping the buttons see a browser error.
-- **Fix:** Replace with the real URLs, or hide the buttons until URLs are decided.
+### 7. Privacy / Terms URLs are hosted on GitHub Pages
+- **Where:** `composeApp/src/commonMain/kotlin/com/sirelon/aicalories/features/seller/auth/presentation/SellerAuthViewModel.kt`
+- **What changed:** Terms and Privacy now launch hosted GitHub Pages URLs instead of the old malformed `https:google.com` placeholders.
+- **Watch:** Keep the page content and app data flows in sync when OLX, OpenAI, Supabase, location, camera, or microphone behavior changes.
 
 ## Concurrency
 
@@ -105,10 +105,10 @@ Scope: seller / OLX flow only. Agile screens are intentionally excluded.
 - **What:** UAH is hardcoded; the comment promises a "change currency" affordance.
 - **Fix:** Either deliver the picker or close out SIR-15 and remove the TODOs.
 
-### 18. SIR-34 — auto-open first failing required attribute
+### 18. ~~SIR-34 — auto-open first failing required attribute~~ ✅ FIXED
 - **Where:** `PreviewAdScreen.kt:249`
 - **What:** When publish is tapped with invalid attributes, validation runs but nothing scrolls/expands the offending field.
-- **Fix:** When `publishAdvert()` short-circuits on `hasErrors`, find the first invalid attribute and emit an effect to scroll its row into view and expand its editor.
+- **Fix applied:** Invalid publish clicks now bring the first invalid attribute row into view and open/focus its editor.
 
 ### 19. SIR-40 — account info / logout menu stubbed
 - **Where:** `GenerateAdScreen.kt:291,299`
@@ -147,10 +147,10 @@ Scope: seller / OLX flow only. Agile screens are intentionally excluded.
 - **What:** When the second `.catch` re-raises or the first transforms, error provenance is lost and only `printStackTrace()` is left.
 - **Fix:** Reduce to one `.catch` per pipeline; route every error to a single `showError(message)` helper that posts `ShowMessage` and updates state consistently.
 
-### 26. Hardcoded English error strings
+### 26. ~~Hardcoded English error strings~~ ✅ FIXED
 - **Where:** `OlxApiError.userMessage` defaults in `OlxModels.kt:74–108`; ad-hoc fallback strings in `SellerAuthViewModel.kt`, `PreviewAdViewModel.kt`, `GenerateAdViewModel.kt`.
 - **What:** All error copy is English while the rest of the seller UI is Ukrainian-leaning (UAH, UA-locale separators).
-- **Fix:** Move user-facing strings into Compose resources and document the language policy in AGENTS.md.
+- **Fix applied:** User-facing auth/profile/generation/preview fallbacks now resolve Compose string resources; `OlxApiError.userMessage` remains developer-facing diagnostic text.
 
 ### 27. Float → Int price truncation
 - **Where:** `PostAdvertRequestMapper.map` — converts a `Float` price to `Int` UAH.

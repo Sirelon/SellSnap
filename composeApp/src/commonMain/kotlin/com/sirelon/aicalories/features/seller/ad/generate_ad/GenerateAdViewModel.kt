@@ -14,9 +14,10 @@ import com.sirelon.sellsnap.features.seller.auth.domain.SellerSessionMode
 import com.sirelon.sellsnap.features.seller.categories.data.CategoriesRepository
 import com.sirelon.sellsnap.features.seller.openai.OpenAIClient
 import com.sirelon.sellsnap.features.seller.profile.data.SellerAccountRepository
-import com.sirelon.sellsnap.supabase.error.RemoteException
 import com.sirelon.sellsnap.generated.resources.Res
 import com.sirelon.sellsnap.generated.resources.error_generate_ad_failed
+import com.sirelon.sellsnap.generated.resources.error_selected_files_process_failed
+import com.sirelon.sellsnap.generated.resources.error_upload_file_failed
 import kotlinx.coroutines.flow.catch
 import org.jetbrains.compose.resources.getString
 import kotlinx.coroutines.flow.filterIsInstance
@@ -155,7 +156,7 @@ class GenerateAdViewModel(
                 postEffect(GenerateAdContract.GenerateAdEffect.OpenAdPreview(ad = it))
             }
             .catch { error ->
-                showError(error.message ?: getString(Res.string.error_generate_ad_failed))
+                showError(getString(Res.string.error_generate_ad_failed))
             }
             .onCompletion {
                 setState { it.copy(isLoading = false) }
@@ -207,12 +208,12 @@ class GenerateAdViewModel(
                     }
                 }
                 .onFailure { error ->
-                    showError(error.message ?: "Failed to process selected files.")
+                    showError(getString(Res.string.error_selected_files_process_failed))
                 }
         }
     }
 
-    private fun handleUploadUpdate(update: MediaUploadUpdate) {
+    private suspend fun handleUploadUpdate(update: MediaUploadUpdate) {
         when (update) {
             MediaUploadUpdate.Started -> {
                 setState { it.copy(errorMessage = null) }
@@ -245,28 +246,12 @@ class GenerateAdViewModel(
             }
 
             is MediaUploadUpdate.Failure -> {
-                handleUploadFailure(file = update.file, message = update.message)
+                handleUploadFailure(file = update.file, message = getString(Res.string.error_upload_file_failed))
             }
 
             is MediaUploadUpdate.Error -> {
-                showError(update.message)
+                showError(getString(Res.string.error_upload_file_failed))
             }
-        }
-    }
-
-    private fun onError(error: Throwable, fallbackMessage: String) {
-        val isRemote = error is RemoteException
-        val message = error.message ?: fallbackMessage
-
-        setState {
-            it.copy(
-                isLoading = false,
-                errorMessage = message.takeUnless { isRemote },
-            )
-        }
-
-        if (isRemote) {
-            postEffect(GenerateAdContract.GenerateAdEffect.ShowMessage(message))
         }
     }
 

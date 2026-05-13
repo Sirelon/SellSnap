@@ -9,13 +9,13 @@ import platform.AVFAudio.AVAudioSessionCategoryRecord
 import platform.AVFAudio.AVFormatIDKey
 import platform.AVFAudio.AVNumberOfChannelsKey
 import platform.AVFAudio.AVSampleRateKey
-import platform.AudioToolbox.kAudioFormatMPEG4AAC
+import platform.CoreAudioTypes.kAudioFormatMPEG4AAC
 import platform.Foundation.NSData
-import platform.Foundation.NSDate
 import platform.Foundation.NSFileManager
 import platform.Foundation.NSNumber
 import platform.Foundation.NSTemporaryDirectory
 import platform.Foundation.NSURL
+import platform.Foundation.NSUUID
 import platform.posix.memcpy
 
 actual fun createAudioRecorder(): AudioRecorder = IosAudioRecorder()
@@ -28,11 +28,10 @@ private class IosAudioRecorder : AudioRecorder {
     override fun startRecording() {
         stopRecording()
 
-        val session = AVAudioSession.sharedInstance()
-        session.setCategory(AVAudioSessionCategoryRecord, error = null)
-        session.setActive(true, error = null)
+        AVAudioSession.sharedInstance()
+            .setCategory(AVAudioSessionCategoryRecord, error = null)
 
-        val fileName = "whisper_${NSDate().timeIntervalSince1970}.m4a"
+        val fileName = "whisper_${NSUUID().UUIDString}.m4a"
         val url = NSURL.fileURLWithPath(NSTemporaryDirectory() + fileName)
         outputUrl = url
 
@@ -41,20 +40,19 @@ private class IosAudioRecorder : AudioRecorder {
             AVSampleRateKey to NSNumber(float = 44_100f),
             AVNumberOfChannelsKey to NSNumber(int = 1),
         )
-        recorder = AVAudioRecorder(url = url, settings = settings, error = null)
+        recorder = AVAudioRecorder(uRL = url, settings = settings, error = null)
         recorder?.record()
     }
 
     override fun stopRecording(): ByteArray? {
         recorder?.stop()
         recorder = null
-        AVAudioSession.sharedInstance().setActive(false, error = null)
 
         val url = outputUrl ?: return null
         outputUrl = null
 
         return try {
-            NSData.dataWithContentsOfURL(url)
+            NSFileManager.defaultManager.contentsAtPath(url.path!!)
                 ?.toByteArray()
                 .also { NSFileManager.defaultManager.removeItemAtURL(url, error = null) }
         } catch (_: Exception) {

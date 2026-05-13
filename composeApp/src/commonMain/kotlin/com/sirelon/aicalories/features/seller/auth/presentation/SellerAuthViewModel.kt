@@ -3,7 +3,11 @@ package com.sirelon.sellsnap.features.seller.auth.presentation
 import androidx.lifecycle.viewModelScope
 import com.sirelon.sellsnap.features.common.presentation.BaseViewModel
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAuthRepository
+import com.sirelon.sellsnap.generated.resources.Res
+import com.sirelon.sellsnap.generated.resources.error_olx_auth_complete_failed
+import com.sirelon.sellsnap.generated.resources.error_olx_auth_prepare_failed
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.getString
 
 class SellerAuthViewModel(
     private val authRepository: OlxAuthRepository,
@@ -23,13 +27,11 @@ class SellerAuthViewModel(
             }
 
             SellerAuthContract.SellerAuthEvent.OnPrivacyClicked -> {
-                // TODO: correct path
-                postEffect(SellerAuthContract.SellerAuthEffect.LaunchBrowser("https:google.com"))
+                postEffect(SellerAuthContract.SellerAuthEffect.LaunchBrowser(PRIVACY_POLICY_URL))
             }
 
             SellerAuthContract.SellerAuthEvent.OnTermsClicked -> {
-                // TODO: correct path
-                postEffect(SellerAuthContract.SellerAuthEffect.LaunchBrowser("https:google.com"))
+                postEffect(SellerAuthContract.SellerAuthEffect.LaunchBrowser(TERMS_AND_CONDITIONS_URL))
             }
 
             SellerAuthContract.SellerAuthEvent.OlxAuthDismissed -> {
@@ -63,7 +65,7 @@ class SellerAuthViewModel(
                     postEffect(SellerAuthContract.SellerAuthEffect.OpenHome)
                 }
                 .onFailure { error ->
-                    showError(error.message ?: "Failed to complete OLX authorization.")
+                    showError(getString(Res.string.error_olx_auth_complete_failed))
                 }
         }
     }
@@ -86,7 +88,7 @@ class SellerAuthViewModel(
                     }
                 }
                 .onFailure { error ->
-                    showError(error.message ?: "Failed to prepare OLX authorization.")
+                    showError(getString(Res.string.error_olx_auth_prepare_failed))
                 }
         }
     }
@@ -101,5 +103,10 @@ class SellerAuthViewModel(
             }
             postEffect(SellerAuthContract.SellerAuthEffect.ShowMessage(message))
         }
+    }
+
+    private companion object {
+        const val TERMS_AND_CONDITIONS_URL = "https://sirelon.github.io/SellSnap/terms-and-conditions/"
+        const val PRIVACY_POLICY_URL = "https://sirelon.github.io/SellSnap/privacy-policy/"
     }
 }
