@@ -23,13 +23,11 @@ class SellerAuthViewModel(
             }
 
             SellerAuthContract.SellerAuthEvent.OnPrivacyClicked -> {
-                // TODO: correct path
-                postEffect(SellerAuthContract.SellerAuthEffect.LaunchBrowser("https:google.com"))
+                postEffect(SellerAuthContract.SellerAuthEffect.LaunchBrowser(PRIVACY_POLICY_URL))
             }
 
             SellerAuthContract.SellerAuthEvent.OnTermsClicked -> {
-                // TODO: correct path
-                postEffect(SellerAuthContract.SellerAuthEffect.LaunchBrowser("https:google.com"))
+                postEffect(SellerAuthContract.SellerAuthEffect.LaunchBrowser(TERMS_AND_CONDITIONS_URL))
             }
 
             SellerAuthContract.SellerAuthEvent.OlxAuthDismissed -> {
@@ -101,5 +99,10 @@ class SellerAuthViewModel(
             }
             postEffect(SellerAuthContract.SellerAuthEffect.ShowMessage(message))
         }
+    }
+
+    private companion object {
+        const val TERMS_AND_CONDITIONS_URL = "https://sirelon.github.io/SellSnap/terms-and-conditions/"
+        const val PRIVACY_POLICY_URL = "https://sirelon.github.io/SellSnap/privacy-policy/"
     }
 }
