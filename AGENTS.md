@@ -64,6 +64,15 @@ If you genuinely think a convention is harmful, surface it. Don't fork silently.
 "Tests pass" is wrong if any were skipped.
 Default to surfacing uncertainty, not hiding it.
 
+### Small Fix Fast Lane
+For narrow bug fixes where the affected files are obvious:
+- Skip memory lookup unless the bug depends on prior decisions or workspace history.
+- Inspect only the direct implementation files and immediate UI/state callers first.
+- Keep progress updates to major phase changes only.
+- Limit command output aggressively.
+- Validate with the narrowest meaningful build/test command plus `git diff --check`.
+- If asked to publish, use the standard git/PR flow without re-reading workflow docs unless blocked.
+
 ## Modules
 
 ### `composeApp`
