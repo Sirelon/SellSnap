@@ -1,8 +1,8 @@
 package com.sirelon.sellsnap.features.seller.auth.data.response
 
+import com.sirelon.sellsnap.features.seller.ad.publish_success.AdvertStatus
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxAdvert
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxAdvertPrice
-import com.sirelon.sellsnap.features.seller.auth.domain.OlxAdvertStatus
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -43,7 +43,7 @@ internal class OlxAdvertResponse(
         return OlxAdvert(
             id = advertId,
             title = title.orEmpty(),
-            status = OlxAdvertStatus.from(status.orEmpty()),
+            status = AdvertStatus.from(status.orEmpty()),
             url = url.orEmpty(),
             primaryImageUrl = images
                 .orEmpty()

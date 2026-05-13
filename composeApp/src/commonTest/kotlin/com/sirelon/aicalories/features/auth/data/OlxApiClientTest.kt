@@ -13,7 +13,7 @@ import com.sirelon.sellsnap.features.seller.auth.data.createOlxHttpClient
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxApiError
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxAuthCallback
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxApiException
-import com.sirelon.sellsnap.features.seller.auth.domain.OlxAdvertStatus
+import com.sirelon.sellsnap.features.seller.ad.publish_success.AdvertStatus
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxTokens
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
@@ -402,7 +402,7 @@ class OlxApiClientTest {
         assertEquals(2, adverts.size)
         assertEquals(1001L, adverts[0].id)
         assertEquals("City bike", adverts[0].title)
-        assertEquals(OlxAdvertStatus.Active, adverts[0].status)
+        assertEquals(AdvertStatus.Active, adverts[0].status)
         assertEquals("https://www.olx.ua/d/uk/obyavlenie/bike-ID1001.html", adverts[0].url)
         assertEquals("https://example.com/bike.jpg", adverts[0].primaryImageUrl)
         assertEquals(1500f, adverts[0].price?.value)
@@ -410,7 +410,7 @@ class OlxApiClientTest {
         assertEquals(false, adverts[0].price?.negotiable)
         assertEquals(1002L, adverts[1].id)
         assertEquals("", adverts[1].title)
-        assertEquals(OlxAdvertStatus.Limited, adverts[1].status)
+        assertEquals(AdvertStatus.Limited, adverts[1].status)
         assertEquals("", adverts[1].url)
         assertEquals("https://example.com/phone.jpg", adverts[1].primaryImageUrl)
         assertNull(adverts[1].price)

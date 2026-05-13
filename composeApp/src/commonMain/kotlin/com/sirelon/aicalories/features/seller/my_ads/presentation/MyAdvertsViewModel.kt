@@ -7,6 +7,7 @@ import com.sirelon.sellsnap.features.seller.my_ads.model.MyAdvertItem
 import com.sirelon.sellsnap.features.seller.my_ads.presentation.MyAdvertsContract.Effect
 import com.sirelon.sellsnap.features.seller.my_ads.presentation.MyAdvertsContract.Event
 import com.sirelon.sellsnap.features.seller.my_ads.presentation.MyAdvertsContract.State
+import com.sirelon.sellsnap.features.seller.profile.data.SellerAccountRepository
 import com.sirelon.sellsnap.generated.resources.Res
 import com.sirelon.sellsnap.generated.resources.my_ads_load_failed
 import com.sirelon.sellsnap.generated.resources.my_ads_missing_url
@@ -17,6 +18,7 @@ private const val PageSize = 50
 
 class MyAdvertsViewModel(
     private val repository: MyAdvertsRepository,
+    private val accountRepository: SellerAccountRepository,
 ) : BaseViewModel<State, Event, Effect>() {
 
     init {
@@ -45,7 +47,7 @@ class MyAdvertsViewModel(
                 )
             }
             runCatching {
-                val session = repository.currentSession()
+                val session = accountRepository.currentSession()
                 if (!session.isAuthorized) {
                     setState {
                         it.copy(

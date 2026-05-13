@@ -42,7 +42,7 @@ import com.sirelon.sellsnap.designsystem.ObserveAsEvents
 import com.sirelon.sellsnap.designsystem.buttons.AppButton
 import com.sirelon.sellsnap.designsystem.buttons.AppButtonDefaults
 import com.sirelon.sellsnap.designsystem.screens.LoadingOverlay
-import com.sirelon.sellsnap.features.seller.auth.domain.OlxAdvertStatus
+import com.sirelon.sellsnap.features.seller.ad.publish_success.AdvertStatus
 import com.sirelon.sellsnap.features.seller.my_ads.model.MyAdvertItem
 import com.sirelon.sellsnap.features.seller.my_ads.presentation.MyAdvertsContract
 import com.sirelon.sellsnap.features.seller.my_ads.presentation.MyAdvertsContract.Event
@@ -419,7 +419,7 @@ private fun DateLine(label: String, value: String) {
 }
 
 @Composable
-private fun StatusChip(status: OlxAdvertStatus) {
+private fun StatusChip(status: AdvertStatus) {
     val color = statusColor(status)
     Box(
         modifier = Modifier
@@ -440,34 +440,34 @@ private fun StatusChip(status: OlxAdvertStatus) {
 }
 
 @Composable
-private fun statusColor(status: OlxAdvertStatus): Color = when (status) {
-    OlxAdvertStatus.Active -> AppTheme.colors.success
-    OlxAdvertStatus.New,
-    OlxAdvertStatus.Moderated,
-    OlxAdvertStatus.Unconfirmed -> AppTheme.colors.warning
-    OlxAdvertStatus.Limited,
-    OlxAdvertStatus.Unpaid -> AppTheme.colors.warningVariant
-    OlxAdvertStatus.RemovedByUser,
-    OlxAdvertStatus.Outdated,
-    OlxAdvertStatus.Blocked,
-    OlxAdvertStatus.Disabled,
-    OlxAdvertStatus.RemovedByModerator -> AppTheme.colors.error
-    OlxAdvertStatus.Unknown -> AppTheme.colors.primary
+private fun statusColor(status: AdvertStatus): Color = when (status) {
+    AdvertStatus.Active -> AppTheme.colors.success
+    AdvertStatus.New,
+    AdvertStatus.Moderated,
+    AdvertStatus.Unconfirmed -> AppTheme.colors.warning
+    AdvertStatus.Limited,
+    AdvertStatus.Unpaid -> AppTheme.colors.warningVariant
+    AdvertStatus.RemovedByUser,
+    AdvertStatus.Outdated,
+    AdvertStatus.Blocked,
+    AdvertStatus.Disabled,
+    AdvertStatus.RemovedByModerator -> AppTheme.colors.error
+    AdvertStatus.Unknown -> AppTheme.colors.primary
 }
 
-private fun statusLabel(status: OlxAdvertStatus): StringResource = when (status) {
-    OlxAdvertStatus.Active -> Res.string.my_ads_status_active
-    OlxAdvertStatus.New -> Res.string.my_ads_status_new
-    OlxAdvertStatus.Limited -> Res.string.my_ads_status_limited
-    OlxAdvertStatus.RemovedByUser -> Res.string.my_ads_status_removed_by_user
-    OlxAdvertStatus.Outdated -> Res.string.my_ads_status_outdated
-    OlxAdvertStatus.Unconfirmed -> Res.string.my_ads_status_unconfirmed
-    OlxAdvertStatus.Unpaid -> Res.string.my_ads_status_unpaid
-    OlxAdvertStatus.Moderated -> Res.string.my_ads_status_moderated
-    OlxAdvertStatus.Blocked -> Res.string.my_ads_status_blocked
-    OlxAdvertStatus.Disabled -> Res.string.my_ads_status_disabled
-    OlxAdvertStatus.RemovedByModerator -> Res.string.my_ads_status_removed_by_moderator
-    OlxAdvertStatus.Unknown -> Res.string.my_ads_status_unknown
+private fun statusLabel(status: AdvertStatus): StringResource = when (status) {
+    AdvertStatus.Active -> Res.string.my_ads_status_active
+    AdvertStatus.New -> Res.string.my_ads_status_new
+    AdvertStatus.Limited -> Res.string.my_ads_status_limited
+    AdvertStatus.RemovedByUser -> Res.string.my_ads_status_removed_by_user
+    AdvertStatus.Outdated -> Res.string.my_ads_status_outdated
+    AdvertStatus.Unconfirmed -> Res.string.my_ads_status_unconfirmed
+    AdvertStatus.Unpaid -> Res.string.my_ads_status_unpaid
+    AdvertStatus.Moderated -> Res.string.my_ads_status_moderated
+    AdvertStatus.Blocked -> Res.string.my_ads_status_blocked
+    AdvertStatus.Disabled -> Res.string.my_ads_status_disabled
+    AdvertStatus.RemovedByModerator -> Res.string.my_ads_status_removed_by_moderator
+    AdvertStatus.Unknown -> Res.string.my_ads_status_unknown
 }
 
 @Composable
