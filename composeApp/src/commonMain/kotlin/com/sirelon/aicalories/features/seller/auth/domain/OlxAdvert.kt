@@ -14,7 +14,7 @@ data class OlxAdvert(
 )
 
 data class OlxAdvertPrice(
-    val value: Float,
+    val value: Long,
     val currency: String,
     val negotiable: Boolean,
 )

@@ -18,7 +18,6 @@ internal object MyAdvertItemMapper {
 
     private fun OlxAdvertPrice.format(): String {
         val amount = value
-            .toLong()
             .coerceAtLeast(0L)
             .toString()
             .reversed()

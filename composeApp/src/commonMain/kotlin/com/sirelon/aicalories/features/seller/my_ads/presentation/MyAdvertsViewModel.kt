@@ -2,6 +2,7 @@ package com.sirelon.sellsnap.features.seller.my_ads.presentation
 
 import androidx.lifecycle.viewModelScope
 import com.sirelon.sellsnap.features.common.presentation.BaseViewModel
+import com.sirelon.sellsnap.features.seller.auth.domain.OlxApiException
 import com.sirelon.sellsnap.features.seller.my_ads.data.MyAdvertsRepository
 import com.sirelon.sellsnap.features.seller.my_ads.model.MyAdvertItem
 import com.sirelon.sellsnap.features.seller.my_ads.presentation.MyAdvertsContract.Effect
@@ -75,7 +76,11 @@ class MyAdvertsViewModel(
                     }
                 }
                 .onFailure { error ->
-                    val message = error.message ?: getString(Res.string.my_ads_load_failed)
+                    val message = if (error is OlxApiException) {
+                        getString(Res.string.my_ads_load_failed)
+                    } else {
+                        error.message ?: getString(Res.string.my_ads_load_failed)
+                    }
                     setState {
                         it.copy(
                             isLoading = false,
@@ -106,7 +111,11 @@ class MyAdvertsViewModel(
                     }
                 }
                 .onFailure { error ->
-                    val message = error.message ?: getString(Res.string.my_ads_load_failed)
+                    val message = if (error is OlxApiException) {
+                        getString(Res.string.my_ads_load_failed)
+                    } else {
+                        error.message ?: getString(Res.string.my_ads_load_failed)
+                    }
                     setState { it.copy(isLoadingMore = false, errorMessage = message) }
                     postEffect(Effect.ShowMessage(message))
                 }

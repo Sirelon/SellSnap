@@ -17,7 +17,7 @@ class MyAdvertItemMapperTest {
                 status = AdvertStatus.Active,
                 url = "https://www.olx.ua/item",
                 primaryImageUrl = "https://example.com/image.jpg",
-                price = OlxAdvertPrice(value = 12500f, currency = "UAH", negotiable = false),
+                price = OlxAdvertPrice(value = 12500L, currency = "UAH", negotiable = false),
                 createdAt = "2026-05-01T10:00:00+03:00",
                 validTo = "2026-06-01T10:00:00+03:00",
             ),

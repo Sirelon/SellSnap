@@ -64,7 +64,7 @@ internal class OlxAdvertImageResponse(
 @Serializable
 internal class OlxAdvertPriceResponse(
     @SerialName("value")
-    val value: Float?,
+    val value: Long?,
 
     @SerialName("currency")
     val currency: String?,

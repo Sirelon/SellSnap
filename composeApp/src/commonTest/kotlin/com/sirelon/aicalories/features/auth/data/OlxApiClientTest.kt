@@ -405,7 +405,7 @@ class OlxApiClientTest {
         assertEquals(AdvertStatus.Active, adverts[0].status)
         assertEquals("https://www.olx.ua/d/uk/obyavlenie/bike-ID1001.html", adverts[0].url)
         assertEquals("https://example.com/bike.jpg", adverts[0].primaryImageUrl)
-        assertEquals(1500f, adverts[0].price?.value)
+        assertEquals(1500L, adverts[0].price?.value)
         assertEquals("UAH", adverts[0].price?.currency)
         assertEquals(false, adverts[0].price?.negotiable)
         assertEquals(1002L, adverts[1].id)
