@@ -6,9 +6,15 @@ import com.sirelon.sellsnap.features.seller.profile.data.SellerAccountRepository
 import com.sirelon.sellsnap.features.seller.profile.presentation.ProfileContract.ProfileEffect
 import com.sirelon.sellsnap.features.seller.profile.presentation.ProfileContract.ProfileEvent
 import com.sirelon.sellsnap.features.seller.profile.presentation.ProfileContract.ProfileState
+import com.sirelon.sellsnap.generated.resources.Res
+import com.sirelon.sellsnap.generated.resources.error_location_fetch_failed
+import com.sirelon.sellsnap.generated.resources.error_olx_auth_complete_failed
+import com.sirelon.sellsnap.generated.resources.error_olx_auth_prepare_failed
+import com.sirelon.sellsnap.generated.resources.error_user_profile_fetch_failed
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.getString
 
 class ProfileViewModel(
     private val accountRepository: SellerAccountRepository,
@@ -52,7 +58,7 @@ class ProfileViewModel(
                     }
                 }
                 .onFailure { error ->
-                    showError(error.message ?: "Failed to complete OLX authorization.")
+                    showError(getString(Res.string.error_olx_auth_complete_failed))
                     setState { it.copy(isAuthenticating = false) }
                 }
         }
@@ -68,7 +74,7 @@ class ProfileViewModel(
             }
                 .onSuccess { (profileResult, location) ->
                     profileResult.onFailure { error ->
-                        showError(error.message ?: "Failed to refresh profile.")
+                        showError(getString(Res.string.error_user_profile_fetch_failed))
                     }
                     setState {
                         it.copy(
@@ -79,7 +85,7 @@ class ProfileViewModel(
                     }
                 }
                 .onFailure { error ->
-                    showError(error.message ?: "Failed to refresh profile.")
+                    showError(getString(Res.string.error_user_profile_fetch_failed))
                     setState { it.copy(isLoading = false) }
                 }
         }
@@ -94,7 +100,7 @@ class ProfileViewModel(
                     postEffect(ProfileEffect.LaunchOlxAuthFlow(request.url))
                 }
                 .onFailure { error ->
-                    showError(error.message ?: "Failed to prepare OLX authorization.")
+                    showError(getString(Res.string.error_olx_auth_prepare_failed))
                     setState { it.copy(isAuthenticating = false) }
                 }
         }
@@ -113,7 +119,7 @@ class ProfileViewModel(
             runCatching { accountRepository.refreshLocationFromDevice() }
                 .onSuccess { location ->
                     if (location == null) {
-                        postEffect(ProfileEffect.ShowMessage("Location is not available."))
+                        postEffect(ProfileEffect.ShowMessage(getString(Res.string.error_location_fetch_failed)))
                     }
                     setState {
                         it.copy(
@@ -124,7 +130,7 @@ class ProfileViewModel(
                 }
                 .onFailure { error ->
                     setState { it.copy(isLocationLoading = false) }
-                    showError(error.message ?: "Failed to update location.")
+                    showError(getString(Res.string.error_location_fetch_failed))
                 }
         }
     }

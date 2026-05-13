@@ -345,6 +345,10 @@
     <string name="error_category_suggestion_failed">Не вдалося підтягнути категорію.</string>
     <string name="error_attributes_load_failed">Не вдалося завантажити деталі.</string>
     <string name="error_user_profile_fetch_failed">Не вдалося завантажити ваш профіль.</string>
+    <string name="error_olx_auth_prepare_failed">Не вдалося почати авторизацію OLX.</string>
+    <string name="error_olx_auth_complete_failed">Не вдалося завершити авторизацію OLX.</string>
+    <string name="error_selected_files_process_failed">Не вдалося обробити вибрані файли.</string>
+    <string name="error_upload_file_failed">Не вдалося завантажити один із файлів.</string>
     <string name="error_publish_failed">Не вдалося опублікувати. Спробуйте ще раз.</string>
     <string name="error_generate_ad_failed">Не вдалося згенерувати оголошення. Спробуєте ще раз?</string>
 

@@ -46,8 +46,6 @@ class OlxAuthRepository(
             }
         }.buildString()
 
-        println("URL: $url")
-
         val request = OlxAuthorizationRequest(
             url = url,
             state = state,

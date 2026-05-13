@@ -3,7 +3,11 @@ package com.sirelon.sellsnap.features.seller.auth.presentation
 import androidx.lifecycle.viewModelScope
 import com.sirelon.sellsnap.features.common.presentation.BaseViewModel
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAuthRepository
+import com.sirelon.sellsnap.generated.resources.Res
+import com.sirelon.sellsnap.generated.resources.error_olx_auth_complete_failed
+import com.sirelon.sellsnap.generated.resources.error_olx_auth_prepare_failed
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.getString
 
 class SellerAuthViewModel(
     private val authRepository: OlxAuthRepository,
@@ -61,7 +65,7 @@ class SellerAuthViewModel(
                     postEffect(SellerAuthContract.SellerAuthEffect.OpenHome)
                 }
                 .onFailure { error ->
-                    showError(error.message ?: "Failed to complete OLX authorization.")
+                    showError(getString(Res.string.error_olx_auth_complete_failed))
                 }
         }
     }
@@ -84,7 +88,7 @@ class SellerAuthViewModel(
                     }
                 }
                 .onFailure { error ->
-                    showError(error.message ?: "Failed to prepare OLX authorization.")
+                    showError(getString(Res.string.error_olx_auth_prepare_failed))
                 }
         }
     }

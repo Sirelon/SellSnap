@@ -344,6 +344,10 @@
     <string name="error_category_suggestion_failed">Couldn\'t pull a category suggestion.</string>
     <string name="error_attributes_load_failed">Couldn\'t load the details.</string>
     <string name="error_user_profile_fetch_failed">Couldn\'t load your profile.</string>
+    <string name="error_olx_auth_prepare_failed">Couldn\'t start OLX authorization.</string>
+    <string name="error_olx_auth_complete_failed">Couldn\'t complete OLX authorization.</string>
+    <string name="error_selected_files_process_failed">Couldn\'t process the selected files.</string>
+    <string name="error_upload_file_failed">Couldn\'t upload one of the files.</string>
     <string name="error_publish_failed">Publishing didn\'t go through. Give it another shot.</string>
     <string name="error_generate_ad_failed">Couldn\'t generate the ad. Try again?</string>
 
