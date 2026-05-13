@@ -217,9 +217,9 @@ class GenerateAdViewModel(
         viewModelScope.launch {
             mediaUploadHelper
                 .prepareFiles(selectionResult = event.result)
-                .onSuccess { files ->
-                    val persistedFiles = files.mapNotNull { draftMediaFileStore.persist(it) }
-                    if (files.isNotEmpty() && currentState().uploads.isEmpty()) {
+                .mapCatching { files -> files.mapNotNull { draftMediaFileStore.persist(it) } }
+                .onSuccess { persistedFiles ->
+                    if (persistedFiles.isNotEmpty() && currentState().uploads.isEmpty()) {
                         adFlowTimerStore.markFlowStartedIfNeeded()
                     }
                     setState { current ->
