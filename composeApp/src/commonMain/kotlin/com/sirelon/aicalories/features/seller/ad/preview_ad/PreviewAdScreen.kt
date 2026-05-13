@@ -66,6 +66,9 @@ import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.scene.SinglePaneSceneStrategy
 import androidx.navigation3.ui.NavDisplay
+import androidx.navigationevent.NavigationEventInfo
+import androidx.navigationevent.compose.NavigationBackHandler
+import androidx.navigationevent.compose.rememberNavigationEventState
 import com.mohamedrejeb.calf.permissions.CoarseLocation
 import com.mohamedrejeb.calf.permissions.Permission
 import com.sirelon.sellsnap.designsystem.AppCard
@@ -258,6 +261,16 @@ fun PreviewAdScreen(
         entryDecorators = listOf(rememberSaveableStateHolderNavEntryDecorator<NavKey>()),
         entryProvider = entryProvider<NavKey> {
             entry<PreviewAdDestination.Content> {
+                val backHandlerState =
+                    rememberNavigationEventState(currentInfo = NavigationEventInfo.None)
+                NavigationBackHandler(
+                    state = backHandlerState,
+                    onBackCompleted = {
+                        if (navBackStack.lastOrNull() !is PreviewAdDestination.BackInfo) {
+                            navBackStack.add(PreviewAdDestination.BackInfo)
+                        }
+                    },
+                )
                 PreviewAdContentRoute(
                     viewModel = viewModel,
                     snackbarHostState = snackbarHostState,
