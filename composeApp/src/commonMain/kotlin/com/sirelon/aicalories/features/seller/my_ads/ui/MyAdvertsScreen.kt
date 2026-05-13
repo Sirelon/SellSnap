@@ -53,6 +53,7 @@ import com.sirelon.sellsnap.generated.resources.ic_camera
 import com.sirelon.sellsnap.generated.resources.ic_refresh_cw
 import com.sirelon.sellsnap.generated.resources.ic_tag
 import com.sirelon.sellsnap.generated.resources.ic_wifi_off
+import com.sirelon.sellsnap.generated.resources.label_value_format
 import com.sirelon.sellsnap.generated.resources.my_ads_connect_action
 import com.sirelon.sellsnap.generated.resources.my_ads_connect_description
 import com.sirelon.sellsnap.generated.resources.my_ads_connect_title
@@ -410,7 +411,7 @@ private fun DateLine(label: String, value: String) {
     if (value.isBlank()) return
 
     Text(
-        text = "$label: $value",
+        text = stringResource(Res.string.label_value_format, label, value),
         style = AppTheme.typography.caption,
         color = AppTheme.colors.onSurfaceMuted,
         maxLines = 1,

@@ -33,6 +33,15 @@ import com.sirelon.sellsnap.designsystem.AppTheme
 import com.sirelon.sellsnap.designsystem.ObserveAsEvents
 import com.sirelon.sellsnap.features.media.PermissionDialogs
 import com.sirelon.sellsnap.features.media.rememberPermissionController
+import com.sirelon.sellsnap.generated.resources.Res
+import com.sirelon.sellsnap.generated.resources.back
+import com.sirelon.sellsnap.generated.resources.whisper_poc_title
+import com.sirelon.sellsnap.generated.resources.whisper_start_live_text
+import com.sirelon.sellsnap.generated.resources.whisper_start_recording
+import com.sirelon.sellsnap.generated.resources.whisper_stop_live_text
+import com.sirelon.sellsnap.generated.resources.whisper_stop_recording
+import com.sirelon.sellsnap.generated.resources.whisper_transcribe
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -90,12 +99,12 @@ private fun WhisperDemoScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text("Whisper PoC") },
+                title = { Text(stringResource(Res.string.whisper_poc_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Back",
+                            contentDescription = stringResource(Res.string.back),
                         )
                     }
                 },
@@ -122,7 +131,15 @@ private fun WhisperDemoScreen(
                     },
                 ),
             ) {
-                Text(if (state.isRecording) "Stop Recording" else "Start Recording")
+                Text(
+                    stringResource(
+                        if (state.isRecording) {
+                            Res.string.whisper_stop_recording
+                        } else {
+                            Res.string.whisper_start_recording
+                        }
+                    )
+                )
             }
 
             Button(
@@ -137,7 +154,15 @@ private fun WhisperDemoScreen(
                     },
                 ),
             ) {
-                Text(if (state.isLiveTranscribing) "Stop Live Text" else "Start Live Text")
+                Text(
+                    stringResource(
+                        if (state.isLiveTranscribing) {
+                            Res.string.whisper_stop_live_text
+                        } else {
+                            Res.string.whisper_start_live_text
+                        }
+                    )
+                )
             }
 
             Button(
@@ -148,7 +173,7 @@ private fun WhisperDemoScreen(
                         !state.isTranscribing &&
                         !state.isLiveTranscribing,
             ) {
-                Text("Transcribe")
+                Text(stringResource(Res.string.whisper_transcribe))
             }
 
             if (state.isTranscribing) {

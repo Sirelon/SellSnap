@@ -55,6 +55,7 @@ import com.sirelon.sellsnap.generated.resources.benefit_publish
 import com.sirelon.sellsnap.generated.resources.benefit_sync
 import com.sirelon.sellsnap.generated.resources.continue_as_guest
 import com.sirelon.sellsnap.generated.resources.continue_with_olx
+import com.sirelon.sellsnap.generated.resources.generic_error_retry
 import com.sirelon.sellsnap.generated.resources.guest_description
 import com.sirelon.sellsnap.generated.resources.ic_check
 import com.sirelon.sellsnap.generated.resources.ic_snap_logo
@@ -153,7 +154,7 @@ fun SellerLandingScreen(
             if (state.status == SellerAuthContract.SellerAuthStatus.Error) {
                 Text(
                     modifier = Modifier.padding(top = AppDimens.Spacing.xl3).fillMaxWidth(),
-                    text = state.errorMessage ?: "Something went wrong. Try again.",
+                    text = state.errorMessage ?: stringResource(Res.string.generic_error_retry),
                     color = AppTheme.colors.error,
                     style = AppTheme.typography.body,
                     textAlign = TextAlign.Center,

@@ -110,6 +110,7 @@ import com.sirelon.sellsnap.generated.resources.ad_description_label
 import com.sirelon.sellsnap.generated.resources.ad_location_label
 import com.sirelon.sellsnap.generated.resources.ad_price_ai_estimated_range
 import com.sirelon.sellsnap.generated.resources.ad_title_label
+import com.sirelon.sellsnap.generated.resources.bullet_item
 import com.sirelon.sellsnap.generated.resources.ad_your_price
 import com.sirelon.sellsnap.generated.resources.banner_ready_in
 import com.sirelon.sellsnap.generated.resources.cancel
@@ -565,7 +566,7 @@ private fun ValidationBanner(
             Column(verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.xs)) {
                 displayErrors.forEach { error ->
                     Text(
-                        text = "• $error",
+                        text = stringResource(Res.string.bullet_item, error),
                         style = AppTheme.typography.body,
                         color = errorColor,
                     )

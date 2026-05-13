@@ -35,7 +35,13 @@ sealed interface RealtimeTranscriptionEvent {
     data object Connected : RealtimeTranscriptionEvent
     data class Delta(val text: String) : RealtimeTranscriptionEvent
     data class Completed(val text: String) : RealtimeTranscriptionEvent
-    data class Error(val message: String) : RealtimeTranscriptionEvent
+    data class Error(val reason: RealtimeTranscriptionErrorReason) : RealtimeTranscriptionEvent
+}
+
+enum class RealtimeTranscriptionErrorReason {
+    MissingApiKey,
+    LiveTranscriptionFailed,
+    ServerError,
 }
 
 class RealtimeTranscriptionClient(
@@ -48,7 +54,7 @@ class RealtimeTranscriptionClient(
         val events = this@callbackFlow
         val token = tokenProvider.token
         if (token.isNullOrBlank()) {
-            trySend(RealtimeTranscriptionEvent.Error("OpenAI API key is missing."))
+            trySend(RealtimeTranscriptionEvent.Error(RealtimeTranscriptionErrorReason.MissingApiKey))
             close()
             return@callbackFlow
         }
@@ -88,12 +94,8 @@ class RealtimeTranscriptionClient(
                         close()
                     }
                 }
-            }.onFailure { throwable ->
-                trySend(
-                    RealtimeTranscriptionEvent.Error(
-                        throwable.message ?: "Live transcription failed.",
-                    ),
-                )
+            }.onFailure {
+                trySend(RealtimeTranscriptionEvent.Error(RealtimeTranscriptionErrorReason.LiveTranscriptionFailed))
             }
             close()
         }
@@ -127,13 +129,7 @@ class RealtimeTranscriptionClient(
             }
 
             "error" -> {
-                val message = event["error"]
-                    ?.jsonObject
-                    ?.get("message")
-                    ?.jsonPrimitive
-                    ?.contentOrNull
-                    ?: "Realtime transcription returned an error."
-                trySend(RealtimeTranscriptionEvent.Error(message))
+                trySend(RealtimeTranscriptionEvent.Error(RealtimeTranscriptionErrorReason.ServerError))
                 true
             }
 

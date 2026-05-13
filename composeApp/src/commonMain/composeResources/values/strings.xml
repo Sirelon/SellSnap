@@ -192,6 +192,7 @@
     <string name="my_ads_load_more">Load more</string>
     <string name="my_ads_created_at">Created</string>
     <string name="my_ads_valid_to">Valid to</string>
+    <string name="label_value_format">%1$s: %2$s</string>
     <string name="my_ads_untitled">Untitled OLX ad</string>
     <string name="my_ads_price_not_set">Price not set</string>
     <string name="my_ads_missing_url">This OLX listing does not have a public link yet.</string>
@@ -294,6 +295,18 @@
     <string name="add_photos_to_continue">Pop in a photo first</string>
     <string name="new_listing">New listing</string>
     <string name="new_listing_subtitle">Drop in 1–8 photos. We\'ll handle the rest.</string>
+    <string name="generic_error_retry">Something went wrong. Try again.</string>
+    <string name="whisper_poc_title">Whisper PoC</string>
+    <string name="whisper_start_recording">Start Recording</string>
+    <string name="whisper_stop_recording">Stop Recording</string>
+    <string name="whisper_start_live_text">Start Live Text</string>
+    <string name="whisper_stop_live_text">Stop Live Text</string>
+    <string name="whisper_transcribe">Transcribe</string>
+    <string name="whisper_recording_failed">Recording failed.</string>
+    <string name="whisper_start_recording_failed">Could not start recording.</string>
+    <string name="whisper_transcription_failed">Transcription failed.</string>
+    <string name="whisper_openai_api_key_missing">OpenAI API key is missing.</string>
+    <string name="whisper_live_transcription_failed">Live transcription failed.</string>
     <string name="welcome_greeting">Hey 👋</string>
     <string name="ai_hint_label">Give the AI a hint (optional)</string>
     <string name="ai_hint_placeholder">e.g. Nike Air Max 90, size 42, worn for 2 months</string>

@@ -72,6 +72,7 @@ import com.sirelon.sellsnap.generated.resources.ic_check
 import com.sirelon.sellsnap.generated.resources.ic_snap_logo
 import com.sirelon.sellsnap.generated.resources.ic_sparkles
 import com.sirelon.sellsnap.generated.resources.new_listing
+import com.sirelon.sellsnap.generated.resources.new_listing_subtitle
 import com.sirelon.sellsnap.generated.resources.sellsnap_title
 import com.sirelon.sellsnap.generated.resources.snap_photo_ad_desc
 import com.sirelon.sellsnap.generated.resources.tip_angles
@@ -80,6 +81,7 @@ import com.sirelon.sellsnap.generated.resources.tip_lighting
 import com.sirelon.sellsnap.generated.resources.tips_for_better_photos
 import com.sirelon.sellsnap.generated.resources.turn_stuff_into_olx_listings
 import com.sirelon.sellsnap.generated.resources.welcome_greeting
+import com.sirelon.sellsnap.generated.resources.whisper_poc_title
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
@@ -339,7 +341,7 @@ private fun SlimHeader(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Mic,
-                        contentDescription = "Whisper PoC",
+                        contentDescription = stringResource(Res.string.whisper_poc_title),
                         tint = AppTheme.colors.onSurface,
                     )
                 }
@@ -437,7 +439,7 @@ private fun PageTitle(modifier: Modifier = Modifier) {
             color = AppTheme.colors.onSurface,
         )
         Text(
-            text = "Add 1-$MAX_PHOTOS photos. AI will handle the rest.",
+            text = stringResource(Res.string.new_listing_subtitle),
             fontSize = AppDimens.TextSize.xl3,
             fontWeight = FontWeight.Normal,
             color = AppTheme.colors.onSurfaceMuted,

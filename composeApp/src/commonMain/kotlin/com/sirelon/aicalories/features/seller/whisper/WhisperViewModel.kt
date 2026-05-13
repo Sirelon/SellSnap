@@ -8,10 +8,18 @@ import com.aallam.openai.client.OpenAI
 import com.sirelon.sellsnap.audio.AudioRecorder
 import com.sirelon.sellsnap.audio.LiveAudioRecorder
 import com.sirelon.sellsnap.features.common.presentation.BaseViewModel
+import com.sirelon.sellsnap.generated.resources.Res
+import com.sirelon.sellsnap.generated.resources.whisper_live_transcription_failed
+import com.sirelon.sellsnap.generated.resources.whisper_openai_api_key_missing
+import com.sirelon.sellsnap.generated.resources.whisper_recording_failed
+import com.sirelon.sellsnap.generated.resources.whisper_start_recording_failed
+import com.sirelon.sellsnap.generated.resources.whisper_transcription_failed
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.launch
 import kotlinx.io.Buffer
+import org.jetbrains.compose.resources.StringResource
+import org.jetbrains.compose.resources.getString
 
 class WhisperViewModel(
     private val audioRecorder: AudioRecorder,
@@ -45,8 +53,11 @@ class WhisperViewModel(
                 it.copy(
                     isRecording = false,
                     hasAudioData = bytes != null,
-                    errorMessage = if (bytes == null) "Recording failed." else null,
+                    errorMessage = null,
                 )
+            }
+            if (bytes == null) {
+                showError(Res.string.whisper_recording_failed)
             }
             return
         }
@@ -64,8 +75,10 @@ class WhisperViewModel(
                 )
             }
         }.onFailure { throwable ->
-            setState { it.copy(errorMessage = throwable.message ?: "Could not start recording.") }
-            postEffect(WhisperContract.Effect.ShowMessage("Could not start recording."))
+            showError(
+                fallback = Res.string.whisper_start_recording_failed,
+                message = throwable.message,
+            )
         }
     }
 
@@ -118,13 +131,21 @@ class WhisperViewModel(
                         }
 
                         is RealtimeTranscriptionEvent.Error -> {
+                            val message = when (event.reason) {
+                                RealtimeTranscriptionErrorReason.MissingApiKey ->
+                                    getString(Res.string.whisper_openai_api_key_missing)
+
+                                RealtimeTranscriptionErrorReason.LiveTranscriptionFailed,
+                                RealtimeTranscriptionErrorReason.ServerError ->
+                                    getString(Res.string.whisper_live_transcription_failed)
+                            }
                             setState {
                                 it.copy(
                                     isLiveTranscribing = false,
-                                    errorMessage = event.message,
+                                    errorMessage = message,
                                 )
                             }
-                            postEffect(WhisperContract.Effect.ShowMessage(event.message))
+                            postEffect(WhisperContract.Effect.ShowMessage(message))
                             stopLiveTranscription()
                         }
                     }
@@ -167,7 +188,7 @@ class WhisperViewModel(
                     )
                 }
             }.onFailure { throwable ->
-                val message = throwable.message ?: "Transcription failed."
+                val message = throwable.message ?: getString(Res.string.whisper_transcription_failed)
                 setState {
                     it.copy(
                         isTranscribing = false,
@@ -176,6 +197,14 @@ class WhisperViewModel(
                 }
                 postEffect(WhisperContract.Effect.ShowMessage(message))
             }
+        }
+    }
+
+    private fun showError(fallback: StringResource, message: String? = null) {
+        viewModelScope.launch {
+            val resolvedMessage = message ?: getString(fallback)
+            setState { it.copy(errorMessage = resolvedMessage) }
+            postEffect(WhisperContract.Effect.ShowMessage(resolvedMessage))
         }
     }
 

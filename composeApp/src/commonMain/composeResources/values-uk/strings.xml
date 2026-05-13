@@ -24,7 +24,7 @@
     <string name="onboarding_step1_title">Сфотографуйте 📸</string>
     <string name="onboarding_step1_subtitle">Наведіть, клацніть — готово. Усе, що хочете продати, ми оформимо.</string>
     <string name="onboarding_step2_title">ШІ напише замість вас ✍️</string>
-    <string name="onboarding_step2_subtitle">Назва, опис і чесна ціна — встигнуть з\'явитися, поки кава охолоне.</string>
+    <string name="onboarding_step2_subtitle">Назва, опис і чесна ціна — встигнуть з'явитися, поки кава охолоне.</string>
     <string name="onboarding_step3_title">Публікація в один тап 🚀</string>
     <string name="onboarding_step3_subtitle">Один тап — і ви на OLX. Покупці, знайомтеся з вашими речами.</string>
     <string name="onboarding_step3_pill">АКТИВНЕ</string>
@@ -154,7 +154,7 @@
 
     <!-- OLX Auth Profile -->
     <string name="profile_field_id">ID</string>
-    <string name="profile_field_name">Ім\'я</string>
+    <string name="profile_field_name">Ім'я</string>
     <string name="profile_field_email">Email</string>
     <string name="profile_field_status">Статус</string>
     <string name="profile_field_phone">Телефон</string>
@@ -163,7 +163,7 @@
     <string name="profile_field_last_login_at">Останній вхід</string>
     <string name="profile_screen_title">Профіль</string>
     <string name="profile_guest_title">Гостьовий профіль</string>
-    <string name="profile_guest_description">Підключіть OLX, щоб публікувати з SellSnap — дані акаунта з\'являться тут.</string>
+    <string name="profile_guest_description">Підключіть OLX, щоб публікувати з SellSnap — дані акаунта з'являться тут.</string>
     <string name="profile_olx_account">Акаунт OLX</string>
     <string name="profile_location_title">Місце продажу</string>
     <string name="profile_location_subtitle">Ми використаємо це як типове місце для ваших наступних оголошень.</string>
@@ -178,14 +178,15 @@
     <string name="my_ads_screen_title">Мої оголошення OLX</string>
     <string name="my_ads_screen_subtitle">Опубліковані оголошення з підключеного акаунта OLX.</string>
     <string name="my_ads_empty_title">Оголошень OLX ще немає</string>
-    <string name="my_ads_empty_description">Створіть перше оголошення в SellSnap — після публікації воно з\'явиться тут.</string>
+    <string name="my_ads_empty_description">Створіть перше оголошення в SellSnap — після публікації воно з'явиться тут.</string>
     <string name="my_ads_create_listing">Нове оголошення</string>
     <string name="my_ads_connect_title">Підключіть OLX, щоб бачити оголошення</string>
-    <string name="my_ads_connect_description">Опубліковані оголошення OLX з\'являться тут після підключення акаунта.</string>
+    <string name="my_ads_connect_description">Опубліковані оголошення OLX з'являться тут після підключення акаунта.</string>
     <string name="my_ads_connect_action">Підключити OLX</string>
     <string name="my_ads_load_more">Завантажити ще</string>
     <string name="my_ads_created_at">Створено</string>
     <string name="my_ads_valid_to">Дійсне до</string>
+    <string name="label_value_format">%1$s: %2$s</string>
     <string name="my_ads_untitled">Оголошення OLX без назви</string>
     <string name="my_ads_price_not_set">Ціну не вказано</string>
     <string name="my_ads_missing_url">У цього оголошення OLX ще немає публічного посилання.</string>
@@ -286,7 +287,7 @@
     <string name="loading_history">Завантаження історії</string>
     <string name="no_history_yet">Ще немає історії</string>
     <string name="loading_wait">Зачекайте</string>
-    <string name="no_history_description">Ваші проаналізовані страви з\'являться тут після того, як ви їх сфотографуєте та збережете.</string>
+    <string name="no_history_description">Ваші проаналізовані страви з'являться тут після того, як ви їх сфотографуєте та збережете.</string>
     <string name="capture_meal">Сфотографувати страву</string>
 
     <!-- Generate Ad Screen -->
@@ -296,8 +297,20 @@
     <string name="add_photos_to_continue">Спершу додайте фото</string>
     <string name="new_listing">Нове оголошення</string>
     <string name="new_listing_subtitle">Додайте 1–8 фото. Решту зробимо ми.</string>
+    <string name="generic_error_retry">Щось пішло не так. Спробуйте ще раз.</string>
+    <string name="whisper_poc_title">Whisper PoC</string>
+    <string name="whisper_start_recording">Почати запис</string>
+    <string name="whisper_stop_recording">Зупинити запис</string>
+    <string name="whisper_start_live_text">Почати живий текст</string>
+    <string name="whisper_stop_live_text">Зупинити живий текст</string>
+    <string name="whisper_transcribe">Транскрибувати</string>
+    <string name="whisper_recording_failed">Не вдалося записати аудіо.</string>
+    <string name="whisper_start_recording_failed">Не вдалося почати запис.</string>
+    <string name="whisper_transcription_failed">Не вдалося транскрибувати аудіо.</string>
+    <string name="whisper_openai_api_key_missing">Немає ключа OpenAI API.</string>
+    <string name="whisper_live_transcription_failed">Не вдалося виконати живу транскрипцію.</string>
     <string name="welcome_greeting">Привіт 👋</string>
-    <string name="ai_hint_label">Підкажіть ШІ (необов\'язково)</string>
+    <string name="ai_hint_label">Підкажіть ШІ (необов'язково)</string>
     <string name="ai_hint_placeholder">напр. Nike Air Max 90, розмір 42, носили 2 місяці</string>
     <string name="get_started">Почнемо</string>
     <string name="next">Далі</string>
@@ -341,7 +354,7 @@
 
     <!-- Preview Ad Screen -->
     <string name="publish_confirm_title">Публікуємо?</string>
-    <string name="publish_confirm_subtitle">Ваше оголошення з\'явиться на OLX за 1–2 хвилини.</string>
+    <string name="publish_confirm_subtitle">Ваше оголошення з'явиться на OLX за 1–2 хвилини.</string>
     <string name="publish_confirm_yes">Так, публікуємо</string>
     <string name="publish_confirm_back">Стоп, ще треба підправити</string>
     <string name="preview_back_info_title">Викинути цю чернетку?</string>
