@@ -12,17 +12,20 @@ class AppThemeRepository(
     private val applicationScope: CoroutineScope,
 ) {
     private val _themeMode = MutableStateFlow(AppThemeMode.System)
+    private val hasManualSelection = MutableStateFlow(false)
     val themeMode: StateFlow<AppThemeMode> = _themeMode.asStateFlow()
 
     init {
         applicationScope.launch {
-            _themeMode.value = store.read()
+            val savedThemeMode = store.read()
+            if (!hasManualSelection.value) {
+                _themeMode.value = savedThemeMode
+            }
         }
     }
 
     fun setThemeMode(themeMode: AppThemeMode) {
-        if (_themeMode.value == themeMode) return
-
+        hasManualSelection.value = true
         _themeMode.value = themeMode
         applicationScope.launch {
             store.write(themeMode)
