@@ -1,9 +1,10 @@
 package com.sirelon.sellsnap.features.seller.ad
 
 import com.sirelon.sellsnap.features.seller.ad.publish_success.PublishSuccessData
+import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.Serializable
 
-sealed interface AdDestination {
+sealed interface AdDestination : NavKey {
 
     @Serializable
     data object GenerateAd : AdDestination

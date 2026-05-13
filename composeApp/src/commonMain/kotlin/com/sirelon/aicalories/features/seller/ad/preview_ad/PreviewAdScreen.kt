@@ -41,7 +41,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -60,7 +59,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.util.fastRoundToInt
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
+import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.scene.SinglePaneSceneStrategy
 import androidx.navigation3.ui.NavDisplay
@@ -172,16 +173,24 @@ fun PreviewAdScreen(
     showImagesPreview: (List<String>, Int) -> Unit,
     onNavigateToProfile: (String) -> Unit = {},
 ) {
-    val viewModel: PreviewAdViewModel = koinViewModel { parametersOf(advertisement) }
+    val viewModel: PreviewAdViewModel = koinViewModel(
+        key = "preview-ad-${advertisement.hashCode()}",
+    ) { parametersOf(advertisement) }
     val snackbarHostState = remember { SnackbarHostState() }
-    val navBackStack = remember {
-        mutableStateListOf<PreviewAdDestination>(PreviewAdDestination.Content)
-    }
+    val navBackStack = rememberNavBackStack(
+        previewNavigationSavedStateConfiguration,
+        PreviewAdDestination.Content,
+    )
     val sceneStrategies = remember {
         listOf(
-            BottomSheetSceneStrategy<PreviewAdDestination>(),
-            SinglePaneSceneStrategy<PreviewAdDestination>(),
+            BottomSheetSceneStrategy<NavKey>(),
+            SinglePaneSceneStrategy<NavKey>(),
         )
+    }
+    LaunchedEffect(Unit) {
+        if (navBackStack.lastOrNull() is PreviewAdDestination.Publishing) {
+            navBackStack.removeAt(navBackStack.lastIndex)
+        }
     }
     val dismissPublishConfirm: () -> Unit = {
         if (navBackStack.lastOrNull() is PreviewAdDestination.PublishConfirm) {
@@ -245,8 +254,8 @@ fun PreviewAdScreen(
             }
         },
         sceneStrategies = sceneStrategies,
-        entryDecorators = listOf(rememberSaveableStateHolderNavEntryDecorator<PreviewAdDestination>()),
-        entryProvider = entryProvider {
+        entryDecorators = listOf(rememberSaveableStateHolderNavEntryDecorator<NavKey>()),
+        entryProvider = entryProvider<NavKey> {
             entry<PreviewAdDestination.Content> {
                 PreviewAdContentRoute(
                     viewModel = viewModel,
