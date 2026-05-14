@@ -167,6 +167,11 @@
     <string name="profile_olx_account">Акаунт OLX</string>
     <string name="profile_location_title">Місце продажу</string>
     <string name="profile_location_subtitle">Ми використаємо це як типове місце для ваших наступних оголошень.</string>
+    <string name="profile_theme_title">Тема</string>
+    <string name="profile_theme_subtitle">Виберіть вигляд SellSnap на цьому пристрої.</string>
+    <string name="profile_theme_system">Системна</string>
+    <string name="profile_theme_light">Світла</string>
+    <string name="profile_theme_dark">Темна</string>
     <string name="profile_logout">Вийти</string>
     <string name="profile_not_provided">Не задано</string>
     <string name="profile_value_yes">Так</string>

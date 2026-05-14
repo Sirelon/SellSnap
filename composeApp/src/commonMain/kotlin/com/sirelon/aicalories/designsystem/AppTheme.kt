@@ -10,7 +10,30 @@ import com.sirelon.sellsnap.designsystem.utils.ThemesFactory
 
 @Composable
 fun AppTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    themeMode: AppThemeMode = AppThemeMode.System,
+    typography: AppTypography = appTypography(
+        displayFontFamily = ManropeFontFamily,
+        bodyFontFamily = InterFontFamily,
+    ),
+    content: @Composable () -> Unit,
+) {
+    val systemDarkTheme = isSystemInDarkTheme()
+    val darkTheme = when (themeMode) {
+        AppThemeMode.System -> systemDarkTheme
+        AppThemeMode.Light -> false
+        AppThemeMode.Dark -> true
+    }
+
+    AppTheme(
+        darkTheme = darkTheme,
+        typography = typography,
+        content = content,
+    )
+}
+
+@Composable
+fun AppTheme(
+    darkTheme: Boolean,
     colors: AppColors = if (darkTheme) ThemesFactory.dark() else ThemesFactory.light(),
     typography: AppTypography = appTypography(
         displayFontFamily = ManropeFontFamily,
