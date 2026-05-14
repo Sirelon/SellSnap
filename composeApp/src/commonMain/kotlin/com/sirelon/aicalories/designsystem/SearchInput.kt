@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Icon
@@ -18,9 +20,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.text.input.ImeAction
 import com.sirelon.sellsnap.generated.resources.Res
 import com.sirelon.sellsnap.generated.resources.ic_x
+import com.sirelon.sellsnap.generated.resources.keyboard_done_action
 import org.jetbrains.compose.resources.painterResource
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun SearchInput(
@@ -31,6 +36,11 @@ fun SearchInput(
 ) {
     val c = AppTheme.colors
     val t = AppTheme.typography
+    val dismissKeyboard = rememberKeyboardDismissAction()
+    val platformImeOptions = rememberPlatformImeOptions(
+        doneLabel = stringResource(Res.string.keyboard_done_action),
+        onDone = dismissKeyboard,
+    )
 
     Row(
         modifier = modifier
@@ -51,6 +61,11 @@ fun SearchInput(
             onValueChange = onValueChange,
             modifier = Modifier.weight(1f),
             singleLine = true,
+            keyboardOptions = KeyboardOptions(
+                imeAction = ImeAction.Search,
+                platformImeOptions = platformImeOptions,
+            ),
+            keyboardActions = KeyboardActions(onSearch = { dismissKeyboard() }),
             textStyle = t.body.copy(color = c.onSurface),
             cursorBrush = SolidColor(c.primary),
             decorationBox = { inner ->

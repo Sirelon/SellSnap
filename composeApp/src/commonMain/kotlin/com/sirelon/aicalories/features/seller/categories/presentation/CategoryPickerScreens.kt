@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -32,8 +33,10 @@ import com.sirelon.sellsnap.designsystem.AppDimens
 import com.sirelon.sellsnap.designsystem.AppTheme
 import com.sirelon.sellsnap.designsystem.Cell
 import com.sirelon.sellsnap.designsystem.SearchInput
+import com.sirelon.sellsnap.designsystem.dismissKeyboardOnTapOutside
 import com.sirelon.sellsnap.designsystem.buttons.AppButton
 import com.sirelon.sellsnap.designsystem.buttons.AppButtonDefaults
+import com.sirelon.sellsnap.designsystem.rememberKeyboardDismissAction
 import com.sirelon.sellsnap.designsystem.screens.LoadingOverlay
 import com.sirelon.sellsnap.features.seller.categories.domain.OlxCategory
 import com.sirelon.sellsnap.features.seller.categories.presentation.CategoryPickerContract.CategoryPickerEvent.NavigateTo
@@ -63,8 +66,13 @@ fun CategoryPickerSheet(
 
     val c = AppTheme.colors
     val t = AppTheme.typography
+    val dismissKeyboard = rememberKeyboardDismissAction()
 
-    Column(modifier = Modifier.fillMaxHeight(0.92f)) {
+    Column(
+        modifier = Modifier
+            .fillMaxHeight(0.92f)
+            .dismissKeyboardOnTapOutside(dismissKeyboard),
+    ) {
         // ── Search bar ────────────────────────────────────────────
         SearchInput(
             value = state.searchQuery,
@@ -230,6 +238,7 @@ fun CategoryPickerSheet(
         Row(
             modifier = Modifier
                 .padding(horizontal = AppDimens.Spacing.xl5, vertical = AppDimens.Spacing.xl)
+                .imePadding()
                 .navigationBarsPadding()
                 .fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing.l),

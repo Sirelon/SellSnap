@@ -15,11 +15,10 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.VisualTransformation
 import com.sirelon.sellsnap.generated.resources.Res
 import com.sirelon.sellsnap.generated.resources.character_count_range
+import com.sirelon.sellsnap.generated.resources.keyboard_done_action
 import com.sirelon.sellsnap.generated.resources.min_characters
 import org.jetbrains.compose.resources.stringResource
 
@@ -47,14 +46,19 @@ fun Input(
     keyboardActions: KeyboardActions = KeyboardActions.Default,
     visualTransformation: VisualTransformation = VisualTransformation.None,
 ) {
-    val focusManager = LocalFocusManager.current
-    val resolvedKeyboardOptions = if (keyboardOptions.imeAction == ImeAction.Default) {
-        keyboardOptions.copy(imeAction = ImeAction.Done)
-    } else {
-        keyboardOptions
-    }
+    val dismissKeyboard = rememberKeyboardDismissAction()
+    val platformImeOptions = rememberPlatformImeOptions(
+        doneLabel = stringResource(Res.string.keyboard_done_action),
+        onDone = dismissKeyboard,
+    )
+    val resolvedKeyboardOptions = keyboardOptions.withKeyboardDismissDefaults(platformImeOptions)
     val resolvedKeyboardActions = if (keyboardActions == KeyboardActions.Default) {
-        KeyboardActions(onDone = { focusManager.clearFocus(force = true) })
+        KeyboardActions(
+            onDone = { dismissKeyboard() },
+            onGo = { dismissKeyboard() },
+            onSearch = { dismissKeyboard() },
+            onSend = { dismissKeyboard() },
+        )
     } else {
         keyboardActions
     }
@@ -128,9 +132,9 @@ fun Input(
         suffix = suffix,
         prefix = prefix,
         isError = isError,
-        singleLine = true,
-        minLines = 1,
-        maxLines = 1,
+        singleLine = singleLine,
+        minLines = if (singleLine) 1 else minLines,
+        maxLines = if (singleLine) 1 else maxLines,
         keyboardOptions = resolvedKeyboardOptions,
         keyboardActions = resolvedKeyboardActions,
         visualTransformation = visualTransformation,
@@ -151,14 +155,14 @@ fun TransparentInput(
     inputTransformation: InputTransformation? = null,
     outputTransformation: OutputTransformation? = null,
 ) {
-    val focusManager = LocalFocusManager.current
-    val resolvedKeyboardOptions = if (keyboardOptions.imeAction == ImeAction.Default) {
-        keyboardOptions.copy(imeAction = ImeAction.Done)
-    } else {
-        keyboardOptions
-    }
+    val dismissKeyboard = rememberKeyboardDismissAction()
+    val platformImeOptions = rememberPlatformImeOptions(
+        doneLabel = stringResource(Res.string.keyboard_done_action),
+        onDone = dismissKeyboard,
+    )
+    val resolvedKeyboardOptions = keyboardOptions.withKeyboardDismissDefaults(platformImeOptions)
     val keyboardActionHandler = KeyboardActionHandler { performDefaultAction ->
-        focusManager.clearFocus(force = true)
+        dismissKeyboard()
         performDefaultAction()
     }
     val characterCountText = when {

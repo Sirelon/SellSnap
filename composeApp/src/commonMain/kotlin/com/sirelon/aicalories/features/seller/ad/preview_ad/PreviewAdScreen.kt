@@ -85,8 +85,10 @@ import com.sirelon.sellsnap.designsystem.ThousandSeparatorOutputTransformation
 import com.sirelon.sellsnap.designsystem.TransparentInput
 import com.sirelon.sellsnap.designsystem.buttons.AppButton
 import com.sirelon.sellsnap.designsystem.buttons.AppButtonDefaults
+import com.sirelon.sellsnap.designsystem.dismissKeyboardOnTapOutside
 import com.sirelon.sellsnap.designsystem.formatPrice
 import com.sirelon.sellsnap.designsystem.pager.ImagesCarousel
+import com.sirelon.sellsnap.designsystem.rememberKeyboardDismissAction
 import com.sirelon.sellsnap.features.media.PermissionController
 import com.sirelon.sellsnap.features.media.PermissionDialogContent
 import com.sirelon.sellsnap.features.media.PermissionDialogs
@@ -388,6 +390,7 @@ private fun PreviewAdContentRoute(
     val scrollState = rememberScrollState()
     val coroutineScope = rememberCoroutineScope()
     val invalidAttributeBringIntoViewRequester = remember { BringIntoViewRequester() }
+    val dismissKeyboard = rememberKeyboardDismissAction()
 
     LaunchedEffect(autoOpenAttributeRequest) {
         if (autoOpenAttributeRequest > 0) {
@@ -396,6 +399,9 @@ private fun PreviewAdContentRoute(
     }
 
     AppScaffold(
+        modifier = Modifier
+            .fillMaxSize()
+            .dismissKeyboardOnTapOutside(dismissKeyboard),
         snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
             Column(
