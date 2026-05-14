@@ -16,6 +16,7 @@
     <string name="terms_privacy_prefix">By continuing, you\'re cool with our </string>
     <string name="terms_of_service">Terms of Service</string>
     <string name="privacy_policy">Privacy Policy</string>
+    <string name="keyboard_done_action">Done</string>
     <string name="step_format">Step %1$s of %2$s</string>
     <string name="or_divider">or</string>
 

@@ -17,6 +17,7 @@
     <string name="terms_privacy_prefix">Продовжуючи, ви приймаєте наші </string>
     <string name="terms_of_service">Умови обслуговування</string>
     <string name="privacy_policy">Політику конфіденційності</string>
+    <string name="keyboard_done_action">Готово</string>
     <string name="step_format">Крок %1$s з %2$s</string>
     <string name="or_divider">або</string>
 
