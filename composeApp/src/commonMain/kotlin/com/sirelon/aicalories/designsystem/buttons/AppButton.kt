@@ -314,13 +314,13 @@ data object AppButtonDefaults {
         return AppButtonStyle(
             backgroundColor = primary,
             contentColor = AppTheme.colors.onPrimary,
-            elevation = AppDimens.Size.l, // 10dp — roughly `0 10px 28px -6px`
+            elevation = 20.dp,
             gradient = Brush.linearGradient(
                 colors = listOf(primary, primaryBright, warningVariant),
                 start = Offset(0f, 0f),
                 end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY),
             ),
-            shadowColor = primary.copy(alpha = 0.56f),
+            shadowColor = primary.copy(alpha = 0.72f),
             innerHighlight = true,
         )
     }
