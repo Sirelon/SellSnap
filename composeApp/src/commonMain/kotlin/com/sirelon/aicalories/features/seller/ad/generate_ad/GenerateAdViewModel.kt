@@ -26,11 +26,11 @@ import com.sirelon.sellsnap.generated.resources.error_upload_file_failed
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
-import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
@@ -199,8 +199,14 @@ class GenerateAdViewModel(
             mediaUploadHelper
                 .uploadPreparedFiles(pendingFiles)
                 .onEach(::handleUploadUpdate)
-                .filterIsInstance<MediaUploadUpdate.Success>()
-                .map { it.file to it.uploadedFile }
+                .mapNotNull { update ->
+                    when (update) {
+                        is MediaUploadUpdate.Success -> update.file to update.uploadedFile
+                        is MediaUploadUpdate.Failure -> throw IllegalStateException(update.message)
+                        is MediaUploadUpdate.Error -> throw IllegalStateException(update.message)
+                        else -> null
+                    }
+                }
                 .toList()
                 .toMap()
         }

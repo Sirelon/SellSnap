@@ -3,6 +3,7 @@ package com.sirelon.sellsnap.supabase
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.auth.minimalConfig
 import io.github.jan.supabase.auth.providers.builtin.Email
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.exceptions.RestException
@@ -35,7 +36,9 @@ class SupabaseClient {
                     socketTimeoutMillis = 60_000
                 }
             }
-            install(Auth)
+            install(Auth) {
+                minimalConfig()
+            }
             install(Storage)
         }
     }
@@ -60,7 +63,6 @@ class SupabaseClient {
 
     private suspend fun ensureAuthenticatedUserId(): String {
         val authPlugin = client.auth
-        authPlugin.awaitInitialization()
 
         return sessionMutex.withLock {
             retrieveUserId(authPlugin) ?: run {

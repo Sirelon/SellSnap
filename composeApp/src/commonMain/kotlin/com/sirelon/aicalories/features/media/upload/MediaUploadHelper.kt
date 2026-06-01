@@ -155,7 +155,7 @@ private val SUPPORTED_IMAGE_EXTENSIONS = setOf("jpg", "jpeg", "png", "webp")
 private val CONVERTIBLE_IMAGE_EXTENSIONS = setOf("heic", "heif")
 
 private fun KmpFile.isSupportedOrConvertible(): Boolean {
-    val extension = getFileExtension() ?: return false
+    val extension = getFileExtension() ?: return true
     return extension in SUPPORTED_IMAGE_EXTENSIONS || extension in CONVERTIBLE_IMAGE_EXTENSIONS
 }
 
