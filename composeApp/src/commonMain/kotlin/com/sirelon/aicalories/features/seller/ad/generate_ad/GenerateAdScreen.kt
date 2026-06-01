@@ -22,6 +22,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FlashOn
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -35,6 +36,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.PreviewLightDark
@@ -180,17 +182,24 @@ private fun GenerateAdScreenContent(
         contentWindowInsets = WindowInsets.safeDrawing,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
+            val bgColor = MaterialTheme.colorScheme.background
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .imePadding()
                     .navigationBarsPadding()
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(bgColor.copy(alpha = 0f), bgColor),
+                        )
+                    )
                     .padding(AppDimens.Spacing.xl3),
             ) {
                 MagicCtaBar(
                     hasPhotos = state.uploads.isNotEmpty(),
                     canSubmit = state.canSubmit,
                     onSubmitClick = onSubmitClick,
+                    onAddPhotoClick = onTakePhotoClick,
                 )
             }
         }
@@ -275,9 +284,9 @@ private fun MagicCtaBar(
     hasPhotos: Boolean,
     canSubmit: Boolean,
     onSubmitClick: () -> Unit,
+    onAddPhotoClick: () -> Unit,
 ) {
     AppButton(
-
         modifier = Modifier.fillMaxWidth(),
         style = AppButtonDefaults.magic(),
         text = if (hasPhotos)
@@ -285,7 +294,11 @@ private fun MagicCtaBar(
         else
             stringResource(Res.string.add_photos_to_continue),
         onClick = {
-            if (canSubmit) onSubmitClick()
+            if (hasPhotos) {
+                if (canSubmit) onSubmitClick()
+            } else {
+                onAddPhotoClick()
+            }
         },
         leadingIcon = if (hasPhotos) painterResource(Res.drawable.ic_sparkles) else null,
     )
