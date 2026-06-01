@@ -17,7 +17,6 @@
     <string name="terms_of_service">Terms of Service</string>
     <string name="privacy_policy">Privacy Policy</string>
     <string name="keyboard_done_action">Done</string>
-    <string name="step_format">Step %1$s of %2$s</string>
     <string name="or_divider">or</string>
 
     <!-- Onboarding Screen Steps -->
@@ -27,34 +26,18 @@
     <string name="onboarding_step2_subtitle">A title, a description, and a fair price — ready before your coffee cools.</string>
     <string name="onboarding_step3_title">Publish in a tap 🚀</string>
     <string name="onboarding_step3_subtitle">One tap and you\'re live on OLX. Buyers, meet your stuff.</string>
-    <string name="onboarding_step3_pill">LIVE</string>
 
     <!-- Generate Ad Screen -->
     <string name="turn_stuff_into_olx_listings">Got stuff to sell? Snap it. We\'ll list it.</string>
     <string name="snap_photo_ad_desc">Snap a photo. AI handles the words.</string>
-    <string name="describe_your_item">Tell us about it</string>
-    <string name="describe_item_placeholder">Brand, condition, extras, scuffs…</string>
     <string name="sellsnap_title">SellSnap</string>
     <string name="tips_for_better_photos">Photo tips 📷</string>
     <string name="tip_lighting">Good light = better results</string>
     <string name="tip_angles">Shoot from a few angles</string>
     <string name="tip_defects">Don\'t hide the scratches — buyers love honesty</string>
-    <string name="add_photo">Add Photo</string>
     <string name="take_photo">Take Photo</string>
 
-    <!-- OLX Authentication -->
-    <string name="olx_auth_screen_title">OLX Seller Auth</string>
-    <string name="olx_auth_screen_subtitle">Connect your OLX account to publish listings directly from the app.</string>
-    <string name="olx_auth_connect">Connect OLX</string>
-    <string name="olx_auth_connected">OLX account connected</string>
-    <string name="olx_auth_refresh_token">Refresh token</string>
-    <string name="olx_auth_test_me">Test /users/me</string>
-    <string name="olx_auth_disconnect">Disconnect</string>
-    <string name="olx_users_me">OLX /users/me</string>
-    <string name="token_expires_at">Token expires at epoch: %1$s</string>
-
     <!-- Preview Ad Screen -->
-    <string name="publish_to_olx">Publish to OLX</string>
     <string name="publish_on_olx">Publish on OLX</string>
     <string name="publish_errors">Publish · %1$d to fix</string>
     <string name="banner_ready_in">Done in %1$s — give it a read before going live.</string>
@@ -65,91 +48,14 @@
     <string name="validation_error_no_category">Pick a category</string>
     <string name="validation_error_no_location">Add a location</string>
     <string name="validation_errors_more">…and %1$d more</string>
-    <string name="character_count">%1$d characters</string>
     <string name="min_characters">At least %1$d characters, please</string>
     <string name="character_count_range">%1$d/%2$d</string>
-    <string name="discount_percentage">%1$d%% off</string>
-    <string name="original_price">Was: €%1$s</string>
     <string name="change_button">Change</string>
 
-    <!-- AI Processing -->
-    <string name="creating_your_ad">Cooking up your ad…</string>
-    <string name="ai_processing_message">AI is doing its thing…</string>
-
-    <!-- Capacity Result Screen -->
-    <string name="capacity_result_title">Capacity result</string>
-    <string name="crunching_numbers">Crunching numbers…</string>
-    <string name="capacity_format">Capacity %1$s–%2$s</string>
-    <string name="base_capacity">Base %1$s</string>
-    <string name="risk_format">Risk ±%1$d%%</string>
-    <string name="total_effort">Effort %1$s</string>
-    <string name="variants_count">%1$d variants</string>
-    <string name="people_count">%1$d people</string>
-    <string name="feasible_ticket_variants">Combinations that fit</string>
-    <string name="sorted_by_fit">Sorted by how well they fit the pessimistic capacity.</string>
-    <string name="all_tickets_fit">All tickets fit within the optimistic capacity — no alternatives needed.</string>
-    <string name="variant_format">Variant #%1$d</string>
-    <string name="effort_points">%1$s pts</string>
-    <string name="ticket_format">%1$s (%2$s)</string>
-
     <!-- Analyze Screen -->
-    <string name="total_nutrition">Total nutrition:</string>
-    <string name="detected_insights">Nutrition insights</string>
-    <string name="confirm_and_save">Confirm &amp; Save</string>
-    <string name="analyze_button">Analyze</string>
-    <string name="add_description">Add description (optional)</string>
-    <string name="summary">Summary</string>
-    <string name="issues_noted">Issues noted</string>
-    <string name="checklist">Checklist</string>
-    <string name="uncertainties">Uncertainties</string>
     <string name="bullet_item">• %1$s</string>
-    <string name="quantity_format">Quantity: %1$s</string>
-    <string name="tags">Tags</string>
-
-    <!-- History Screen -->
-    <string name="history_insights_title">History &amp; Insights</string>
-    <string name="track_analysed_meals">Track your analyzed meals</string>
-    <string name="insights">Insights</string>
-    <string name="issues">Issues</string>
-
-    <!-- Agile/Team Screens -->
-    <string name="agile_title">Agile</string>
-    <string name="agile_subtitle">Calculation logic</string>
-    <string name="calculate_capacity">Calculate capacity</string>
-    <string name="count_user_stories">User stories: %1$d</string>
-    <string name="add_ticket">Add ticket</string>
-    <string name="team_list">Team list</string>
-    <string name="showing_team_format">Showing Team #%1$d. Tap to switch.</string>
-
-    <!-- Team Picker Screen -->
-    <string name="teams_title">Teams</string>
-    <string name="teams_subtitle">Select a team</string>
-    <string name="teams_list_content">Teams list</string>
 
     <!-- Team Screen -->
-    <string name="team_overview_format">%1$s overview</string>
-    <string name="people_format">%1$d people</string>
-    <string name="capacity_format_simple">Capacity %1$s</string>
-    <string name="risk_percentage_format">Risk ±%1$d%%</string>
-    <string name="capacity_range_format">Range %1$s–%2$s</string>
-    <string name="user_stories_format">%1$d user stories</string>
-    <string name="tickets_format">%1$d tickets</string>
-
-    <!-- Data Generator Screen -->
-    <string name="data_generator_title">Data Generator</string>
-    <string name="data_generator_subtitle">Generate random agile test data</string>
-    <string name="reset_to_empty">Reset to empty</string>
-    <string name="existing_teams_format">Existing teams: %1$d</string>
-    <string name="clear_existing_data">Clear existing data before generating</string>
-    <string name="teams_configuration">Teams configuration</string>
-    <string name="stories_configuration">Stories configuration</string>
-    <string name="generate_random_data">Generate random data</string>
-
-    <!-- Range Selector -->
-    <string name="decrease_value">Decrease value</string>
-    <string name="increase_value">Increase value</string>
-    <string name="decrease_minimum">Decrease minimum</string>
-    <string name="increase_maximum">Increase maximum</string>
 
     <!-- Photos Section -->
     <string name="photos_count_format">%1$d/%2$d photos</string>
@@ -183,12 +89,11 @@
     <string name="profile_not_provided">Not set</string>
     <string name="profile_value_yes">Yes</string>
     <string name="profile_value_no">No</string>
-    <string name="from_note">From note</string>
 
     <!-- My OLX Ads -->
     <string name="nav_my_ads">My ads</string>
     <string name="my_ads_screen_title">My OLX ads</string>
-    <string name="my_ads_screen_subtitle">Published listings from your connected OLX account.</string>
+    <string name="my_ads_screen_subtitle">Your OLX listings, all in one place.</string>
     <string name="my_ads_empty_title">No OLX ads yet</string>
     <string name="my_ads_empty_description">Create your first listing in SellSnap and it will show up here after publishing.</string>
     <string name="my_ads_create_listing">New listing</string>
@@ -201,7 +106,7 @@
     <string name="label_value_format">%1$s: %2$s</string>
     <string name="my_ads_untitled">Untitled OLX ad</string>
     <string name="my_ads_price_not_set">Price not set</string>
-    <string name="my_ads_missing_url">This OLX listing does not have a public link yet.</string>
+    <string name="my_ads_missing_url">No public link yet — OLX is still processing it.</string>
     <string name="my_ads_load_failed">Couldn\'t load OLX ads.</string>
     <string name="my_ads_status_active">Active</string>
     <string name="my_ads_status_new">Under review</string>
@@ -217,92 +122,20 @@
     <string name="my_ads_status_unknown">Pending</string>
 
     <!-- Navigation -->
-    <string name="app_name">SellSnap</string>
-    <string name="nav_analyze">Analyze</string>
-    <string name="nav_history">History</string>
-    <string name="nav_agile">Agile</string>
-    <string name="nav_generator">Generator</string>
     <string name="back">Back</string>
-
-    <!-- Permission Dialogs -->
-    <string name="camera_permission_title">Camera access</string>
-    <string name="camera_permission_message">We need the camera to snap your stuff for your listings.</string>
-
-    <!-- Estimation -->
-    <string name="estimation">Estimation</string>
-    <string name="select_estimation">Select estimation</string>
 
     <!-- Capacity Result Screen — status messages -->
     <string name="retry">Retry</string>
-    <string name="estimation_outcome">Estimation outcome</string>
-    <string name="status_everything_fits">Everything fits — even the worst-case scenario is covered.</string>
-    <string name="status_scope_fits_optimistic">The scope only fits in the optimistic scenario.</string>
-    <string name="status_need_more_points">You\'re %1$d points short.</string>
-    <string name="detail_effort_vs_capacity">Effort %1$s vs capacity %2$s–%3$s (risk ±%4$d%%).</string>
-    <string name="detail_effort_exceeds_pessimistic">Effort %1$s is %2$d over the pessimistic capacity, but fits within the optimistic %3$s.</string>
-    <string name="detail_effort_above_optimistic">Effort %1$s exceeds the optimistic capacity of %2$s.</string>
-    <string name="pessimistic_over">Pessimistic over %1$d</string>
-    <string name="pessimistic_slack">Pessimistic slack %1$d</string>
-    <string name="optimistic_over">Optimistic over %1$d</string>
-    <string name="optimistic_slack">Optimistic slack %1$d</string>
-    <string name="add_tickets_hint">Add tickets to see how they stack up against the current risk-adjusted capacity.</string>
-    <string name="no_tickets_fit">No ticket combination fits the pessimistic capacity. Try trimming scope or increasing capacity.</string>
-    <string name="showing_best_capped">Showing the best %1$d of %2$d combinations — top %3$d shown for clarity.</string>
-    <string name="showing_best">Showing the best %1$d of %2$d combinations.</string>
-    <string name="showing_top">Showing the top %1$d of %2$d combinations.</string>
-    <string name="collapse">Collapse</string>
-    <string name="show_more">Show more</string>
-    <string name="exact_fit">Exact fit</string>
-    <string name="slack_free">%1$d free</string>
-    <string name="over_by">Over by %1$d</string>
 
     <!-- Analyze Screen -->
-    <string name="analysis_result_title">Analysis Result</string>
     <string name="add_photos_title">Add Photos</string>
-    <string name="review_detected_items">Review what we found</string>
-    <string name="upload_images_hint">Add 1–3 photos</string>
-    <string name="syncing">Syncing…</string>
-    <string name="analyzing">Analyzing…</string>
-    <string name="description_placeholder">e.g., Breakfast at home, restaurant meal…</string>
-    <string name="no_summary_yet">No summary yet</string>
-    <string name="loading_report">Hang tight, your report is on its way.</string>
-    <string name="nutrition_breakdown_loading">We\'ll show the full nutrition breakdown once the analysis finishes.</string>
-    <string name="nutrition_facts_loading">Key nutrition facts will appear here once available.</string>
-    <string name="calories">Calories</string>
-    <string name="protein">Protein</string>
-    <string name="fat">Fat</string>
-    <string name="carbs">Carbs</string>
-
-    <!-- Agile Screen -->
-    <string name="add_user_story">Add user story</string>
-    <string name="add_team">Add team</string>
-
-    <!-- Data Generator Screen — snackbar messages -->
-    <string name="random_data_generated">Random data generated successfully!</string>
-    <string name="all_data_cleared">All data cleared!</string>
-    <string name="number_of_teams">Number of teams</string>
-    <string name="people_per_team">People per team</string>
-    <string name="team_capacity_label">Team capacity</string>
-    <string name="risk_factor">Risk factor</string>
-    <string name="stories_per_team">Stories per team</string>
-    <string name="tickets_per_story">Tickets per story</string>
-
-    <!-- History Screen -->
-    <string name="loading_history">Loading history</string>
-    <string name="no_history_yet">No history yet</string>
-    <string name="loading_wait">Just a moment</string>
-    <string name="no_history_description">Your analyzed meals will appear here once you start tracking.</string>
-    <string name="capture_meal">Capture meal</string>
 
     <!-- Generate Ad Screen -->
-    <string name="generating">Working on it…</string>
-    <string name="generate_ad_with_ai">Generate ad with AI</string>
     <string name="generate_with_ai">Generate with AI</string>
     <string name="add_photos_to_continue">Pop in a photo first</string>
     <string name="new_listing">New listing</string>
     <string name="new_listing_subtitle">Drop in 1–8 photos. We\'ll handle the rest.</string>
     <string name="generic_error_retry">Something went wrong. Try again.</string>
-    <string name="welcome_greeting">Hey 👋</string>
     <string name="ai_hint_label">Give the AI a hint (optional)</string>
     <string name="ai_hint_placeholder">e.g. Nike Air Max 90, size 42, worn for 2 months</string>
     <string name="get_started">Let\'s go</string>
@@ -337,7 +170,7 @@
     <string name="camera_rationale_message">We use it to snap your items for OLX listings. Allow access to keep going.</string>
     <string name="camera_settings_title">Turn on the camera in settings</string>
     <string name="camera_settings_message_ios">Camera\'s blocked. Head to Settings → Privacy → Camera and switch SellSnap on.</string>
-    <string name="camera_settings_message_android">Camera\'s blocked. Open app settings and switch the camera permission on.</string>
+    <string name="camera_settings_message_android">Camera\'s blocked. Open app settings and turn it on for SellSnap.</string>
     <string name="not_now">Not now</string>
     <string name="open_settings">Open settings</string>
     <string name="cancel">Cancel</string>
@@ -363,7 +196,6 @@
     <string name="preview_back_info_stay">Keep editing</string>
     <string name="preview_back_info_leave">Discard draft</string>
     <string name="publishing">Going live…</string>
-    <string name="copy">Copy</string>
     <string name="copy_pill_default">Copy</string>
     <string name="copy_pill_copied">Copied ✓</string>
     <string name="error_pill_default">Oops</string>
@@ -380,20 +212,18 @@
     <string name="location_settings_title">Turn on location in settings</string>
     <string name="location_settings_message_android">Location\'s blocked. Open app settings and switch it on for SellSnap.</string>
     <string name="location_settings_message_ios">Location\'s blocked. Head to Settings → Privacy → Location Services and toggle SellSnap on.</string>
-    <string name="select_category">Pick a category</string>
-    <string name="subcategory_count">%d subcategories</string>
 
     <!-- Error Messages -->
     <string name="error_location_fetch_failed">Couldn\'t find your location.</string>
     <string name="error_publish_missing_category_or_location">Almost there — add a category and location before going live.</string>
     <string name="error_publish_missing_contact_name">Your OLX profile is missing a name. Pop in there, add one, and we\'ll try again.</string>
-    <string name="error_category_suggestion_failed">Couldn\'t pull a category suggestion.</string>
+    <string name="error_category_suggestion_failed">Couldn\'t suggest a category.</string>
     <string name="error_attributes_load_failed">Couldn\'t load the details.</string>
     <string name="error_user_profile_fetch_failed">Couldn\'t load your profile.</string>
-    <string name="error_olx_auth_prepare_failed">Couldn\'t start OLX authorization.</string>
-    <string name="error_olx_auth_complete_failed">Couldn\'t complete OLX authorization.</string>
-    <string name="error_selected_files_process_failed">Couldn\'t process the selected files.</string>
-    <string name="error_upload_file_failed">Couldn\'t upload one of the files.</string>
+    <string name="error_olx_auth_prepare_failed">Couldn\'t start OLX sign-in.</string>
+    <string name="error_olx_auth_complete_failed">Couldn\'t finish signing in to OLX.</string>
+    <string name="error_selected_files_process_failed">Couldn\'t load those photos.</string>
+    <string name="error_upload_file_failed">Couldn\'t upload one of the photos.</string>
     <string name="error_publish_failed">Publishing didn\'t go through. Give it another shot.</string>
     <string name="error_generate_ad_failed">Couldn\'t generate the ad. Try again?</string>
 
@@ -401,7 +231,7 @@
     <string name="publish_success_title">You\'re live! 🎉</string>
     <string name="publish_success_subtitle">Your listing is up on OLX. First views should roll in within 10–15 minutes.</string>
     <string name="publish_success_subtitle_new">Off to moderation — your listing goes live after a quick review.</string>
-    <string name="publish_success_subtitle_limited">Listing\'s ready! You\'ll just need an OLX packet to activate it.</string>
+    <string name="publish_success_subtitle_limited">Listing\'s ready! You\'ll need an OLX package to activate it.</string>
     <string name="publish_success_listing_url_label">Listing link</string>
     <string name="publish_success_status_label">Status</string>
     <string name="publish_success_status_new">Under review</string>
@@ -423,16 +253,6 @@
     <string name="time_unit_second_other">seconds</string>
     <string name="time_unit_minute_one">minute</string>
     <string name="time_unit_minute_other">minutes</string>
-
-    <!-- Team Settings Screen -->
-    <string name="team_settings_title">Team settings</string>
-    <string name="team_size_capacity">Team size &amp; capacity</string>
-    <string name="team_people_capacity_risk">People: %1$d | Capacity: %2$d | Risk: %3$d%%</string>
-    <string name="people">People</string>
-    <string name="capacity">Capacity</string>
-    <string name="story_points_per_sprint">Story points per sprint</string>
-    <string name="risk_factor_label">Risk factor</string>
-    <string name="risk_factor_hint">0.0 to 1.0 (20%% risk = 0.2)</string>
 
     <!-- Category Picker Sheet -->
     <string name="category_picker_search_placeholder">Search categories</string>

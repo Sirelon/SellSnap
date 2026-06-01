@@ -18,7 +18,6 @@
     <string name="terms_of_service">Умови обслуговування</string>
     <string name="privacy_policy">Політику конфіденційності</string>
     <string name="keyboard_done_action">Готово</string>
-    <string name="step_format">Крок %1$s з %2$s</string>
     <string name="or_divider">або</string>
 
     <!-- Onboarding Screen Steps -->
@@ -28,34 +27,18 @@
     <string name="onboarding_step2_subtitle">Назва, опис і чесна ціна — встигнуть з'явитися, поки кава охолоне.</string>
     <string name="onboarding_step3_title">Публікація в один тап 🚀</string>
     <string name="onboarding_step3_subtitle">Один тап — і ви на OLX. Покупці, знайомтеся з вашими речами.</string>
-    <string name="onboarding_step3_pill">АКТИВНЕ</string>
 
     <!-- Generate Ad Screen -->
     <string name="turn_stuff_into_olx_listings">Є що продати? Сфотографуйте. Решту зробимо ми.</string>
     <string name="snap_photo_ad_desc">Сфотографуйте. Текст напише ШІ.</string>
-    <string name="describe_your_item">Розкажіть про вашу річ</string>
-    <string name="describe_item_placeholder">Бренд, стан, аксесуари, подряпини…</string>
     <string name="sellsnap_title">SellSnap</string>
     <string name="tips_for_better_photos">Поради для фото 📷</string>
     <string name="tip_lighting">Гарне світло = кращий результат</string>
     <string name="tip_angles">Знімайте з кількох кутів</string>
     <string name="tip_defects">Не ховайте подряпини — покупці люблять чесність</string>
-    <string name="add_photo">Додати фото</string>
     <string name="take_photo">Зробити фото</string>
 
-    <!-- OLX Authentication -->
-    <string name="olx_auth_screen_title">Підключення OLX</string>
-    <string name="olx_auth_screen_subtitle">Підключіть акаунт OLX і публікуйте оголошення прямо з додатка.</string>
-    <string name="olx_auth_connect">Підключити OLX</string>
-    <string name="olx_auth_connected">OLX підключено ✅</string>
-    <string name="olx_auth_refresh_token">Токен оновлення</string>
-    <string name="olx_auth_test_me">Тест /users/me</string>
-    <string name="olx_auth_disconnect">Відключити</string>
-    <string name="olx_users_me">OLX /users/me</string>
-    <string name="token_expires_at">Токен закінчується в епоху: %1$s</string>
-
     <!-- Preview Ad Screen -->
-    <string name="publish_to_olx">Опублікувати на OLX</string>
     <string name="publish_on_olx">Опублікувати на OLX</string>
     <string name="publish_errors">Опублікувати · %1$d виправити</string>
     <string name="banner_ready_in">Готово за %1$s — перегляньте перед публікацією.</string>
@@ -67,91 +50,14 @@
     <string name="validation_error_no_location">Додайте місцезнаходження</string>
     <string name="validation_errors_more">…і ще %1$d</string>
     <string name="ad_price_ai_estimated_range">ШІ радить: %1$s – %2$s ₴</string>
-    <string name="character_count">%1$d символів</string>
     <string name="min_characters">Хоча б %1$d символів, будь ласка</string>
     <string name="character_count_range">%1$d/%2$d</string>
-    <string name="discount_percentage">%1$d%% знижка</string>
-    <string name="original_price">Було: €%1$s</string>
     <string name="change_button">Змінити</string>
 
-    <!-- AI Processing -->
-    <string name="creating_your_ad">Готуємо ваше оголошення…</string>
-    <string name="ai_processing_message">ШІ робить свою справу…</string>
-
-    <!-- Capacity Result Screen -->
-    <string name="capacity_result_title">Результат обсяги</string>
-    <string name="crunching_numbers">Розраховуємо числа...</string>
-    <string name="capacity_format">Обсяг %1$s-%2$s</string>
-    <string name="base_capacity">Базова %1$s</string>
-    <string name="risk_format">Ризик ±%1$d%%</string>
-    <string name="total_effort">Зусиллі %1$s</string>
-    <string name="variants_count">%1$d варіантів</string>
-    <string name="people_count">%1$d людей</string>
-    <string name="feasible_ticket_variants">Можливі варіанти квитанцій</string>
-    <string name="sorted_by_fit">Відсортовано за найкращим відповіддю песимістичній обсягу.</string>
-    <string name="all_tickets_fit">Всі квитанції підходять до оптимістичної обсяги, тому альтернативні підмножини не потрібні.</string>
-    <string name="variant_format">Варіант #%1$d</string>
-    <string name="effort_points">%1$s пт</string>
-    <string name="ticket_format">%1$s (%2$s)</string>
-
     <!-- Analyze Screen -->
-    <string name="total_nutrition">Загальне харчування:</string>
-    <string name="detected_insights">Виявлені інформація</string>
-    <string name="confirm_and_save">Підтвердити та зберегти</string>
-    <string name="analyze_button">Аналізувати</string>
-    <string name="add_description">Додайте опис (необов'язково)</string>
-    <string name="summary">Резюме</string>
-    <string name="issues_noted">Зазначені проблеми</string>
-    <string name="checklist">Контрольний список</string>
-    <string name="uncertainties">Невизначеності</string>
     <string name="bullet_item">• %1$s</string>
-    <string name="quantity_format">Кількість: %1$s</string>
-    <string name="tags">Теги</string>
-
-    <!-- History Screen -->
-    <string name="history_insights_title">Історія та інформація</string>
-    <string name="track_analysed_meals">Відстежуйте свої проаналізовані страви</string>
-    <string name="insights">Інформація</string>
-    <string name="issues">Проблеми</string>
-
-    <!-- Agile/Team Screens -->
-    <string name="agile_title">Agile</string>
-    <string name="agile_subtitle">Логіка розрахунків</string>
-    <string name="calculate_capacity">Розрахувати обсяг</string>
-    <string name="count_user_stories">Кількість історій користувача: %1$d</string>
-    <string name="add_ticket">Додати квитанцію</string>
-    <string name="team_list">Список команд</string>
-    <string name="showing_team_format">Наразі відображається команда #%1$d. Торкніться, щоб змінити команди.</string>
-
-    <!-- Team Picker Screen -->
-    <string name="teams_title">Команди</string>
-    <string name="teams_subtitle">Виберіть команду</string>
-    <string name="teams_list_content">Список команд</string>
 
     <!-- Team Screen -->
-    <string name="team_overview_format">Огляд %1$s</string>
-    <string name="people_format">%1$d людей</string>
-    <string name="capacity_format_simple">Обсяг %1$s</string>
-    <string name="risk_percentage_format">Ризик ±%1$d%%</string>
-    <string name="capacity_range_format">Діапазон %1$s-%2$s</string>
-    <string name="user_stories_format">%1$d історій користувача</string>
-    <string name="tickets_format">%1$d квитанцій</string>
-
-    <!-- Data Generator Screen -->
-    <string name="data_generator_title">Генератор даних</string>
-    <string name="data_generator_subtitle">Генеруйте випадкові agile тестові дані</string>
-    <string name="reset_to_empty">Скинути на порожньо</string>
-    <string name="existing_teams_format">Існуючі команди: %1$d</string>
-    <string name="clear_existing_data">Очистити існуючі дані перед генеруванням</string>
-    <string name="teams_configuration">Конфігурація команд</string>
-    <string name="stories_configuration">Конфігурація історій</string>
-    <string name="generate_random_data">Генерувати випадкові дані</string>
-
-    <!-- Range Selector -->
-    <string name="decrease_value">Зменшити значення</string>
-    <string name="increase_value">Збільшити значення</string>
-    <string name="decrease_minimum">Зменшити мінімум</string>
-    <string name="increase_maximum">Збільшити максимум</string>
 
     <!-- OLX Auth Profile -->
     <string name="profile_field_id">ID</string>
@@ -167,7 +73,7 @@
     <string name="profile_guest_description">Підключіть OLX, щоб публікувати з SellSnap — дані акаунта з'являться тут.</string>
     <string name="profile_olx_account">Акаунт OLX</string>
     <string name="profile_location_title">Місце продажу</string>
-    <string name="profile_location_subtitle">Ми використаємо це як типове місце для ваших наступних оголошень.</string>
+    <string name="profile_location_subtitle">Підставимо це місце в нові оголошення автоматично.</string>
     <string name="profile_theme_title">Тема</string>
     <string name="profile_theme_subtitle">Виберіть вигляд SellSnap на цьому пристрої.</string>
     <string name="profile_theme_system">Системна</string>
@@ -177,12 +83,11 @@
     <string name="profile_not_provided">Не задано</string>
     <string name="profile_value_yes">Так</string>
     <string name="profile_value_no">Ні</string>
-    <string name="from_note">З нотатки</string>
 
     <!-- My OLX Ads -->
     <string name="nav_my_ads">Мої оголошення</string>
     <string name="my_ads_screen_title">Мої оголошення OLX</string>
-    <string name="my_ads_screen_subtitle">Опубліковані оголошення з підключеного акаунта OLX.</string>
+    <string name="my_ads_screen_subtitle">Усі ваші OLX-оголошення — в одному місці.</string>
     <string name="my_ads_empty_title">Оголошень OLX ще немає</string>
     <string name="my_ads_empty_description">Створіть перше оголошення в SellSnap — після публікації воно з'явиться тут.</string>
     <string name="my_ads_create_listing">Нове оголошення</string>
@@ -195,7 +100,7 @@
     <string name="label_value_format">%1$s: %2$s</string>
     <string name="my_ads_untitled">Оголошення OLX без назви</string>
     <string name="my_ads_price_not_set">Ціну не вказано</string>
-    <string name="my_ads_missing_url">У цього оголошення OLX ще немає публічного посилання.</string>
+    <string name="my_ads_missing_url">Публічне посилання ще не готове — OLX обробляє оголошення.</string>
     <string name="my_ads_load_failed">Не вдалося завантажити оголошення OLX.</string>
     <string name="my_ads_status_active">Активне</string>
     <string name="my_ads_status_new">На перевірці</string>
@@ -219,92 +124,20 @@
     <string name="source_gallery">Галерея</string>
 
     <!-- Navigation -->
-    <string name="app_name">SellSnap</string>
-    <string name="nav_analyze">Аналіз</string>
-    <string name="nav_history">Історія</string>
-    <string name="nav_agile">Agile</string>
-    <string name="nav_generator">Генератор</string>
     <string name="back">Назад</string>
-
-    <!-- Permission Dialogs -->
-    <string name="camera_permission_title">Доступ до камери</string>
-    <string name="camera_permission_message">Камера потрібна, щоб фотографувати речі для ваших оголошень.</string>
-
-    <!-- Estimation -->
-    <string name="estimation">Оцінка</string>
-    <string name="select_estimation">Виберіть оцінку</string>
 
     <!-- Capacity Result Screen — status messages -->
     <string name="retry">Повторити</string>
-    <string name="estimation_outcome">Результат оцінки</string>
-    <string name="status_everything_fits">Все вміщується навіть з песимістичною обсягом.</string>
-    <string name="status_scope_fits_optimistic">Обсяг підходить лише в оптимістичному сценарії.</string>
-    <string name="status_need_more_points">Вам потрібно ще %1$d очок.</string>
-    <string name="detail_effort_vs_capacity">Зусилля %1$s проти обсягу %2$s-%3$s (ризик ±%4$d%%).</string>
-    <string name="detail_effort_exceeds_pessimistic">Зусилля %1$s перевищує песимістичний обсяг на %2$d, але підходить оптимістичному %3$s.</string>
-    <string name="detail_effort_above_optimistic">Зусилля %1$s перевищує оптимістичний обсяг %2$s.</string>
-    <string name="pessimistic_over">Песимістичне перевищення %1$d</string>
-    <string name="pessimistic_slack">Песимістичний запас %1$d</string>
-    <string name="optimistic_over">Оптимістичне перевищення %1$d</string>
-    <string name="optimistic_slack">Оптимістичний запас %1$d</string>
-    <string name="add_tickets_hint">Додайте квитанції, щоб побачити, як вони співвідносяться з поточним обсягом з урахуванням ризику.</string>
-    <string name="no_tickets_fit">Жодна комбінація квитанцій не підходить до поточного песимістичного обсягу. Скоротіть обсяг або збільшіть ємність.</string>
-    <string name="showing_best_capped">Показано найкращих %1$d з %2$d варіантів (збережено топ %3$d для читабельності).</string>
-    <string name="showing_best">Показано найкращих %1$d з %2$d варіантів.</string>
-    <string name="showing_top">Показано топ %1$d з %2$d варіантів.</string>
-    <string name="collapse">Згорнути</string>
-    <string name="show_more">Показати більше</string>
-    <string name="exact_fit">Точне влучання</string>
-    <string name="slack_free">%1$d вільних</string>
-    <string name="over_by">Перевищення на %1$d</string>
 
     <!-- Analyze Screen -->
-    <string name="analysis_result_title">Результат аналізу</string>
     <string name="add_photos_title">Додати фото</string>
-    <string name="review_detected_items">Перегляньте виявлені елементи</string>
-    <string name="upload_images_hint">Завантажте 1-3 зображення</string>
-    <string name="syncing">Синхронізація…</string>
-    <string name="analyzing">Аналізуємо…</string>
-    <string name="description_placeholder">напр., Сніданок вдома, ресторанна страва...</string>
-    <string name="no_summary_yet">Резюме відсутнє</string>
-    <string name="loading_report">Зачекайте, поки ми читаємо звіт.</string>
-    <string name="nutrition_breakdown_loading">Ми покажемо розбивку харчування, як тільки аналіз буде готовий.</string>
-    <string name="nutrition_facts_loading">Ми виділимо ключові факти харчування, як тільки вони будуть доступні.</string>
-    <string name="calories">Калорії</string>
-    <string name="protein">Білки</string>
-    <string name="fat">Жири</string>
-    <string name="carbs">Вуглеводи</string>
-
-    <!-- Agile Screen -->
-    <string name="add_user_story">Додати User Story</string>
-    <string name="add_team">Додати команду</string>
-
-    <!-- Data Generator Screen — snackbar messages -->
-    <string name="random_data_generated">Випадкові дані успішно згенеровано!</string>
-    <string name="all_data_cleared">Всі дані очищено!</string>
-    <string name="number_of_teams">Кількість команд</string>
-    <string name="people_per_team">Людей у команді</string>
-    <string name="team_capacity_label">Обсяг команди</string>
-    <string name="risk_factor">Коефіцієнт ризику</string>
-    <string name="stories_per_team">Історій у команді</string>
-    <string name="tickets_per_story">Квитанцій у Story</string>
-
-    <!-- History Screen -->
-    <string name="loading_history">Завантаження історії</string>
-    <string name="no_history_yet">Ще немає історії</string>
-    <string name="loading_wait">Зачекайте</string>
-    <string name="no_history_description">Ваші проаналізовані страви з'являться тут після того, як ви їх сфотографуєте та збережете.</string>
-    <string name="capture_meal">Сфотографувати страву</string>
 
     <!-- Generate Ad Screen -->
-    <string name="generating">Працюємо…</string>
-    <string name="generate_ad_with_ai">Створити оголошення з ШІ</string>
     <string name="generate_with_ai">Створити з ШІ</string>
     <string name="add_photos_to_continue">Спершу додайте фото</string>
     <string name="new_listing">Нове оголошення</string>
     <string name="new_listing_subtitle">Додайте 1–8 фото. Решту зробимо ми.</string>
     <string name="generic_error_retry">Щось пішло не так. Спробуйте ще раз.</string>
-    <string name="welcome_greeting">Привіт 👋</string>
     <string name="ai_hint_label">Підкажіть ШІ (необов'язково)</string>
     <string name="ai_hint_placeholder">напр. Nike Air Max 90, розмір 42, носили 2 місяці</string>
     <string name="get_started">Почнемо</string>
@@ -336,10 +169,10 @@
 
     <!-- Permission Dialogs -->
     <string name="camera_rationale_title">Можна нам камеру?</string>
-    <string name="camera_rationale_message">Ми використовуємо її, щоб фотографувати речі для оголошень OLX. Дозвольте доступ, щоб продовжити.</string>
+    <string name="camera_rationale_message">Нам потрібна камера, щоб знімати ваші речі для оголошень. Дозвольте доступ — і вперед!</string>
     <string name="camera_settings_title">Увімкніть камеру в налаштуваннях</string>
     <string name="camera_settings_message_ios">Камеру заблоковано. Відкрийте Налаштування → Конфіденційність → Камера та увімкніть SellSnap.</string>
-    <string name="camera_settings_message_android">Камеру заблоковано. Відкрийте налаштування додатка й увімкніть дозвіл на камеру.</string>
+    <string name="camera_settings_message_android">Камеру заблоковано. Відкрийте налаштування додатка й увімкніть її для SellSnap.</string>
     <string name="not_now">Не зараз</string>
     <string name="open_settings">Відкрити налаштування</string>
     <string name="cancel">Скасувати</string>
@@ -365,7 +198,6 @@
     <string name="preview_back_info_stay">Продовжити редагування</string>
     <string name="preview_back_info_leave">Видалити чернетку</string>
     <string name="publishing">Публікуємо…</string>
-    <string name="copy">Копіювати</string>
     <string name="copy_pill_default">Копіювати</string>
     <string name="copy_pill_copied">Скопійовано ✓</string>
     <string name="error_pill_default">Ой</string>
@@ -375,26 +207,24 @@
     <string name="ad_category_label">Категорія</string>
     <string name="ad_location_label">Місцезнаходження</string>
     <string name="location_detecting">Шукаємо вас…</string>
-    <string name="location_not_available">Не вдалося знайти вас на мапі</string>
-    <string name="location_rationale_title">Потрібен ваш дозвіл на геолокацію</string>
-    <string name="location_rationale_message">Щоб запропонувати найближче місто для оголошення, нам треба знати, де ви.</string>
+    <string name="location_not_available">Не вдалося визначити локацію</string>
+    <string name="location_rationale_title">Дозвольте доступ до геолокації</string>
+    <string name="location_rationale_message">Щоб підставити ваше місто в оголошення, потрібен доступ до геолокації.</string>
     <string name="location_settings_title">Увімкніть геолокацію в налаштуваннях</string>
     <string name="location_settings_message_android">Геолокацію заблоковано. Відкрийте налаштування додатка й увімкніть її для SellSnap.</string>
     <string name="location_settings_message_ios">Геолокацію заблоковано. Відкрийте Налаштування → Конфіденційність → Служби геолокації та увімкніть SellSnap.</string>
-    <string name="select_category">Оберіть категорію</string>
-    <string name="subcategory_count">%d підкатегорій</string>
 
     <!-- Error Messages -->
     <string name="error_location_fetch_failed">Не вдалося знайти ваше місцезнаходження.</string>
     <string name="error_publish_missing_category_or_location">Майже готово — додайте категорію та місцезнаходження перед публікацією.</string>
     <string name="error_publish_missing_contact_name">У вашому профілі OLX немає імені. Зайдіть туди, додайте — і спробуємо ще раз.</string>
-    <string name="error_category_suggestion_failed">Не вдалося підтягнути категорію.</string>
+    <string name="error_category_suggestion_failed">Не вдалося запропонувати категорію.</string>
     <string name="error_attributes_load_failed">Не вдалося завантажити деталі.</string>
     <string name="error_user_profile_fetch_failed">Не вдалося завантажити ваш профіль.</string>
-    <string name="error_olx_auth_prepare_failed">Не вдалося почати авторизацію OLX.</string>
-    <string name="error_olx_auth_complete_failed">Не вдалося завершити авторизацію OLX.</string>
-    <string name="error_selected_files_process_failed">Не вдалося обробити вибрані файли.</string>
-    <string name="error_upload_file_failed">Не вдалося завантажити один із файлів.</string>
+    <string name="error_olx_auth_prepare_failed">Не вдалося розпочати вхід у OLX.</string>
+    <string name="error_olx_auth_complete_failed">Не вдалося завершити вхід у OLX.</string>
+    <string name="error_selected_files_process_failed">Не вдалося завантажити вибрані фото.</string>
+    <string name="error_upload_file_failed">Не вдалося завантажити одне з фото.</string>
     <string name="error_publish_failed">Не вдалося опублікувати. Спробуйте ще раз.</string>
     <string name="error_generate_ad_failed">Не вдалося згенерувати оголошення. Спробуєте ще раз?</string>
 
@@ -424,16 +254,6 @@
     <string name="time_unit_second_other">секунд</string>
     <string name="time_unit_minute_one">хвилина</string>
     <string name="time_unit_minute_other">хвилин</string>
-
-    <!-- Team Settings Screen -->
-    <string name="team_settings_title">Налаштування команди</string>
-    <string name="team_size_capacity">Розмір та обсяг команди</string>
-    <string name="team_people_capacity_risk">Люди: %1$d | Обсяг: %2$d | Ризик: %3$d%%</string>
-    <string name="people">Люди</string>
-    <string name="capacity">Обсяг</string>
-    <string name="story_points_per_sprint">Стори-пойнти на спринт</string>
-    <string name="risk_factor_label">Коефіцієнт ризику</string>
-    <string name="risk_factor_hint">0.0 до 1.0 (20%% ризик = 0.2)</string>
 
     <!-- Category Picker Sheet -->
     <string name="category_picker_search_placeholder">Пошук категорій</string>
