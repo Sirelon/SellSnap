@@ -26,7 +26,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
@@ -98,19 +98,15 @@ fun AppButton(
     Box(
         modifier = modifier
             .height(ButtonHeight)
-            .graphicsLayer {
-                scaleX = pressScale
-                scaleY = pressScale
-                translationY = pressTranslateY.toPx()
-            }
             .then(
                 if (useShadow) {
-                    Modifier.shadow(
-                        elevation = animatedElevation,
-                        shape = ButtonShape,
-                        ambientColor = style.shadowColor,
-                        spotColor = style.shadowColor,
-                    )
+                    Modifier.dropShadow(shape = ButtonShape) {
+                        color = style.shadowColor
+                        radius = (animatedElevation * 3).toPx()
+                        offset = Offset(0f, (animatedElevation / 2).toPx())
+                        spread = 0f
+                        alpha = if (isPressed || !enabled) 0f else 1f
+                    }
                 } else {
                     Modifier
                 }
@@ -125,6 +121,11 @@ fun AppButton(
             interactionSource = interactionSource,
             modifier = Modifier
                 .fillMaxSize()
+                .graphicsLayer {
+                    scaleX = pressScale
+                    scaleY = pressScale
+                    translationY = pressTranslateY.toPx()
+                }
                 .then(
                     if (gradient != null && enabled) {
                         Modifier.background(gradient, ButtonShape)
@@ -150,7 +151,6 @@ fun AppButton(
                 },
                 disabledContentColor = style.contentColor.copy(alpha = 0.5f),
             ),
-            // External `Modifier.shadow` owns the elevation; disable Button's own shadow to avoid doubling.
             elevation = ButtonDefaults.buttonElevation(
                 defaultElevation = 0.dp,
                 pressedElevation = 0.dp,
