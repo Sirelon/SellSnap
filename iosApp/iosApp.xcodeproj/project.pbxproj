@@ -82,6 +82,7 @@
 				0084760425FC973BAAC1AB53 /* Sources */,
 				310C328037E80843B4B71000 /* Frameworks */,
 				A96036DED015CB0BCEEA0BA7 /* Resources */,
+				F1A2B3C4D5E6F7A8B9C0D1E2 /* Crashlytics dSYM Upload */,
 			);
 			buildRules = (
 			);
@@ -147,6 +148,26 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		F1A2B3C4D5E6F7A8B9C0D1E2 /* Crashlytics dSYM Upload */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Resources/DWARF/${TARGET_NAME}",
+				"$(SRCROOT)/$(BUILT_PRODUCTS_DIR)/$(INFOPLIST_PATH)",
+			);
+			name = "Crashlytics dSYM Upload";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+			shellPath = /bin/sh;
+			shellScript = "\"${BUILD_DIR%/Build/*}/SourcePackages/checkouts/firebase-ios-sdk/Crashlytics/run\"\n";
+		};
 		EC4347BD05DBC2CBC0A9C7BD /* Compile Kotlin Framework */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
