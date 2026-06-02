@@ -180,6 +180,11 @@ class PreviewAdViewModel(
             .launchIn(viewModelScope)
     }
 
+    override fun onCleared() {
+        adFlowTimerStore.clear()
+        super.onCleared()
+    }
+
     override fun initialState() = PreviewAdState(
         categoryLabel = "",
         generationElapsedMs = adFlowTimerStore.generationElapsedMs(),
