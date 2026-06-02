@@ -22,6 +22,7 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
+import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.scene.DialogSceneStrategy
 import androidx.navigation3.scene.Scene
@@ -128,7 +129,10 @@ fun AdRootScreen(
                             slideOutHorizontally(targetOffsetX = { it })
                 }
             },
-            entryDecorators = listOf(rememberSaveableStateHolderNavEntryDecorator<NavKey>()),
+            entryDecorators = listOf(
+                rememberSaveableStateHolderNavEntryDecorator<NavKey>(),
+                rememberViewModelStoreNavEntryDecorator(),
+            ),
             entryProvider = entryProvider<NavKey> {
                 entry<AdDestination.GenerateAd>(
                     metadata = topLevelMetadata,
