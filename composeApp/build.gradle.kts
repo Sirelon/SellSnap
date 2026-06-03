@@ -193,7 +193,7 @@ kotlin {
 }
 
 configurations.matching { it.name.startsWith("ios") }.configureEach {
-    exclude(group = "androidx.lifecycle", module = "lifecycle-viewmodel-compose")
+    exclude(group = "org.jetbrains.androidx.lifecycle", module = "lifecycle-viewmodel-compose")
 }
 
 compose.desktop {
