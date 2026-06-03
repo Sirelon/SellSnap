@@ -59,6 +59,7 @@
       footer_tagline: "Фото — на вхід, оголошення — на вихід.",
       footer_privacy: "Політика конфіденційності",
       footer_terms: "Умови обслуговування",
+      footer_support: "Підтримка",
       footer_copyright: "© 2026 SellSnap. Усі права захищені.",
     },
     en: {
@@ -116,6 +117,7 @@
       footer_tagline: "Photo in, listing out.",
       footer_privacy: "Privacy Policy",
       footer_terms: "Terms of Service",
+      footer_support: "Support",
       footer_copyright: "© 2026 SellSnap. All rights reserved.",
     },
   };

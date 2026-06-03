@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SellSnap — Підтримка</title>
+  <meta name="description" content="Підтримка SellSnap — поширені питання та контакти.">
+  <link rel="icon" href="../assets/favicon.png" type="image/png">
+  <link rel="stylesheet" href="../assets/legal.css">
+  <style>
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        color-scheme: dark;
+        --bg: #1e0d00;
+        --surface: #2b1400;
+        --text: #f5e8d8;
+        --muted: #c4a98e;
+        --border: #3d2510;
+      }
+      :root:not([data-theme="light"]) .notice { background: rgba(216,95,31,.12); }
+    }
+    [data-theme="dark"] {
+      color-scheme: dark;
+      --bg: #1e0d00;
+      --surface: #2b1400;
+      --text: #f5e8d8;
+      --muted: #c4a98e;
+      --border: #3d2510;
+    }
+    [data-theme="dark"] .notice { background: rgba(216,95,31,.12); }
+
+    [lang="uk"] .en-only { display: none; }
+    [lang="en"] .uk-only { display: none; }
+
+    .site-controls {
+      position: fixed;
+      top: 12px;
+      right: 16px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      z-index: 50;
+    }
+    .site-controls button {
+      padding: 4px 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--surface);
+      color: var(--muted);
+      font-family: inherit;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      cursor: pointer;
+      line-height: 1.6;
+      transition: background 0.15s, color 0.15s;
+    }
+    .site-controls button[aria-pressed="true"] {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+    .site-controls .sep {
+      width: 1px;
+      height: 20px;
+      background: var(--border);
+    }
+  </style>
+  <script>
+    (function () {
+      var s = localStorage.getItem("sellsnap-lang");
+      var n = (navigator.language || "en").toLowerCase();
+      document.documentElement.lang = (s === "en" || s === "uk") ? s : (n.startsWith("en") ? "en" : "uk");
+      var t = localStorage.getItem("sellsnap-theme");
+      if (t === "light" || t === "dark") document.documentElement.dataset.theme = t;
+    })();
+  </script>
+</head>
+<body>
+  <nav class="site-controls" aria-label="Preferences">
+    <button data-set-lang="uk" aria-pressed="true">UA</button>
+    <button data-set-lang="en" aria-pressed="false">EN</button>
+    <span class="sep" role="separator"></span>
+    <button data-set-theme="system" aria-pressed="true" aria-label="System theme">◑</button>
+    <button data-set-theme="light" aria-pressed="false" aria-label="Light theme">☀</button>
+    <button data-set-theme="dark" aria-pressed="false" aria-label="Dark theme">☾</button>
+  </nav>
+
+  <main class="page">
+    <article class="document">
+      <p class="eyebrow">SellSnap</p>
+      <h1 data-i18n="title">Підтримка</h1>
+      <p class="meta" data-i18n="meta">Оновлено: 3 червня 2026</p>
+
+      <p data-i18n="intro">Маєте питання або щось пішло не так? Нижче — відповіді на поширені питання й способи зв'язатися з нами.</p>
+
+      <h2 data-i18n="contact_h">Зв'яжіться з нами</h2>
+      <p class="uk-only">Пишіть нам — відповідаємо якнайшвидше:</p>
+      <p class="en-only">Reach out by email — we respond as soon as we can:</p>
+      <p><a href="mailto:sasha.sirelon@gmail.com">sasha.sirelon@gmail.com</a></p>
+      <p class="uk-only">Розробник: Oleksandr Romanishyn</p>
+      <p class="en-only">Developer: Oleksandr Romanishyn</p>
+
+      <h2 data-i18n="faq_h">Поширені питання</h2>
+
+      <h3 data-i18n="faq_ai_q">ШІ написав неправильний заголовок або опис. Як виправити?</h3>
+      <p data-i18n="faq_ai_a">Ви можете відредагувати будь-яке поле вручну перед публікацією. Якщо ШІ систематично помиляється — напишіть нам, і ми це розглянемо.</p>
+
+      <h3 data-i18n="faq_olx_q">Я не можу підключити або авторизувати акаунт OLX.</h3>
+      <p class="uk-only">Переконайтеся, що маєте стабільне з'єднання з інтернетом і ваш акаунт OLX активний. Спробуйте вийти і знову увійти. Якщо проблема залишається — напишіть на <a href="mailto:sasha.sirelon@gmail.com">sasha.sirelon@gmail.com</a> з описом помилки.</p>
+      <p class="en-only">Make sure you have a stable internet connection and your OLX account is active. Try signing out and back in. If the problem persists, email <a href="mailto:sasha.sirelon@gmail.com">sasha.sirelon@gmail.com</a> with a description of the error.</p>
+
+      <h3 data-i18n="faq_crash_q">Додаток вилітає або поводиться некоректно.</h3>
+      <p class="uk-only">Спробуйте перезапустити або переінсталювати застосунок. Якщо проблема повторюється — опишіть, що сталося, і напишіть на <a href="mailto:sasha.sirelon@gmail.com">sasha.sirelon@gmail.com</a>.</p>
+      <p class="en-only">Try restarting or reinstalling the app. If it keeps happening, describe what occurred and email <a href="mailto:sasha.sirelon@gmail.com">sasha.sirelon@gmail.com</a>.</p>
+
+      <h3 data-i18n="faq_delete_q">Як видалити мої дані?</h3>
+      <p class="uk-only">Надішліть запит на <a href="mailto:sasha.sirelon@gmail.com">sasha.sirelon@gmail.com</a>. Запити на видалення обробляються відповідно до нашої <a href="../privacy-policy/">Політики конфіденційності</a>.</p>
+      <p class="en-only">Send a request to <a href="mailto:sasha.sirelon@gmail.com">sasha.sirelon@gmail.com</a>. Deletion requests are handled in line with our <a href="../privacy-policy/">Privacy Policy</a>.</p>
+
+      <h3 data-i18n="faq_download_q">Де завантажити застосунок?</h3>
+      <p class="uk-only">SellSnap доступний у <a href="https://play.google.com/store/apps/details?id=com.sirelon.sellsnap">Google Play</a> та App Store.</p>
+      <p class="en-only">SellSnap is available on <a href="https://play.google.com/store/apps/details?id=com.sirelon.sellsnap">Google Play</a> and the App Store.</p>
+
+      <div class="links">
+        <a href="../privacy-policy/" data-i18n="link_privacy">Політика конфіденційності</a>
+        <a href="../terms-and-conditions/" data-i18n="link_terms">Умови обслуговування</a>
+        <a href="../" data-i18n="link_home">Головна</a>
+      </div>
+
+      <p class="footer">
+        <span data-i18n="copyright">© 2026 SellSnap. Усі права захищені.</span>
+      </p>
+    </article>
+  </main>
+
+  <script>
+    (function () {
+      var LANG_KEY = "sellsnap-lang";
+      var THEME_KEY = "sellsnap-theme";
+      var SUPPORTED_LANGS = ["uk", "en"];
+
+      var I18N = {
+        uk: {
+          page_title: "SellSnap — Підтримка",
+          title: "Підтримка",
+          meta: "Оновлено: 3 червня 2026",
+          intro: "Маєте питання або щось пішло не так? Нижче — відповіді на поширені питання й способи зв'язатися з нами.",
+          contact_h: "Зв'яжіться з нами",
+          faq_h: "Поширені питання",
+          faq_ai_q: "ШІ написав неправильний заголовок або опис. Як виправити?",
+          faq_ai_a: "Ви можете відредагувати будь-яке поле вручну перед публікацією. Якщо ШІ систематично помиляється — напишіть нам, і ми це розглянемо.",
+          faq_olx_q: "Я не можу підключити або авторизувати акаунт OLX.",
+          faq_crash_q: "Додаток вилітає або поводиться некоректно.",
+          faq_delete_q: "Як видалити мої дані?",
+          faq_download_q: "Де завантажити застосунок?",
+          link_privacy: "Політика конфіденційності",
+          link_terms: "Умови обслуговування",
+          link_home: "Головна",
+          copyright: "© 2026 SellSnap. Усі права захищені.",
+        },
+        en: {
+          page_title: "SellSnap — Support",
+          title: "Support",
+          meta: "Last updated: June 3, 2026",
+          intro: "Have a question or ran into something? Find answers to common questions below or reach out directly.",
+          contact_h: "Contact Us",
+          faq_h: "Frequently Asked Questions",
+          faq_ai_q: "The AI wrote the wrong title or description. How do I fix it?",
+          faq_ai_a: "You can edit any field manually before publishing. If the AI is consistently off, let us know and we'll look into it.",
+          faq_olx_q: "I can't connect or authorize my OLX account.",
+          faq_crash_q: "The app crashes or behaves unexpectedly.",
+          faq_delete_q: "How do I delete my data?",
+          faq_download_q: "Where can I download the app?",
+          link_privacy: "Privacy Policy",
+          link_terms: "Terms of Service",
+          link_home: "Home",
+          copyright: "© 2026 SellSnap. All rights reserved.",
+        },
+      };
+
+      function detectLang() {
+        var q = new URLSearchParams(window.location.search).get("lang");
+        if (q && SUPPORTED_LANGS.indexOf(q) !== -1) return q;
+        var stored = localStorage.getItem(LANG_KEY);
+        if (stored && SUPPORTED_LANGS.indexOf(stored) !== -1) return stored;
+        var nav = (navigator.language || "en").toLowerCase();
+        return nav.startsWith("en") ? "en" : "uk";
+      }
+
+      function applyLang(lang) {
+        if (SUPPORTED_LANGS.indexOf(lang) === -1) lang = "en";
+        document.documentElement.lang = lang;
+        var dict = I18N[lang];
+        document.querySelectorAll("[data-i18n]").forEach(function (el) {
+          var key = el.dataset.i18n;
+          if (dict[key] != null) el.textContent = dict[key];
+        });
+        document.title = dict.page_title;
+        document.querySelectorAll("[data-set-lang]").forEach(function (btn) {
+          btn.setAttribute("aria-pressed", btn.dataset.setLang === lang ? "true" : "false");
+        });
+        localStorage.setItem(LANG_KEY, lang);
+      }
+
+      function applyTheme(theme) {
+        if (["system", "light", "dark"].indexOf(theme) === -1) theme = "system";
+        if (theme === "system") {
+          delete document.documentElement.dataset.theme;
+        } else {
+          document.documentElement.dataset.theme = theme;
+        }
+        document.querySelectorAll("[data-set-theme]").forEach(function (btn) {
+          btn.setAttribute("aria-pressed", btn.dataset.setTheme === theme ? "true" : "false");
+        });
+        localStorage.setItem(THEME_KEY, theme);
+      }
+
+      function init() {
+        applyLang(detectLang());
+        applyTheme(localStorage.getItem(THEME_KEY) || "system");
+        document.querySelectorAll("[data-set-lang]").forEach(function (btn) {
+          btn.addEventListener("click", function () { applyLang(btn.dataset.setLang); });
+        });
+        document.querySelectorAll("[data-set-theme]").forEach(function (btn) {
+          btn.addEventListener("click", function () { applyTheme(btn.dataset.setTheme); });
+        });
+      }
+
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", init);
+      } else {
+        init();
+      }
+    })();
+  </script>
+</body>
+</html>
