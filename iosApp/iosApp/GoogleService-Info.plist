@@ -9,7 +9,7 @@
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>com.sirelon.sellsnap.SellSnap</string>
+	<string>com.sirelon.sellsnap</string>
 	<key>PROJECT_ID</key>
 	<string>sellsnap-6e85c</string>
 	<key>STORAGE_BUCKET</key>
@@ -25,6 +25,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:186709313778:ios:e0e23617571024b5fc286b</string>
+	<string>1:186709313778:ios:62e5f879f0dc1a83fc286b</string>
 </dict>
 </plist>
