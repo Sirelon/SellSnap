@@ -11,8 +11,8 @@ See [AGENTS.md](AGENTS.md) for the full repo map, module breakdown, and source-s
 # Compile-check only (fast)
 ./gradlew :composeApp:compileAndroidMain
 
-# All unit tests
-./gradlew :composeApp:testDebugUnitTest
+# All unit tests (KMP — no Android host tests enabled)
+./gradlew :composeApp:jvmTest
 
 # Desktop run
 ./gradlew :composeApp:run
