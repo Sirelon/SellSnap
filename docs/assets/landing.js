@@ -16,11 +16,6 @@
       hero_h1: "Сфотографуй. ШІ напише. Публікуй на OLX.",
       hero_sub: "Фото — на вхід, оголошення — на вихід. ШІ напише за вас.",
 
-      store_google_eyebrow: "Завантажуйте в",
-      store_google_name: "Google Play",
-      store_apple_eyebrow: "Завантажуйте в",
-      store_apple_name: "App Store",
-
       mock_step_1_title: "Сфотографуйте",
       mock_step_2_title: "Готуємо ваше оголошення…",
       mock_step_2_sub: "ШІ робить свою справу…",
@@ -73,11 +68,6 @@
 
       hero_h1: "Snap it. AI writes it. OLX gets it.",
       hero_sub: "Photo in, listing out — AI does the typing.",
-
-      store_google_eyebrow: "GET IT ON",
-      store_google_name: "Google Play",
-      store_apple_eyebrow: "Download on the",
-      store_apple_name: "App Store",
 
       mock_step_1_title: "Snap it",
       mock_step_2_title: "Cooking up your ad…",
