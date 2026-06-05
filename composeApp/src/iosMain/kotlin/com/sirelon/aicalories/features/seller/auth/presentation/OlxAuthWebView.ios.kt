@@ -1,10 +1,19 @@
 package com.sirelon.sellsnap.features.seller.auth.presentation
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.UIKitView
 import kotlinx.cinterop.readValue
+import kotlinx.coroutines.delay
 import platform.CoreGraphics.CGRectZero
 import platform.Foundation.NSURL
 import platform.Foundation.NSURLRequest
@@ -59,25 +68,41 @@ actual fun OlxAuthWebView(
     onUrlIntercepted: (String) -> Unit,
     modifier: Modifier,
 ) {
+    var isLoading by remember { mutableStateOf(true) }
     val delegate = remember(redirectUri) {
-        OlxWKNavigationDelegate(redirectUri, onUrlIntercepted)
+        OlxWKNavigationDelegate(
+            redirectUri = redirectUri,
+            onUrlIntercepted = onUrlIntercepted,
+        )
     }
     delegate.onUrlIntercepted = onUrlIntercepted
 
-    UIKitView(
-        factory = {
-            val config = WKWebViewConfiguration()
-            config.preferences.javaScriptEnabled = true
+    LaunchedEffect(url) {
+        isLoading = true
+        delay(1_200)
+        isLoading = false
+    }
 
-            WKWebView(frame = CGRectZero.readValue(), configuration = config).apply {
-                navigationDelegate = delegate
-                customUserAgent =
-                    "Mozilla/5.0 (Macintosh; Intel Mac OS X 13_5_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
-                NSURL.URLWithString(url)?.let { nsUrl ->
-                    loadRequest(NSURLRequest.requestWithURL(nsUrl))
+    Box(modifier = modifier) {
+        UIKitView(
+            factory = {
+                val config = WKWebViewConfiguration()
+                config.preferences.javaScriptEnabled = true
+
+                WKWebView(frame = CGRectZero.readValue(), configuration = config).apply {
+                    navigationDelegate = delegate
+                    customUserAgent =
+                        "Mozilla/5.0 (Macintosh; Intel Mac OS X 13_5_0) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15"
+                    NSURL.URLWithString(url)?.let { nsUrl ->
+                        loadRequest(NSURLRequest.requestWithURL(nsUrl))
+                    }
                 }
-            }
-        },
-        modifier = modifier,
-    )
+            },
+            modifier = Modifier.fillMaxSize(),
+        )
+
+        if (isLoading) {
+            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+        }
+    }
 }

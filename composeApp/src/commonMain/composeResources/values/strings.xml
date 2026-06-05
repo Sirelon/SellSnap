@@ -86,6 +86,11 @@
     <string name="profile_theme_light">Light</string>
     <string name="profile_theme_dark">Dark</string>
     <string name="profile_logout">Log out</string>
+    <string name="profile_delete_account_data">Delete SellSnap account data</string>
+    <string name="profile_delete_account_data_title">Delete SellSnap account data?</string>
+    <string name="profile_delete_account_data_message">This removes the saved OLX connection, local profile cache, guest session, and selling location from this device. It does not delete your OLX account.</string>
+    <string name="profile_delete_account_data_confirm">Delete data</string>
+    <string name="profile_delete_account_data_cancel">Cancel</string>
     <string name="profile_not_provided">Not set</string>
     <string name="profile_value_yes">Yes</string>
     <string name="profile_value_no">No</string>

@@ -11,6 +11,10 @@ class LocationRepository(
 ) {
     suspend fun getSavedLocation(): OlxLocation? = locationStore.read()
 
+    suspend fun clearSavedLocation() {
+        locationStore.clear()
+    }
+
     suspend fun fetchUserLocation(): OlxLocation? {
         val deviceLocation = locationProvider.getCurrentLocation() ?: return null
 

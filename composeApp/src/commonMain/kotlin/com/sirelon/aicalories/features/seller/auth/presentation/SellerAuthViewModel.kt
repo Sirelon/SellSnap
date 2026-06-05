@@ -78,20 +78,21 @@ class SellerAuthViewModel(
     private fun startAuthorization() {
         analytics.logEvent(AnalyticsEvents.AUTH_STARTED)
         viewModelScope.launch {
+            setState {
+                it.copy(
+                    status = SellerAuthContract.SellerAuthStatus.Processing,
+                    errorMessage = null,
+                )
+            }
             runCatching { authRepository.createAuthorizationRequest() }
                 .onSuccess { request ->
                     setState {
                         it.copy(
-                            status = SellerAuthContract.SellerAuthStatus.Processing,
+                            status = SellerAuthContract.SellerAuthStatus.Idle,
                             errorMessage = null,
                         )
                     }
                     postEffect(SellerAuthContract.SellerAuthEffect.LaunchOlxAuthFlow(request.url))
-                    setState {
-                        it.copy(
-                            status = SellerAuthContract.SellerAuthStatus.Processing,
-                        )
-                    }
                 }
                 .onFailure { error ->
                     analytics.logEvent(AnalyticsEvents.AUTH_FAILED)

@@ -14,6 +14,10 @@ val appNavigationSavedStateConfiguration: SavedStateConfiguration =
                 subclass(AppDestination.SellerOnboarding::class, AppDestination.SellerOnboarding.serializer())
                 subclass(AppDestination.SellerLanding::class, AppDestination.SellerLanding.serializer())
                 subclass(AppDestination.Seller::class, AppDestination.Seller.serializer())
+                subclass(
+                    AppDestination.DeleteAccountDataConfirm::class,
+                    AppDestination.DeleteAccountDataConfirm.serializer(),
+                )
             }
         }
     }

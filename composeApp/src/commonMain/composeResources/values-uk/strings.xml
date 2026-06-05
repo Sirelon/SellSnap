@@ -80,6 +80,11 @@
     <string name="profile_theme_light">Світла</string>
     <string name="profile_theme_dark">Темна</string>
     <string name="profile_logout">Вийти</string>
+    <string name="profile_delete_account_data">Видалити дані акаунта SellSnap</string>
+    <string name="profile_delete_account_data_title">Видалити дані акаунта SellSnap?</string>
+    <string name="profile_delete_account_data_message">Це видалить збережене підключення OLX, локальний кеш профілю, гостьову сесію та місце продажу з цього пристрою. Ваш акаунт OLX не буде видалено.</string>
+    <string name="profile_delete_account_data_confirm">Видалити дані</string>
+    <string name="profile_delete_account_data_cancel">Скасувати</string>
     <string name="profile_not_provided">Не задано</string>
     <string name="profile_value_yes">Так</string>
     <string name="profile_value_no">Ні</string>

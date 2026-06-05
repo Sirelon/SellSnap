@@ -17,6 +17,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.RadioButton
@@ -24,6 +25,7 @@ import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -85,6 +87,11 @@ import com.sirelon.sellsnap.generated.resources.profile_field_phone
 import com.sirelon.sellsnap.generated.resources.profile_field_status
 import com.sirelon.sellsnap.generated.resources.profile_guest_description
 import com.sirelon.sellsnap.generated.resources.profile_guest_title
+import com.sirelon.sellsnap.generated.resources.profile_delete_account_data
+import com.sirelon.sellsnap.generated.resources.profile_delete_account_data_cancel
+import com.sirelon.sellsnap.generated.resources.profile_delete_account_data_confirm
+import com.sirelon.sellsnap.generated.resources.profile_delete_account_data_message
+import com.sirelon.sellsnap.generated.resources.profile_delete_account_data_title
 import com.sirelon.sellsnap.generated.resources.profile_location_subtitle
 import com.sirelon.sellsnap.generated.resources.profile_location_title
 import com.sirelon.sellsnap.generated.resources.profile_logout
@@ -108,6 +115,7 @@ fun ProfileScreenRoute(
     onBack: (() -> Unit)?,
     onOpenOlxAuth: (String) -> Unit,
     onLogout: () -> Unit,
+    onDeleteAccountDataRequested: () -> Unit,
     reason: String? = null,
 ) {
     val viewModel: ProfileViewModel = koinViewModel()
@@ -148,6 +156,7 @@ fun ProfileScreenRoute(
                     viewModel.onEvent(ProfileEvent.ChangeLocationClicked)
                 }
             },
+            onDeleteAccountDataRequested = onDeleteAccountDataRequested,
             reason = reason,
         )
     }
@@ -182,6 +191,7 @@ private fun ProfileScreen(
     onBack: (() -> Unit)?,
     onEvent: (ProfileEvent) -> Unit,
     onChangeLocation: () -> Unit,
+    onDeleteAccountDataRequested: () -> Unit,
     reason: String? = null,
 ) {
     AppScaffold(
@@ -237,6 +247,7 @@ private fun ProfileScreen(
                 AccountCard(
                     user = state.user,
                     onLogout = { onEvent(ProfileEvent.LogoutClicked) },
+                    onDeleteAccountData = onDeleteAccountDataRequested,
                 )
             }
 
@@ -299,6 +310,7 @@ private fun GuestCard(onLogin: () -> Unit) {
 private fun AccountCard(
     user: OlxUser,
     onLogout: () -> Unit,
+    onDeleteAccountData: () -> Unit,
 ) {
     AppCard(modifier = Modifier.fillMaxWidth()) {
         Column(
@@ -361,6 +373,77 @@ private fun AccountCard(
                     contentColor = AppTheme.colors.onError,
                 ),
             )
+
+            Cell(
+                headline = {
+                    Text(
+                        text = stringResource(Res.string.profile_delete_account_data),
+                        style = AppTheme.typography.body,
+                        color = AppTheme.colors.error,
+                    )
+                },
+                modifier = Modifier.fillMaxWidth(),
+                transparent = true,
+                onClick = onDeleteAccountData,
+            )
+        }
+    }
+}
+
+@Composable
+fun DeleteAccountDataConfirmSheet(
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+    isDeleting: Boolean,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = AppDimens.Spacing.xl5)
+            .padding(bottom = AppDimens.Spacing.xl5),
+        verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.xl4),
+    ) {
+        Text(
+            text = stringResource(Res.string.profile_delete_account_data_title),
+            style = AppTheme.typography.headline,
+            color = AppTheme.colors.onBackground,
+        )
+        Text(
+            text = stringResource(Res.string.profile_delete_account_data_message),
+            style = AppTheme.typography.body,
+            color = AppTheme.colors.onSurfaceMuted,
+        )
+        if (isDeleting) {
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center,
+            ) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(AppDimens.Size.xl6),
+                    color = AppTheme.colors.primary,
+                )
+            }
+        }
+        AppButton(
+            modifier = Modifier.fillMaxWidth(),
+            text = stringResource(Res.string.profile_delete_account_data_confirm),
+            onClick = onConfirm,
+            enabled = !isDeleting,
+            style = AppButtonStyle(
+                backgroundColor = AppTheme.colors.error,
+                contentColor = AppTheme.colors.onError,
+            ),
+        )
+        Box(
+            modifier = Modifier.fillMaxWidth(),
+            contentAlignment = Alignment.Center,
+        ) {
+            TextButton(
+                onClick = onDismiss,
+                enabled = !isDeleting,
+            ) {
+                Text(text = stringResource(Res.string.profile_delete_account_data_cancel))
+            }
         }
     }
 }

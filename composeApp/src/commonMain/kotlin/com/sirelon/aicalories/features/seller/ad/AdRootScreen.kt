@@ -58,6 +58,7 @@ import org.jetbrains.compose.resources.stringResource
 fun AdRootScreen(
     onConnectOlxClick: () -> Unit,
     onLogout: () -> Unit,
+    onDeleteAccountDataRequested: () -> Unit,
     popToAdRoot: () -> Unit,
 ) {
     val navBackStack = rememberNavBackStack(
@@ -202,6 +203,7 @@ fun AdRootScreen(
                         },
                         onOpenOlxAuth = { url -> navBackStack.add(AdDestination.ProfileAuth(url)) },
                         onLogout = onLogout,
+                        onDeleteAccountDataRequested = onDeleteAccountDataRequested,
                         reason = destination.reason,
                     )
                 }

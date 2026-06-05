@@ -51,6 +51,12 @@ class SellerAccountRepository(
         _user.value = null
     }
 
+    suspend fun deleteSellSnapAccountData() {
+        authRepository.logout()
+        locationRepository.clearSavedLocation()
+        _user.value = null
+    }
+
     suspend fun savedLocation(): OlxLocation? = locationRepository.getSavedLocation()
 
     suspend fun refreshLocationFromDevice(): OlxLocation? =

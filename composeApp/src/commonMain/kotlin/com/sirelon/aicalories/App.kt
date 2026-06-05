@@ -4,6 +4,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -11,6 +15,7 @@ import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
+import androidx.navigation3.scene.SinglePaneSceneStrategy
 import androidx.navigation3.ui.NavDisplay
 import coil3.ImageLoader
 import coil3.compose.setSingletonImageLoaderFactory
@@ -24,10 +29,14 @@ import com.sirelon.sellsnap.di.networkModule
 import com.sirelon.sellsnap.features.seller.ad.AdRootScreen
 import com.sirelon.sellsnap.features.seller.auth.presentation.SellerLandingScreenRoute
 import com.sirelon.sellsnap.features.seller.onboarding.OnboardingScreen
+import com.sirelon.sellsnap.features.seller.profile.data.SellerAccountRepository
+import com.sirelon.sellsnap.features.seller.profile.ui.DeleteAccountDataConfirmSheet
+import com.sirelon.sellsnap.navigation.BottomSheetSceneStrategy
 import com.sirelon.sellsnap.navigation.AppDestination
 import com.sirelon.sellsnap.navigation.appNavigationSavedStateConfiguration
 import com.sirelon.sellsnap.startup.AppNavigationViewModel
 import com.sirelon.sellsnap.startup.AppThemeRepository
+import kotlinx.coroutines.launch
 import org.koin.compose.KoinApplication
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
@@ -54,12 +63,21 @@ fun App() {
 
         AppTheme(themeMode = themeMode) {
             val navVm: AppNavigationViewModel = koinViewModel()
+            val accountRepository: SellerAccountRepository = koinInject()
             val backStackList by navVm.backStack.collectAsStateWithLifecycle()
+            val coroutineScope = rememberCoroutineScope()
+            var isDeletingAccountData by remember { mutableStateOf(false) }
 
             val navBackStack = rememberNavBackStack(
                 appNavigationSavedStateConfiguration,
                 AppDestination.Splash,
             )
+            val sceneStrategies = remember {
+                listOf(
+                    BottomSheetSceneStrategy<NavKey>(),
+                    SinglePaneSceneStrategy<NavKey>(),
+                )
+            }
             LaunchedEffect(backStackList) {
                 val restoredFromSavedState = navBackStack.toList() != listOf(AppDestination.Splash)
                 val hasResolvedStartup = backStackList != listOf(AppDestination.Splash)
@@ -72,6 +90,12 @@ fun App() {
             NavDisplay(
                 modifier = Modifier.fillMaxSize(),
                 backStack = navBackStack,
+                onBack = {
+                    if (!isDeletingAccountData) {
+                        navVm.popDestination()
+                    }
+                },
+                sceneStrategies = sceneStrategies,
                 entryDecorators = listOf(rememberSaveableStateHolderNavEntryDecorator<NavKey>()),
                 entryProvider = entryProvider<NavKey> {
 
@@ -97,7 +121,38 @@ fun App() {
                         AdRootScreen(
                             onConnectOlxClick = navVm::exitGuestModeToLanding,
                             onLogout = { navVm.replaceWith(AppDestination.SellerLanding) },
+                            onDeleteAccountDataRequested = {
+                                navVm.navigateTo(AppDestination.DeleteAccountDataConfirm)
+                            },
                             popToAdRoot = navVm::popToAdRoot,
+                        )
+                    }
+
+                    entry<AppDestination.DeleteAccountDataConfirm>(
+                        metadata = BottomSheetSceneStrategy.bottomSheet(),
+                    ) {
+                        DeleteAccountDataConfirmSheet(
+                            onConfirm = {
+                                if (!isDeletingAccountData) {
+                                    coroutineScope.launch {
+                                        isDeletingAccountData = true
+                                        runCatching {
+                                            accountRepository.deleteSellSnapAccountData()
+                                        }.onSuccess {
+                                            navVm.replaceWith(AppDestination.SellerLanding)
+                                        }.onFailure { error ->
+                                            error.printStackTrace()
+                                        }
+                                        isDeletingAccountData = false
+                                    }
+                                }
+                            },
+                            onDismiss = {
+                                if (!isDeletingAccountData) {
+                                    navVm.popDestination()
+                                }
+                            },
+                            isDeleting = isDeletingAccountData,
                         )
                     }
                 },

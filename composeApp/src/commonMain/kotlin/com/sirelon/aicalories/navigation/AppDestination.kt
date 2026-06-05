@@ -20,4 +20,7 @@ sealed interface AppDestination : NavKey {
 
     @Serializable
     data object Seller : AppDestination
+
+    @Serializable
+    data object DeleteAccountDataConfirm : AppDestination
 }
