@@ -3,6 +3,7 @@ package com.sirelon.sellsnap.features.seller.auth.presentation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAuthCallbackBridge
+import com.sirelon.sellsnap.features.seller.auth.data.OlxConfig
 import platform.AuthenticationServices.ASWebAuthenticationPresentationContextProvidingProtocol
 import platform.AuthenticationServices.ASWebAuthenticationSession
 import platform.AuthenticationServices.ASWebAuthenticationSessionCallback
@@ -18,7 +19,8 @@ actual fun rememberOlxAuthLauncher(): (String) -> Unit {
     return remember {
         { url: String ->
             val nsUrl = NSURL.URLWithString(url) ?: return@remember
-            val callback = ASWebAuthenticationSessionCallback.callbackWithCustomScheme("selolxai")
+            val scheme = OlxConfig.redirectUri.substringBefore("://")
+            val callback = ASWebAuthenticationSessionCallback.callbackWithCustomScheme(scheme)
             val session = ASWebAuthenticationSession(
                 uRL = nsUrl,
                 callback = callback,
