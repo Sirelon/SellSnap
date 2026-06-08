@@ -18,7 +18,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.window.DialogProperties
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
@@ -32,8 +31,7 @@ import com.sirelon.sellsnap.designsystem.screens.ImagesPreview
 import com.sirelon.sellsnap.features.seller.ad.generate_ad.GenerateAdScreen
 import com.sirelon.sellsnap.features.seller.ad.preview_ad.PreviewAdScreen
 import com.sirelon.sellsnap.features.seller.ad.publish_success.PublishSuccessScreen
-import com.sirelon.sellsnap.features.seller.auth.data.OlxAuthCallbackBridge
-import com.sirelon.sellsnap.features.seller.auth.presentation.OlxAuthDialogScreen
+import com.sirelon.sellsnap.features.seller.auth.presentation.rememberOlxAuthLauncher
 import com.sirelon.sellsnap.features.seller.categories.domain.OlxCategory
 import com.sirelon.sellsnap.features.seller.categories.presentation.CategoryPickerSheet
 import com.sirelon.sellsnap.features.seller.my_ads.ui.MyAdvertsScreenRoute
@@ -67,6 +65,7 @@ fun AdRootScreen(
     )
     val connectOlxReason = stringResource(Res.string.guest_connect_olx_cta)
 
+    val authLauncher = rememberOlxAuthLauncher()
     var pendingCategory by remember { mutableStateOf<OlxCategory?>(null) }
     var isGeneratingAd by remember { mutableStateOf(false) }
     val sceneStrategies = remember {
@@ -201,25 +200,10 @@ fun AdRootScreen(
                         } else {
                             { navBackStack.removeAt(navBackStack.lastIndex) }
                         },
-                        onOpenOlxAuth = { url -> navBackStack.add(AdDestination.ProfileAuth(url)) },
+                        onOpenOlxAuth = authLauncher,
                         onLogout = onLogout,
                         onDeleteAccountDataRequested = onDeleteAccountDataRequested,
                         reason = destination.reason,
-                    )
-                }
-
-                entry<AdDestination.ProfileAuth>(
-                    metadata = DialogSceneStrategy.dialog(
-                        DialogProperties(usePlatformDefaultWidth = false),
-                    ),
-                ) { destination ->
-                    OlxAuthDialogScreen(
-                        url = destination.url,
-                        onDismiss = { navBackStack.removeAt(navBackStack.lastIndex) },
-                        onCallbackReceived = { callbackUrl ->
-                            navBackStack.removeAt(navBackStack.lastIndex)
-                            OlxAuthCallbackBridge.publishCallback(callbackUrl)
-                        },
                     )
                 }
 

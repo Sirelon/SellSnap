@@ -124,6 +124,7 @@ kotlin {
             implementation(project.dependencies.platform(libs.firebase.bom))
             implementation(libs.gitlive.firebase.analytics)
             implementation(libs.gitlive.firebase.crashlytics)
+            implementation("androidx.browser:browser:1.8.0")
         }
         commonMain.dependencies {
             implementation(libs.supabase.compose.auth)

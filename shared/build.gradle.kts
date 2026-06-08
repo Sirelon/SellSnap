@@ -65,7 +65,7 @@ val olxScope =
 
 val olxAuthBaseUrl =
     resolveSecret("OLX_AUTH_BASE_URL", "olx.auth.base.url")
-        ?: "https://www.olx.ua/oauth/authorize"
+        ?: "https://www.olx.ua/uk/oauth/authorize/"
 
 val olxRedirectUri =
     resolveSecret("OLX_REDIRECT_URI", "olx.redirect.uri")
