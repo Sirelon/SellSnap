@@ -21,10 +21,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -34,9 +33,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.sirelon.sellsnap.features.seller.auth.data.OlxAuthCallbackBridge
 import com.sirelon.sellsnap.designsystem.AppDimens
 import com.sirelon.sellsnap.designsystem.AppDivider
 import com.sirelon.sellsnap.designsystem.AppScaffold
@@ -74,13 +72,19 @@ fun SellerLandingScreenRoute(openHome: () -> Unit) {
     val viewModel: SellerAuthViewModel = koinViewModel()
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
-    var webViewUrl by remember { mutableStateOf<String?>(null) }
     val localUriHandler = LocalUriHandler.current
+    val authLauncher = rememberOlxAuthLauncher()
+
+    LaunchedEffect(viewModel) {
+        OlxAuthCallbackBridge.callbacks.collect { callbackUrl ->
+            viewModel.onCallbackReceived(callbackUrl)
+        }
+    }
 
     ObserveAsEvents(viewModel.effects) { effect ->
         when (effect) {
             is SellerAuthContract.SellerAuthEffect.LaunchOlxAuthFlow -> {
-                webViewUrl = effect.url
+                authLauncher(effect.url)
             }
 
             is SellerAuthContract.SellerAuthEffect.ShowMessage -> {
@@ -101,28 +105,6 @@ fun SellerLandingScreenRoute(openHome: () -> Unit) {
             SellerLandingScreen(state = state, onEvent = viewModel::onEvent)
         }
     )
-
-    webViewUrl?.let { url ->
-        Dialog(
-            onDismissRequest = {
-                webViewUrl = null
-                viewModel.onEvent(SellerAuthContract.SellerAuthEvent.OlxAuthDismissed)
-            },
-            properties = DialogProperties(usePlatformDefaultWidth = false),
-        ) {
-            OlxAuthDialogScreen(
-                url = url,
-                onDismiss = {
-                    webViewUrl = null
-                    viewModel.onEvent(SellerAuthContract.SellerAuthEvent.OlxAuthDismissed)
-                },
-                onCallbackReceived = { callbackUrl ->
-                    webViewUrl = null
-                    viewModel.onCallbackReceived(callbackUrl)
-                },
-            )
-        }
-    }
 }
 
 @Composable
