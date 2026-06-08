@@ -1,0 +1,271 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- OnBoarding & Authentication -->
+    <string name="welcome_to_sellsnap">Привіт, ласкаво просимо в SellSnap 👋</string>
+    <string name="welcome_subtitle">Фото — на вхід, оголошення — на вихід. ШІ напише за вас.</string>
+    <string name="why_connect_olx">Навіщо підключати OLX?</string>
+    <string name="benefit_publish">Публікуйте прямо на OLX — без копіювання</string>
+    <string name="benefit_sync">Ваші оголошення синхронізуються самі</string>
+    <string name="benefit_manage">Усі оголошення — в одному місці</string>
+    <string name="continue_as_guest">Спробувати без акаунта</string>
+    <string name="guest_description">Ви зможете створити оголошення й скопіювати текст — а вставити на OLX доведеться вручну.</string>
+    <string name="guest_mode_banner_title">Гостьовий режим</string>
+    <string name="guest_mode_banner_message">Хочете опублікувати? Знадобиться акаунт OLX. А поки скопіюйте назву, опис і ціну нижче й вставте їх на OLX.</string>
+    <string name="guest_connect_olx_cta">Підключити OLX і публікувати в один тап</string>
+    <string name="guest_copy_hint">Натисніть кнопки копіювання поряд із назвою, описом і ціною — і вставте їх на OLX, коли будете готові.</string>
+    <string name="continue_with_olx">Продовжити з OLX</string>
+    <string name="terms_privacy_prefix">Продовжуючи, ви приймаєте наші </string>
+    <string name="terms_of_service">Умови обслуговування</string>
+    <string name="privacy_policy">Політику конфіденційності</string>
+    <string name="keyboard_done_action">Готово</string>
+    <string name="or_divider">або</string>
+
+    <!-- Onboarding Screen Steps -->
+    <string name="onboarding_step1_title">Сфотографуйте 📸</string>
+    <string name="onboarding_step1_subtitle">Наведіть, клацніть — готово. Усе, що хочете продати, ми оформимо.</string>
+    <string name="onboarding_step2_title">ШІ напише замість вас ✍️</string>
+    <string name="onboarding_step2_subtitle">Назва, опис і чесна ціна — встигнуть з'явитися, поки кава охолоне.</string>
+    <string name="onboarding_step3_title">Публікація в один тап 🚀</string>
+    <string name="onboarding_step3_subtitle">Один тап — і ви на OLX. Покупці, знайомтеся з вашими речами.</string>
+
+    <!-- Generate Ad Screen -->
+    <string name="turn_stuff_into_olx_listings">Є що продати? Сфотографуйте. Решту зробимо ми.</string>
+    <string name="snap_photo_ad_desc">Сфотографуйте. Текст напише ШІ.</string>
+    <string name="sellsnap_title">SellSnap</string>
+    <string name="tips_for_better_photos">Поради для фото 📷</string>
+    <string name="tip_lighting">Гарне світло = кращий результат</string>
+    <string name="tip_angles">Знімайте з кількох кутів</string>
+    <string name="tip_defects">Не ховайте подряпини — покупці люблять чесність</string>
+    <string name="take_photo">Зробити фото</string>
+
+    <!-- Preview Ad Screen -->
+    <string name="publish_on_olx">Опублікувати на OLX</string>
+    <string name="publish_errors">Опублікувати · %1$d виправити</string>
+    <string name="banner_ready_in">Готово за %1$s — перегляньте перед публікацією.</string>
+    <string name="validation_all_valid">Виглядає чудово — усе на місці ✨</string>
+    <string name="validation_fields_remaining">%1$d залишилось заповнити</string>
+    <string name="validation_error_title_too_short">У назві треба 10+ символів</string>
+    <string name="validation_error_desc_too_short">В описі треба 30+ символів</string>
+    <string name="validation_error_no_category">Оберіть категорію</string>
+    <string name="validation_error_no_location">Додайте місцезнаходження</string>
+    <string name="validation_errors_more">…і ще %1$d</string>
+    <string name="ad_price_ai_estimated_range">ШІ радить: %1$s – %2$s ₴</string>
+    <string name="min_characters">Хоча б %1$d символів, будь ласка</string>
+    <string name="character_count_range">%1$d/%2$d</string>
+    <string name="change_button">Змінити</string>
+
+    <!-- Analyze Screen -->
+    <string name="bullet_item">• %1$s</string>
+
+    <!-- Team Screen -->
+
+    <!-- OLX Auth Profile -->
+    <string name="profile_field_id">ID</string>
+    <string name="profile_field_name">Ім'я</string>
+    <string name="profile_field_email">Email</string>
+    <string name="profile_field_status">Статус</string>
+    <string name="profile_field_phone">Телефон</string>
+    <string name="profile_field_business">Бізнес</string>
+    <string name="profile_field_created_at">Створено</string>
+    <string name="profile_field_last_login_at">Останній вхід</string>
+    <string name="profile_screen_title">Профіль</string>
+    <string name="profile_guest_title">Гостьовий профіль</string>
+    <string name="profile_guest_description">Підключіть OLX, щоб публікувати з SellSnap — дані акаунта з'являться тут.</string>
+    <string name="profile_olx_account">Акаунт OLX</string>
+    <string name="profile_location_title">Місце продажу</string>
+    <string name="profile_location_subtitle">Підставимо це місце в нові оголошення автоматично.</string>
+    <string name="profile_theme_title">Тема</string>
+    <string name="profile_theme_subtitle">Виберіть вигляд SellSnap на цьому пристрої.</string>
+    <string name="profile_theme_system">Системна</string>
+    <string name="profile_theme_light">Світла</string>
+    <string name="profile_theme_dark">Темна</string>
+    <string name="profile_logout">Вийти</string>
+    <string name="profile_delete_account_data">Видалити дані акаунта SellSnap</string>
+    <string name="profile_delete_account_data_title">Видалити дані акаунта SellSnap?</string>
+    <string name="profile_delete_account_data_message">Це видалить збережене підключення OLX, локальний кеш профілю, гостьову сесію та місце продажу з цього пристрою. Ваш акаунт OLX не буде видалено.</string>
+    <string name="profile_delete_account_data_confirm">Видалити дані</string>
+    <string name="profile_delete_account_data_cancel">Скасувати</string>
+    <string name="profile_not_provided">Не задано</string>
+    <string name="profile_value_yes">Так</string>
+    <string name="profile_value_no">Ні</string>
+
+    <!-- My OLX Ads -->
+    <string name="nav_my_ads">Мої оголошення</string>
+    <string name="my_ads_screen_title">Мої оголошення OLX</string>
+    <string name="my_ads_screen_subtitle">Усі ваші OLX-оголошення — в одному місці.</string>
+    <string name="my_ads_empty_title">Оголошень OLX ще немає</string>
+    <string name="my_ads_empty_description">Створіть перше оголошення в SellSnap — після публікації воно з'явиться тут.</string>
+    <string name="my_ads_create_listing">Нове оголошення</string>
+    <string name="my_ads_connect_title">Підключіть OLX, щоб бачити оголошення</string>
+    <string name="my_ads_connect_description">Опубліковані оголошення OLX з'являться тут після підключення акаунта.</string>
+    <string name="my_ads_connect_action">Підключити OLX</string>
+    <string name="my_ads_load_more">Завантажити ще</string>
+    <string name="my_ads_created_at">Створено</string>
+    <string name="my_ads_valid_to">Дійсне до</string>
+    <string name="label_value_format">%1$s: %2$s</string>
+    <string name="my_ads_untitled">Оголошення OLX без назви</string>
+    <string name="my_ads_price_not_set">Ціну не вказано</string>
+    <string name="my_ads_missing_url">Публічне посилання ще не готове — OLX обробляє оголошення.</string>
+    <string name="my_ads_load_failed">Не вдалося завантажити оголошення OLX.</string>
+    <string name="my_ads_status_active">Активне</string>
+    <string name="my_ads_status_new">На перевірці</string>
+    <string name="my_ads_status_limited">Обмежене</string>
+    <string name="my_ads_status_removed_by_user">Видалене</string>
+    <string name="my_ads_status_outdated">Прострочене</string>
+    <string name="my_ads_status_unconfirmed">Не підтверджене</string>
+    <string name="my_ads_status_unpaid">Не оплачене</string>
+    <string name="my_ads_status_moderated">Після модерації</string>
+    <string name="my_ads_status_blocked">Заблоковане</string>
+    <string name="my_ads_status_disabled">Вимкнене</string>
+    <string name="my_ads_status_removed_by_moderator">Видалене модератором</string>
+    <string name="my_ads_status_unknown">Очікує</string>
+
+    <!-- Photos Section -->
+    <string name="photos_count_format">%1$d/%2$d фото</string>
+    <string name="add_photo_cd">Додати фото</string>
+    <string name="add_photo_label">Додати</string>
+    <string name="remove_photo_cd">Видалити фото</string>
+    <string name="source_camera">Камера</string>
+    <string name="source_gallery">Галерея</string>
+
+    <!-- Navigation -->
+    <string name="back">Назад</string>
+
+    <!-- Capacity Result Screen — status messages -->
+    <string name="retry">Повторити</string>
+
+    <!-- Analyze Screen -->
+    <string name="add_photos_title">Додати фото</string>
+
+    <!-- Generate Ad Screen -->
+    <string name="generate_with_ai">Створити з ШІ</string>
+    <string name="add_photos_to_continue">Спершу додайте фото</string>
+    <string name="new_listing">Нове оголошення</string>
+    <string name="new_listing_subtitle">Додайте 1–8 фото. Решту зробимо ми.</string>
+    <string name="generic_error_retry">Щось пішло не так. Спробуйте ще раз.</string>
+    <string name="ai_hint_label">Підкажіть ШІ (необов'язково)</string>
+    <string name="ai_hint_placeholder">напр. Nike Air Max 90, розмір 42, носили 2 місяці</string>
+    <string name="get_started">Почнемо</string>
+    <string name="next">Далі</string>
+
+    <!-- AI Processing -->
+    <string name="ai_creating_ad_title">Готуємо ваше оголошення</string>
+    <string name="ai_analyzing_photo">Розглядаємо ваші фото і пишемо ідеальну назву, опис та ціну…</string>
+    <string name="ai_step_uploading_photos">Завантажуємо фото</string>
+    <string name="ai_step_analyzing_image">Розглядаємо фото</string>
+    <string name="ai_step_preparing_guest_ad">Збираємо все докупи</string>
+    <string name="ai_step_generating_title">Придумуємо назву</string>
+    <string name="ai_step_writing_description">Пишемо опис</string>
+    <string name="ai_step_calculating_price">Шукаємо чесну ціну</string>
+    <string name="ai_processing_status_in_progress">Працюємо…</string>
+    <string name="ai_processing_status_done">Готово ✓</string>
+    <string name="ai_processing_tip_connect_olx_faster">Лайфгак: підключіть OLX — і наступне оголошення вилетить у 5× швидше 🚀</string>
+    <string name="ai_processing_tip_good_lighting">Лайфгак: гарне світло = чистіший результат ШІ.</string>
+    <string name="ai_processing_tip_capture_details">Лайфгак: крупні плани деталей — і опис вийде точнішим.</string>
+    <string name="ai_processing_tip_keep_background_clean">Лайфгак: чистий фон — і ваша річ виділиться ✨</string>
+    <string name="ai_processing_tip_first_photo_matters">Лайфгак: перше фото — це 80%% успіху. Зробіть його найкращим 📸</string>
+    <string name="ai_processing_tip_reply_fast">Лайфгак: відповіли за годину — і покупець ваш.</string>
+    <string name="ai_processing_tip_honesty_sells">Лайфгак: покажіть подряпини — покупці люблять чесність.</string>
+    <string name="ai_processing_tip_evening_post">Лайфгак: викладайте ввечері — саме тоді покупці гортають OLX.</string>
+    <string name="ai_processing_tip_include_accessories">Лайфгак: додайте у кадр коробку чи зарядку — і річ виглядатиме дорожче.</string>
+    <string name="ai_processing_tip_scale_reference">Лайфгак: покладіть монету поряд — покупці одразу зрозуміють розмір.</string>
+    <string name="ai_processing_tip_wipe_item">Лайфгак: протріть річ перед зйомкою — пил на фото видно вдвічі більше.</string>
+    <string name="ai_processing_tip_daylight">Лайфгак: знімайте біля вікна — денне світло переможе будь-яку лампу 💡</string>
+
+    <!-- Permission Dialogs -->
+    <string name="camera_rationale_title">Можна нам камеру?</string>
+    <string name="camera_rationale_message">Нам потрібна камера, щоб знімати ваші речі для оголошень. Дозвольте доступ — і вперед!</string>
+    <string name="camera_settings_title">Увімкніть камеру в налаштуваннях</string>
+    <string name="camera_settings_message_ios">Камеру заблоковано. Відкрийте Налаштування → Конфіденційність → Камера та увімкніть SellSnap.</string>
+    <string name="camera_settings_message_android">Камеру заблоковано. Відкрийте налаштування додатка й увімкніть її для SellSnap.</string>
+    <string name="not_now">Не зараз</string>
+    <string name="open_settings">Відкрити налаштування</string>
+    <string name="cancel">Скасувати</string>
+
+    <!-- Attributes -->
+    <string name="ad_attributes_label">Деталі</string>
+    <string name="attr_select_placeholder">Оберіть…</string>
+    <string name="confirm">Підтвердити</string>
+    <string name="error_attr_required">Це поле потрібно заповнити</string>
+    <string name="error_attr_must_be_numeric">Тут лише числа</string>
+    <string name="error_attr_below_minimum">Мінімум — %1$s</string>
+    <string name="error_attr_above_maximum">Максимум — %1$s</string>
+    <string name="error_attr_invalid_selection">Цей варіант не підходить</string>
+    <string name="error_attr_multiple_values_not_allowed">Лише одне значення, будь ласка</string>
+
+    <!-- Preview Ad Screen -->
+    <string name="publish_confirm_title">Публікуємо?</string>
+    <string name="publish_confirm_subtitle">Ваше оголошення з'явиться на OLX за 1–2 хвилини.</string>
+    <string name="publish_confirm_yes">Так, публікуємо</string>
+    <string name="publish_confirm_back">Стоп, ще треба підправити</string>
+    <string name="preview_back_info_title">Викинути цю чернетку?</string>
+    <string name="preview_back_info_message">Оголошення ще не опубліковане. Якщо вийти зараз, чернетка зникне — і ви повернетеся на екран генерації, щоб почати спочатку.</string>
+    <string name="preview_back_info_stay">Продовжити редагування</string>
+    <string name="preview_back_info_leave">Видалити чернетку</string>
+    <string name="publishing">Публікуємо…</string>
+    <string name="copy_pill_default">Копіювати</string>
+    <string name="copy_pill_copied">Скопійовано ✓</string>
+    <string name="error_pill_default">Ой</string>
+    <string name="ad_title_label">Назва</string>
+    <string name="ad_description_label">Опис</string>
+    <string name="ad_your_price">Ваша ціна</string>
+    <string name="ad_category_label">Категорія</string>
+    <string name="ad_location_label">Місцезнаходження</string>
+    <string name="location_detecting">Шукаємо вас…</string>
+    <string name="location_not_available">Не вдалося визначити локацію</string>
+    <string name="location_rationale_title">Дозвольте доступ до геолокації</string>
+    <string name="location_rationale_message">Щоб підставити ваше місто в оголошення, потрібен доступ до геолокації.</string>
+    <string name="location_settings_title">Увімкніть геолокацію в налаштуваннях</string>
+    <string name="location_settings_message_android">Геолокацію заблоковано. Відкрийте налаштування додатка й увімкніть її для SellSnap.</string>
+    <string name="location_settings_message_ios">Геолокацію заблоковано. Відкрийте Налаштування → Конфіденційність → Служби геолокації та увімкніть SellSnap.</string>
+
+    <!-- Error Messages -->
+    <string name="error_location_fetch_failed">Не вдалося знайти ваше місцезнаходження.</string>
+    <string name="error_publish_missing_category_or_location">Майже готово — додайте категорію та місцезнаходження перед публікацією.</string>
+    <string name="error_publish_missing_contact_name">У вашому профілі OLX немає імені. Зайдіть туди, додайте — і спробуємо ще раз.</string>
+    <string name="error_category_suggestion_failed">Не вдалося запропонувати категорію.</string>
+    <string name="error_attributes_load_failed">Не вдалося завантажити деталі.</string>
+    <string name="error_user_profile_fetch_failed">Не вдалося завантажити ваш профіль.</string>
+    <string name="error_olx_auth_prepare_failed">Не вдалося розпочати вхід у OLX.</string>
+    <string name="error_olx_auth_complete_failed">Не вдалося завершити вхід у OLX.</string>
+    <string name="error_selected_files_process_failed">Не вдалося завантажити вибрані фото.</string>
+    <string name="error_upload_file_failed">Не вдалося завантажити одне з фото.</string>
+    <string name="error_publish_failed">Не вдалося опублікувати. Спробуйте ще раз.</string>
+    <string name="error_generate_ad_failed">Не вдалося згенерувати оголошення. Спробуєте ще раз?</string>
+
+    <!-- Publish Success Screen -->
+    <string name="publish_success_title">Опубліковано! 🎉</string>
+    <string name="publish_success_subtitle">Ваше оголошення на OLX. Перші перегляди підтягнуться за 10–15 хвилин.</string>
+    <string name="publish_success_subtitle_new">Відправили на модерацію — оголошення стане активним після перевірки.</string>
+    <string name="publish_success_subtitle_limited">Оголошення готове! Залишилось придбати пакет на OLX, щоб активувати.</string>
+    <string name="publish_success_listing_url_label">Посилання на оголошення</string>
+    <string name="publish_success_status_label">Статус</string>
+    <string name="publish_success_status_new">На модерації</string>
+    <string name="publish_success_status_new_caption">Стане активним після перевірки</string>
+    <string name="publish_success_status_limited">Обмежене</string>
+    <string name="publish_success_status_limited_caption">Купіть пакет на OLX, щоб активувати</string>
+    <string name="publish_success_status_unknown">Очікує</string>
+    <string name="publish_success_status_unknown_caption">Перевірте оголошення на OLX</string>
+    <string name="publish_success_total_time_label">Загальний час</string>
+    <string name="publish_success_total_time_caption">Від кадру до публікації</string>
+    <string name="publish_success_view_on_olx">Подивитись на OLX</string>
+    <string name="publish_success_create_another">Продати ще щось</string>
+    <string name="time_unit_seconds">%1$dс</string>
+    <string name="time_unit_minutes_seconds">%1$dхв %2$dс</string>
+    <string name="time_duration_seconds">%1$d %2$s</string>
+    <string name="time_duration_minutes">%1$d %2$s</string>
+    <string name="time_duration_minutes_seconds">%1$d %2$s і %3$d %4$s</string>
+    <string name="time_unit_second_one">секунда</string>
+    <string name="time_unit_second_other">секунд</string>
+    <string name="time_unit_minute_one">хвилина</string>
+    <string name="time_unit_minute_other">хвилин</string>
+
+    <!-- Category Picker Sheet -->
+    <string name="category_picker_search_placeholder">Пошук категорій</string>
+    <string name="category_picker_all">Усі</string>
+    <string name="category_picker_reset">Скинути</string>
+    <string name="category_picker_select">Обрати цю</string>
+    <string name="category_picker_select_with_name">Обрати · %1$s</string>
+    <string name="category_picker_selected_label">ОБРАНО</string>
+    <string name="category_picker_select_label">ОБРАТИ</string>
+</resources>
