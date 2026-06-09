@@ -15,6 +15,8 @@ import com.sirelon.sellsnap.features.seller.auth.domain.OlxAuthCallback
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxApiException
 import com.sirelon.sellsnap.features.seller.ad.publish_success.AdvertStatus
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxTokens
+import com.sirelon.sellsnap.features.seller.currency.data.CurrencyRepository
+import com.sirelon.sellsnap.features.seller.currency.domain.OlxCurrency
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
 import io.ktor.http.ContentType
@@ -462,6 +464,104 @@ class OlxApiClientTest {
 
         assertIs<OlxApiError.InsufficientScope>(exception.error)
         Unit
+    }
+
+    @Test
+    fun `loadCurrencies attaches auth headers and maps documented raw list`() = runBlocking {
+        var authorizationHeader: String? = null
+        var versionHeader: String? = null
+        val engine = MockEngine { request ->
+            authorizationHeader = request.headers[HttpHeaders.Authorization]
+            versionHeader = request.headers["Version"]
+            respond(
+                content = """
+                    [
+                      { "code": "PLN", "label": "zł", "is_default": false },
+                      { "code": "UAH", "label": "₴", "is_default": true },
+                      { "code": null, "label": "broken", "is_default": false }
+                    ]
+                """.trimIndent(),
+                status = HttpStatusCode.OK,
+                headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
+            )
+        }
+        val tokenStore = OlxTokenStore(InMemoryOlxKeyValueStore(), testJson).apply {
+            write(
+                OlxTokens(
+                    accessToken = "active-token",
+                    refreshToken = "refresh-token",
+                    expiresInSeconds = 86_400,
+                    tokenType = "bearer",
+                    scope = "v2 read write",
+                    issuedAtEpochSeconds = 4_102_444_800,
+                ),
+            )
+        }
+        val errorParser = OlxRemoteErrorParser(testJson)
+        val apiClient = OlxApiClient(
+            httpClient = createOlxAuthorizedHttpClient(
+                authRefreshClient = createOlxHttpClient(engine),
+                credentialsProvider = TestCredentialsProvider(),
+                tokenStore = tokenStore,
+                authSessionStore = OlxAuthSessionStore(InMemoryOlxKeyValueStore(), testJson),
+                errorParser = errorParser,
+                engine = engine,
+            ),
+            json = testJson,
+            errorParser = errorParser,
+        )
+
+        val currencies = apiClient.loadCurrencies()
+
+        assertEquals("Bearer active-token", authorizationHeader)
+        assertEquals("2.0", versionHeader)
+        assertEquals(
+            listOf(
+                OlxCurrency(code = "PLN", label = "zł", isDefault = false),
+                OlxCurrency(code = "UAH", label = "₴", isDefault = true),
+            ),
+            currencies,
+        )
+    }
+
+    @Test
+    fun `currency repository falls back to UAH when currencies are unavailable`() = runBlocking {
+        val engine = MockEngine {
+            respond(
+                content = "",
+                status = HttpStatusCode.InternalServerError,
+                headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
+            )
+        }
+        val tokenStore = OlxTokenStore(InMemoryOlxKeyValueStore(), testJson).apply {
+            write(
+                OlxTokens(
+                    accessToken = "active-token",
+                    refreshToken = "refresh-token",
+                    expiresInSeconds = 86_400,
+                    tokenType = "bearer",
+                    scope = "v2 read write",
+                    issuedAtEpochSeconds = 4_102_444_800,
+                ),
+            )
+        }
+        val errorParser = OlxRemoteErrorParser(testJson)
+        val apiClient = OlxApiClient(
+            httpClient = createOlxAuthorizedHttpClient(
+                authRefreshClient = createOlxHttpClient(engine),
+                credentialsProvider = TestCredentialsProvider(),
+                tokenStore = tokenStore,
+                authSessionStore = OlxAuthSessionStore(InMemoryOlxKeyValueStore(), testJson),
+                errorParser = errorParser,
+                engine = engine,
+            ),
+            json = testJson,
+            errorParser = errorParser,
+        )
+
+        val currency = CurrencyRepository(apiClient).getDefaultCurrency()
+
+        assertEquals(OlxCurrency.Default, currency)
     }
 
     @Test

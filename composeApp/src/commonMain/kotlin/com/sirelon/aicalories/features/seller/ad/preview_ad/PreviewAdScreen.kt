@@ -86,7 +86,6 @@ import com.sirelon.sellsnap.designsystem.TransparentInput
 import com.sirelon.sellsnap.designsystem.buttons.AppButton
 import com.sirelon.sellsnap.designsystem.buttons.AppButtonDefaults
 import com.sirelon.sellsnap.designsystem.dismissKeyboardOnTapOutside
-import com.sirelon.sellsnap.designsystem.formatPrice
 import com.sirelon.sellsnap.designsystem.pager.ImagesCarousel
 import com.sirelon.sellsnap.designsystem.rememberKeyboardDismissAction
 import com.sirelon.sellsnap.features.media.PermissionController
@@ -104,6 +103,7 @@ import com.sirelon.sellsnap.features.seller.ad.publish_success.PublishSuccessDat
 import com.sirelon.sellsnap.features.seller.categories.domain.OlxCategory
 import com.sirelon.sellsnap.features.seller.categories.domain.ValidationError
 import com.sirelon.sellsnap.features.seller.categories.ui.AttributeItem
+import com.sirelon.sellsnap.features.seller.currency.domain.OlxCurrency
 import com.sirelon.sellsnap.features.seller.location.OlxLocation
 import com.sirelon.sellsnap.generated.resources.Res
 import com.sirelon.sellsnap.generated.resources.ad_attributes_label
@@ -298,7 +298,7 @@ fun PreviewAdScreen(
                     imageUrls = state.images,
                     title = viewModel.titleState.text.toString(),
                     categoryLabel = state.categoryLabel,
-                    priceFormatted = "₴ ${formatPrice(state.price)}",
+                    priceFormatted = state.currency.format(state.price),
                     onConfirm = { viewModel.onEvent(PreviewAdEvent.Publish) },
                     onDismiss = dismissPublishConfirm,
                 )
@@ -762,6 +762,7 @@ private fun PreviewAdContent(
             priceTextFieldState = priceTextFieldState,
             minPrice = state.minPrice,
             maxPrice = state.maxPrice,
+            currency = state.currency,
         )
 
         if (state.isSessionResolved && !state.isGuest) {
@@ -904,6 +905,7 @@ private fun AdPriceCard(
     priceTextFieldState: TextFieldState,
     minPrice: Float,
     maxPrice: Float,
+    currency: OlxCurrency,
 ) {
     val textStyle = AppTheme.typography.headline
     PreviewSectionCard(label = stringResource(Res.string.ad_your_price)) {
@@ -927,8 +929,7 @@ private fun AdPriceCard(
                         inputTransformation = DigitOnlyInputTransformation,
                         outputTransformation = ThousandSeparatorOutputTransformation,
                         prefix = {
-                            // TODO: change currency (SIR-15)
-                            Text(text = "₴", style = textStyle)
+                            Text(text = currency.displayLabel(), style = textStyle)
                         },
                     )
                 }
@@ -946,7 +947,7 @@ private fun AdPriceCard(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = formatPrice(minPrice),
+                    text = currency.format(minPrice),
                     style = AppTheme.typography.label,
                     color = AppTheme.colors.onSurface,
                 )
@@ -961,7 +962,7 @@ private fun AdPriceCard(
                     valueRange = minPrice..maxPrice,
                 )
                 Text(
-                    text = formatPrice(maxPrice),
+                    text = currency.format(maxPrice),
                     style = AppTheme.typography.label,
                 )
             }
@@ -970,8 +971,8 @@ private fun AdPriceCard(
                 modifier = Modifier.padding(horizontal = AppDimens.Spacing.xl3),
                 text = stringResource(
                     Res.string.ad_price_ai_estimated_range,
-                    formatPrice(minPrice),
-                    formatPrice(maxPrice),
+                    currency.format(minPrice),
+                    currency.format(maxPrice),
                 ),
                 style = AppTheme.typography.caption,
                 color = AppTheme.colors.onSurfaceMuted,
@@ -1237,6 +1238,7 @@ private fun AdPriceCardMinPreview() {
                 priceTextFieldState = rememberTextFieldState("1000"),
                 minPrice = 1000f,
                 maxPrice = 50000f,
+                currency = OlxCurrency.Default,
             )
         }
     }
@@ -1260,6 +1262,7 @@ private fun AdPriceCardMidPreview() {
                 priceTextFieldState = rememberTextFieldState("25500"),
                 minPrice = 1000f,
                 maxPrice = 50000f,
+                currency = OlxCurrency.Default,
             )
         }
     }
@@ -1311,6 +1314,7 @@ private fun AdPriceCardMaxPreview() {
                 priceTextFieldState = rememberTextFieldState("50000"),
                 minPrice = 1000f,
                 maxPrice = 50000f,
+                currency = OlxCurrency.Default,
             )
         }
     }
