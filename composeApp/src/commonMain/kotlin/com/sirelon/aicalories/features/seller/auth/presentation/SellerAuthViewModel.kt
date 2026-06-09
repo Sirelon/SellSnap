@@ -114,6 +114,8 @@ class SellerAuthViewModel(
     }
 
     private companion object {
+        // If app data flows change (OLX scope, Supabase, location, camera, new SDKs),
+        // update these pages before the next release.
         const val TERMS_AND_CONDITIONS_URL = "https://sirelon.github.io/SellSnap/terms-and-conditions/"
         const val PRIVACY_POLICY_URL = "https://sirelon.github.io/SellSnap/privacy-policy/"
     }
