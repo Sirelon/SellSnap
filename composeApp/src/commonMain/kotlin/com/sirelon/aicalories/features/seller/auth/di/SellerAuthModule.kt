@@ -13,6 +13,7 @@ import com.sirelon.sellsnap.features.seller.auth.data.OlxTokenStore
 import com.sirelon.sellsnap.features.seller.auth.data.createOlxAuthorizedHttpClient
 import com.sirelon.sellsnap.features.seller.auth.data.createOlxHttpClient
 import com.sirelon.sellsnap.features.seller.auth.presentation.SellerAuthViewModel
+import com.sirelon.sellsnap.features.seller.currency.data.CurrencyRepository
 import io.ktor.client.HttpClient
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.core.qualifier.named
@@ -51,5 +52,6 @@ val sellerAuthModule = module {
         )
     }
     single { OlxApiClient(httpClient = get(olxAuthorizedHttpClientQualifier), json = get(), errorParser = get()) }
+    single { CurrencyRepository(olxApiClient = get()) }
     viewModelOf(::SellerAuthViewModel)
 }

@@ -100,10 +100,9 @@ Scope: seller / OLX flow only. Agile screens are intentionally excluded.
 
 (Each maps to a Linear ticket where labelled in code.)
 
-### 17. SIR-15 — currency picker not implemented
-- **Where:** `PreviewAdScreen.kt:719,727` and `PostAdvertRequestMapper.kt:33`
-- **What:** UAH is hardcoded; the comment promises a "change currency" affordance.
-- **Fix:** Either deliver the picker or close out SIR-15 and remove the TODOs.
+### 17. ~~SIR-15 — currency picker not implemented~~ ✅ FIXED
+- **Where:** `PreviewAdScreen.kt` and `PostAdvertRequestMapper.kt`
+- **Fix applied:** Preview and publish now load OLX's default currency from `/currencies`, use it for display and payloads, and fall back to UAH when the currency list is unavailable.
 
 ### 18. ~~SIR-34 — auto-open first failing required attribute~~ ✅ FIXED
 - **Where:** `PreviewAdScreen.kt:249`

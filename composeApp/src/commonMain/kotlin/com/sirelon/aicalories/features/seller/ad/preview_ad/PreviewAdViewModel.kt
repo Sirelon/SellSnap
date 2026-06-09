@@ -6,7 +6,6 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.sirelon.sellsnap.analytics.Analytics
 import com.sirelon.sellsnap.analytics.AnalyticsEvents
-import com.sirelon.sellsnap.designsystem.formatPrice
 import com.sirelon.sellsnap.features.common.presentation.BaseViewModel
 import com.sirelon.sellsnap.features.seller.ad.AdFlowTimerStore
 import com.sirelon.sellsnap.features.seller.ad.AdvertisementWithAttributes
@@ -30,6 +29,7 @@ import com.sirelon.sellsnap.features.seller.categories.domain.AttributeInputType
 import com.sirelon.sellsnap.features.seller.categories.domain.AttributeValidationResult
 import com.sirelon.sellsnap.features.seller.categories.domain.AttributeValidator
 import com.sirelon.sellsnap.features.seller.categories.domain.OlxCategory
+import com.sirelon.sellsnap.features.seller.currency.data.CurrencyRepository
 import com.sirelon.sellsnap.features.seller.location.data.LocationRepository
 import com.sirelon.sellsnap.generated.resources.Res
 import com.sirelon.sellsnap.generated.resources.error_attributes_load_failed
@@ -66,6 +66,7 @@ class PreviewAdViewModel(
     private val categoriesRepository: CategoriesRepository,
     private val locationRepository: LocationRepository,
     private val olxApiClient: OlxApiClient,
+    private val currencyRepository: CurrencyRepository,
     private val attributeValidator: AttributeValidator,
     private val authRepository: OlxAuthRepository,
     private val adFlowTimerStore: AdFlowTimerStore,
@@ -83,6 +84,7 @@ class PreviewAdViewModel(
     private val selectedCategoryId = MutableStateFlow<Int?>(null)
     private val publishSuccessData = MutableStateFlow(restoredSavedState.publishSuccessData)
     private var nonGuestSetupStarted = false
+    private var currencyLoadStarted = false
     private var skipRestoredTitleSuggestion = restoredSavedState.selectedCategoryId != null
 
     init {
@@ -111,16 +113,29 @@ class PreviewAdViewModel(
 
             val isGuest = authRepository.currentSession().mode == SellerSessionMode.Guest
             setState { it.copy(isGuest = isGuest, isSessionResolved = true) }
-            if (!isGuest) startNonGuestSetup()
+            if (!isGuest) {
+                loadDefaultCurrency()
+                startNonGuestSetup()
+            }
         }
 
         authRepository.sessionModeFlow
             .onEach { mode ->
                 val isGuest = mode == SellerSessionMode.Guest
                 setState { it.copy(isGuest = isGuest) }
-                if (!isGuest) startNonGuestSetup()
+                if (!isGuest) {
+                    loadDefaultCurrency()
+                    startNonGuestSetup()
+                }
             }
             .launchIn(viewModelScope)
+    }
+
+    private suspend fun loadDefaultCurrency() {
+        if (currencyLoadStarted) return
+        currencyLoadStarted = true
+        val currency = currencyRepository.getDefaultCurrency()
+        setState { it.copy(currency = currency) }
     }
 
     private fun startNonGuestSetup() {
@@ -315,6 +330,7 @@ class PreviewAdViewModel(
                 location = location,
                 images = s.images,
                 price = s.price,
+                currency = s.currency,
                 contactName = contactName,
                 attributeItems = validatedItems,
             )
@@ -322,7 +338,7 @@ class PreviewAdViewModel(
             val successData = PublishSuccessData(
                 url = data.url.orEmpty(),
                 title = title,
-                priceFormatted = "₴ ${formatPrice(s.price)}",
+                priceFormatted = s.currency.format(s.price),
                 primaryImageUrl = s.images.firstOrNull(),
                 totalElapsedMs = adFlowTimerStore.totalElapsedMs(),
                 status = data.status,

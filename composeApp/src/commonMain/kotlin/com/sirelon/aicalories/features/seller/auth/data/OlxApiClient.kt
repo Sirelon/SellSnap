@@ -13,6 +13,9 @@ import com.sirelon.sellsnap.features.seller.categories.data.response.OlxAttribut
 import com.sirelon.sellsnap.features.seller.categories.data.response.OlxCategoriesRootResponse
 import com.sirelon.sellsnap.features.seller.categories.data.response.OlxCategoryResponse
 import com.sirelon.sellsnap.features.seller.categories.data.response.OlxCategorySuggestionResponse
+import com.sirelon.sellsnap.features.seller.currency.data.response.OlxCurrenciesRootResponse
+import com.sirelon.sellsnap.features.seller.currency.data.response.OlxCurrencyResponse
+import com.sirelon.sellsnap.features.seller.currency.domain.OlxCurrency
 import com.sirelon.sellsnap.features.seller.location.data.response.OlxLocationResponse
 import com.sirelon.sellsnap.features.seller.location.data.response.OlxLocationsRootResponse
 import io.ktor.client.HttpClient
@@ -28,6 +31,8 @@ import io.ktor.http.isSuccess
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.decodeFromJsonElement
 
 class OlxApiClient(
     private val httpClient: HttpClient,
@@ -82,6 +87,30 @@ class OlxApiClient(
         response.ensureSuccess()
 
         return response.decodeBody<OlxAttributesResponse>("category attributes").data.orEmpty()
+    }
+
+    suspend fun loadCurrencies(): List<OlxCurrency> {
+        val response = httpClient.get("currencies")
+        response.ensureSuccess()
+
+        val payload = response.bodyAsText()
+        if (payload.isBlank()) {
+            throw missingResponseData("currencies", "body")
+        }
+
+        val currencyResponses = try {
+            val element = json.parseToJsonElement(payload)
+            when (element) {
+                is JsonArray -> json.decodeFromJsonElement<List<OlxCurrencyResponse>>(element)
+                else -> json.decodeFromJsonElement<OlxCurrenciesRootResponse>(element).data.orEmpty()
+            }
+        } catch (exception: SerializationException) {
+            throw OlxApiException(
+                OlxApiError.Unknown("Could not parse OLX response for currencies."),
+            )
+        }
+
+        return currencyResponses.mapNotNull { it.toDomain() }
     }
 
     internal suspend fun getLocations(latitude: Double, longitude: Double): List<OlxLocationResponse> {

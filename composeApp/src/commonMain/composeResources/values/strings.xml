@@ -207,7 +207,7 @@
     <string name="ad_title_label">Title</string>
     <string name="ad_description_label">Description</string>
     <string name="ad_your_price">Your price</string>
-    <string name="ad_price_ai_estimated_range">AI suggests: %1$s – %2$s ₴</string>
+    <string name="ad_price_ai_estimated_range">AI suggests: %1$s – %2$s</string>
     <string name="ad_category_label">Category</string>
     <string name="ad_location_label">Location</string>
     <string name="location_detecting">Finding you…</string>

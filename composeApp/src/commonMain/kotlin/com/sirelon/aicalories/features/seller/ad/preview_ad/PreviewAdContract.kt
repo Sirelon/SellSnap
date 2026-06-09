@@ -6,6 +6,7 @@ import com.sirelon.sellsnap.features.seller.categories.domain.OlxAttribute
 import com.sirelon.sellsnap.features.seller.categories.domain.OlxAttributeValue
 import com.sirelon.sellsnap.features.seller.categories.domain.OlxCategory
 import com.sirelon.sellsnap.features.seller.categories.domain.ValidationError
+import com.sirelon.sellsnap.features.seller.currency.domain.OlxCurrency
 import com.sirelon.sellsnap.features.seller.location.OlxLocation
 import kotlin.jvm.JvmInline
 
@@ -28,6 +29,7 @@ interface PreviewAdContract {
         val price: Float,
         val minPrice: Float,
         val maxPrice: Float,
+        val currency: OlxCurrency = OlxCurrency.Default,
         val images: List<String>,
         val attributes: List<OlxAttribute> = emptyList(),
         val location: OlxLocation? = null,
