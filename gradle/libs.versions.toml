@@ -28,7 +28,7 @@ kotlinx-coroutines = "1.11.0"
 kotlinx-serialization = "1.11.0"
 # https://github.com/ktorio/ktor/releases
 ktor = "3.5.0"
-logback = "1.5.32"
+logback = "1.5.34"
 # https://mvnrepository.com/artifact/org.jetbrains.compose.material3/material3
 material3 = "1.12.0-alpha01"
 # https://mvnrepository.com/artifact/org.jetbrains.compose.material3.adaptive/adaptive
