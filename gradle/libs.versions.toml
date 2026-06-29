@@ -43,7 +43,7 @@ calf = "0.12.0"
 # https://github.com/supabase-community/supabase-kt/releases
 supabase = "3.6.0"
 # https://github.com/yshrsmz/BuildKonfig/releases
-buildKonfig = "0.21.2"
+buildKonfig = "0.22.0"
 compose = "1.11.0"
 playServicesLocation = "21.3.0"
 # https://github.com/GitLiveApp/firebase-kotlin-sdk/releases
