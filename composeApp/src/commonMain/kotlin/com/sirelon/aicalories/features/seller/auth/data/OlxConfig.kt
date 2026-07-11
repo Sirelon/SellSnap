@@ -20,9 +20,10 @@ object OlxConfig {
         get() = AppConfig.olxScope
 
     val authBaseUrl: String
-        get() = AppConfig.olxAuthBaseUrl
+        get() = _currentOlxCountry.authBaseUrl
 
-    const val apiBaseUrl = "https://www.olx.ua/api/partner/"
+    val apiBaseUrl: String
+        get() = _currentOlxCountry.apiBaseUrl
 
     // Changing redirect scheme? See BUGS.md #2 (App Links migration) and update policy pages above.
     val redirectUri: String

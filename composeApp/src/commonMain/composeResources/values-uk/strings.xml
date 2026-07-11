@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- OLX Country Picker -->
+    <string name="olx_country_picker_title">Оберіть країну</string>
+    <string name="olx_country_picker_subtitle">Ми підключимо вас до потрібного регіонального маркетплейсу OLX</string>
+    <string name="olx_country_picker_select_prompt">Оберіть країну</string>
+    <string name="olx_country_picker_continue">Продовжити</string>
+
     <!-- OnBoarding & Authentication -->
     <string name="welcome_to_sellsnap">Привіт, ласкаво просимо в SellSnap 👋</string>
     <string name="welcome_subtitle">Фото — на вхід, оголошення — на вихід. ШІ напише за вас.</string>

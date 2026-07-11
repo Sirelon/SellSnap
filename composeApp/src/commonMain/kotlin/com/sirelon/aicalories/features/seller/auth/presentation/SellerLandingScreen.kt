@@ -68,24 +68,15 @@ import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
-fun SellerLandingScreenRoute(openHome: () -> Unit) {
+fun SellerLandingScreenRoute(openHome: () -> Unit, openCountryPicker: () -> Unit) {
     val viewModel: SellerAuthViewModel = koinViewModel()
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val localUriHandler = LocalUriHandler.current
-    val authLauncher = rememberOlxAuthLauncher()
-
-    LaunchedEffect(viewModel) {
-        OlxAuthCallbackBridge.callbacks.collect { callbackUrl ->
-            viewModel.onCallbackReceived(callbackUrl)
-        }
-    }
 
     ObserveAsEvents(viewModel.effects) { effect ->
         when (effect) {
-            is SellerAuthContract.SellerAuthEffect.LaunchOlxAuthFlow -> {
-                authLauncher(effect.url)
-            }
+            SellerAuthContract.SellerAuthEffect.NavigateToCountryPicker -> openCountryPicker()
 
             is SellerAuthContract.SellerAuthEffect.ShowMessage -> {
                 snackbarHostState.showSnackbar(effect.message)
@@ -96,6 +87,7 @@ fun SellerLandingScreenRoute(openHome: () -> Unit) {
             }
 
             SellerAuthContract.SellerAuthEffect.OpenHome -> openHome()
+            else -> Unit
         }
     }
 

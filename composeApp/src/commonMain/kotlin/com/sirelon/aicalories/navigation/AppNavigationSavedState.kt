@@ -13,6 +13,7 @@ val appNavigationSavedStateConfiguration: SavedStateConfiguration =
                 subclass(AppDestination.Splash::class, AppDestination.Splash.serializer())
                 subclass(AppDestination.SellerOnboarding::class, AppDestination.SellerOnboarding.serializer())
                 subclass(AppDestination.SellerLanding::class, AppDestination.SellerLanding.serializer())
+                subclass(AppDestination.OlxCountryPicker::class, AppDestination.OlxCountryPicker.serializer())
                 subclass(AppDestination.Seller::class, AppDestination.Seller.serializer())
                 subclass(
                     AppDestination.DeleteAccountDataConfirm::class,
