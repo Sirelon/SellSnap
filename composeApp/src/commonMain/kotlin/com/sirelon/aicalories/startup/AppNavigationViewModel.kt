@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.sirelon.sellsnap.features.seller.ad.AdFlowTimerStore
 import com.sirelon.sellsnap.features.seller.auth.data.OlxApiClient
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAuthRepository
+import com.sirelon.sellsnap.features.seller.auth.data.OlxCountryStore
 import com.sirelon.sellsnap.features.seller.auth.domain.SellerSessionMode
 import com.sirelon.sellsnap.navigation.AppDestination
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,13 +18,17 @@ class AppNavigationViewModel(
     private val olxApiClient: OlxApiClient,
     private val startupStore: AppStartupStore,
     private val adFlowTimerStore: AdFlowTimerStore,
+    private val olxCountryStore: OlxCountryStore,
 ) : ViewModel() {
 
     private val _backStack = MutableStateFlow<List<AppDestination>>(listOf(AppDestination.Splash))
     val backStack: StateFlow<List<AppDestination>> = _backStack.asStateFlow()
 
     init {
-        viewModelScope.launch { resolveStartupDestination() }
+        viewModelScope.launch {
+            olxCountryStore.loadFromStorage()
+            resolveStartupDestination()
+        }
     }
 
     fun navigateTo(destination: AppDestination) {

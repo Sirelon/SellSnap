@@ -16,6 +16,7 @@ import com.sirelon.sellsnap.features.media.upload.UploadingItem
 import com.sirelon.sellsnap.features.seller.ad.AdFlowTimerStore
 import com.sirelon.sellsnap.features.seller.ad.AdvertisementWithAttributes
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAuthRepository
+import com.sirelon.sellsnap.features.seller.auth.data.OlxCountryStore
 import com.sirelon.sellsnap.features.seller.auth.domain.SellerSessionMode
 import com.sirelon.sellsnap.features.seller.categories.data.CategoriesRepository
 import com.sirelon.sellsnap.features.seller.openai.OpenAIClient
@@ -50,6 +51,7 @@ class GenerateAdViewModel(
     private val categoriesRepository: CategoriesRepository,
     private val openAi: OpenAIClient,
     private val authRepository: OlxAuthRepository,
+    private val countryStore: OlxCountryStore,
     private val adFlowTimerStore: AdFlowTimerStore,
     private val savedStateHandle: SavedStateHandle,
     private val json: Json,
@@ -126,7 +128,7 @@ class GenerateAdViewModel(
             .map { uploadFilesAndGetPublicUrls() }
             .onEach { setState { it.copy(completedSteps = 1) } }
 
-            .map { openAi.analyzeThing(images = it, sellerPrompt = state.value.prompt) }
+            .map { openAi.analyzeThing(images = it, sellerPrompt = state.value.prompt, country = countryStore.current) }
             .onEach { setState { it.copy(completedSteps = 2) } }
 
             .flatMapLatest { data ->

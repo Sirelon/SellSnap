@@ -5,6 +5,7 @@ import com.sirelon.sellsnap.analytics.Analytics
 import com.sirelon.sellsnap.analytics.AnalyticsEvents
 import com.sirelon.sellsnap.features.common.presentation.BaseViewModel
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAuthRepository
+import com.sirelon.sellsnap.features.seller.auth.data.OlxCountryStore
 import com.sirelon.sellsnap.generated.resources.Res
 import com.sirelon.sellsnap.generated.resources.error_olx_auth_complete_failed
 import com.sirelon.sellsnap.generated.resources.error_olx_auth_prepare_failed
@@ -14,6 +15,7 @@ import org.jetbrains.compose.resources.getString
 class SellerAuthViewModel(
     private val authRepository: OlxAuthRepository,
     private val analytics: Analytics,
+    private val olxCountryStore: OlxCountryStore,
 ) : BaseViewModel<SellerAuthContract.SellerAuthState, SellerAuthContract.SellerAuthEvent, SellerAuthContract.SellerAuthEffect>() {
 
     override fun initialState(): SellerAuthContract.SellerAuthState =
@@ -21,7 +23,16 @@ class SellerAuthViewModel(
 
     override fun onEvent(event: SellerAuthContract.SellerAuthEvent) {
         when (event) {
-            SellerAuthContract.SellerAuthEvent.OlxAuthClicked -> startAuthorization()
+            SellerAuthContract.SellerAuthEvent.OlxAuthClicked ->
+                postEffect(SellerAuthContract.SellerAuthEffect.NavigateToCountryPicker)
+
+            is SellerAuthContract.SellerAuthEvent.CountryConfirmed -> {
+                viewModelScope.launch {
+                    olxCountryStore.save(event.country)
+                    startAuthorization()
+                }
+            }
+
             SellerAuthContract.SellerAuthEvent.ContinueAsGuestClicked -> {
                 viewModelScope.launch {
                     authRepository.enterGuestMode()
@@ -68,37 +79,35 @@ class SellerAuthViewModel(
                     }
                     postEffect(SellerAuthContract.SellerAuthEffect.OpenHome)
                 }
-                .onFailure { error ->
+                .onFailure {
                     analytics.logEvent(AnalyticsEvents.AUTH_FAILED)
                     showError(getString(Res.string.error_olx_auth_complete_failed))
                 }
         }
     }
 
-    private fun startAuthorization() {
+    private suspend fun startAuthorization() {
         analytics.logEvent(AnalyticsEvents.AUTH_STARTED)
-        viewModelScope.launch {
-            setState {
-                it.copy(
-                    status = SellerAuthContract.SellerAuthStatus.Processing,
-                    errorMessage = null,
-                )
-            }
-            runCatching { authRepository.createAuthorizationRequest() }
-                .onSuccess { request ->
-                    setState {
-                        it.copy(
-                            status = SellerAuthContract.SellerAuthStatus.Idle,
-                            errorMessage = null,
-                        )
-                    }
-                    postEffect(SellerAuthContract.SellerAuthEffect.LaunchOlxAuthFlow(request.url))
-                }
-                .onFailure { error ->
-                    analytics.logEvent(AnalyticsEvents.AUTH_FAILED)
-                    showError(getString(Res.string.error_olx_auth_prepare_failed))
-                }
+        setState {
+            it.copy(
+                status = SellerAuthContract.SellerAuthStatus.Processing,
+                errorMessage = null,
+            )
         }
+        runCatching { authRepository.createAuthorizationRequest() }
+            .onSuccess { request ->
+                setState {
+                    it.copy(
+                        status = SellerAuthContract.SellerAuthStatus.Idle,
+                        errorMessage = null,
+                    )
+                }
+                postEffect(SellerAuthContract.SellerAuthEffect.LaunchOlxAuthFlow(request.url))
+            }
+            .onFailure {
+                analytics.logEvent(AnalyticsEvents.AUTH_FAILED)
+                showError(getString(Res.string.error_olx_auth_prepare_failed))
+            }
     }
 
     private fun showError(message: String) {

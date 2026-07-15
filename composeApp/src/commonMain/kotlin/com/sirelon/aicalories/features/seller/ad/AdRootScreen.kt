@@ -45,6 +45,7 @@ import com.sirelon.sellsnap.generated.resources.nav_my_ads
 import com.sirelon.sellsnap.generated.resources.new_listing
 import com.sirelon.sellsnap.generated.resources.profile_screen_title
 import com.sirelon.sellsnap.generated.resources.guest_connect_olx_cta
+import com.sirelon.sellsnap.features.seller.auth.data._currentOlxCountry
 import com.sirelon.sellsnap.platform.openUrl
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.StringResource
@@ -220,7 +221,7 @@ fun AdRootScreen(
                         data = destination.data,
                         onViewOnOlx = {
                             val url = destination.data.url
-                                .ifBlank { "https://www.olx.ua/uk/myaccount/" }
+                                .ifBlank { "https://www.${_currentOlxCountry.domain}/myaccount/" }
                             openUrl(url)
                         },
                         onCreateAnother = {

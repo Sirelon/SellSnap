@@ -1,4 +1,10 @@
 <resources>
+    <!-- OLX Country Picker -->
+    <string name="olx_country_picker_title">Choose your country</string>
+    <string name="olx_country_picker_subtitle">We'll connect you to the right OLX regional marketplace</string>
+    <string name="olx_country_picker_select_prompt">Select a country</string>
+    <string name="olx_country_picker_continue">Continue</string>
+
     <!-- OnBoarding & Authentication -->
     <string name="welcome_to_sellsnap">Hey, welcome to SellSnap 👋</string>
     <string name="welcome_subtitle">Photo in, listing out — AI does the typing.</string>

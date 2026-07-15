@@ -8,10 +8,10 @@ object OlxConfig {
     const val defaultRefreshSafetyWindowSeconds = 60L
 
     val clientId: String
-        get() = AppConfig.olxClientId
+        get() = _currentOlxCountry.clientId
 
     val clientSecret: String
-        get() = AppConfig.olxClientSecret
+        get() = _currentOlxCountry.clientSecret
 
     // Changing scope = new data access. Update privacy policy pages before releasing:
     // https://sirelon.github.io/SellSnap/privacy-policy/
@@ -20,9 +20,10 @@ object OlxConfig {
         get() = AppConfig.olxScope
 
     val authBaseUrl: String
-        get() = AppConfig.olxAuthBaseUrl
+        get() = _currentOlxCountry.authBaseUrl
 
-    const val apiBaseUrl = "https://www.olx.ua/api/partner/"
+    val apiBaseUrl: String
+        get() = _currentOlxCountry.apiBaseUrl
 
     // Changing redirect scheme? See BUGS.md #2 (App Links migration) and update policy pages above.
     val redirectUri: String

@@ -23,4 +23,7 @@ sealed interface AppDestination : NavKey {
 
     @Serializable
     data object DeleteAccountDataConfirm : AppDestination
+
+    @Serializable
+    data object OlxCountryPicker : AppDestination
 }

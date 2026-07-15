@@ -10,6 +10,7 @@ import com.sirelon.sellsnap.features.seller.auth.data.OlxCredentialsProvider
 import com.sirelon.sellsnap.features.seller.auth.data.OlxRedirectHandler
 import com.sirelon.sellsnap.features.seller.auth.data.OlxRemoteErrorParser
 import com.sirelon.sellsnap.features.seller.auth.data.OlxTokenStore
+import com.sirelon.sellsnap.features.seller.auth.data.OlxCountryStore
 import com.sirelon.sellsnap.features.seller.auth.data.createOlxAuthorizedHttpClient
 import com.sirelon.sellsnap.features.seller.auth.data.createOlxHttpClient
 import com.sirelon.sellsnap.features.seller.auth.presentation.SellerAuthViewModel
@@ -24,6 +25,7 @@ val olxHttpClientQualifier = named("olxHttpClient")
 val olxAuthorizedHttpClientQualifier = named("olxAuthorizedHttpClient")
 
 val sellerAuthModule = module {
+    single { OlxCountryStore() }
     single<HttpClient>(qualifier = olxHttpClientQualifier) { createOlxHttpClient() }
     single { OlxRemoteErrorParser(get()) }
     single<HttpClient>(qualifier = olxAuthorizedHttpClientQualifier) {

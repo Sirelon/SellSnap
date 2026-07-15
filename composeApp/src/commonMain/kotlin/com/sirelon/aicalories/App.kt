@@ -27,6 +27,7 @@ import com.sirelon.sellsnap.designsystem.screens.LoadingOverlay
 import com.sirelon.sellsnap.di.appModule
 import com.sirelon.sellsnap.di.networkModule
 import com.sirelon.sellsnap.features.seller.ad.AdRootScreen
+import com.sirelon.sellsnap.features.seller.auth.presentation.OlxCountryPickerScreenRoute
 import com.sirelon.sellsnap.features.seller.auth.presentation.SellerLandingScreenRoute
 import com.sirelon.sellsnap.features.seller.onboarding.OnboardingScreen
 import com.sirelon.sellsnap.features.seller.profile.data.SellerAccountRepository
@@ -113,6 +114,14 @@ fun App() {
 
                     entry<AppDestination.SellerLanding> {
                         SellerLandingScreenRoute(
+                            openHome = { navVm.replaceWith(AppDestination.Seller) },
+                            openCountryPicker = { navVm.navigateTo(AppDestination.OlxCountryPicker) },
+                        )
+                    }
+
+                    entry<AppDestination.OlxCountryPicker> {
+                        OlxCountryPickerScreenRoute(
+                            onBack = { navVm.popDestination() },
                             openHome = { navVm.replaceWith(AppDestination.Seller) },
                         )
                     }

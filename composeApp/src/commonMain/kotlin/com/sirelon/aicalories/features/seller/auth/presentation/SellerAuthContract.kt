@@ -1,5 +1,7 @@
 package com.sirelon.sellsnap.features.seller.auth.presentation
 
+import com.sirelon.sellsnap.features.seller.auth.domain.OlxCountry
+
 interface SellerAuthContract {
 
     data class SellerAuthState(
@@ -20,9 +22,11 @@ interface SellerAuthContract {
         data object OnTermsClicked : SellerAuthEvent
         data object OnPrivacyClicked : SellerAuthEvent
         data object OlxAuthDismissed : SellerAuthEvent
+        data class CountryConfirmed(val country: OlxCountry) : SellerAuthEvent
     }
 
     sealed interface SellerAuthEffect {
+        data object NavigateToCountryPicker : SellerAuthEffect
         data class LaunchOlxAuthFlow(val url: String) : SellerAuthEffect
         data object OpenHome: SellerAuthEffect
         data class LaunchBrowser(val url: String) : SellerAuthEffect
