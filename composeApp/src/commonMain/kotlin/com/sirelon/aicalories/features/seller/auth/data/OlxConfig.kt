@@ -8,10 +8,10 @@ object OlxConfig {
     const val defaultRefreshSafetyWindowSeconds = 60L
 
     val clientId: String
-        get() = AppConfig.olxClientId
+        get() = _currentOlxCountry.clientId
 
     val clientSecret: String
-        get() = AppConfig.olxClientSecret
+        get() = _currentOlxCountry.clientSecret
 
     // Changing scope = new data access. Update privacy policy pages before releasing:
     // https://sirelon.github.io/SellSnap/privacy-policy/

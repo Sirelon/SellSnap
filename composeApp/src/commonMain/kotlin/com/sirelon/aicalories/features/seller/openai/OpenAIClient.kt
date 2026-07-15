@@ -9,6 +9,7 @@ import com.aallam.openai.api.response.ResponseRequest
 import com.aallam.openai.client.OpenAI
 import com.sirelon.sellsnap.features.seller.ad.Advertisement
 import com.sirelon.sellsnap.features.seller.ad.data.GeneratedAdMapper
+import com.sirelon.sellsnap.features.seller.auth.domain.OlxCountry
 import com.sirelon.sellsnap.features.seller.categories.domain.AttributeInputType
 import com.sirelon.sellsnap.features.seller.categories.domain.OlxAttribute
 import com.sirelon.sellsnap.features.seller.categories.domain.OlxAttributeValue
@@ -27,8 +28,8 @@ private val DEFAULT_MODEL = ModelId("gpt-4.1")
 private const val DEFAULT_IMAGE_DETAIL = "high"
 private val NUMBER_PATTERN = Regex("""-?\d+(?:\.\d+)?""")
 
-private const val AD_GENERATION_INSTRUCTIONS = """
-You are writing a single second-hand listing for OLX Ukraine.
+private fun adGenerationInstructions(country: OlxCountry): String = """
+You are writing a single second-hand listing for OLX ${country.nameEn}.
 Write like a real private seller talking about their own item — warm, concrete, specific.
 Do not sound like a product catalogue, an image caption, or a bot.
 
@@ -44,14 +45,14 @@ If the seller note is present, treat it as the source of truth.
 Use the photos to add concrete visible details that support the seller's facts: colour, visible wear, accessories included, distinguishing features. If the seller note contradicts the photos, trust the seller.
 
 Output fields:
-- title: short, searchable, in Ukrainian. Prefer item type + brand + key detail + exact size when available. No emoji, no ALL CAPS, no hashtags.
-- description: 3 to 6 short sentences in Ukrainian, conversational tone. No bullet points, no markdown, no hashtags, no emoji. If a seller note is present, at least one sentence should reflect its personal context (reason for selling, how long it was worn, etc.).
-- suggestedPrice, minPrice, maxPrice: plain integers in Ukrainian hryvnia (UAH) for the Ukrainian second-hand market. Not retail, not collectible premium. Ensure minPrice <= suggestedPrice <= maxPrice.
+- title: short, searchable, in ${country.language}. Prefer item type + brand + key detail + exact size when available. No emoji, no ALL CAPS, no hashtags.
+- description: 3 to 6 short sentences in ${country.language}, conversational tone. No bullet points, no markdown, no hashtags, no emoji. If a seller note is present, at least one sentence should reflect its personal context (reason for selling, how long it was worn, etc.).
+- suggestedPrice, minPrice, maxPrice: plain integers in ${country.currencyCode} for the ${country.nameEn} second-hand market. Not retail, not collectible premium. Ensure minPrice <= suggestedPrice <= maxPrice.
 
 Guardrails:
 - Do not invent brand, size, material, defects, or condition that are not supported by the seller note or clearly visible.
 - If uncertain, simply omit it rather than guessing.
-- Do not add filler phrases like "стан видно на фото", "додаткові питання в повідомленнях", or "підійде для повсякденного носіння".
+- Do not add filler phrases that are generic placeholders — write only real content.
 - Do not infer the season of clothing unless the seller says so or the photos make it unmistakable.
 
 Return ONLY valid JSON with this exact shape:
@@ -133,6 +134,7 @@ class OpenAIClient(
     suspend fun analyzeThing(
         images: List<String>,
         sellerPrompt: String,
+        country: OlxCountry,
         model: ModelId = DEFAULT_MODEL,
         imageDetail: String = DEFAULT_IMAGE_DETAIL,
     ): Pair<ResponseId, Advertisement> {
@@ -144,10 +146,10 @@ class OpenAIClient(
         val listingResponse = openAI.response(
             request = ResponseRequest(
                 model = model,
-                instructions = AD_GENERATION_INSTRUCTIONS.trimIndent(),
+                instructions = adGenerationInstructions(country).trimIndent(),
                 // Higher temperature gives the description a natural seller voice instead of a catalogue tone.
                 temperature = 0.7,
-                // Enough headroom for a real Ukrainian description plus three prices without truncation.
+                // Enough headroom for a real localized description plus three prices without truncation.
                 maxOutputTokens = 600,
                 // Stored so the follow-up attribute-fill call can chain on this response id.
                 store = true,
@@ -156,6 +158,7 @@ class OpenAIClient(
                         createListingAnalysisUserItem(
                             images = images,
                             sellerPrompt = sellerPrompt,
+                            country = country,
                             imageDetail = imageDetail,
                         )
                     )
@@ -171,11 +174,12 @@ class OpenAIClient(
     private fun createListingAnalysisUserItem(
         images: List<String>,
         sellerPrompt: String,
+        country: OlxCountry,
         imageDetail: String,
     ): ResponseInputItem = ResponseInputItem(
         role = "user",
         content = buildJsonArray {
-            add(createTextContent("Generate the OLX Ukraine listing for the main item shown in the photos."))
+            add(createTextContent("Generate the OLX ${country.nameEn} listing for the main item shown in the photos."))
             sellerPrompt.trim()
                 .takeIf { it.isNotEmpty() }
                 ?.let { prompt ->
