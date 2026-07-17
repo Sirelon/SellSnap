@@ -12,6 +12,7 @@ val appNavigationSavedStateConfiguration: SavedStateConfiguration =
             polymorphic(NavKey::class) {
                 subclass(AppDestination.Splash::class, AppDestination.Splash.serializer())
                 subclass(AppDestination.SellerOnboarding::class, AppDestination.SellerOnboarding.serializer())
+                subclass(AppDestination.ConsentPrompt::class, AppDestination.ConsentPrompt.serializer())
                 subclass(AppDestination.SellerLanding::class, AppDestination.SellerLanding.serializer())
                 subclass(AppDestination.OlxCountryPicker::class, AppDestination.OlxCountryPicker.serializer())
                 subclass(AppDestination.Seller::class, AppDestination.Seller.serializer())

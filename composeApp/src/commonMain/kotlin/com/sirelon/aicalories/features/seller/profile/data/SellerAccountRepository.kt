@@ -1,7 +1,9 @@
 package com.sirelon.sellsnap.features.seller.profile.data
 
+import com.sirelon.sellsnap.features.media.upload.DraftMediaFileStore
 import com.sirelon.sellsnap.features.seller.auth.data.OlxApiClient
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAuthRepository
+import com.sirelon.sellsnap.features.seller.auth.data.OlxCountryStore
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxAuthorizationRequest
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxSessionState
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxUser
@@ -15,6 +17,8 @@ class SellerAccountRepository(
     private val authRepository: OlxAuthRepository,
     private val olxApiClient: OlxApiClient,
     private val locationRepository: LocationRepository,
+    private val olxCountryStore: OlxCountryStore,
+    private val draftMediaFileStore: DraftMediaFileStore,
 ) {
     private val _user = MutableStateFlow<OlxUser?>(null)
     val user: StateFlow<OlxUser?> = _user.asStateFlow()
@@ -54,6 +58,8 @@ class SellerAccountRepository(
     suspend fun deleteSellSnapAccountData() {
         authRepository.logout()
         locationRepository.clearSavedLocation()
+        draftMediaFileStore.deleteAll()
+        olxCountryStore.clear()
         _user.value = null
     }
 

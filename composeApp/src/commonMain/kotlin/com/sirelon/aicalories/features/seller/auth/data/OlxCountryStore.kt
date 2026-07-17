@@ -23,6 +23,11 @@ class OlxCountryStore internal constructor(private val storage: KeyValueStore) {
         storage.putString(KEY, country.code)
     }
 
+    suspend fun clear() {
+        storage.remove(KEY)
+        _currentOlxCountry = OlxCountry.defaultForLocale()
+    }
+
     companion object {
         private const val KEY = "country_code"
     }

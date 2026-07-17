@@ -22,4 +22,6 @@ private class JsWasmDraftMediaFileStore : DraftMediaFileStore {
     override fun stablePath(file: KmpFile): String? = file.getPath()
 
     override suspend fun delete(photos: List<DraftPhoto>) = Unit
+
+    override suspend fun deleteAll() = Unit
 }

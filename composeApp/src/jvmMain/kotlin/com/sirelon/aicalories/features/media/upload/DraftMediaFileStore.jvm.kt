@@ -37,6 +37,10 @@ private class JvmDraftMediaFileStore(
     override suspend fun delete(photos: List<DraftPhoto>) {
         photos.forEach { photo -> File(photo.path).delete() }
     }
+
+    override suspend fun deleteAll() {
+        directory.deleteRecursively()
+    }
 }
 
 private fun String?.extensionSuffix(): String {

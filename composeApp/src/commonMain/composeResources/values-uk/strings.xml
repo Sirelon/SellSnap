@@ -26,6 +26,12 @@
     <string name="keyboard_done_action">Готово</string>
     <string name="or_divider">або</string>
 
+    <!-- Analytics Consent -->
+    <string name="consent_title">Допомогти покращити SellSnap?</string>
+    <string name="consent_message">Діліться анонімною аналітикою використання та звітами про збої, щоб ми виправляли помилки й робили SellSnap кращим. За замовчуванням вимкнено, і це ніколи не включає ваші фото чи вміст оголошень — змінити можна будь-коли в Профілі.</string>
+    <string name="consent_allow">Дозволити</string>
+    <string name="consent_decline">Не зараз</string>
+
     <!-- Onboarding Screen Steps -->
     <string name="onboarding_step1_title">Сфотографуйте 📸</string>
     <string name="onboarding_step1_subtitle">Наведіть, клацніть — готово. Усе, що хочете продати, ми оформимо.</string>
@@ -88,9 +94,13 @@
     <string name="profile_logout">Вийти</string>
     <string name="profile_delete_account_data">Видалити дані акаунта SellSnap</string>
     <string name="profile_delete_account_data_title">Видалити дані акаунта SellSnap?</string>
-    <string name="profile_delete_account_data_message">Це видалить збережене підключення OLX, локальний кеш профілю, гостьову сесію та місце продажу з цього пристрою. Ваш акаунт OLX не буде видалено.</string>
+    <string name="profile_delete_account_data_message">Це видалить збережене підключення OLX, локальний кеш профілю, гостьову сесію, місце продажу, обрану країну та чернеткові фото з цього пристрою. Ваш акаунт OLX не буде видалено.</string>
     <string name="profile_delete_account_data_confirm">Видалити дані</string>
     <string name="profile_delete_account_data_cancel">Скасувати</string>
+    <string name="profile_privacy_data_title">Приватність і дані</string>
+    <string name="profile_analytics_consent_title">Ділитися аналітикою та звітами про збої</string>
+    <string name="profile_analytics_consent_subtitle">Анонімні дані використання, що допомагають покращувати SellSnap. Змінюйте будь-коли.</string>
+    <string name="profile_contact_data_request">Зв'язатися щодо ваших даних</string>
     <string name="profile_not_provided">Не задано</string>
     <string name="profile_value_yes">Так</string>
     <string name="profile_value_no">Ні</string>

@@ -69,6 +69,19 @@ private class IosDraftMediaFileStore : DraftMediaFileStore {
             url.path?.let { NSFileManager.defaultManager.removeItemAtPath(it, error = null) }
         }
     }
+
+    override suspend fun deleteAll() {
+        val fileManager = NSFileManager.defaultManager
+        // Reading directoryPath ensures it's resolved; delete then re-create so later persist()
+        // calls in the same process (e.g. "continue as guest") don't write into a missing dir.
+        fileManager.removeItemAtPath(directoryPath, error = null)
+        fileManager.createDirectoryAtPath(
+            path = directoryPath,
+            withIntermediateDirectories = true,
+            attributes = null,
+            error = null,
+        )
+    }
 }
 
 private fun String?.extensionSuffix(): String {

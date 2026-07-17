@@ -19,6 +19,7 @@ class AppNavigationViewModel(
     private val startupStore: AppStartupStore,
     private val adFlowTimerStore: AdFlowTimerStore,
     private val olxCountryStore: OlxCountryStore,
+    private val analyticsConsentRepository: AnalyticsConsentRepository,
 ) : ViewModel() {
 
     private val _backStack = MutableStateFlow<List<AppDestination>>(listOf(AppDestination.Splash))
@@ -61,26 +62,52 @@ class AppNavigationViewModel(
         }
     }
 
-    private suspend fun resolveStartupDestination() {
-        val initial: AppDestination = if (!startupStore.hasSeenOnboarding()) {
-            startupStore.markOnboardingSeen()
-            AppDestination.SellerOnboarding
-        } else {
-            val session = authRepository.currentSession()
-            when (session.mode) {
-                SellerSessionMode.Authenticated -> runCatching {
-                    olxApiClient.getAuthenticatedUser()
-                    AppDestination.Seller
-                }
-                    .getOrElse {
-                        it.printStackTrace()
-                        AppDestination.SellerLanding
-                    }
-
-                SellerSessionMode.Guest -> AppDestination.Seller
-                SellerSessionMode.Unauthenticated -> AppDestination.SellerLanding
+    fun onOnboardingCompleted() {
+        viewModelScope.launch {
+            val next = if (analyticsConsentRepository.currentConsent() == AnalyticsConsent.Undecided) {
+                AppDestination.ConsentPrompt
+            } else {
+                sessionDestination()
             }
+            _backStack.value = listOf(next)
+        }
+    }
+
+    fun onConsentDecided() {
+        viewModelScope.launch {
+            _backStack.value = listOf(sessionDestination())
+        }
+    }
+
+    private suspend fun resolveStartupDestination() {
+        val initial: AppDestination = when {
+            !startupStore.hasSeenOnboarding() -> {
+                startupStore.markOnboardingSeen()
+                AppDestination.SellerOnboarding
+            }
+
+            analyticsConsentRepository.currentConsent() == AnalyticsConsent.Undecided ->
+                AppDestination.ConsentPrompt
+
+            else -> sessionDestination()
         }
         _backStack.value = listOf(initial)
+    }
+
+    private suspend fun sessionDestination(): AppDestination {
+        val session = authRepository.currentSession()
+        return when (session.mode) {
+            SellerSessionMode.Authenticated -> runCatching {
+                olxApiClient.getAuthenticatedUser()
+                AppDestination.Seller
+            }
+                .getOrElse {
+                    it.printStackTrace()
+                    AppDestination.SellerLanding
+                }
+
+            SellerSessionMode.Guest -> AppDestination.Seller
+            SellerSessionMode.Unauthenticated -> AppDestination.SellerLanding
+        }
     }
 }

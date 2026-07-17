@@ -52,6 +52,10 @@ private class AndroidDraftMediaFileStore(
             }
         }
     }
+
+    override suspend fun deleteAll() {
+        directory.deleteRecursively()
+    }
 }
 
 private fun String?.extensionSuffix(): String {

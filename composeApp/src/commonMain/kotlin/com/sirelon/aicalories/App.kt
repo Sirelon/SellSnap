@@ -9,6 +9,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavKey
@@ -18,6 +19,8 @@ import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.scene.SinglePaneSceneStrategy
 import androidx.navigation3.ui.NavDisplay
 import coil3.ImageLoader
+import coil3.SingletonImageLoader
+import coil3.compose.LocalPlatformContext
 import coil3.compose.setSingletonImageLoaderFactory
 import com.mohamedrejeb.calf.picker.coil.KmpFileFetcher
 import com.sirelon.sellsnap.analytics.Analytics
@@ -26,6 +29,7 @@ import com.sirelon.sellsnap.designsystem.AppTheme
 import com.sirelon.sellsnap.designsystem.screens.LoadingOverlay
 import com.sirelon.sellsnap.di.appModule
 import com.sirelon.sellsnap.di.networkModule
+import com.sirelon.sellsnap.features.consent.ConsentScreen
 import com.sirelon.sellsnap.features.seller.ad.AdRootScreen
 import com.sirelon.sellsnap.features.seller.auth.presentation.OlxCountryPickerScreenRoute
 import com.sirelon.sellsnap.features.seller.auth.presentation.SellerLandingScreenRoute
@@ -34,7 +38,9 @@ import com.sirelon.sellsnap.features.seller.profile.data.SellerAccountRepository
 import com.sirelon.sellsnap.features.seller.profile.ui.DeleteAccountDataConfirmSheet
 import com.sirelon.sellsnap.navigation.BottomSheetSceneStrategy
 import com.sirelon.sellsnap.navigation.AppDestination
+import com.sirelon.sellsnap.legal.LegalLinks
 import com.sirelon.sellsnap.navigation.appNavigationSavedStateConfiguration
+import com.sirelon.sellsnap.startup.AnalyticsConsentRepository
 import com.sirelon.sellsnap.startup.AppNavigationViewModel
 import com.sirelon.sellsnap.startup.AppThemeRepository
 import kotlinx.coroutines.launch
@@ -108,8 +114,33 @@ fun App() {
                         val analytics: Analytics = koinInject()
                         OnboardingScreen {
                             analytics.logEvent(AnalyticsEvents.ONBOARDING_COMPLETED)
-                            navVm.replaceWith(AppDestination.SellerLanding)
+                            navVm.onOnboardingCompleted()
                         }
+                    }
+
+                    entry<AppDestination.ConsentPrompt> {
+                        val consentRepository: AnalyticsConsentRepository = koinInject()
+                        val uriHandler = LocalUriHandler.current
+                        var isProcessingConsent by remember { mutableStateOf(false) }
+                        ConsentScreen(
+                            isProcessing = isProcessingConsent,
+                            onAllow = {
+                                if (!isProcessingConsent) {
+                                    isProcessingConsent = true
+                                    consentRepository.setConsent(true)
+                                    navVm.onConsentDecided()
+                                }
+                            },
+                            onDecline = {
+                                if (!isProcessingConsent) {
+                                    isProcessingConsent = true
+                                    consentRepository.setConsent(false)
+                                    navVm.onConsentDecided()
+                                }
+                            },
+                            onOpenPrivacy = { uriHandler.openUri(LegalLinks.PRIVACY_URL) },
+                            onOpenTerms = { uriHandler.openUri(LegalLinks.TERMS_URL) },
+                        )
                     }
 
                     entry<AppDestination.SellerLanding> {
@@ -140,6 +171,7 @@ fun App() {
                     entry<AppDestination.DeleteAccountDataConfirm>(
                         metadata = BottomSheetSceneStrategy.bottomSheet(),
                     ) {
+                        val platformContext = LocalPlatformContext.current
                         DeleteAccountDataConfirmSheet(
                             onConfirm = {
                                 if (!isDeletingAccountData) {
@@ -148,6 +180,11 @@ fun App() {
                                         runCatching {
                                             accountRepository.deleteSellSnapAccountData()
                                         }.onSuccess {
+                                            // Drop cached copies of the user's listing photos too.
+                                            SingletonImageLoader.get(platformContext).apply {
+                                                memoryCache?.clear()
+                                                diskCache?.clear()
+                                            }
                                             navVm.replaceWith(AppDestination.SellerLanding)
                                         }.onFailure { error ->
                                             error.printStackTrace()

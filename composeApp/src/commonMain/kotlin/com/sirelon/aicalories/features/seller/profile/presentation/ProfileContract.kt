@@ -12,6 +12,7 @@ interface ProfileContract {
         val user: OlxUser? = null,
         val location: OlxLocation? = null,
         val themeMode: AppThemeMode = AppThemeMode.System,
+        val analyticsConsentGranted: Boolean = false,
         val errorMessage: String? = null,
     ) {
         val isGuest: Boolean
@@ -24,6 +25,7 @@ interface ProfileContract {
         data object ChangeLocationClicked : ProfileEvent
         data object RefreshClicked : ProfileEvent
         data class ThemeModeSelected(val themeMode: AppThemeMode) : ProfileEvent
+        data class SetAnalyticsConsent(val enabled: Boolean) : ProfileEvent
     }
 
     sealed interface ProfileEffect {
