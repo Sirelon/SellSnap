@@ -9,26 +9,26 @@ androidx-activity = "1.13.0"
 androidx-datastore = "1.2.1"
 androidx-appcompat = "1.7.1"
 # https://developer.android.com/jetpack/androidx/releases/core
-androidx-core = "1.18.0"
+androidx-core = "1.19.0"
 androidx-espresso = "3.7.0"
 # https://developer.android.com/jetpack/androidx/releases/lifecycle
-androidx-lifecycle = "2.10.0"
+androidx-lifecycle = "2.11.0"
 androidx-testExt = "1.3.0"
-coil3 = "3.4.0"
+coil3 = "3.5.0"
 composeHotReload = "1.1.1"
 # https://github.com/JetBrains/compose-multiplatform/releases
-composeMultiplatform = "1.12.0-alpha01"
+composeMultiplatform = "1.12.0-beta02"
 junit = "4.13.2"
 # https://github.com/InsertKoinIO/koin/releases
-koin = "4.2.1"
-kotlin = "2.3.21"
+koin = "4.2.2"
+kotlin = "2.4.10"
 # https://github.com/Kotlin/kotlinx.coroutines/releases
 kotlinx-coroutines = "1.11.0"
 # https://github.com/Kotlin/kotlinx.serialization/releases
 kotlinx-serialization = "1.11.0"
 # https://github.com/ktorio/ktor/releases
-ktor = "3.5.0"
-logback = "1.5.32"
+ktor = "3.5.1"
+logback = "1.5.38"
 # https://mvnrepository.com/artifact/org.jetbrains.compose.material3/material3
 material3 = "1.12.0-alpha03"
 # https://mvnrepository.com/artifact/org.jetbrains.compose.material3.adaptive/adaptive
@@ -38,8 +38,8 @@ materialIconsExtended = "1.7.3"
 navigation3Runtime = "1.2.0-alpha06"
 # https://developer.android.com/jetpack/androidx/releases/lifecycle
 lifecycleViewmodelNav3 = "2.11.0"
-# https://developer.android.com/jetpack/androidx/releases/navigation3
-navigation3Ui = "1.2.0-alpha06"
+# https://mvnrepository.com/artifact/org.jetbrains.androidx.navigation3/navigation3-ui
+navigation3Ui = "1.2.0-alpha02"
 # https://github.com/MohamedRejeb/Calf/releases
 calf = "0.12.0"
 # https://github.com/supabase-community/supabase-kt/releases
@@ -47,7 +47,7 @@ supabase = "3.6.0"
 # https://github.com/yshrsmz/BuildKonfig/releases
 buildKonfig = "0.22.0"
 
-compose = "1.12.0-beta01"
+compose = "1.12.0-beta02"
 playServicesLocation = "21.4.0"
 # https://github.com/GitLiveApp/firebase-kotlin-sdk/releases
 gitliveFirebase = "2.5.0"
