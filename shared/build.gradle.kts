@@ -64,7 +64,7 @@ val olxRedirectUri =
         ?: "selolxai://olx-auth/callback"
 
 kotlin {
-    androidLibrary {
+    android {
         namespace = "com.sirelon.sellsnap.shared"
         compileSdk = libs.versions.android.compileSdk.get().toInt()
         minSdk = libs.versions.android.minSdk.get().toInt()
@@ -98,10 +98,10 @@ kotlin {
                 sharedOptInAnnotations.forEach { optIn(it) }
             }
         }
-        val iosMain by creating {
+        val iosMain = create("iosMain") {
             dependsOn(getByName("commonMain"))
         }
-        val iosTest by creating {
+        val iosTest = create("iosTest") {
             dependsOn(getByName("commonTest"))
         }
         commonMain.dependencies {
