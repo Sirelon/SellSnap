@@ -15,6 +15,14 @@ if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
 
+// Single source of truth for app version, shared with iOS via fastlane (see Fastfile)
+val versionPropertiesFile = rootProject.file("version.properties")
+val versionProperties = Properties().apply {
+    load(FileInputStream(versionPropertiesFile))
+}
+val appVersionName = versionProperties.getProperty("VERSION_NAME")
+val appVersionCode = versionProperties.getProperty("VERSION_CODE").toInt()
+
 android {
     namespace = "com.sirelon.sellsnap"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
@@ -23,8 +31,8 @@ android {
         applicationId = "com.sirelon.sellsnap"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 5
-        versionName = "1.3"
+        versionCode = appVersionCode
+        versionName = appVersionName
     }
 
     signingConfigs {

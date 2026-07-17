@@ -7,6 +7,11 @@ IOS_SCHEME     = "iosApp"
 ANDROID_AAB         = "androidApp/build/outputs/bundle/release/androidApp-release.aab"
 GOOGLE_PLAY_KEY     = "fastlane/google-play-key.json"
 
+# version.properties (repo root) is the single source of truth for the app
+# version, shared by Android (read directly in build.gradle.kts) and iOS
+# (synced into the Xcode project below before every build).
+VERSION_PROPERTIES = "version.properties"
+
 # ---------------------------------------------------------------------------
 # iOS
 # ---------------------------------------------------------------------------
@@ -23,8 +28,26 @@ platform :ios do
     )
   end
 
+  desc "Sync MARKETING_VERSION / CURRENT_PROJECT_VERSION from version.properties"
+  private_lane :sync_version do
+    props = File.read(VERSION_PROPERTIES).lines.each_with_object({}) do |line, h|
+      key, value = line.strip.split("=", 2)
+      h[key] = value if key && value
+    end
+
+    increment_version_number(
+      xcodeproj: IOS_PROJECT,
+      version_number: props.fetch("VERSION_NAME")
+    )
+    increment_build_number(
+      xcodeproj: IOS_PROJECT,
+      build_number: props.fetch("VERSION_CODE")
+    )
+  end
+
   desc "Build and upload a new beta to TestFlight"
   lane :beta do
+    sync_version
     Bundler.with_unbundled_env do
       build_app(
         project: IOS_PROJECT,
@@ -41,6 +64,7 @@ platform :ios do
 
   desc "Build and upload to App Store (does not submit for review)"
   lane :release do
+    sync_version
     Bundler.with_unbundled_env do
       build_app(
         project: IOS_PROJECT,
