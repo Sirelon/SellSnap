@@ -20,7 +20,7 @@ composeHotReload = "1.1.1"
 composeMultiplatform = "1.12.0-alpha01"
 junit = "4.13.2"
 # https://github.com/InsertKoinIO/koin/releases
-koin = "4.2.1"
+koin = "4.2.2"
 kotlin = "2.3.21"
 # https://github.com/Kotlin/kotlinx.coroutines/releases
 kotlinx-coroutines = "1.11.0"
