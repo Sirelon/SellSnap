@@ -21,7 +21,7 @@ composeMultiplatform = "1.12.0-alpha01"
 junit = "4.13.2"
 # https://github.com/InsertKoinIO/koin/releases
 koin = "4.2.1"
-kotlin = "2.3.21"
+kotlin = "2.4.0"
 # https://github.com/Kotlin/kotlinx.coroutines/releases
 kotlinx-coroutines = "1.11.0"
 # https://github.com/Kotlin/kotlinx.serialization/releases
