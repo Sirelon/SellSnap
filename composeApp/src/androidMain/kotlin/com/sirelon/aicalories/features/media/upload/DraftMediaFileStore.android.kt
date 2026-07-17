@@ -54,7 +54,9 @@ private class AndroidDraftMediaFileStore(
     }
 
     override suspend fun deleteAll() {
-        directory.deleteRecursively()
+        if (!directory.deleteRecursively()) {
+            throw IllegalStateException("Failed to fully delete draft media directory: ${directory.absolutePath}")
+        }
     }
 }
 

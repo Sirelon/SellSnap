@@ -74,7 +74,13 @@ private class IosDraftMediaFileStore : DraftMediaFileStore {
         val fileManager = NSFileManager.defaultManager
         // Reading directoryPath ensures it's resolved; delete then re-create so later persist()
         // calls in the same process (e.g. "continue as guest") don't write into a missing dir.
-        fileManager.removeItemAtPath(directoryPath, error = null)
+        if (fileManager.fileExistsAtPath(directoryPath)) {
+            val removed = fileManager.removeItemAtPath(directoryPath, error = null)
+            if (!removed) {
+                throw IllegalStateException("Failed to delete draft media directory: $directoryPath")
+            }
+        }
+        // Best-effort re-create; persist() will fail gracefully if this doesn't succeed.
         fileManager.createDirectoryAtPath(
             path = directoryPath,
             withIntermediateDirectories = true,

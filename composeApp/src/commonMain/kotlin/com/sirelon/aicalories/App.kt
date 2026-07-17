@@ -40,7 +40,6 @@ import com.sirelon.sellsnap.navigation.BottomSheetSceneStrategy
 import com.sirelon.sellsnap.navigation.AppDestination
 import com.sirelon.sellsnap.legal.LegalLinks
 import com.sirelon.sellsnap.navigation.appNavigationSavedStateConfiguration
-import com.sirelon.sellsnap.startup.AnalyticsConsentRepository
 import com.sirelon.sellsnap.startup.AppNavigationViewModel
 import com.sirelon.sellsnap.startup.AppThemeRepository
 import kotlinx.coroutines.launch
@@ -119,25 +118,10 @@ fun App() {
                     }
 
                     entry<AppDestination.ConsentPrompt> {
-                        val consentRepository: AnalyticsConsentRepository = koinInject()
                         val uriHandler = LocalUriHandler.current
-                        var isProcessingConsent by remember { mutableStateOf(false) }
                         ConsentScreen(
-                            isProcessing = isProcessingConsent,
-                            onAllow = {
-                                if (!isProcessingConsent) {
-                                    isProcessingConsent = true
-                                    consentRepository.setConsent(true)
-                                    navVm.onConsentDecided()
-                                }
-                            },
-                            onDecline = {
-                                if (!isProcessingConsent) {
-                                    isProcessingConsent = true
-                                    consentRepository.setConsent(false)
-                                    navVm.onConsentDecided()
-                                }
-                            },
+                            onAllow = { navVm.onConsentAllow() },
+                            onDecline = { navVm.onConsentDecline() },
                             onOpenPrivacy = { uriHandler.openUri(LegalLinks.PRIVACY_URL) },
                             onOpenTerms = { uriHandler.openUri(LegalLinks.TERMS_URL) },
                         )

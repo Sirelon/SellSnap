@@ -73,7 +73,15 @@ class AppNavigationViewModel(
         }
     }
 
-    fun onConsentDecided() {
+    fun onConsentAllow() {
+        analyticsConsentRepository.setConsent(true)
+        viewModelScope.launch {
+            _backStack.value = listOf(sessionDestination())
+        }
+    }
+
+    fun onConsentDecline() {
+        analyticsConsentRepository.setConsent(false)
         viewModelScope.launch {
             _backStack.value = listOf(sessionDestination())
         }
@@ -94,20 +102,22 @@ class AppNavigationViewModel(
         _backStack.value = listOf(initial)
     }
 
-    private suspend fun sessionDestination(): AppDestination {
+    private suspend fun sessionDestination(): AppDestination = runCatching {
         val session = authRepository.currentSession()
-        return when (session.mode) {
+        when (session.mode) {
             SellerSessionMode.Authenticated -> runCatching {
                 olxApiClient.getAuthenticatedUser()
                 AppDestination.Seller
+            }.getOrElse {
+                it.printStackTrace()
+                AppDestination.SellerLanding
             }
-                .getOrElse {
-                    it.printStackTrace()
-                    AppDestination.SellerLanding
-                }
 
             SellerSessionMode.Guest -> AppDestination.Seller
             SellerSessionMode.Unauthenticated -> AppDestination.SellerLanding
         }
+    }.getOrElse {
+        it.printStackTrace()
+        AppDestination.SellerLanding
     }
 }

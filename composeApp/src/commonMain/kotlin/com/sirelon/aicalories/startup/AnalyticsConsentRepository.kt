@@ -5,6 +5,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class AnalyticsConsentRepository(
@@ -20,8 +21,9 @@ class AnalyticsConsentRepository(
         // at startup also forces the platform Analytics impl to be created before any event fires.
         applicationScope.launch {
             val saved = store.read()
-            _consent.value = saved
-            analytics.setCollectionEnabled(saved == AnalyticsConsent.Granted)
+            // Only update if no explicit setConsent() call has already landed (race guard).
+            _consent.update { current -> if (current == AnalyticsConsent.Undecided) saved else current }
+            analytics.setCollectionEnabled(_consent.value == AnalyticsConsent.Granted)
         }
     }
 
@@ -34,6 +36,15 @@ class AnalyticsConsentRepository(
         analytics.setCollectionEnabled(granted)
         applicationScope.launch {
             store.write(value)
+        }
+    }
+
+    /** Resets consent to [AnalyticsConsent.Undecided] and disables collection. Called on data erasure. */
+    fun resetConsent() {
+        _consent.value = AnalyticsConsent.Undecided
+        analytics.setCollectionEnabled(false)
+        applicationScope.launch {
+            store.write(AnalyticsConsent.Undecided)
         }
     }
 }

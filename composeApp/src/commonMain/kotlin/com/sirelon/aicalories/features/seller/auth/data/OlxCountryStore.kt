@@ -7,6 +7,7 @@ import com.sirelon.sellsnap.features.seller.auth.domain.OlxCountry
 // Package-level backing var so OlxConfig (an object) can read the current country
 // without going through Koin DI. Initialized synchronously from device locale;
 // overwritten by OlxCountryStore.loadFromStorage() at app startup.
+@kotlin.concurrent.Volatile
 internal var _currentOlxCountry: OlxCountry = OlxCountry.defaultForLocale()
 
 class OlxCountryStore internal constructor(private val storage: KeyValueStore) {
