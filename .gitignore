@@ -325,6 +325,7 @@ render.experimental.xml
 /composeApp/src/androidMain/assets/composeResources/com.sirelon.aicalories.composeapp.generated.resources/drawable/compose-multiplatform.xml
 /composeApp/src/androidMain/assets/composeResources/com.sirelon.aicalories.composeapp.generated.resources/values/strings.commonMain.cvr
 /.claude/settings.json
+/.claude/tmp/
 /keystore.properties
 .env
 .env.local

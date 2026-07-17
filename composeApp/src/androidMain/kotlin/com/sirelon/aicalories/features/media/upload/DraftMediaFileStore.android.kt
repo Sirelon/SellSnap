@@ -52,6 +52,12 @@ private class AndroidDraftMediaFileStore(
             }
         }
     }
+
+    override suspend fun deleteAll() {
+        if (!directory.deleteRecursively()) {
+            throw IllegalStateException("Failed to fully delete draft media directory: ${directory.absolutePath}")
+        }
+    }
 }
 
 private fun String?.extensionSuffix(): String {

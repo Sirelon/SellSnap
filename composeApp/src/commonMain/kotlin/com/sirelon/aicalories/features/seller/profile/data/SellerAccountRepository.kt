@@ -1,12 +1,15 @@
 package com.sirelon.sellsnap.features.seller.profile.data
 
+import com.sirelon.sellsnap.features.media.upload.DraftMediaFileStore
 import com.sirelon.sellsnap.features.seller.auth.data.OlxApiClient
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAuthRepository
+import com.sirelon.sellsnap.features.seller.auth.data.OlxCountryStore
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxAuthorizationRequest
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxSessionState
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxUser
 import com.sirelon.sellsnap.features.seller.location.OlxLocation
 import com.sirelon.sellsnap.features.seller.location.data.LocationRepository
+import com.sirelon.sellsnap.startup.AnalyticsConsentRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -15,6 +18,9 @@ class SellerAccountRepository(
     private val authRepository: OlxAuthRepository,
     private val olxApiClient: OlxApiClient,
     private val locationRepository: LocationRepository,
+    private val olxCountryStore: OlxCountryStore,
+    private val draftMediaFileStore: DraftMediaFileStore,
+    private val analyticsConsentRepository: AnalyticsConsentRepository,
 ) {
     private val _user = MutableStateFlow<OlxUser?>(null)
     val user: StateFlow<OlxUser?> = _user.asStateFlow()
@@ -54,6 +60,9 @@ class SellerAccountRepository(
     suspend fun deleteSellSnapAccountData() {
         authRepository.logout()
         locationRepository.clearSavedLocation()
+        draftMediaFileStore.deleteAll()
+        olxCountryStore.clear()
+        analyticsConsentRepository.resetConsent()
         _user.value = null
     }
 

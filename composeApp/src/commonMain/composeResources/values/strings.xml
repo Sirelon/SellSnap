@@ -25,6 +25,12 @@
     <string name="keyboard_done_action">Done</string>
     <string name="or_divider">or</string>
 
+    <!-- Analytics Consent -->
+    <string name="consent_title">Help improve SellSnap?</string>
+    <string name="consent_message">Share anonymous usage analytics and crash reports so we can squash bugs and make SellSnap better. It's off by default and never includes your photos or listing content — and you can change it anytime in Profile.</string>
+    <string name="consent_allow">Allow</string>
+    <string name="consent_decline">Not now</string>
+
     <!-- Onboarding Screen Steps -->
     <string name="onboarding_step1_title">Snap it 📸</string>
     <string name="onboarding_step1_subtitle">Point, shoot, done. Anything you want to sell — we'll take it from there.</string>
@@ -94,9 +100,13 @@
     <string name="profile_logout">Log out</string>
     <string name="profile_delete_account_data">Delete SellSnap account data</string>
     <string name="profile_delete_account_data_title">Delete SellSnap account data?</string>
-    <string name="profile_delete_account_data_message">This removes the saved OLX connection, local profile cache, guest session, and selling location from this device. It does not delete your OLX account.</string>
+    <string name="profile_delete_account_data_message">This removes the saved OLX connection, local profile cache, guest session, selling location, selected market, and draft photos from this device. It does not delete your OLX account.</string>
     <string name="profile_delete_account_data_confirm">Delete data</string>
     <string name="profile_delete_account_data_cancel">Cancel</string>
+    <string name="profile_privacy_data_title">Privacy &amp; data</string>
+    <string name="profile_analytics_consent_title">Share analytics &amp; crash reports</string>
+    <string name="profile_analytics_consent_subtitle">Anonymous usage data that helps us improve SellSnap. Change anytime.</string>
+    <string name="profile_contact_data_request">Contact us about your data</string>
     <string name="profile_not_provided">Not set</string>
     <string name="profile_value_yes">Yes</string>
     <string name="profile_value_no">No</string>

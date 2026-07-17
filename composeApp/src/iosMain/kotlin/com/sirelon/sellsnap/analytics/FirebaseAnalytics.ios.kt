@@ -52,6 +52,11 @@ internal class FirebaseAnalyticsImpl : Analytics {
             Firebase.crashlytics.log(message)
         }
     }
+
+    override fun setCollectionEnabled(enabled: Boolean) {
+        withAnalytics { Firebase.analytics.setAnalyticsCollectionEnabled(enabled) }
+        withCrashlytics { Firebase.crashlytics.setCrashlyticsCollectionEnabled(enabled) }
+    }
 }
 
 actual val analyticsModule: Module = module {
