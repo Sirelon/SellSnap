@@ -97,7 +97,8 @@ platform :android do
     upload_to_play_store(
       track: "internal",
       aab: ANDROID_AAB,
-      json_key: GOOGLE_PLAY_KEY
+      json_key: GOOGLE_PLAY_KEY,
+      skip_upload_apk: true
     )
   end
 
