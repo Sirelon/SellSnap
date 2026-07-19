@@ -7,6 +7,10 @@ IOS_SCHEME     = "iosApp"
 ANDROID_AAB         = "androidApp/build/outputs/bundle/release/androidApp-release.aab"
 GOOGLE_PLAY_KEY     = "fastlane/google-play-key.json"
 
+ASC_KEY_ID       = "G5TTXS7GV3"
+ASC_ISSUER_ID    = "8873b38c-775e-4a3e-baf5-4e2bada765a8"
+ASC_KEY_FILEPATH = "fastlane/AuthKey_G5TTXS7GV3.p8"
+
 # version.properties (repo root) is the single source of truth for the app
 # version, shared by Android (read directly in build.gradle.kts) and iOS
 # (synced into the Xcode project below before every build).
@@ -18,13 +22,12 @@ VERSION_PROPERTIES = "version.properties"
 
 platform :ios do
   before_all do
-    next unless ENV["APP_STORE_CONNECT_API_KEY_ID"]
+    next unless File.exist?(ASC_KEY_FILEPATH)
 
     app_store_connect_api_key(
-      key_id: ENV["APP_STORE_CONNECT_API_KEY_ID"],
-      issuer_id: ENV["APP_STORE_CONNECT_API_ISSUER_ID"],
-      key_content: ENV["APP_STORE_CONNECT_API_KEY_CONTENT"],
-      is_key_content_base64: true
+      key_id: ASC_KEY_ID,
+      issuer_id: ASC_ISSUER_ID,
+      key_filepath: ASC_KEY_FILEPATH
     )
   end
 

@@ -330,3 +330,4 @@ render.experimental.xml
 .env
 .env.local
 fastlane/google-play-key.json
+fastlane/*.p8
