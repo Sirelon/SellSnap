@@ -9,12 +9,15 @@ GOOGLE_PLAY_KEY     = "fastlane/google-play-key.json"
 
 ASC_KEY_ID       = "G5TTXS7GV3"
 ASC_ISSUER_ID    = "8873b38c-775e-4a3e-baf5-4e2bada765a8"
-ASC_KEY_FILEPATH = "fastlane/AuthKey_G5TTXS7GV3.p8"
+# Plain Ruby File.* calls in this Fastfile run relative to the fastlane/
+# folder itself, not the repo root actions like gradle()/build_app() resolve
+# their string params against, so anchor these to __dir__ explicitly.
+ASC_KEY_FILEPATH = File.expand_path("AuthKey_G5TTXS7GV3.p8", __dir__)
 
 # version.properties (repo root) is the single source of truth for the app
 # version, shared by Android (read directly in build.gradle.kts) and iOS
 # (synced into the Xcode project below before every build).
-VERSION_PROPERTIES = "version.properties"
+VERSION_PROPERTIES = File.expand_path("../version.properties", __dir__)
 
 # ---------------------------------------------------------------------------
 # iOS
