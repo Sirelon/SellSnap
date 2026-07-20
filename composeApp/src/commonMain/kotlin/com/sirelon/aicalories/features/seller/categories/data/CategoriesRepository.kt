@@ -1,9 +1,11 @@
 package com.sirelon.sellsnap.features.seller.categories.data
 
 import com.sirelon.sellsnap.features.seller.auth.data.OlxApiClient
+import com.sirelon.sellsnap.features.seller.auth.data.OlxCountryStore
 import com.sirelon.sellsnap.features.seller.categories.domain.CategoriesMapper
 import com.sirelon.sellsnap.features.seller.categories.domain.OlxAttribute
 import com.sirelon.sellsnap.features.seller.categories.domain.OlxCategory
+import com.sirelon.sellsnap.features.seller.categories.domain.excludedRootCategoryIds
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharedFlow
@@ -18,16 +20,8 @@ class CategoriesRepository(
     private val olxApiClient: OlxApiClient,
     private val mapper: CategoriesMapper,
     private val scope: CoroutineScope,
+    private val countryStore: OlxCountryStore,
 ) {
-    private val notSupportedParentIds = listOf(
-        1, // нерухомість
-        1532, // autotransport
-        6, // work
-        35, // тварини?? але під питанням, бо там є зоотовари
-        7, // бізнесс і послуги
-        3709, // житло подобово
-        3428, // Оренда та прокат ?
-    )
 
     // Errors are wrapped as Result so the sharing coroutine is never cancelled by a network failure.
     // Callers unwrap with getOrThrow(), propagating the exception to their own collector/caller.
@@ -73,10 +67,11 @@ class CategoriesRepository(
     }
 
     private fun normalize(data: List<OlxCategory>): List<OlxCategory> {
+        val notSupportedRootIds = excludedRootCategoryIds(countryStore.current)
         val grouppedData = data.groupBy { it.parentId }.toMutableMap()
 
         val rootCategories = grouppedData[null].orEmpty()
-        val toRemove = rootCategories.filter { notSupportedParentIds.contains(it.id) }
+        val toRemove = rootCategories.filter { notSupportedRootIds.contains(it.id) }
 
         grouppedData[null] = rootCategories - toRemove
 
