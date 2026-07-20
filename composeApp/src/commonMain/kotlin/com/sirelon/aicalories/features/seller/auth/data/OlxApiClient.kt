@@ -80,6 +80,7 @@ class OlxApiClient(
             .orEmpty()
             .firstOrNull()
             ?.id
+            ?.toIntOrNull()
     }
 
     internal suspend fun loadAttributes(categoryId: Int): List<OlxAttributeResponse> {

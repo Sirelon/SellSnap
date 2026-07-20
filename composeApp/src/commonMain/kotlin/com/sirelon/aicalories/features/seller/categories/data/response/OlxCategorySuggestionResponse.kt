@@ -10,7 +10,10 @@ internal class OlxCategorySuggestionResponse(
 ) {
     @Serializable
     internal class OlxCategorySuggestionResponseItem(
+        // OLX returns the suggested category id as a numeric string (e.g. "85"), unlike the
+        // integer ids from /categories. Kept as String and converted at the call site so parsing
+        // doesn't silently rely on lenient string->int coercion.
         @SerialName("id")
-        val id: Int?,
+        val id: String?,
     )
 }
