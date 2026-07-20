@@ -49,6 +49,11 @@ class RootCategoryTaxonomyTest {
         assertEquals(RootCategoryKind.SPORT_HOBBY, rootCategoryKind(OlxCountry.PL, 767))
         // Poland's id 37 is unrelated to UA's Electronics root and must not resolve to anything.
         assertNull(rootCategoryKind(OlxCountry.PL, 37))
+
+        assertEquals(RootCategoryKind.ANTIQUES, rootCategoryKind(OlxCountry.PL, 4042))
+        assertEquals(RootCategoryKind.BEAUTY, rootCategoryKind(OlxCountry.PL, 3647))
+        assertEquals(RootCategoryKind.CONSTRUCTION, rootCategoryKind(OlxCountry.PL, 5216))
+        assertEquals(RootCategoryKind.MUSIC_EDUCATION, rootCategoryKind(OlxCountry.PL, 751))
     }
 
     @Test
@@ -62,6 +67,8 @@ class RootCategoryTaxonomyTest {
         )
         // Peças e acessórios is the same concept as UA's kept Spare Parts root - reuses its icon, not a new one.
         assertEquals(RootCategoryKind.SPARE_PARTS, rootCategoryKind(OlxCountry.PT, 5478))
+        assertEquals(RootCategoryKind.LEISURE, rootCategoryKind(OlxCountry.PT, 26))
+        assertEquals(RootCategoryKind.OTHER_SALES, rootCategoryKind(OlxCountry.PT, 185))
     }
 
     @Test
@@ -81,13 +88,12 @@ class RootCategoryTaxonomyTest {
         )
         assertEquals(RootCategoryKind.ELECTRONICS, rootCategoryKind(OlxCountry.BG, 632))
         assertEquals(RootCategoryKind.SPARE_PARTS, rootCategoryKind(OlxCountry.BG, 1625))
+        assertEquals(RootCategoryKind.ANTIQUES, rootCategoryKind(OlxCountry.BG, 1609))
     }
 
     @Test
-    fun `unmapped country-specific verticals resolve to no kind, not a guess`() {
-        // Poland's Health&Beauty/Antiques roots have no confident UA equivalent - stay visible, no icon.
-        assertNull(rootCategoryKind(OlxCountry.PL, 3647)) // Zdrowie i Uroda (Health & Beauty)
-        assertNull(rootCategoryKind(OlxCountry.PL, 4042)) // Antyki i Kolekcje (Antiques)
+    fun `antiques icon is shared by poland and bulgaria`() {
+        assertEquals(rootCategoryKind(OlxCountry.PL, 4042), rootCategoryKind(OlxCountry.BG, 1609))
     }
 
     @Test

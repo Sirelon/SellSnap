@@ -10,9 +10,7 @@ import com.sirelon.sellsnap.features.seller.auth.domain.OlxCountry
  * this per-country lookup instead of hardcoding one country's ids.
  *
  * Only roots with a confident cross-country match are mapped. Country-specific verticals with
- * no clear equivalent elsewhere (e.g. Poland's Agriculture/Health&Beauty/Antiques roots) are
- * intentionally left unmapped, so they stay visible with no custom icon — the same behavior
- * every non-Ukraine country had before this mapping existed.
+ * no clear equivalent elsewhere stay unmapped, so they remain visible with no custom icon.
  */
 internal enum class RootCategoryKind {
     // Service/vertical marketplaces excluded from this app's consumer-goods listing flow.
@@ -32,6 +30,12 @@ internal enum class RootCategoryKind {
     SPORT_HOBBY,
     SPARE_PARTS,
     OTHER,
+    ANTIQUES,
+    BEAUTY,
+    CONSTRUCTION,
+    MUSIC_EDUCATION,
+    LEISURE,
+    OTHER_SALES,
 }
 
 internal val EXCLUDED_ROOT_CATEGORY_KINDS = setOf(
@@ -76,6 +80,10 @@ internal val ROOT_CATEGORY_KINDS_BY_COUNTRY: Map<OlxCountry, Map<Int, RootCatego
         88 to RootCategoryKind.BABY,
         628 to RootCategoryKind.HOME_GARDEN,
         767 to RootCategoryKind.SPORT_HOBBY,
+        4042 to RootCategoryKind.ANTIQUES, // Antyki i Kolekcje
+        3647 to RootCategoryKind.BEAUTY, // Zdrowie i Uroda
+        5216 to RootCategoryKind.CONSTRUCTION, // Budowa i Remont
+        751 to RootCategoryKind.MUSIC_EDUCATION, // Muzyka i Edukacja
     ),
     OlxCountry.PT to mapOf(
         16 to RootCategoryKind.REAL_ESTATE,
@@ -93,6 +101,8 @@ internal val ROOT_CATEGORY_KINDS_BY_COUNTRY: Map<OlxCountry, Map<Int, RootCatego
         13 to RootCategoryKind.HOME_GARDEN,
         12 to RootCategoryKind.SPORT_HOBBY,
         5478 to RootCategoryKind.SPARE_PARTS, // Peças e acessórios - same concept as UA's kept Spare Parts root
+        26 to RootCategoryKind.LEISURE, // Lazer
+        185 to RootCategoryKind.OTHER_SALES, // Outras Vendas
     ),
     OlxCountry.RO to mapOf(
         3 to RootCategoryKind.REAL_ESTATE,
@@ -126,6 +136,7 @@ internal val ROOT_CATEGORY_KINDS_BY_COUNTRY: Map<OlxCountry, Map<Int, RootCatego
         262 to RootCategoryKind.HOME_GARDEN,
         618 to RootCategoryKind.SPORT_HOBBY,
         1625 to RootCategoryKind.SPARE_PARTS, // Авточасти, аксесоари - same concept as UA's kept Spare Parts root
+        1609 to RootCategoryKind.ANTIQUES, // Антики и колекции
     ),
 )
 
