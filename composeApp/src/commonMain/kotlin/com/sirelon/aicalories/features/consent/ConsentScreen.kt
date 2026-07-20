@@ -14,6 +14,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.tooling.preview.Preview
 import com.sirelon.sellsnap.designsystem.AppDimens
 import com.sirelon.sellsnap.designsystem.AppScaffold
@@ -59,13 +60,13 @@ fun ConsentScreen(
                     )
                 }
                 AppButton(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().testTag("consent_allow_button"),
                     text = stringResource(Res.string.consent_allow),
                     onClick = onAllow,
                     enabled = !isProcessing,
                 )
                 AppButton(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().testTag("consent_decline_button"),
                     text = stringResource(Res.string.consent_decline),
                     style = AppButtonDefaults.ghost(),
                     onClick = onDecline,
