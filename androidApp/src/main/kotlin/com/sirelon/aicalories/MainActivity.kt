@@ -6,7 +6,12 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import com.sirelon.sellsnap.datastore.initAndroidKeyValueStore
@@ -31,7 +36,14 @@ class MainActivity : ComponentActivity() {
         publishOlxCallback(intent)
 
         setContent {
-            App()
+            // Expose Compose testTags as Android resource-ids so Maestro can target them.
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .semantics { testTagsAsResourceId = true },
+            ) {
+                App()
+            }
         }
     }
 

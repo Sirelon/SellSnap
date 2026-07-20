@@ -31,6 +31,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -168,6 +169,7 @@ private fun OlxCountryPickerScreen(
                         isSelected = country == selected,
                         isLast = country == OlxCountry.all.last(),
                         onClick = { selected = country },
+                        modifier = Modifier.testTag("country_row_${country.code}"),
                     )
                 }
             }
@@ -191,7 +193,8 @@ private fun OlxCountryPickerScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = AppDimens.Spacing.xl5)
-                    .padding(top = AppDimens.Spacing.xl3, bottom = AppDimens.Spacing.xl10),
+                    .padding(top = AppDimens.Spacing.xl3, bottom = AppDimens.Spacing.xl10)
+                    .testTag("country_picker_continue_button"),
                 style = AppButtonDefaults.primary(),
             )
         }
@@ -204,9 +207,10 @@ private fun CountryRow(
     isSelected: Boolean,
     isLast: Boolean,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .background(
                 if (isSelected) OLX_DARK.copy(alpha = 0.07f)

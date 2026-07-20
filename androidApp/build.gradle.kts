@@ -87,6 +87,7 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     implementation(libs.compose.runtime)
     implementation(libs.compose.ui)
+    implementation(libs.compose.foundation)
     implementation(libs.compose.preview)
     debugImplementation(libs.compose.tooling)
 }

@@ -1,0 +1,42 @@
+appId: com.sirelon.sellsnap
+---
+# Reusable: fresh cold launch through onboarding + analytics consent, leaving the
+# app on the SellerLanding (login) screen. Fully test-id based (locale-independent).
+
+# Fresh state so onboarding + consent always show and no OLX session is persisted.
+- clearState
+- launchApp
+
+# Splash resolves asynchronously (VM loads the country store) — wait for onboarding.
+- extendedWaitUntil:
+    visible:
+      id: "onboarding_primary_button"
+    timeout: 20000
+
+# Advance the 3 onboarding pages (Next -> Next -> Let's go). A loop (not a fixed
+# count) so a tap landing mid-animation cannot silently drop a page; it exits once
+# the button disappears (navigation to Consent).
+- repeat:
+    while:
+      visible:
+        id: "onboarding_primary_button"
+    commands:
+      - tapOn:
+          id: "onboarding_primary_button"
+      - waitForAnimationToEnd
+
+# Analytics consent prompt -> decline (either choice routes to SellerLanding).
+- extendedWaitUntil:
+    visible:
+      id: "consent_decline_button"
+    timeout: 10000
+- tapOn:
+    id: "consent_decline_button"
+
+# Landing (login) screen — button may sit below the fold in a vertical scroll.
+- scrollUntilVisible:
+    element:
+      id: "landing_continue_olx_button"
+    direction: DOWN
+- assertVisible:
+    id: "landing_continue_olx_button"

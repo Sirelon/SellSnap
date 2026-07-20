@@ -1,0 +1,36 @@
+appId: com.sirelon.sellsnap
+tags:
+  - login
+  - olx
+---
+# COUNTRY is supplied at runtime via -e COUNTRY=<code> (lowercase: pt/ro/pl/ua/bg).
+# NOTE: do NOT add a `COUNTRY` default to a flow-level `env:` block — a declared
+# env default shadows the -e override in Maestro, which silently pins the country.
+# scripts/maestro-login.sh always passes -e COUNTRY (defaulting to ua).
+# End-to-end: cold launch -> onboarding -> consent -> landing -> country picker ->
+# OLX web login (external browser) -> logged-in Home. All in-app steps use stable
+# test-ids, so the flow is locale-independent; only the OLX web page (Part D) is not.
+
+# 1. Cold launch through onboarding + consent to the landing (login) screen.
+- runFlow: subflows/launch_through_consent.yaml
+
+# 2. Start OLX auth and pick the target country (parameterized).
+- tapOn:
+    id: "landing_continue_olx_button"
+- extendedWaitUntil:
+    visible:
+      id: "country_row_${COUNTRY}"
+    timeout: 10000
+- tapOn:
+    id: "country_row_${COUNTRY}"
+- tapOn:
+    id: "country_picker_continue_button"
+
+# 3. Complete login on the OLX website (external Chrome Custom Tab).
+- runFlow: subflows/olx_web_login.yaml
+
+# 4. Assert we reached the logged-in Home (token exchange can take a moment).
+- extendedWaitUntil:
+    visible:
+      id: "home_root"
+    timeout: 45000
