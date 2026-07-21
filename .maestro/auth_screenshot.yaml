@@ -1,0 +1,16 @@
+appId: com.sirelon.sellsnap
+name: Auth Screen Screenshot
+tags:
+  - screenshot
+---
+- runFlow: subflows/launch_through_consent.yaml
+
+- runFlow:
+    when:
+      true: ${ORIENTATION == 'landscape'}
+    commands:
+      - setOrientation: LANDSCAPE_LEFT
+      - waitForAnimationToEnd
+
+- takeScreenshot:
+    path: "screenshots/${PLATFORM}/${COUNTRY}/auth"

@@ -1,0 +1,33 @@
+appId: com.sirelon.sellsnap
+---
+# Same as launch_through_consent but without clearState — used when the caller
+# has already done `pm clear` + locale setup externally before invoking Maestro.
+- launchApp
+
+- extendedWaitUntil:
+    visible:
+      id: "onboarding_primary_button"
+    timeout: 20000
+
+- repeat:
+    while:
+      visible:
+        id: "onboarding_primary_button"
+    commands:
+      - tapOn:
+          id: "onboarding_primary_button"
+      - waitForAnimationToEnd
+
+- extendedWaitUntil:
+    visible:
+      id: "consent_decline_button"
+    timeout: 10000
+- tapOn:
+    id: "consent_decline_button"
+
+- scrollUntilVisible:
+    element:
+      id: "landing_continue_olx_button"
+    direction: DOWN
+- assertVisible:
+    id: "landing_continue_olx_button"
