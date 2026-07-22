@@ -35,9 +35,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigationevent.NavigationEventInfo
@@ -200,6 +201,7 @@ private fun GenerateAdScreenContent(
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
+                .testTag("generate_ad_screen")
                 .consumeWindowInsets(padding)
                 .padding(horizontal = AppDimens.Spacing.xl3),
             contentPadding = padding,
@@ -246,6 +248,7 @@ private fun GenerateAdScreenContent(
                     value = state.prompt,
                     enabled = !state.isLoading,
                     onValueChange = onPromptChanged,
+                    modifier = Modifier.testTag("generate_ad_prompt"),
                 )
             }
         }

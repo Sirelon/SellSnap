@@ -17,6 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
@@ -48,7 +49,7 @@ fun CameraGalleryPicker(
             onClick = onCameraClick,
         )
         SourcePill(
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.weight(1f).testTag("generate_ad_gallery_button"),
             icon = Icons.Outlined.Image,
             label = stringResource(Res.string.source_gallery),
             enabled = enabled,

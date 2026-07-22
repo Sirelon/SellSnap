@@ -4,3 +4,4 @@
 flows:
   - login.yaml
   - guest.yaml
+  - generate_ad_with_photos.yaml
