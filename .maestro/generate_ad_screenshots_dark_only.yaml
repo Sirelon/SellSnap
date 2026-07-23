@@ -1,0 +1,38 @@
+appId: com.sirelon.sellsnap
+name: GenerateAd Screenshots (dark, no login)
+tags:
+  - screenshot
+  - photos
+---
+# Takes dark-mode GenerateAd screenshots WITHOUT clearing state or logging in.
+# Precondition: light-mode flow already ran — app is on GenerateAd screen with 3 photos
+# selected, scrolled to show the prompt section. Appearance has been switched to dark.
+# COUNTRY, PLATFORM, ORIENTATION, THEME required at runtime.
+
+- launchApp
+
+- runFlow:
+    when:
+      true: ${ORIENTATION == 'landscape'}
+    commands:
+      - setOrientation: LANDSCAPE_LEFT
+      - waitForAnimationToEnd
+
+# Scroll back to top so photos grid is visible
+- scrollUntilVisible:
+    element:
+      id: "generate_ad_photos_grid"
+    direction: UP
+    timeout: 10000
+
+- takeScreenshot:
+    path: "screenshots/${PLATFORM}/${COUNTRY}/generate_ad_top_${THEME}"
+
+- scrollUntilVisible:
+    element:
+      id: "generate_ad_prompt"
+    direction: DOWN
+    timeout: 10000
+
+- takeScreenshot:
+    path: "screenshots/${PLATFORM}/${COUNTRY}/generate_ad_bottom_${THEME}"

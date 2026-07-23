@@ -1,0 +1,57 @@
+appId: com.sirelon.sellsnap
+---
+# Selects 3 photos from the gallery picker one at a time.
+# Assumes the gallery already contains test photos — use maestro-add-media.sh
+# (or add_media.yaml) once before calling this subflow.
+# Ends after photos appear in the grid (screen scrolled to top, prompt not yet visible).
+- evalScript: ${output.counter = 0}
+- repeat:
+    times: 3
+    commands:
+      - tapOn:
+          id: "generate_ad_gallery_button"
+      - waitForAnimationToEnd:
+          timeout: 2000
+
+      - runFlow:
+          when:
+            platform: Android
+          commands:
+            - tapOn:
+                id: 'com.google.android.documentsui:id/thumbnail'
+                index: ${output.counter}
+                optional: true
+            - tapOn:
+                id: 'com.google.android.providers.media.module:id/icon_thumbnail'
+                index: ${output.counter}
+                optional: true
+            - tapOn:
+                text: "Add.*"
+                optional: true
+            - tapOn:
+                text: "Done"
+                optional: true
+
+      - runFlow:
+          when:
+            platform: iOS
+          commands:
+            - tapOn:
+                id: 'PXGGridLayout-Info'
+                index: ${output.counter}
+                optional: true
+            - tapOn:
+                text: 'Photo, .*'
+                index: ${output.counter}
+                optional: true
+            # "Add" is the locale-agnostic rid of the Done/Готово confirm button
+            - tapOn:
+                id: "Add"
+                optional: true
+
+      - evalScript: ${output.counter = output.counter + 1}
+
+- extendedWaitUntil:
+    visible:
+      id: "generate_ad_photos_grid"
+    timeout: 15000

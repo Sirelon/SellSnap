@@ -1,5 +1,14 @@
 appId: com.sirelon.sellsnap
 ---
+# iOS system sheet: "SellSnap wants to use www.olx.<tld> for authentication"
+# Appears on every fresh iOS login after clearState. Android: no such dialog.
+# Button text varies by locale — regex covers en/pt/ro/pl/bg/uk.
+- tapOn:
+    text: "(?i)^\\s*(continu.*|kontynuuj|продо.*|продъ.*)\\s*$"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 2000
+
 # =====================================================================
 # Login on the OLX website inside the Chrome Custom Tab.
 #
@@ -12,6 +21,13 @@ appId: com.sirelon.sellsnap
 # =====================================================================
 
 # --- Cookie consent: prefer stable widget ids, then per-locale accept text ---
+# Scroll to bottom first in case the accept button is below the fold (OLX.bg full-page GDPR consent).
+- scrollUntilVisible:
+    element:
+      text: "(?i)^\\s*(akceptuj wszystkie|akceptuj niezbędne|accept all|прийняти всі|aceitar tudo|acceptă tot.*|приеми.*|приемам.*)\\s*$"
+    direction: DOWN
+    timeout: 5000
+    optional: true
 - tapOn:
     id: "onetrust-accept-btn-handler"
     optional: true
@@ -19,10 +35,14 @@ appId: com.sirelon.sellsnap
     id: "didomi-notice-agree-button"
     optional: true
 - tapOn:
-    text: "(?i)^\\s*(akceptuj wszystkie|akceptuj niezbędne|accept all|прийняти всі|aceitar tudo|acceptă tot|приемам всички)\\s*$"
+    text: "(?i)^\\s*(akceptuj wszystkie|akceptuj niezbędne|accept all|прийняти всі|aceitar tudo|acceptă tot.*|приеми.*|приемам.*)\\s*$"
     optional: true
 
-# --- Login form — only if shown (skipped when Chrome already has an OLX session) ---
+# --- Login form — only if shown (skipped when OLX session already exists) ---
+# Wait for the page to fully render after cookie dismissal.
+- waitForAnimationToEnd:
+    timeout: 3000
+# Android Chrome Custom Tab: HTML ids exposed as resource-ids. Try both field names.
 - runFlow:
     when:
       visible: { id: "username" }
@@ -33,6 +53,116 @@ appId: com.sirelon.sellsnap
       - inputText: "${OLX_PASSWORD}"
       - hideKeyboard
       - tapOn: { id: "Login" }
+- runFlow:
+    when:
+      visible: { id: "email" }
+    commands:
+      - tapOn: { id: "email" }
+      - inputText: "${OLX_EMAIL}"
+      - tapOn: { id: "password" }
+      - inputText: "${OLX_PASSWORD}"
+      - hideKeyboard
+      - tapOn: { id: "Login" }
+# iOS ASWebAuthenticationSession: HTML ids not accessible; password inputs are
+# hidden from the accessibility tree. Form layouts observed in practice:
+#   - PT form: "Email" label + coordinate tap for password
+#   - RO form: "Adresa ta de e-mail" / "Parola" labels
+#   - BG form: "Тvoyat imejl" (Твоят имейл) / "Parola" (Парола) labels
+
+# RO-style form ("Adresa ta de e-mail" label) — iOS ASWebAuth, manual password entry.
+- runFlow:
+    when:
+      visible:
+        text: "(?i)^Adresa ta de e-mail$"
+    commands:
+      - tapOn:
+          below:
+            text: "(?i)^Adresa ta de e-mail$"
+      - waitForAnimationToEnd:
+          timeout: 500
+      - inputText: "${OLX_EMAIL}"
+      - pressKey: Tab
+      - waitForAnimationToEnd:
+          timeout: 500
+      # iOS: password field is type="password" — not in accessibility tree.
+      # User types password via Mac keyboard (hardware keyboard → iOS first responder).
+      # login.yaml's extendedWaitUntil:home_root (5 min) waits for the manual submit.
+
+# BG-style form — Cyrillic "Твоят имейл" label. Detected via COUNTRY env var because
+# Cyrillic in when:visible:text: causes a Maestro parser bug.
+# All steps optional: if form doesn't appear (session already valid), everything is a no-op.
+- runFlow:
+    when:
+      true: "${COUNTRY == 'bg'}"
+    commands:
+      - extendedWaitUntil:
+          visible:
+            text: "(?i)^Твоят имейл$"
+          timeout: 20000
+          optional: true
+      - tapOn:
+          below:
+            text: "(?i)^Твоят имейл$"
+          optional: true
+      - waitForAnimationToEnd:
+          timeout: 500
+      - inputText: "${OLX_EMAIL}"
+      - pressKey: Tab
+      - waitForAnimationToEnd:
+          timeout: 500
+
+# PL-style form — olx.pl login page. Detected via COUNTRY env var.
+# optional extendedWaitUntil + nested visibility guard so an existing session skips the form.
+- runFlow:
+    when:
+      true: "${COUNTRY == 'pl'}"
+    commands:
+      - extendedWaitUntil:
+          visible:
+            text: "(?i)(e-mail|email)"
+          timeout: 20000
+          optional: true
+      - runFlow:
+          when:
+            visible:
+              text: "(?i)(e-mail|email)"
+          commands:
+            - tapOn:
+                below:
+                  text: "(?i)(e-mail|email)"
+                optional: true
+            - waitForAnimationToEnd:
+                timeout: 500
+            - inputText: "${OLX_EMAIL}"
+            - pressKey: Tab
+            - waitForAnimationToEnd:
+                timeout: 500
+            # iOS: password field hidden from a11y — user types manually.
+
+# PT-style form ("Email" label) — iOS ASWebAuth, manual password entry.
+- runFlow:
+    when:
+      visible:
+        text: "(?i)^Email$"
+    commands:
+      - tapOn:
+          below:
+            text: "(?i)^Email$"
+      - waitForAnimationToEnd:
+          timeout: 500
+      - inputText: "${OLX_EMAIL}"
+      - pressKey: Tab
+      - waitForAnimationToEnd:
+          timeout: 500
+      # iOS: password field hidden from a11y — user types manually.
+
+# iOS system "Save password?" sheet — appears after a successful login form submit.
+# Tap "Not now" / locale variant to dismiss without saving.
+- tapOn:
+    text: "(?i)^\\s*(nu acum|not now|agora não|nie teraz|не сега|зараз ні)\\s*$"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 1000
 
 # --- OAuth authorize / grant-access. No id on the button, so match the localized
 #     "agree/authorize" label, anchored (^…$) so "Nie zgadzam się" / "don't allow"

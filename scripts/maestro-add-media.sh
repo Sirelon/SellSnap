@@ -17,12 +17,12 @@ ASSETS_DIR="$ROOT_DIR/.maestro/assets"
 if [[ $# -gt 0 ]]; then
   FILES=("$@")
 else
-  mapfile -t FILES < <(
-    find "$ASSETS_DIR" -maxdepth 1 -type f \
-      \( -iname "*.png" -o -iname "*.jpg" -o -iname "*.jpeg" \
-         -o -iname "*.gif" -o -iname "*.mp4" \) \
-      | sort
-  )
+  FILES=()
+  while IFS= read -r f; do
+    FILES+=("$f")
+  done < <(find "$ASSETS_DIR" -maxdepth 1 -type f \
+    \( -iname "*.png" -o -iname "*.jpg" -o -iname "*.jpeg" \
+       -o -iname "*.gif" -o -iname "*.mp4" \) | sort)
 fi
 
 if [[ ${#FILES[@]} -eq 0 ]]; then
@@ -55,9 +55,8 @@ name: Add Media to Device
 - addMedia:
 ${MEDIA_LIST}YAML
 
-DEVICE_ARGS=()
 if [[ -n "${DEVICE:-}" ]]; then
-  DEVICE_ARGS=(--device "$DEVICE")
+  exec maestro --device "$DEVICE" test "$TMPFLOW"
+else
+  exec maestro test "$TMPFLOW"
 fi
-
-exec maestro "${DEVICE_ARGS[@]}" test "$TMPFLOW"

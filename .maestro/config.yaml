@@ -5,3 +5,6 @@ flows:
   - login.yaml
   - guest.yaml
   - generate_ad_with_photos.yaml
+  - generate_ad_screenshots.yaml
+  - generate_ad_screenshots_android.yaml
+  - generate_ad_screenshots_dark_only.yaml
