@@ -2,14 +2,21 @@
 # Result/Analysing screenshots for all countries on an iOS simulator.
 # chmod +x scripts/maestro-generate-ad-result-screenshots-ios.sh
 #
-# No login required — runs with the currently logged-in session.
-# Requires: app built with screenshotMode = true (see ScreenshotMode.kt).
-# Requires: test photos already in gallery (added once per simulator boot).
+# Login strategy: mirrors maestro-generate-ad-screenshots-ios.sh.
+# Each country logs in fresh (clearState) via result_screenshots.yaml so
+# OpenAI generates content in the correct language.
+# iOS password fields are hidden from a11y — the script pre-fills the email,
+# focuses the password field, and waits for you to type the password on your
+# Mac keyboard (hardware keyboard → iOS first responder) and press Enter.
+# Dark mode reuses the live session (no second login) via result_screenshots_dark_only.yaml.
+#
+# Per-country email credentials: set OLX_EMAIL_PT, OLX_EMAIL_PL, OLX_EMAIL_BG
+# in .maestro/.env (or export them). Falls back to OLX_EMAIL if not set.
 #
 # Usage:
 #   ./scripts/maestro-generate-ad-result-screenshots-ios.sh
-#   UDID=<udid> PLATFORM=iphone ./scripts/maestro-generate-ad-result-screenshots-ios.sh
-#   COUNTRIES="bg" ./scripts/maestro-generate-ad-result-screenshots-ios.sh  (partial run)
+#   UDID=<udid> PLATFORM=iphone ./scripts/...
+#   COUNTRIES="bg" ./scripts/...  (partial run / retry)
 
 set -euo pipefail
 
@@ -22,7 +29,8 @@ fi
 
 UDID="${UDID:-C74C95D7-F29C-49D7-A281-E9D8DAAEDD59}"
 PLATFORM="${PLATFORM:-iphone}"
-FLOW=".maestro/result_screenshots.yaml"
+FLOW_FULL=".maestro/result_screenshots.yaml"
+FLOW_DARK=".maestro/result_screenshots_dark_only.yaml"
 
 # ro excluded — account suspended
 ALL_COUNTRIES=(
@@ -52,43 +60,65 @@ FAILED=()
 
 for entry in "${COUNTRY_ENTRIES[@]}"; do
   country="${entry%%|*}"
-  # lang/locale not used — no locale switching (stays logged in with current locale)
+  rest="${entry#*|}"
+  lang="${rest%%|*}"
+  locale="${rest##*|}"
+
+  # Resolve per-country email: OLX_EMAIL_PT / OLX_EMAIL_PL / OLX_EMAIL_BG → OLX_EMAIL
+  country_upper="${country^^}"
+  email_var="OLX_EMAIL_${country_upper}"
+  olx_email="${!email_var:-${OLX_EMAIL:-}}"
+  if [[ -z "$olx_email" ]]; then
+    echo "ERROR: neither ${email_var} nor OLX_EMAIL is set. Skipping $country."
+    FAILED+=("light/$country" "dark/$country")
+    continue
+  fi
 
   mkdir -p "screenshots/$PLATFORM/$country"
 
   echo ""
   echo "════════════════════════════════════════"
-  echo "  Country: $country"
+  echo "  Country: $country  ($locale)"
   echo "════════════════════════════════════════"
 
-  # Light mode
+  xcrun simctl spawn "$UDID" defaults write -g AppleLanguages "(\"$lang\")" 2>/dev/null
+  xcrun simctl spawn "$UDID" defaults write -g AppleLocale "$locale" 2>/dev/null
   xcrun simctl ui "$UDID" appearance light
   sleep 1
+
+  echo ""
+  echo "  ▶ MANUAL LOGIN: The login form is opening now."
+  echo "    Email will be pre-filled with: $olx_email"
+  echo "    Click the Simulator window, type the password, and press Enter."
+  echo ""
 
   if maestro test --udid "$UDID" \
       -e COUNTRY="$country" \
       -e PLATFORM="$PLATFORM" \
       -e THEME="light" \
-      "$FLOW"; then
+      -e OLX_EMAIL="$olx_email" \
+      "$FLOW_FULL"; then
     echo "  ✓ light done"
-  else
-    echo "  ✗ light failed"
-    FAILED+=("light/$country")
-  fi
 
-  # Dark mode
-  xcrun simctl ui "$UDID" appearance dark
-  sleep 1
+    # Dark mode: reuse the logged-in session — no second login.
+    echo "  Switching to dark appearance..."
+    xcrun simctl ui "$UDID" appearance dark
+    sleep 1
 
-  if maestro test --udid "$UDID" \
-      -e COUNTRY="$country" \
-      -e PLATFORM="$PLATFORM" \
-      -e THEME="dark" \
-      "$FLOW"; then
-    echo "  ✓ dark done"
+    if maestro test --udid "$UDID" \
+        -e COUNTRY="$country" \
+        -e PLATFORM="$PLATFORM" \
+        -e THEME="dark" \
+        -e OLX_EMAIL="$olx_email" \
+        "$FLOW_DARK"; then
+      echo "  ✓ dark done"
+    else
+      echo "  ✗ dark failed"
+      FAILED+=("dark/$country")
+    fi
   else
-    echo "  ✗ dark failed"
-    FAILED+=("dark/$country")
+    echo "  ✗ light failed (login may have timed out)"
+    FAILED+=("light/$country" "dark/$country")
   fi
 done
 
