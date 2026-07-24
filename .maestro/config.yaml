@@ -8,3 +8,4 @@ flows:
   - generate_ad_screenshots.yaml
   - generate_ad_screenshots_android.yaml
   - generate_ad_screenshots_dark_only.yaml
+  - result_screenshots.yaml

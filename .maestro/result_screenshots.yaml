@@ -1,0 +1,113 @@
+appId: com.sirelon.sellsnap
+name: GenerateAd Result Screenshots (iOS)
+tags:
+  - screenshot
+  - result
+---
+# No clearState, no login — runs with the currently logged-in session.
+# Requires: app built with screenshotMode = true (see ScreenshotMode.kt in GenerateAdViewModel).
+# Requires: test photos already in gallery (run maestro-add-media.sh once per simulator boot).
+# COUNTRY, PLATFORM, THEME required at runtime.
+#
+# In screenshotMode, preview_ad_back_button navigates directly to GenerateAd (skips BackInfo sheet).
+
+- launchApp
+
+- extendedWaitUntil:
+    visible:
+      id: "home_root"
+    timeout: 15000
+
+# Start guard: if nav state was restored to PreviewAd from a previous run, navigate back to GenerateAd.
+- runFlow:
+    when:
+      visible:
+        id: "preview_ad_screen"
+    commands:
+      - tapOn:
+          id: "preview_ad_publish_confirm_dismiss"
+          optional: true
+      - waitForAnimationToEnd:
+          timeout: 1500
+      - tapOn:
+          id: "preview_ad_back_button"
+      - extendedWaitUntil:
+          visible:
+            id: "home_root"
+          timeout: 10000
+
+- runFlow: subflows/select_photos_no_add.yaml
+
+- tapOn:
+    id: "generate_ad_submit_button"
+
+- extendedWaitUntil:
+    visible:
+      id: "ai_processing_screen"
+    timeout: 10000
+
+# Analysing screen — initial state (early steps, upload just started)
+- takeScreenshot:
+    path: "screenshots/${PLATFORM}/${COUNTRY}/analysing_start_${THEME}"
+
+# Wait ~8 s to capture meaningful progress (real OpenAI takes 30-60 s total)
+- waitForAnimationToEnd:
+    timeout: 8000
+
+# Analysing screen — mid-progress state (more steps completed)
+- takeScreenshot:
+    path: "screenshots/${PLATFORM}/${COUNTRY}/analysing_progress_${THEME}"
+
+# Real OpenAI analysis can take up to 60 s
+- extendedWaitUntil:
+    visible:
+      id: "preview_ad_screen"
+    timeout: 90000
+
+# Give images time to load from the network before screenshotting
+- waitForAnimationToEnd:
+    timeout: 4000
+
+# Result screen — top (title/photos visible)
+- takeScreenshot:
+    path: "screenshots/${PLATFORM}/${COUNTRY}/result_top_${THEME}"
+
+# Swipe up to scroll the result content down so the bottom section is visible.
+# (preview_ad_publish_button is in the fixed bottomBar so scrollUntilVisible won't scroll.)
+- swipe:
+    direction: UP
+    duration: 1500
+- waitForAnimationToEnd:
+    timeout: 1000
+
+# Result screen — bottom (price, category, attributes, location visible)
+- takeScreenshot:
+    path: "screenshots/${PLATFORM}/${COUNTRY}/result_bottom_${THEME}"
+
+- tapOn:
+    id: "preview_ad_publish_button"
+
+- extendedWaitUntil:
+    visible:
+      id: "preview_ad_publish_confirm_sheet"
+    timeout: 10000
+
+# Result screen — publish confirm dialog
+- takeScreenshot:
+    path: "screenshots/${PLATFORM}/${COUNTRY}/result_publish_dialog_${THEME}"
+
+# Cleanup: dismiss dialog, then tap back button — in screenshotMode this navigates
+# directly to GenerateAd (skips BackInfo sheet).
+- tapOn:
+    id: "preview_ad_publish_confirm_dismiss"
+
+- waitForAnimationToEnd:
+    timeout: 1500
+
+- tapOn:
+    id: "preview_ad_back_button"
+
+- extendedWaitUntil:
+    visible:
+      id: "home_root"
+    timeout: 10000

@@ -26,8 +26,10 @@ import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.Card
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -52,6 +54,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -94,6 +97,7 @@ import com.sirelon.sellsnap.features.media.PermissionDialogs
 import com.sirelon.sellsnap.features.media.rememberPermissionController
 import com.sirelon.sellsnap.features.seller.ad.AdvertisementWithAttributes
 import com.sirelon.sellsnap.features.seller.ad.formatFriendlyElapsedTime
+import com.sirelon.sellsnap.features.seller.ad.screenshotMode
 import com.sirelon.sellsnap.features.seller.ad.preview_ad.PreviewAdContract.PreviewAdEvent
 import com.sirelon.sellsnap.features.seller.ad.preview_ad.PreviewAdContract.PreviewAdEvent.CategorySelected
 import com.sirelon.sellsnap.features.seller.ad.preview_ad.ui.PreviewBackInfoSheet
@@ -276,6 +280,10 @@ fun PreviewAdScreen(
                 PreviewAdContentRoute(
                     viewModel = viewModel,
                     snackbarHostState = snackbarHostState,
+                    onBack = {
+                        if (screenshotMode) onBackToGenerate()
+                        else navBackStack.add(PreviewAdDestination.BackInfo)
+                    },
                     onChangeCategoryClick = onChangeCategoryClick,
                     pendingCategory = pendingCategory,
                     onCategoryConsumed = onCategoryConsumed,
@@ -328,6 +336,7 @@ fun PreviewAdScreen(
 private fun PreviewAdContentRoute(
     viewModel: PreviewAdViewModel,
     snackbarHostState: SnackbarHostState,
+    onBack: () -> Unit,
     onChangeCategoryClick: () -> Unit,
     pendingCategory: OlxCategory?,
     onCategoryConsumed: () -> Unit,
@@ -401,7 +410,19 @@ private fun PreviewAdContentRoute(
     AppScaffold(
         modifier = Modifier
             .fillMaxSize()
+            .testTag("preview_ad_screen")
             .dismissKeyboardOnTapOutside(dismissKeyboard),
+        topBar = {
+            IconButton(
+                onClick = onBack,
+                modifier = Modifier.testTag("preview_ad_back_button"),
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.ArrowBack,
+                    contentDescription = null,
+                )
+            }
+        },
         snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
             Column(
@@ -423,7 +444,7 @@ private fun PreviewAdContentRoute(
                     )
                 } else if (state.isSessionResolved) {
                     AppButton(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().testTag("preview_ad_publish_button"),
                         style = if (isValid) AppButtonDefaults.success() else AppButtonDefaults.primary(),
                         text = if (isValid) {
                             stringResource(Res.string.publish_on_olx)
@@ -432,7 +453,7 @@ private fun PreviewAdContentRoute(
                         },
                         trailingIcon = painterResource(Res.drawable.ic_arrow_right),
                         onClick = {
-                            if (!isValid) {
+                            if (!isValid && !screenshotMode) {
                                 hapticFeedback.performErrorFeedback()
                                 showErrors = true
                                 val attributeCode = firstInvalidAttributeCode
@@ -456,6 +477,7 @@ private fun PreviewAdContentRoute(
             modifier = Modifier
                 .padding(paddingValues)
                 .consumeWindowInsets(paddingValues)
+                .testTag("preview_ad_scrollable_content")
                 .verticalScroll(scrollState)
                 .padding(bottom = AppDimens.Spacing.xl3),
             verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.xl3)
@@ -495,7 +517,9 @@ private fun PreviewAdContentRoute(
             )
             if (state.isSessionResolved && !state.isGuest) {
                 ValidationStatusCard(
-                    modifier = Modifier.padding(horizontal = AppDimens.Spacing.xl3),
+                    modifier = Modifier
+                        .padding(horizontal = AppDimens.Spacing.xl3)
+                        .testTag("preview_ad_validation_status"),
                     isValid = isValid,
                     errorCount = validationErrors.size,
                 )

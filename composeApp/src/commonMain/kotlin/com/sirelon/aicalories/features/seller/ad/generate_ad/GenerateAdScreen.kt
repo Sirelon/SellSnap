@@ -283,7 +283,7 @@ private fun MagicCtaBar(
     onAddPhotoClick: () -> Unit,
 ) {
     AppButton(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().testTag("generate_ad_submit_button"),
         style = AppButtonDefaults.magic(),
         text = if (hasPhotos)
             stringResource(Res.string.generate_with_ai)

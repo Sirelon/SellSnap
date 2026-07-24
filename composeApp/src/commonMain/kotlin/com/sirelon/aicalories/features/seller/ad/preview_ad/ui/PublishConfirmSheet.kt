@@ -15,6 +15,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import com.sirelon.sellsnap.designsystem.AppAsyncImage
@@ -41,6 +42,7 @@ fun PublishConfirmSheet(
     Column(
         modifier = Modifier
             .fillMaxWidth()
+            .testTag("preview_ad_publish_confirm_sheet")
             .padding(horizontal = AppDimens.Spacing.xl4)
             .padding(bottom = AppDimens.Spacing.xl5),
         verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.xl3),
@@ -91,7 +93,7 @@ fun PublishConfirmSheet(
             onClick = onConfirm,
         )
         AppButton(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().testTag("preview_ad_publish_confirm_dismiss"),
             style = AppButtonDefaults.secondary(),
             text = stringResource(Res.string.publish_confirm_back),
             onClick = onDismiss,
