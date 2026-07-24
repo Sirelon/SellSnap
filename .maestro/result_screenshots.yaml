@@ -58,11 +58,11 @@ tags:
 - takeScreenshot:
     path: "screenshots/${PLATFORM}/${COUNTRY}/analysing_progress_${THEME}"
 
-# Real OpenAI analysis can take up to 60 s
+# Real OpenAI analysis can take up to 120 s
 - extendedWaitUntil:
     visible:
       id: "preview_ad_screen"
-    timeout: 90000
+    timeout: 120000
 
 # Give images time to load from the network before screenshotting
 - waitForAnimationToEnd:
