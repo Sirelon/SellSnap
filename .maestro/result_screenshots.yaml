@@ -41,18 +41,37 @@ tags:
       id: "preview_ad_screen"
     timeout: 120000
 
-# Give images time to load from the network before screenshotting
+# Wait for a carousel image to actually be on screen. These are remote Supabase
+# URLs and the login's clearState wipes Coil's disk cache, so every run is a cold
+# fetch. `waitForAnimationToEnd` cannot work here — ImageShimmer runs an infinite
+# transition while loading, so the wait never settles and merely burns its timeout,
+# which is why result_top used to capture an empty gradient.
+# Optional so a failed image load degrades to the old behaviour instead of hanging.
+- extendedWaitUntil:
+    visible:
+      id: "async_image_loaded"
+    timeout: 30000
+    optional: true
 - waitForAnimationToEnd:
-    timeout: 4000
+    timeout: 1000
 
 # Result screen — top (title/photos visible)
 - takeScreenshot:
     path: "screenshots/${PLATFORM}/${COUNTRY}/result_top_${THEME}"
 
-# Swipe up to scroll the result content down so the bottom section is visible
-- swipe:
-    direction: UP
-    duration: 1500
+# Scroll to the last card (location) so the bottom section is visible. A blind
+# `swipe` silently no-ops when the gesture lands on a child that eats the drag —
+# that produced result_bottom files byte-identical to result_top.
+# 40 s, not 15 s: bg content is the tallest (extra delivery row + Cyrillic wrapping)
+# and 15 s at the default scroll speed expired just before the card came into view.
+# visibilityPercentage below 100 so the sticky publish CTA overlapping the card's
+# lower edge cannot block the match.
+- scrollUntilVisible:
+    element:
+      id: "preview_ad_location_card"
+    direction: DOWN
+    visibilityPercentage: 60
+    timeout: 40000
 - waitForAnimationToEnd:
     timeout: 1000
 

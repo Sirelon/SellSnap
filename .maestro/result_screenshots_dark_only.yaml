@@ -60,15 +60,26 @@ tags:
       id: "preview_ad_screen"
     timeout: 120000
 
+# See result_screenshots.yaml — waitForAnimationToEnd can't settle against the
+# shimmer's infinite transition, so wait on the image's own loaded state instead.
+- extendedWaitUntil:
+    visible:
+      id: "async_image_loaded"
+    timeout: 30000
+    optional: true
 - waitForAnimationToEnd:
-    timeout: 4000
+    timeout: 1000
 
 - takeScreenshot:
     path: "screenshots/${PLATFORM}/${COUNTRY}/result_top_${THEME}"
 
-- swipe:
-    direction: UP
-    duration: 1500
+# See result_screenshots.yaml for why 40 s / 60 % rather than 15 s / 100 %.
+- scrollUntilVisible:
+    element:
+      id: "preview_ad_location_card"
+    direction: DOWN
+    visibilityPercentage: 60
+    timeout: 40000
 - waitForAnimationToEnd:
     timeout: 1000
 

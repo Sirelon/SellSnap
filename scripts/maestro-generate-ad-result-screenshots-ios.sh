@@ -29,14 +29,18 @@ fi
 
 UDID="${UDID:-C74C95D7-F29C-49D7-A281-E9D8DAAEDD59}"
 PLATFORM="${PLATFORM:-iphone}"
+APP_ID="com.sirelon.sellsnap"
 FLOW_FULL=".maestro/result_screenshots.yaml"
 FLOW_DARK=".maestro/result_screenshots_dark_only.yaml"
 
+# code|AppleLanguages|AppleLocale|lat,lon
+# Coordinates are each country's capital, so the Location card resolves to a real
+# city via the OLX reverse-geocode instead of "couldn't find your location".
 # ro excluded — account suspended
 ALL_COUNTRIES=(
-  "pt|pt-PT|pt_PT"
-  "pl|pl|pl_PL"
-  "bg|bg|bg_BG"
+  "pt|pt-PT|pt_PT|38.7223,-9.1393"   # Lisbon
+  "pl|pl|pl_PL|52.2297,21.0122"      # Warsaw
+  "bg|bg|bg_BG|42.6977,23.3219"      # Sofia
 )
 
 # Allow overriding with COUNTRIES="bg pl" for partial runs
@@ -60,12 +64,15 @@ FAILED=()
 
 for entry in "${COUNTRY_ENTRIES[@]}"; do
   country="${entry%%|*}"
-  rest="${entry#*|}"
+  rest="${entry#*|}"            # lang|locale|coords
   lang="${rest%%|*}"
-  locale="${rest##*|}"
+  rest="${rest#*|}"             # locale|coords
+  locale="${rest%%|*}"
+  coords="${rest#*|}"
 
   # Resolve per-country email: OLX_EMAIL_PT / OLX_EMAIL_PL / OLX_EMAIL_BG → OLX_EMAIL
-  country_upper="${country^^}"
+  # `${country^^}` is bash 4+; macOS ships bash 3.2, so uppercase via tr.
+  country_upper="$(printf '%s' "$country" | tr '[:lower:]' '[:upper:]')"
   email_var="OLX_EMAIL_${country_upper}"
   olx_email="${!email_var:-${OLX_EMAIL:-}}"
   if [[ -z "$olx_email" ]]; then
@@ -78,11 +85,20 @@ for entry in "${COUNTRY_ENTRIES[@]}"; do
 
   echo ""
   echo "════════════════════════════════════════"
-  echo "  Country: $country  ($locale)"
+  echo "  Country: $country  ($locale)  location: $coords"
   echo "════════════════════════════════════════"
 
   xcrun simctl spawn "$UDID" defaults write -g AppleLanguages "(\"$lang\")" 2>/dev/null
   xcrun simctl spawn "$UDID" defaults write -g AppleLocale "$locale" 2>/dev/null
+
+  # Simulated capital-city fix + pre-granted permission. PreviewAdScreen's
+  # LocationPermissionsBlock auto-requests on composition and fetches on grant, so
+  # both are needed or the card falls back to "couldn't find your location".
+  # Granted via simctl rather than by tapping the system dialog to stay
+  # locale-independent — matching a localized button is what broke the auth sheet.
+  xcrun simctl location "$UDID" set "$coords"
+  xcrun simctl privacy "$UDID" grant location "$APP_ID" 2>/dev/null
+
   xcrun simctl ui "$UDID" appearance light
   sleep 1
 
@@ -97,6 +113,7 @@ for entry in "${COUNTRY_ENTRIES[@]}"; do
       -e PLATFORM="$PLATFORM" \
       -e THEME="light" \
       -e OLX_EMAIL="$olx_email" \
+      -e OLX_PASSWORD="${OLX_PASSWORD:-}" \
       "$FLOW_FULL"; then
     echo "  ✓ light done"
 
@@ -110,6 +127,7 @@ for entry in "${COUNTRY_ENTRIES[@]}"; do
         -e PLATFORM="$PLATFORM" \
         -e THEME="dark" \
         -e OLX_EMAIL="$olx_email" \
+      -e OLX_PASSWORD="${OLX_PASSWORD:-}" \
         "$FLOW_DARK"; then
       echo "  ✓ dark done"
     else
@@ -117,7 +135,7 @@ for entry in "${COUNTRY_ENTRIES[@]}"; do
       FAILED+=("dark/$country")
     fi
   else
-    echo "  ✗ light failed (login may have timed out)"
+    echo "  ✗ light failed — see the Maestro debug dir printed above for the failing step"
     FAILED+=("light/$country" "dark/$country")
   fi
 done

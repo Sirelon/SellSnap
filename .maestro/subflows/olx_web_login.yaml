@@ -2,9 +2,28 @@ appId: com.sirelon.sellsnap
 ---
 # iOS system sheet: "SellSnap wants to use www.olx.<tld> for authentication"
 # Appears on every fresh iOS login after clearState. Android: no such dialog.
-# Button text varies by locale — regex covers en/pt/ro/pl/bg/uk.
+# Button text varies by locale. Values below are read from the iOS runtime itself
+# (AuthenticationServices.framework/<lang>.lproj/Localizable.strings, key "Continue"),
+# NOT guessed: en=Continue pt=Continuar ro=Continuați pl=Dalej bg=Продължи
+# uk=Продовжити. Note pl is "Dalej", not "Kontynuuj" — that wrong guess is why the
+# PL login hung until the sheet's consent happened to be already granted.
+#
+# The sheet renders asynchronously after country_picker_continue_button, so WAIT
+# for it instead of tapping blind. Two bugs this avoids:
+#  1) A bare optional tap fires before the sheet exists, so the sheet is never
+#     dismissed and every later step fails against a blocked web view.
+#  2) The old `continu.*` alternative also matched the app's OWN country-picker
+#     button, "Continue · olx.pt" (OlxCountryPickerScreen.kt:191) — `.*` swallows
+#     the " · olx.pt" suffix — so the early tap re-tapped the app and reported
+#     COMPLETED, masking the miss. Alternatives are now exact words, never
+#     prefixes, so an app button with a " · domain" suffix cannot match.
+- extendedWaitUntil:
+    visible:
+      text: "(?i)^\\s*(continue|continuar|continuați|continuă|dalej|kontynuuj|продължи|продължаване|продовжити)\\s*$"
+    timeout: 15000
+    optional: true
 - tapOn:
-    text: "(?i)^\\s*(continu.*|kontynuuj|продо.*|продъ.*)\\s*$"
+    text: "(?i)^\\s*(continue|continuar|continuați|continuă|dalej|kontynuuj|продължи|продължаване|продовжити)\\s*$"
     optional: true
 - waitForAnimationToEnd:
     timeout: 2000

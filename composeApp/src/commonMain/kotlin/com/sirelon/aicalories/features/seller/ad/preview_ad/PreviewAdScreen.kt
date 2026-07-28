@@ -808,6 +808,7 @@ private fun PreviewAdContent(
             AdLocationCard(
                 location = state.location,
                 isLoading = state.locationLoading,
+                modifier = Modifier.testTag("preview_ad_location_card"),
                 onRefreshClick = {
                     locationPermissionController?.requestPermission {
                         onEvent(PreviewAdEvent.RefreshLocationClicked)
@@ -1010,9 +1011,10 @@ private fun PreviewSectionClickableCard(
     label: String,
     icon: Painter,
     content: @Composable () -> Unit,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    PreviewSectionCard(label = label, onClick = onClick) {
+    PreviewSectionCard(label = label, modifier = modifier, onClick = onClick) {
         Row(
             modifier = Modifier.fillMaxWidth()
                 .padding(horizontal = AppDimens.Spacing.xl3)
@@ -1107,9 +1109,11 @@ private fun AdLocationCard(
     location: OlxLocation?,
     isLoading: Boolean,
     onRefreshClick: () -> Unit = {},
+    modifier: Modifier = Modifier,
 ) {
     PreviewSectionClickableCard(
         label = stringResource(Res.string.ad_location_label),
+        modifier = modifier,
         onClick = onRefreshClick,
         icon = rememberVectorPainter(Icons.Default.LocationOn),
         content = {

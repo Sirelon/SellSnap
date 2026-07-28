@@ -17,8 +17,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.testTag
 import coil3.compose.AsyncImage
 import coil3.compose.AsyncImagePainter
+
+// Exposed only so screenshot flows can wait for a remote image to actually be on
+// screen. `waitForAnimationToEnd` cannot serve that purpose: ImageShimmer runs an
+// infinite transition while loading, so the wait never settles and just expires.
+const val AsyncImageLoadedTestTag = "async_image_loaded"
 
 @Composable
 fun AppAsyncImage(
@@ -26,16 +32,19 @@ fun AppAsyncImage(
     modifier: Modifier = Modifier,
 ) {
     var isLoading by remember(model) { mutableStateOf(true) }
+    var isLoaded by remember(model) { mutableStateOf(false) }
 
     Box {
         AsyncImage(
             model = model,
             contentDescription = null,
-            modifier = modifier,
+            // Tagged on Success only — an Error must not look like a rendered image.
+            modifier = if (isLoaded) modifier.testTag(AsyncImageLoadedTestTag) else modifier,
             contentScale = ContentScale.Crop,
             onState = { state ->
                 isLoading = state !is AsyncImagePainter.State.Success &&
                     state !is AsyncImagePainter.State.Error
+                isLoaded = state is AsyncImagePainter.State.Success
             },
         )
         if (isLoading) {
