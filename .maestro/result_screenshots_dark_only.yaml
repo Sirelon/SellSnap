@@ -36,7 +36,7 @@ tags:
             id: "home_root"
           timeout: 10000
 
-- runFlow: subflows/select_photos_no_add.yaml
+- runFlow: subflows/wait_for_photos.yaml
 
 - tapOn:
     id: "generate_ad_submit_button"

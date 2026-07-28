@@ -19,6 +19,16 @@ fi
 : "${OLX_EMAIL:?OLX_EMAIL is required}"
 : "${OLX_PASSWORD:?OLX_PASSWORD is required}"
 
+# Every photo flow depends on screenshotMode = true: GenerateAd then seeds the bundled
+# test photos itself instead of driving the OS picker. Checks source, so it cannot catch
+# "flipped but not rebuilt" — reinstall the app after changing it.
+SCREENSHOT_MODE_FILE="composeApp/src/commonMain/kotlin/com/sirelon/aicalories/features/seller/ad/ScreenshotMode.kt"
+if ! grep -q "screenshotMode = true" "$SCREENSHOT_MODE_FILE"; then
+  echo "ERROR: screenshotMode is false in $SCREENSHOT_MODE_FILE" >&2
+  echo "       Set it to true, rebuild + reinstall the app, then re-run." >&2
+  exit 1
+fi
+
 DEVICE="${DEVICE:-emulator-5554}"
 PLATFORM="${PLATFORM:-android-phone}"
 THEMES="${THEMES:-light dark}"
@@ -44,10 +54,6 @@ else
 fi
 # wm size handles landscape for tablet; no rotation needed in the flow
 ORIENTATION=portrait
-
-# Add test photos once — they survive pm clear (app data ≠ system gallery).
-echo "Adding test photos to device gallery..."
-./scripts/maestro-add-media.sh
 
 FAILED=()
 

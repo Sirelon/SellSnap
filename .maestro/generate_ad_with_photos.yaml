@@ -11,6 +11,12 @@ tags:
 # login -> home_root (GenerateAd is the default tab). Env vars flow through.
 - runFlow: login.yaml
 
-# Push 3 test photos into the gallery, select them via the picker,
-# confirm, and scroll to the bottom of the GenerateAd screen.
-- runFlow: subflows/attach_photos_from_gallery.yaml
+# GenerateAd seeds the 3 bundled test photos itself in screenshotMode — no picker.
+- runFlow: subflows/wait_for_photos.yaml
+
+# Scroll to the bottom of the GenerateAd screen.
+- scrollUntilVisible:
+    element:
+      id: "generate_ad_prompt"
+    direction: DOWN
+    timeout: 10000

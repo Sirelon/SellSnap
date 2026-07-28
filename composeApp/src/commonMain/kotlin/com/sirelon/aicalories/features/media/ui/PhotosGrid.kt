@@ -139,7 +139,10 @@ private fun RemovePhotoButton(
     onClick: () -> Unit,
 ) {
     Surface(
-        modifier = modifier.padding(AppDimens.Spacing.s),
+        // One of these exists per loaded photo, so screenshot flows use it as a
+        // locale-independent "all N photos are in the grid" signal (matched with an index).
+        // generate_ad_photos_grid only proves the container exists, not that it has content.
+        modifier = modifier.padding(AppDimens.Spacing.s).testTag("generate_ad_photo_remove"),
         onClick = onClick,
         enabled = enabled,
         shape = CircleShape,

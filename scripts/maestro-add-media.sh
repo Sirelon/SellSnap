@@ -1,12 +1,16 @@
 #!/usr/bin/env bash
-# Pushes images/videos into the device's photo gallery via Maestro addMedia.
+# Pushes images/videos into the device's photo gallery.
+#
+# For iOS simulators: uses `xcrun simctl addmedia` directly — faster and does not
+# require the Maestro XCTest driver (which can time out on iOS 26+).
+# For Android / unknown: falls back to Maestro's addMedia flow.
 #
 # Usage:
 #   ./scripts/maestro-add-media.sh                        # all files in .maestro/assets/
 #   ./scripts/maestro-add-media.sh path/to/a.jpg b.png    # explicit files
 #
 # Supported formats: png, jpg, jpeg, gif, mp4
-# DEVICE env var pins a specific device/emulator (optional).
+# DEVICE env var pins a specific iOS simulator UDID or Android serial (optional).
 
 set -euo pipefail
 
@@ -36,15 +40,24 @@ for f in "${FILES[@]}"; do
   echo "  $(basename "$f")"
 done
 
-# Build the addMedia entries (absolute paths work regardless of tmp file location).
-MEDIA_LIST=""
+# Resolve absolute paths.
+ABS_FILES=()
 for f in "${FILES[@]}"; do
-  # Resolve to absolute path.
-  abs="$(cd "$(dirname "$f")" && pwd)/$(basename "$f")"
+  ABS_FILES+=("$(cd "$(dirname "$f")" && pwd)/$(basename "$f")")
+done
+
+# iOS simulator: use simctl directly — no Maestro XCTest driver needed.
+# Detect by checking if DEVICE looks like a simulator UDID (8-4-4-4-12 hex).
+if [[ "${DEVICE:-}" =~ ^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}$ ]]; then
+  exec xcrun simctl addmedia "$DEVICE" "${ABS_FILES[@]}"
+fi
+
+# Android / default device: fall back to Maestro addMedia flow.
+MEDIA_LIST=""
+for abs in "${ABS_FILES[@]}"; do
   MEDIA_LIST+="    - \"${abs}\""$'\n'
 done
 
-# Write a temporary flow YAML.
 TMPFLOW="$(mktemp /tmp/maestro-add-media-XXXXXX.yaml)"
 trap 'rm -f "$TMPFLOW"' EXIT
 

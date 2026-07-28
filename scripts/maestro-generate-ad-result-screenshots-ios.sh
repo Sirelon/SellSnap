@@ -27,6 +27,16 @@ if [[ -f "$ENV_FILE" ]]; then
   set -a; source "$ENV_FILE"; set +a
 fi
 
+# Every photo flow depends on screenshotMode = true: GenerateAd then seeds the bundled
+# test photos itself instead of driving the OS picker. Checks source, so it cannot catch
+# "flipped but not rebuilt" — reinstall the app after changing it.
+SCREENSHOT_MODE_FILE="composeApp/src/commonMain/kotlin/com/sirelon/aicalories/features/seller/ad/ScreenshotMode.kt"
+if ! grep -q "screenshotMode = true" "$SCREENSHOT_MODE_FILE"; then
+  echo "ERROR: screenshotMode is false in $SCREENSHOT_MODE_FILE" >&2
+  echo "       Set it to true, rebuild + reinstall the app, then re-run." >&2
+  exit 1
+fi
+
 UDID="${UDID:-C74C95D7-F29C-49D7-A281-E9D8DAAEDD59}"
 PLATFORM="${PLATFORM:-iphone}"
 APP_ID="com.sirelon.sellsnap"
@@ -36,11 +46,11 @@ FLOW_DARK=".maestro/result_screenshots_dark_only.yaml"
 # code|AppleLanguages|AppleLocale|lat,lon
 # Coordinates are each country's capital, so the Location card resolves to a real
 # city via the OLX reverse-geocode instead of "couldn't find your location".
-# ro excluded — account suspended
 ALL_COUNTRIES=(
   "pt|pt-PT|pt_PT|38.7223,-9.1393"   # Lisbon
   "pl|pl|pl_PL|52.2297,21.0122"      # Warsaw
   "bg|bg|bg_BG|42.6977,23.3219"      # Sofia
+  "ro|ro|ro_RO|44.4268,26.1025"      # Bucharest
 )
 
 # Allow overriding with COUNTRIES="bg pl" for partial runs
@@ -55,10 +65,6 @@ if [[ -n "${COUNTRIES:-}" ]]; then
 else
   COUNTRY_ENTRIES=("${ALL_COUNTRIES[@]}")
 fi
-
-# Add test photos once — they persist across launchApp on iOS.
-echo "Adding test photos to simulator gallery..."
-DEVICE="$UDID" ./scripts/maestro-add-media.sh
 
 FAILED=()
 

@@ -28,17 +28,27 @@ fi
 : "${OLX_EMAIL:?OLX_EMAIL is required}"
 : "${OLX_PASSWORD:?OLX_PASSWORD is required}"
 
+# Every photo flow depends on screenshotMode = true: GenerateAd then seeds the bundled
+# test photos itself instead of driving the OS picker. Checks source, so it cannot catch
+# "flipped but not rebuilt" — reinstall the app after changing it.
+SCREENSHOT_MODE_FILE="composeApp/src/commonMain/kotlin/com/sirelon/aicalories/features/seller/ad/ScreenshotMode.kt"
+if ! grep -q "screenshotMode = true" "$SCREENSHOT_MODE_FILE"; then
+  echo "ERROR: screenshotMode is false in $SCREENSHOT_MODE_FILE" >&2
+  echo "       Set it to true, rebuild + reinstall the app, then re-run." >&2
+  exit 1
+fi
+
 UDID="${UDID:-C74C95D7-F29C-49D7-A281-E9D8DAAEDD59}"
 PLATFORM="${PLATFORM:-iphone}"
 ORIENTATION="${ORIENTATION:-portrait}"
 FLOW_FULL=".maestro/generate_ad_screenshots.yaml"
 FLOW_DARK=".maestro/generate_ad_screenshots_dark_only.yaml"
 
-# ro excluded — account suspended
 ALL_COUNTRIES=(
   "pt|pt-PT|pt_PT"
   "pl|pl|pl_PL"
   "bg|bg|bg_BG"
+  "ro|ro|ro_RO"
 )
 
 # Allow overriding with COUNTRIES="bg pl" for partial runs
@@ -53,10 +63,6 @@ if [[ -n "${COUNTRIES:-}" ]]; then
 else
   COUNTRY_ENTRIES=("${ALL_COUNTRIES[@]}")
 fi
-
-# Add test photos once — they persist across clearState on iOS.
-echo "Adding test photos to simulator gallery..."
-DEVICE="$UDID" ./scripts/maestro-add-media.sh
 
 FAILED=()
 

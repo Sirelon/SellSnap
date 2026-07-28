@@ -18,6 +18,8 @@ import com.sirelon.sellsnap.features.seller.ad.AdvertisementWithAttributes
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAuthRepository
 import com.sirelon.sellsnap.features.seller.auth.data.OlxCountryStore
 import com.sirelon.sellsnap.features.seller.auth.domain.SellerSessionMode
+import com.sirelon.sellsnap.features.seller.ad.loadScreenshotPhotos
+import com.sirelon.sellsnap.features.seller.ad.screenshotMode
 import com.sirelon.sellsnap.features.seller.categories.data.CategoriesRepository
 import com.sirelon.sellsnap.features.seller.openai.OpenAIClient
 import com.sirelon.sellsnap.generated.resources.Res
@@ -67,6 +69,24 @@ class GenerateAdViewModel(
             .distinctUntilChanged()
             .onEach { snapshot -> savedStateHandle[GenerateAdSavedStateKey] = json.encodeToString(snapshot) }
             .launchIn(viewModelScope)
+
+        if (screenshotMode) seedScreenshotPhotos()
+    }
+
+    /**
+     * Screenshot runs cannot reliably drive the OS photo picker (see ScreenshotPhotos.kt),
+     * so the bundled test photos are injected through the very same event the picker emits.
+     * Skipped when photos were already restored, so a process death does not duplicate them.
+     */
+    private fun seedScreenshotPhotos() {
+        viewModelScope.launch {
+            if (currentState().uploads.isNotEmpty()) return@launch
+            val files = loadScreenshotPhotos()
+            if (files.isEmpty()) return@launch
+            onFileResult(
+                GenerateAdContract.GenerateAdEvent.UploadFilesResult(result = Result.success(files)),
+            )
+        }
     }
 
     override fun onEvent(event: GenerateAdContract.GenerateAdEvent) {

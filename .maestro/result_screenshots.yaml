@@ -5,15 +5,15 @@ tags:
   - result
 ---
 # OLX_EMAIL, COUNTRY, PLATFORM, THEME required at runtime.
-# Requires: app built with screenshotMode = true (see ScreenshotMode.kt).
-# Requires: test photos already in gallery (run maestro-add-media.sh once per simulator boot).
-# In screenshotMode, preview_ad_back_button navigates directly to GenerateAd (skips BackInfo).
+# Requires: app built with screenshotMode = true (see ScreenshotMode.kt), which both seeds
+# the 3 bundled test photos into GenerateAd (no picker, no device gallery needed) and makes
+# preview_ad_back_button navigate directly back to GenerateAd (skips BackInfo).
 #
 # Login sets the correct market/locale so OpenAI generates content in the right language.
 
 - runFlow: login.yaml
 
-- runFlow: subflows/select_photos_no_add.yaml
+- runFlow: subflows/wait_for_photos.yaml
 
 - tapOn:
     id: "generate_ad_submit_button"

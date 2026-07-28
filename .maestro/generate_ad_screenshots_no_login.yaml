@@ -1,14 +1,15 @@
 appId: com.sirelon.sellsnap
-name: GenerateAd Screenshots (iOS)
+name: GenerateAd Screenshots (no login, reuse session)
 tags:
   - screenshot
-  - photos
 ---
-# OLX_EMAIL, OLX_PASSWORD, COUNTRY, PLATFORM, ORIENTATION, THEME required at runtime.
-# Requires screenshotMode = true — GenerateAd then seeds its own test photos, so the
-# device gallery does not need to be populated and no picker is driven.
+# Like generate_ad_screenshots.yaml but skips clearState/login.
+# Precondition: user is already logged in and app is on home_root.
+# COUNTRY, PLATFORM, ORIENTATION, THEME required at runtime.
+# Requires screenshotMode = true — GenerateAd seeds its own test photos, so this works
+# unchanged on iPhone, iPad and Android.
 
-- runFlow: login.yaml
+- launchApp
 
 - runFlow: subflows/wait_for_photos.yaml
 

@@ -280,6 +280,27 @@ Most features use some combination of:
 - JVM tests: `./gradlew jvmTest`
 - iOS simulator tests: `./gradlew iosSimulatorArm64Test`
 
+## UI Tests And Store Screenshots (Maestro)
+- Flows live in `.maestro/`; reusable pieces in `.maestro/subflows/`. Only top-level runnable
+  flows are listed in `.maestro/config.yaml`, so `maestro test .maestro/` does not try to run
+  the subflows standalone.
+- Runner scripts are in `scripts/maestro-*.sh`. They read credentials from `.maestro/.env`
+  (`OLX_EMAIL` / `OLX_PASSWORD`) and loop over countries, capturing light and dark per country.
+- **Photos are never picked through the OS picker.** With `screenshotMode = true`
+  (`features/seller/ad/ScreenshotMode.kt`), `GenerateAdViewModel` seeds the three bundled
+  photos from `composeResources/files/` on open, feeding them through the normal
+  prepare → persist → upload path. `PHPickerViewController` on iPad exposes nothing to the
+  accessibility tree, and Android needs different selectors per picker implementation, so
+  automating the picker is not viable. `subflows/wait_for_photos.yaml` just waits for them.
+- `screenshotMode` is committed as `false` and must be flipped to `true` **and the app
+  rebuilt/reinstalled** before a screenshot run; the scripts fail fast if the source says
+  `false`. Never commit it as `true` — it also bypasses the publish confirmation.
+- Prefer `testTag` ids over visible text in selectors: the flows run in 4+ locales. Android
+  exposes them as resource-ids via `testTagsAsResourceId` (set in `MainActivity`).
+- **Boot only one iOS simulator per run.** Maestro starts one driver per device and they
+  contend for the same port; the loser is silently ignored and hierarchy/screenshot calls
+  return the *other* device's data.
+
 ## Fast “Where Do I Edit?” Guide
 - Add app-level screen/navigation:
   - `navigation/AppDestination.kt`

@@ -6,7 +6,8 @@ tags:
 ---
 # clearState + locale are handled by the script before this flow runs.
 # OLX_EMAIL, OLX_PASSWORD, COUNTRY, PLATFORM, THEME required at runtime.
-# Test photos must be in the device gallery before this flow runs (see script).
+# Requires screenshotMode = true — GenerateAd then seeds its own test photos, so the
+# device gallery does not need to be populated and no picker is driven.
 
 # Login without clearState (script already cleared state and set locale)
 - runFlow: subflows/launch_through_consent_no_clear.yaml
@@ -26,7 +27,7 @@ tags:
       id: "home_root"
     timeout: 45000
 
-- runFlow: subflows/select_photos_no_add.yaml
+- runFlow: subflows/wait_for_photos.yaml
 
 # Top screenshot: photos grid visible
 - takeScreenshot:
