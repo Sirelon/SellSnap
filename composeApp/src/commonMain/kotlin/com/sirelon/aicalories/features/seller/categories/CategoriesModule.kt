@@ -12,6 +12,13 @@ import org.koin.dsl.module
 val categoriesModule = module {
     factoryOf(::AttributeValidator)
     factoryOf(::CategoriesMapper)
-    single { CategoriesRepository(get(), get(), get(applicationScopeQualifier)) }
+    single {
+        CategoriesRepository(
+            olxApiClient = get(),
+            mapper = get(),
+            scope = get(applicationScopeQualifier),
+            countryStore = get(),
+        )
+    }
     viewModelOf(::CategoryPickerViewModel)
 }

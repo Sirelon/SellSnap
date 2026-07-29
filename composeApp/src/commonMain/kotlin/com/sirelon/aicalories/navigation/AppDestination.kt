@@ -16,6 +16,9 @@ sealed interface AppDestination : NavKey {
     data object SellerOnboarding : AppDestination
 
     @Serializable
+    data object ConsentPrompt : AppDestination
+
+    @Serializable
     data object SellerLanding : AppDestination
 
     @Serializable
@@ -23,4 +26,7 @@ sealed interface AppDestination : NavKey {
 
     @Serializable
     data object DeleteAccountDataConfirm : AppDestination
+
+    @Serializable
+    data object OlxCountryPicker : AppDestination
 }

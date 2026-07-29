@@ -96,19 +96,19 @@ kotlin {
                 composeOptInAnnotations.forEach { optIn(it) }
             }
         }
-        val dataStoreMain by creating {
+        val dataStoreMain = create("dataStoreMain") {
             dependsOn(commonMain.get())
             dependencies {
                 implementation(libs.androidx.datastore.preferences)
             }
         }
-        val jsWasmMain by creating {
+        val jsWasmMain = create("jsWasmMain") {
             dependsOn(getByName("commonMain"))
             dependencies {
                 implementation(libs.ktor.client.js)
             }
         }
-        val iosMain by creating {
+        val iosMain = create("iosMain") {
             dependsOn(dataStoreMain)
         }
 

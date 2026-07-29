@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.sirelon.sellsnap.features.seller.ad.AdFlowTimerStore
 import com.sirelon.sellsnap.features.seller.auth.data.OlxApiClient
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAuthRepository
+import com.sirelon.sellsnap.features.seller.auth.data.OlxCountryStore
 import com.sirelon.sellsnap.features.seller.auth.domain.SellerSessionMode
 import com.sirelon.sellsnap.navigation.AppDestination
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,13 +18,18 @@ class AppNavigationViewModel(
     private val olxApiClient: OlxApiClient,
     private val startupStore: AppStartupStore,
     private val adFlowTimerStore: AdFlowTimerStore,
+    private val olxCountryStore: OlxCountryStore,
+    private val analyticsConsentRepository: AnalyticsConsentRepository,
 ) : ViewModel() {
 
     private val _backStack = MutableStateFlow<List<AppDestination>>(listOf(AppDestination.Splash))
     val backStack: StateFlow<List<AppDestination>> = _backStack.asStateFlow()
 
     init {
-        viewModelScope.launch { resolveStartupDestination() }
+        viewModelScope.launch {
+            olxCountryStore.loadFromStorage()
+            resolveStartupDestination()
+        }
     }
 
     fun navigateTo(destination: AppDestination) {
@@ -56,26 +62,62 @@ class AppNavigationViewModel(
         }
     }
 
-    private suspend fun resolveStartupDestination() {
-        val initial: AppDestination = if (!startupStore.hasSeenOnboarding()) {
-            startupStore.markOnboardingSeen()
-            AppDestination.SellerOnboarding
-        } else {
-            val session = authRepository.currentSession()
-            when (session.mode) {
-                SellerSessionMode.Authenticated -> runCatching {
-                    olxApiClient.getAuthenticatedUser()
-                    AppDestination.Seller
-                }
-                    .getOrElse {
-                        it.printStackTrace()
-                        AppDestination.SellerLanding
-                    }
-
-                SellerSessionMode.Guest -> AppDestination.Seller
-                SellerSessionMode.Unauthenticated -> AppDestination.SellerLanding
+    fun onOnboardingCompleted() {
+        viewModelScope.launch {
+            val next = if (analyticsConsentRepository.currentConsent() == AnalyticsConsent.Undecided) {
+                AppDestination.ConsentPrompt
+            } else {
+                sessionDestination()
             }
+            _backStack.value = listOf(next)
+        }
+    }
+
+    fun onConsentAllow() {
+        analyticsConsentRepository.setConsent(true)
+        viewModelScope.launch {
+            _backStack.value = listOf(sessionDestination())
+        }
+    }
+
+    fun onConsentDecline() {
+        analyticsConsentRepository.setConsent(false)
+        viewModelScope.launch {
+            _backStack.value = listOf(sessionDestination())
+        }
+    }
+
+    private suspend fun resolveStartupDestination() {
+        val initial: AppDestination = when {
+            !startupStore.hasSeenOnboarding() -> {
+                startupStore.markOnboardingSeen()
+                AppDestination.SellerOnboarding
+            }
+
+            analyticsConsentRepository.currentConsent() == AnalyticsConsent.Undecided ->
+                AppDestination.ConsentPrompt
+
+            else -> sessionDestination()
         }
         _backStack.value = listOf(initial)
+    }
+
+    private suspend fun sessionDestination(): AppDestination = runCatching {
+        val session = authRepository.currentSession()
+        when (session.mode) {
+            SellerSessionMode.Authenticated -> runCatching {
+                olxApiClient.getAuthenticatedUser()
+                AppDestination.Seller
+            }.getOrElse {
+                it.printStackTrace()
+                AppDestination.SellerLanding
+            }
+
+            SellerSessionMode.Guest -> AppDestination.Seller
+            SellerSessionMode.Unauthenticated -> AppDestination.SellerLanding
+        }
+    }.getOrElse {
+        it.printStackTrace()
+        AppDestination.SellerLanding
     }
 }

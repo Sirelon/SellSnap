@@ -11,6 +11,8 @@ import com.sirelon.sellsnap.generated.resources.error_location_fetch_failed
 import com.sirelon.sellsnap.generated.resources.error_olx_auth_complete_failed
 import com.sirelon.sellsnap.generated.resources.error_olx_auth_prepare_failed
 import com.sirelon.sellsnap.generated.resources.error_user_profile_fetch_failed
+import com.sirelon.sellsnap.startup.AnalyticsConsent
+import com.sirelon.sellsnap.startup.AnalyticsConsentRepository
 import com.sirelon.sellsnap.startup.AppThemeRepository
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -20,6 +22,7 @@ import org.jetbrains.compose.resources.getString
 class ProfileViewModel(
     private val accountRepository: SellerAccountRepository,
     private val themeRepository: AppThemeRepository,
+    private val analyticsConsentRepository: AnalyticsConsentRepository,
 ) : BaseViewModel<ProfileState, ProfileEvent, ProfileEffect>() {
 
     init {
@@ -41,6 +44,15 @@ class ProfileViewModel(
             }
             .launchIn(viewModelScope)
 
+        analyticsConsentRepository
+            .consent
+            .onEach { consent ->
+                setState {
+                    it.copy(analyticsConsentGranted = consent == AnalyticsConsent.Granted)
+                }
+            }
+            .launchIn(viewModelScope)
+
         refresh()
     }
 
@@ -53,6 +65,7 @@ class ProfileViewModel(
             ProfileEvent.ChangeLocationClicked -> updateLocation()
             ProfileEvent.RefreshClicked -> refresh()
             is ProfileEvent.ThemeModeSelected -> themeRepository.setThemeMode(event.themeMode)
+            is ProfileEvent.SetAnalyticsConsent -> analyticsConsentRepository.setConsent(event.enabled)
         }
     }
 

@@ -24,6 +24,7 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -35,6 +36,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -61,6 +63,7 @@ import com.sirelon.sellsnap.features.seller.location.OlxLocation
 import com.sirelon.sellsnap.features.seller.profile.presentation.ProfileContract
 import com.sirelon.sellsnap.features.seller.profile.presentation.ProfileContract.ProfileEvent
 import com.sirelon.sellsnap.features.seller.profile.presentation.ProfileViewModel
+import com.sirelon.sellsnap.legal.LegalLinks
 import com.sirelon.sellsnap.generated.resources.Res
 import com.sirelon.sellsnap.generated.resources.back
 import com.sirelon.sellsnap.generated.resources.change_button
@@ -92,6 +95,12 @@ import com.sirelon.sellsnap.generated.resources.profile_delete_account_data_canc
 import com.sirelon.sellsnap.generated.resources.profile_delete_account_data_confirm
 import com.sirelon.sellsnap.generated.resources.profile_delete_account_data_message
 import com.sirelon.sellsnap.generated.resources.profile_delete_account_data_title
+import com.sirelon.sellsnap.generated.resources.profile_analytics_consent_subtitle
+import com.sirelon.sellsnap.generated.resources.profile_analytics_consent_title
+import com.sirelon.sellsnap.generated.resources.profile_contact_data_request
+import com.sirelon.sellsnap.generated.resources.profile_privacy_data_title
+import com.sirelon.sellsnap.generated.resources.privacy_policy
+import com.sirelon.sellsnap.generated.resources.terms_of_service
 import com.sirelon.sellsnap.generated.resources.profile_location_subtitle
 import com.sirelon.sellsnap.generated.resources.profile_location_title
 import com.sirelon.sellsnap.generated.resources.profile_logout
@@ -122,6 +131,7 @@ fun ProfileScreenRoute(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val locationPermissionController = rememberPermissionController(permission = Permission.CoarseLocation)
+    val uriHandler = LocalUriHandler.current
 
     LaunchedEffect(viewModel) {
         OlxAuthCallbackBridge.callbacks.collect { callbackUrl ->
@@ -157,6 +167,9 @@ fun ProfileScreenRoute(
                 }
             },
             onDeleteAccountDataRequested = onDeleteAccountDataRequested,
+            onOpenPrivacy = { uriHandler.openUri(LegalLinks.PRIVACY_URL) },
+            onOpenTerms = { uriHandler.openUri(LegalLinks.TERMS_URL) },
+            onContactDataRequest = { uriHandler.openUri(LegalLinks.DATA_REQUEST_MAILTO) },
             reason = reason,
         )
     }
@@ -192,6 +205,9 @@ private fun ProfileScreen(
     onEvent: (ProfileEvent) -> Unit,
     onChangeLocation: () -> Unit,
     onDeleteAccountDataRequested: () -> Unit,
+    onOpenPrivacy: () -> Unit,
+    onOpenTerms: () -> Unit,
+    onContactDataRequest: () -> Unit,
     reason: String? = null,
 ) {
     AppScaffold(
@@ -247,7 +263,6 @@ private fun ProfileScreen(
                 AccountCard(
                     user = state.user,
                     onLogout = { onEvent(ProfileEvent.LogoutClicked) },
-                    onDeleteAccountData = onDeleteAccountDataRequested,
                 )
             }
 
@@ -262,6 +277,17 @@ private fun ProfileScreen(
                 onThemeModeSelected = { themeMode ->
                     onEvent(ProfileEvent.ThemeModeSelected(themeMode))
                 },
+            )
+
+            PrivacyAndDataCard(
+                analyticsConsentGranted = state.analyticsConsentGranted,
+                onToggleAnalytics = { enabled ->
+                    onEvent(ProfileEvent.SetAnalyticsConsent(enabled))
+                },
+                onOpenPrivacy = onOpenPrivacy,
+                onOpenTerms = onOpenTerms,
+                onContactDataRequest = onContactDataRequest,
+                onDeleteAccountData = onDeleteAccountDataRequested,
             )
 
             state.errorMessage?.let { message ->
@@ -310,7 +336,6 @@ private fun GuestCard(onLogin: () -> Unit) {
 private fun AccountCard(
     user: OlxUser,
     onLogout: () -> Unit,
-    onDeleteAccountData: () -> Unit,
 ) {
     AppCard(modifier = Modifier.fillMaxWidth()) {
         Column(
@@ -372,19 +397,6 @@ private fun AccountCard(
                     backgroundColor = AppTheme.colors.error,
                     contentColor = AppTheme.colors.onError,
                 ),
-            )
-
-            Cell(
-                headline = {
-                    Text(
-                        text = stringResource(Res.string.profile_delete_account_data),
-                        style = AppTheme.typography.body,
-                        color = AppTheme.colors.error,
-                    )
-                },
-                modifier = Modifier.fillMaxWidth(),
-                transparent = true,
-                onClick = onDeleteAccountData,
             )
         }
     }
@@ -500,6 +512,113 @@ private fun ThemeCard(
                     },
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun PrivacyAndDataCard(
+    analyticsConsentGranted: Boolean,
+    onToggleAnalytics: (Boolean) -> Unit,
+    onOpenPrivacy: () -> Unit,
+    onOpenTerms: () -> Unit,
+    onContactDataRequest: () -> Unit,
+    onDeleteAccountData: () -> Unit,
+) {
+    AppCard(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(vertical = AppDimens.Spacing.xl2),
+        ) {
+            Column(
+                modifier = Modifier.padding(
+                    horizontal = AppDimens.Spacing.xl5,
+                    vertical = AppDimens.Spacing.xl3,
+                ),
+                verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.xs),
+            ) {
+                Text(
+                    text = stringResource(Res.string.profile_privacy_data_title),
+                    style = AppTheme.typography.title,
+                    color = AppTheme.colors.onSurface,
+                )
+            }
+
+            Cell(
+                headline = {
+                    Text(
+                        text = stringResource(Res.string.profile_analytics_consent_title),
+                        style = AppTheme.typography.body,
+                        color = AppTheme.colors.onSurface,
+                    )
+                },
+                supporting = {
+                    Text(
+                        text = stringResource(Res.string.profile_analytics_consent_subtitle),
+                        style = AppTheme.typography.caption,
+                        color = AppTheme.colors.onSurfaceMuted,
+                    )
+                },
+                modifier = Modifier.fillMaxWidth(),
+                transparent = true,
+                trailing = {
+                    Switch(
+                        checked = analyticsConsentGranted,
+                        onCheckedChange = onToggleAnalytics,
+                    )
+                },
+            )
+
+            Cell(
+                headline = {
+                    Text(
+                        text = stringResource(Res.string.privacy_policy),
+                        style = AppTheme.typography.body,
+                        color = AppTheme.colors.onSurface,
+                    )
+                },
+                modifier = Modifier.fillMaxWidth(),
+                transparent = true,
+                onClick = onOpenPrivacy,
+            )
+
+            Cell(
+                headline = {
+                    Text(
+                        text = stringResource(Res.string.terms_of_service),
+                        style = AppTheme.typography.body,
+                        color = AppTheme.colors.onSurface,
+                    )
+                },
+                modifier = Modifier.fillMaxWidth(),
+                transparent = true,
+                onClick = onOpenTerms,
+            )
+
+            Cell(
+                headline = {
+                    Text(
+                        text = stringResource(Res.string.profile_contact_data_request),
+                        style = AppTheme.typography.body,
+                        color = AppTheme.colors.onSurface,
+                    )
+                },
+                modifier = Modifier.fillMaxWidth(),
+                transparent = true,
+                onClick = onContactDataRequest,
+            )
+
+            Cell(
+                headline = {
+                    Text(
+                        text = stringResource(Res.string.profile_delete_account_data),
+                        style = AppTheme.typography.body,
+                        color = AppTheme.colors.error,
+                    )
+                },
+                modifier = Modifier.fillMaxWidth(),
+                transparent = true,
+                onClick = onDeleteAccountData,
+            )
         }
     }
 }

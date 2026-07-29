@@ -14,5 +14,13 @@ val appStartupModule = module {
             applicationScope = get(named("applicationScope")),
         )
     }
+    single { AnalyticsConsentStore() }
+    single {
+        AnalyticsConsentRepository(
+            store = get(),
+            analytics = get(),
+            applicationScope = get(named("applicationScope")),
+        )
+    }
     viewModelOf(::AppNavigationViewModel)
 }

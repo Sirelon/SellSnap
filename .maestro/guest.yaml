@@ -1,0 +1,21 @@
+appId: com.sirelon.sellsnap
+tags:
+  - smoke
+  - guest
+---
+# Fully deterministic, 100% id-based smoke test: reach Home via guest mode (no OLX
+# browser, no credentials). Use this as the always-green baseline signal.
+
+- runFlow: subflows/launch_through_consent.yaml
+
+- scrollUntilVisible:
+    element:
+      id: "landing_continue_guest_button"
+    direction: DOWN
+- tapOn:
+    id: "landing_continue_guest_button"
+
+- extendedWaitUntil:
+    visible:
+      id: "home_root"
+    timeout: 30000

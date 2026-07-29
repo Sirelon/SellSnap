@@ -22,6 +22,9 @@ interface DraftMediaFileStore {
     fun restore(photo: DraftPhoto): KmpFile?
     fun stablePath(file: KmpFile): String?
     suspend fun delete(photos: List<DraftPhoto>)
+
+    /** Removes every persisted draft photo (used by the GDPR "delete my data" wipe). */
+    suspend fun deleteAll()
 }
 
 expect fun createDraftMediaFileStore(): DraftMediaFileStore

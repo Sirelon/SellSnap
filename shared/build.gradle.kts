@@ -51,14 +51,6 @@ val defaultPassword =
     resolveSecret("SUPABASE_DEFAULT_PASSWORD", "supabase.default.password")
         ?: "testMe"
 
-val olxClientId =
-    resolveSecret("OLX_CLIENT_ID", "olx.client.id")
-        ?: "olx-client-id"
-
-val olxClientSecret =
-    resolveSecret("OLX_CLIENT_SECRET", "olx.client.secret")
-        ?: "olx-client-secret"
-
 val olxScope =
     resolveSecret("OLX_SCOPE", "olx.scope")
         ?: "v2 read write"
@@ -72,7 +64,7 @@ val olxRedirectUri =
         ?: "selolxai://olx-auth/callback"
 
 kotlin {
-    androidLibrary {
+    android {
         namespace = "com.sirelon.sellsnap.shared"
         compileSdk = libs.versions.android.compileSdk.get().toInt()
         minSdk = libs.versions.android.minSdk.get().toInt()
@@ -106,10 +98,10 @@ kotlin {
                 sharedOptInAnnotations.forEach { optIn(it) }
             }
         }
-        val iosMain by creating {
+        val iosMain = create("iosMain") {
             dependsOn(getByName("commonMain"))
         }
-        val iosTest by creating {
+        val iosTest = create("iosTest") {
             dependsOn(getByName("commonTest"))
         }
         commonMain.dependencies {
@@ -146,8 +138,6 @@ buildkonfig {
         buildConfigField(STRING, "SUPABASE_KEY", supabaseKey)
         buildConfigField(STRING, "SUPABASE_DEFAULT_EMAIL", defaultEmail)
         buildConfigField(STRING, "SUPABASE_DEFAULT_PASSWORD", defaultPassword)
-        buildConfigField(STRING, "OLX_CLIENT_ID", olxClientId)
-        buildConfigField(STRING, "OLX_CLIENT_SECRET", olxClientSecret)
         buildConfigField(STRING, "OLX_SCOPE", olxScope)
         buildConfigField(STRING, "OLX_AUTH_BASE_URL", olxAuthBaseUrl)
         buildConfigField(STRING, "OLX_REDIRECT_URI", olxRedirectUri)

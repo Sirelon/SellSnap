@@ -9,6 +9,7 @@ private class NoopAnalytics : Analytics {
     override fun setUserProperty(name: String, value: String?) = Unit
     override fun recordException(throwable: Throwable, message: String?) = Unit
     override fun log(message: String) = Unit
+    override fun setCollectionEnabled(enabled: Boolean) = Unit
 }
 
 actual val analyticsModule: Module = module {

@@ -29,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -68,24 +69,15 @@ import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
-fun SellerLandingScreenRoute(openHome: () -> Unit) {
+fun SellerLandingScreenRoute(openHome: () -> Unit, openCountryPicker: () -> Unit) {
     val viewModel: SellerAuthViewModel = koinViewModel()
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val localUriHandler = LocalUriHandler.current
-    val authLauncher = rememberOlxAuthLauncher()
-
-    LaunchedEffect(viewModel) {
-        OlxAuthCallbackBridge.callbacks.collect { callbackUrl ->
-            viewModel.onCallbackReceived(callbackUrl)
-        }
-    }
 
     ObserveAsEvents(viewModel.effects) { effect ->
         when (effect) {
-            is SellerAuthContract.SellerAuthEffect.LaunchOlxAuthFlow -> {
-                authLauncher(effect.url)
-            }
+            SellerAuthContract.SellerAuthEffect.NavigateToCountryPicker -> openCountryPicker()
 
             is SellerAuthContract.SellerAuthEffect.ShowMessage -> {
                 snackbarHostState.showSnackbar(effect.message)
@@ -96,6 +88,7 @@ fun SellerLandingScreenRoute(openHome: () -> Unit) {
             }
 
             SellerAuthContract.SellerAuthEffect.OpenHome -> openHome()
+            else -> Unit
         }
     }
 
@@ -223,7 +216,7 @@ private fun ContinueAsGuestBlock(onContinueAsGuest: () -> Unit) {
         AppButton(
             text = stringResource(Res.string.continue_as_guest),
             onClick = onContinueAsGuest,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().testTag("landing_continue_guest_button"),
             style = AppButtonDefaults.outline(),
             leadingIcon = painterResource(Res.drawable.ic_user)
         )
@@ -258,7 +251,7 @@ private fun ContinueWithOlxBlock(onContinueWithOlx: () -> Unit) {
         AppButton(
             text = stringResource(Res.string.continue_with_olx),
             onClick = onContinueWithOlx,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().testTag("landing_continue_olx_button"),
             style = AppButtonStyle(
                 backgroundColor = AppTheme.colors.primary,
                 contentColor = AppTheme.colors.onPrimary,

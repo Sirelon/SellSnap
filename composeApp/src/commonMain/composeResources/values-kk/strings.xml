@@ -1,0 +1,268 @@
+<resources>
+    <!-- OnBoarding & Authentication -->
+    <string name="welcome_to_sellsnap">Сәлем, SellSnap-қа қош келдің 👋</string>
+    <string name="welcome_subtitle">Фото салдың — хабарландыру дайын. Жазуды AI өзі жасайды.</string>
+    <string name="why_connect_olx">OLX аккаунтын неге қосу керек?</string>
+    <string name="benefit_publish">OLX-ке тікелей жариялау — көшіріп-қою жоқ</string>
+    <string name="benefit_sync">Хабарландыруларың автоматты түрде синхрондалады</string>
+    <string name="benefit_manage">Барлық хабарландыру бір жерде</string>
+    <string name="continue_as_guest">Аккаунтсыз қолданып көру</string>
+    <string name="guest_description">Хабарландыруды жасап, мәтінді көшіруге болады — оны OLX-ке өзің қоюың керек болады.</string>
+    <string name="guest_mode_banner_title">Қонақ режимі</string>
+    <string name="guest_mode_banner_message">Жариялағың келе ме? OLX аккаунты қажет. Әзірге төмендегі тақырыпты, сипаттаманы және бағаны көшіріп, OLX-ке қой.</string>
+    <string name="guest_connect_olx_cta">Бір түртіп жариялау үшін OLX-ті қос</string>
+    <string name="guest_copy_hint">Тақырып, сипаттама және баға жанындағы көшіру түймелерін түрт — содан кейін дайын болғанда OLX-ке қой.</string>
+    <string name="continue_with_olx">OLX арқылы кіру</string>
+    <string name="terms_privacy_prefix">Жалғастыру арқылы сен біздің </string>
+    <string name="terms_of_service">Қызмет шарттарымен</string>
+    <string name="privacy_policy">Құпиялылық саясатымен</string>
+    <string name="keyboard_done_action">Дайын</string>
+    <string name="or_divider">немесе</string>
+
+    <!-- Onboarding Screen Steps -->
+    <string name="onboarding_step1_title">Түсіріп ал 📸</string>
+    <string name="onboarding_step1_subtitle">Нұқта, суретке түсір, бітті. Не сатқың келсе де — қалғанын біз жасаймыз.</string>
+    <string name="onboarding_step2_title">Мәтінді AI жазады ✍️</string>
+    <string name="onboarding_step2_subtitle">Тақырып, сипаттама және әділ баға — кофең суымай дайын болады.</string>
+    <string name="onboarding_step3_title">Бір түртіп жариялау 🚀</string>
+    <string name="onboarding_step3_subtitle">Бір түртсең — OLX-те тірісің. Сатып алушылар затыңды тапты.</string>
+
+    <!-- Generate Ad Screen -->
+    <string name="turn_stuff_into_olx_listings">Сатқың келетін нәрсе бар ма? Суретке түсір — хабарландыруды біз жасаймыз.</string>
+    <string name="snap_photo_ad_desc">Фото түсір. Сөзді AI өзі жасайды.</string>
+    <string name="sellsnap_title">SellSnap</string>
+    <string name="tips_for_better_photos">Фото кеңестері 📷</string>
+    <string name="tip_lighting">Жақсы жарық = жақсы нәтиже</string>
+    <string name="tip_angles">Бірнеше бұрыштан түсір</string>
+    <string name="tip_defects">Тырнақшаларды жасырма — сатып алушылар адалдықты бағалайды</string>
+    <string name="take_photo">Фото түсіру</string>
+
+    <!-- Preview Ad Screen -->
+    <string name="publish_on_olx">OLX-те жариялау</string>
+    <string name="publish_errors">Жариялау · %1$d түзету керек</string>
+    <string name="banner_ready_in">%1$s ішінде дайын — жариялаудан бұрын оқып шық.</string>
+    <string name="validation_all_valid">Тамаша — бәрі дайын ✨</string>
+    <string name="validation_fields_remaining">%1$d толтыру керек</string>
+    <string name="validation_error_title_too_short">Тақырып 10+ таңбадан тұруы керек</string>
+    <string name="validation_error_desc_too_short">Сипаттама 30+ таңбадан тұруы керек</string>
+    <string name="validation_error_no_category">Санатты таңда</string>
+    <string name="validation_error_no_location">Орынды қос</string>
+    <string name="validation_errors_more">…және тағы %1$d</string>
+    <string name="min_characters">Кемінде %1$d таңба болуы керек</string>
+    <string name="character_count_range">%1$d/%2$d</string>
+    <string name="change_button">Өзгерту</string>
+
+    <!-- Analyze Screen -->
+    <string name="bullet_item">• %1$s</string>
+
+    <!-- Photos Section -->
+    <string name="photos_count_format">%1$d/%2$d фото</string>
+    <string name="add_photo_cd">Фото қосу</string>
+    <string name="add_photo_label">Қосу</string>
+    <string name="remove_photo_cd">Фотоны жою</string>
+    <string name="source_camera">Камера</string>
+    <string name="source_gallery">Галерея</string>
+
+    <!-- OLX Auth Profile -->
+    <string name="profile_field_id">ID</string>
+    <string name="profile_field_name">Аты</string>
+    <string name="profile_field_email">Email</string>
+    <string name="profile_field_status">Мәртебе</string>
+    <string name="profile_field_phone">Телефон</string>
+    <string name="profile_field_business">Бизнес</string>
+    <string name="profile_field_created_at">Тіркелген күні</string>
+    <string name="profile_field_last_login_at">Соңғы кіру</string>
+    <string name="profile_screen_title">Профиль</string>
+    <string name="profile_guest_title">Қонақ профилі</string>
+    <string name="profile_guest_description">SellSnap арқылы жариялау үшін OLX-ті қос — аккаунт деректерің де осында пайда болады.</string>
+    <string name="profile_olx_account">OLX аккаунты</string>
+    <string name="profile_location_title">Сату орны</string>
+    <string name="profile_location_subtitle">Келесі хабарландыруларың үшін үнсіз келісім бойынша қолданылады.</string>
+    <string name="profile_theme_title">Тақырып</string>
+    <string name="profile_theme_subtitle">SellSnap осы құрылғыда қалай көрінетінін таңда.</string>
+    <string name="profile_theme_system">Жүйелік</string>
+    <string name="profile_theme_light">Ашық</string>
+    <string name="profile_theme_dark">Күңгірт</string>
+    <string name="profile_logout">Шығу</string>
+    <string name="profile_delete_account_data">SellSnap аккаунт деректерін жою</string>
+    <string name="profile_delete_account_data_title">SellSnap аккаунт деректерін жою керек пе?</string>
+    <string name="profile_delete_account_data_message">Бұл осы құрылғыдан сақталған OLX байланысын, жергілікті профиль кэшін, қонақ сессиясын және сату орнын жояды. OLX аккаунтың жойылмайды.</string>
+    <string name="profile_delete_account_data_confirm">Деректерді жою</string>
+    <string name="profile_delete_account_data_cancel">Болдырмау</string>
+    <string name="profile_not_provided">Орнатылмаған</string>
+    <string name="profile_value_yes">Иә</string>
+    <string name="profile_value_no">Жоқ</string>
+
+    <!-- My OLX Ads -->
+    <string name="nav_my_ads">Менің хабарландыруларым</string>
+    <string name="my_ads_screen_title">Менің OLX хабарландыруларым</string>
+    <string name="my_ads_screen_subtitle">OLX хабарландыруларың, бәрі бір жерде.</string>
+    <string name="my_ads_empty_title">Әзірге OLX хабарландыруы жоқ</string>
+    <string name="my_ads_empty_description">SellSnap-та алғашқы хабарландыруыңды жасап жариялағаннан кейін мұнда пайда болады.</string>
+    <string name="my_ads_create_listing">Жаңа хабарландыру</string>
+    <string name="my_ads_connect_title">Хабарландыруларыңды көру үшін OLX-ті қос</string>
+    <string name="my_ads_connect_description">Аккаунтты қосқаннан кейін жарияланған OLX хабарландыруларың осында пайда болады.</string>
+    <string name="my_ads_connect_action">OLX-ті қосу</string>
+    <string name="my_ads_load_more">Тағы жүктеу</string>
+    <string name="my_ads_created_at">Жасалған</string>
+    <string name="my_ads_valid_to">Дейін жарамды</string>
+    <string name="label_value_format">%1$s: %2$s</string>
+    <string name="my_ads_untitled">Атаусыз OLX хабарландыруы</string>
+    <string name="my_ads_price_not_set">Баға қойылмаған</string>
+    <string name="my_ads_missing_url">Әзірге сілтеме жоқ — OLX өңдеп жатыр.</string>
+    <string name="my_ads_load_failed">OLX хабарландыруларын жүктеу мүмкін болмады.</string>
+    <string name="my_ads_status_active">Белсенді</string>
+    <string name="my_ads_status_new">Қарастырылуда</string>
+    <string name="my_ads_status_limited">Шектеулі</string>
+    <string name="my_ads_status_removed_by_user">Жойылған</string>
+    <string name="my_ads_status_outdated">Мерзімі өткен</string>
+    <string name="my_ads_status_unconfirmed">Расталмаған</string>
+    <string name="my_ads_status_unpaid">Төленбеген</string>
+    <string name="my_ads_status_moderated">Модерацияда</string>
+    <string name="my_ads_status_blocked">Бұғатталған</string>
+    <string name="my_ads_status_disabled">Өшірілген</string>
+    <string name="my_ads_status_removed_by_moderator">Модератор жойған</string>
+    <string name="my_ads_status_unknown">Күтуде</string>
+
+    <!-- Navigation -->
+    <string name="back">Артқа</string>
+
+    <!-- Capacity Result Screen -->
+    <string name="retry">Қайталап көру</string>
+
+    <!-- Analyze Screen -->
+    <string name="add_photos_title">Фото қосу</string>
+
+    <!-- Generate Ad Screen -->
+    <string name="generate_with_ai">AI арқылы жасау</string>
+    <string name="add_photos_to_continue">Алдымен фото қос</string>
+    <string name="new_listing">Жаңа хабарландыру</string>
+    <string name="new_listing_subtitle">1–8 фото сал. Қалғанын біз жасаймыз.</string>
+    <string name="generic_error_retry">Бірдеңе дұрыс болмады. Қайталап көр.</string>
+    <string name="ai_hint_label">AI-ға нұсқау бер (міндетті емес)</string>
+    <string name="ai_hint_placeholder">мысалы, Nike Air Max 90, 42 өлшем, 2 ай киілген</string>
+    <string name="get_started">Бастайық</string>
+    <string name="next">Келесі</string>
+
+    <!-- AI Processing -->
+    <string name="ai_creating_ad_title">Хабарландыруың дайындалуда</string>
+    <string name="ai_analyzing_photo">Фотоларыңды зерттеп, тамаша тақырып, сипаттама және баға жазып жатырмыз…</string>
+    <string name="ai_step_uploading_photos">Фотолар жүктелуде</string>
+    <string name="ai_step_analyzing_image">Фотоларыңды қарастырып жатырмыз</string>
+    <string name="ai_step_preparing_guest_ad">Біріктіріп жатырмыз</string>
+    <string name="ai_step_generating_title">Тақырып жазылуда</string>
+    <string name="ai_step_writing_description">Сипаттама жазылуда</string>
+    <string name="ai_step_calculating_price">Әділ баға анықталуда</string>
+    <string name="ai_processing_status_in_progress">Жұмыс жасалуда…</string>
+    <string name="ai_processing_status_done">Дайын ✓</string>
+    <string name="ai_processing_tip_connect_olx_faster">Кеңес: OLX-ті қос — келесі хабарландырың 5 есе жылдам жарияланады.</string>
+    <string name="ai_processing_tip_good_lighting">Кеңес: жақсы жарық = AI нәтижесі жақсырақ болады.</string>
+    <string name="ai_processing_tip_capture_details">Кеңес: бөлшектер мен тозу іздерінің жақын суреттері жақсы мәтін жазуға көмектеседі.</string>
+    <string name="ai_processing_tip_keep_background_clean">Кеңес: таза фон затыңды ерекшелендіреді.</string>
+    <string name="ai_processing_tip_first_photo_matters">Кеңес: бірінші фото — сатудың 80%% -і. Ең жақсысын қой 📸</string>
+    <string name="ai_processing_tip_reply_fast">Кеңес: бір сағат ішінде жауап бер — сатып алушы сенікі болады.</string>
+    <string name="ai_processing_tip_honesty_sells">Кеңес: тырнақшаларды көрсет — сатып алушылар адалдықты бағалайды.</string>
+    <string name="ai_processing_tip_evening_post">Кеңес: кешкісін жарияла — сатып алушылар OLX-ті сол кезде шолады.</string>
+    <string name="ai_processing_tip_include_accessories">Кеңес: қорапты немесе зарядтағышты суретке қос — зат қымбатырақ көрінеді.</string>
+    <string name="ai_processing_tip_scale_reference">Кеңес: кадрға тиын сал — сатып алушылар өлшемді бірден түсінеді.</string>
+    <string name="ai_processing_tip_wipe_item">Кеңес: түсіруден бұрын затты сүрт — шаң камерада екі есе үлкен көрінеді.</string>
+    <string name="ai_processing_tip_daylight">Кеңес: терезе жанында түсір — күн жарығы кез келген шамнан жақсы 💡</string>
+
+    <!-- Permission Dialogs -->
+    <string name="camera_rationale_title">Камераны пайдалануға рұқсат ете аласың ба?</string>
+    <string name="camera_rationale_message">OLX хабарландырулары үшін заттарыңның фотосын түсіру керек. Жалғастыру үшін рұқсат бер.</string>
+    <string name="camera_settings_title">Параметрлерден камераны қос</string>
+    <string name="camera_settings_message_ios">Камера бұғатталған. Параметрлер → Құпиялылық → Камераға өт және SellSnap-ты қос.</string>
+    <string name="camera_settings_message_android">Камера бұғатталған. Қолданба параметрлерін ашып, SellSnap үшін қос.</string>
+    <string name="not_now">Кейінірек</string>
+    <string name="open_settings">Параметрлерді ашу</string>
+    <string name="cancel">Болдырмау</string>
+
+    <!-- Attributes -->
+    <string name="ad_attributes_label">Сипаттамалар</string>
+    <string name="attr_select_placeholder">Біреуін таңда…</string>
+    <string name="confirm">Растау</string>
+    <string name="error_attr_required">Бұл өріс міндетті</string>
+    <string name="error_attr_must_be_numeric">Тек сандар ғана</string>
+    <string name="error_attr_below_minimum">Минимум: %1$s</string>
+    <string name="error_attr_above_maximum">Максимум: %1$s</string>
+    <string name="error_attr_invalid_selection">Бұл нұсқа жұмыс істемейді</string>
+    <string name="error_attr_multiple_values_not_allowed">Тек біреуін таңда</string>
+
+    <!-- Preview Ad Screen -->
+    <string name="publish_confirm_title">Жариялауға дайынсың ба?</string>
+    <string name="publish_confirm_subtitle">Хабарландырың 1–2 минут ішінде OLX-те пайда болады.</string>
+    <string name="publish_confirm_yes">Иә, жариялау</string>
+    <string name="publish_confirm_back">Күте тұр, өңдейін</string>
+    <string name="preview_back_info_title">Бұл жобаны тастап кету керек пе?</string>
+    <string name="preview_back_info_message">Бұл хабарландыру әлі жарияланбаған. Кетсең, жоба жойылады — генерация экранынан қайта бастайсың.</string>
+    <string name="preview_back_info_stay">Өңдеуді жалғастыру</string>
+    <string name="preview_back_info_leave">Жобаны тастау</string>
+    <string name="publishing">Жариялануда…</string>
+    <string name="copy_pill_default">Көшіру</string>
+    <string name="copy_pill_copied">Көшірілді ✓</string>
+    <string name="error_pill_default">Қате</string>
+    <string name="ad_title_label">Тақырып</string>
+    <string name="ad_description_label">Сипаттама</string>
+    <string name="ad_your_price">Бағаң</string>
+    <string name="ad_price_ai_estimated_range">AI ұсынысы: %1$s – %2$s</string>
+    <string name="ad_category_label">Санат</string>
+    <string name="ad_location_label">Орын</string>
+    <string name="location_detecting">Орның анықталуда…</string>
+    <string name="location_not_available">Орнынды таба алмадық</string>
+    <string name="location_rationale_title">Орныңды білу керек</string>
+    <string name="location_rationale_message">Хабарландырың үшін жақын қаланы ұсыну мақсатында орныңа қысқаша қарауымыз керек.</string>
+    <string name="location_settings_title">Параметрлерден орынды қос</string>
+    <string name="location_settings_message_android">Орын бұғатталған. Қолданба параметрлерін ашып, SellSnap үшін қос.</string>
+    <string name="location_settings_message_ios">Орын бұғатталған. Параметрлер → Құпиялылық → Орын қызметтеріне өт және SellSnap-ты қос.</string>
+
+    <!-- Error Messages -->
+    <string name="error_location_fetch_failed">Орыныңды таба алмадық.</string>
+    <string name="error_publish_missing_category_or_location">Жарияладан бұрын санат пен орынды қос.</string>
+    <string name="error_publish_missing_contact_name">OLX профиліңде аты жоқ. Кіріп, атыңды қос — қайталап көреміз.</string>
+    <string name="error_category_suggestion_failed">Санатты ұсына алмадық.</string>
+    <string name="error_attributes_load_failed">Сипаттамаларды жүктеу мүмкін болмады.</string>
+    <string name="error_user_profile_fetch_failed">Профиліңді жүктеу мүмкін болмады.</string>
+    <string name="error_olx_auth_prepare_failed">OLX-ке кіруді бастау мүмкін болмады.</string>
+    <string name="error_olx_auth_complete_failed">OLX-ке кіруді аяқтау мүмкін болмады.</string>
+    <string name="error_selected_files_process_failed">Фотоларды жүктеу мүмкін болмады.</string>
+    <string name="error_upload_file_failed">Фотолардың бірін жүктеу мүмкін болмады.</string>
+    <string name="error_publish_failed">Жариялау сәтсіз аяқталды. Қайталап көр.</string>
+    <string name="error_generate_ad_failed">Хабарландыруды жасау мүмкін болмады. Қайталап көресің бе?</string>
+
+    <!-- Publish Success Screen -->
+    <string name="publish_success_title">Тірісің! 🎉</string>
+    <string name="publish_success_subtitle">Хабарландырың OLX-те жарияланды. Алғашқы қараулар 10–15 минут ішінде келеді.</string>
+    <string name="publish_success_subtitle_new">Модерацияға жіберілді — тез тексерілгеннен кейін жарияланады.</string>
+    <string name="publish_success_subtitle_limited">Хабарландыру дайын! Оны белсендіру үшін OLX пакеті қажет.</string>
+    <string name="publish_success_listing_url_label">Хабарландыру сілтемесі</string>
+    <string name="publish_success_status_label">Мәртебе</string>
+    <string name="publish_success_status_new">Қарастырылуда</string>
+    <string name="publish_success_status_new_caption">Модерациядан кейін жарияланады</string>
+    <string name="publish_success_status_limited">Шектеулі</string>
+    <string name="publish_success_status_limited_caption">Белсендіру үшін OLX-тен пакет ал</string>
+    <string name="publish_success_status_unknown">Күтуде</string>
+    <string name="publish_success_status_unknown_caption">OLX-те қара</string>
+    <string name="publish_success_total_time_label">Жалпы уақыт</string>
+    <string name="publish_success_total_time_caption">Суреттен жариялауға дейін</string>
+    <string name="publish_success_view_on_olx">OLX-те қарау</string>
+    <string name="publish_success_create_another">Басқа нәрсе сату</string>
+    <string name="time_unit_seconds">%1$dс</string>
+    <string name="time_unit_minutes_seconds">%1$dм %2$dс</string>
+    <string name="time_duration_seconds">%1$d %2$s</string>
+    <string name="time_duration_minutes">%1$d %2$s</string>
+    <string name="time_duration_minutes_seconds">%1$d %2$s және %3$d %4$s</string>
+    <string name="time_unit_second_one">секунд</string>
+    <string name="time_unit_second_other">секунд</string>
+    <string name="time_unit_minute_one">минут</string>
+    <string name="time_unit_minute_other">минут</string>
+
+    <!-- Category Picker Sheet -->
+    <string name="category_picker_search_placeholder">Санаттарды іздеу</string>
+    <string name="category_picker_all">Барлығы</string>
+    <string name="category_picker_reset">Қалпына келтіру</string>
+    <string name="category_picker_select">Осыны таңдау</string>
+    <string name="category_picker_select_with_name">Таңдау · %1$s</string>
+    <string name="category_picker_selected_label">ТАҢДАЛДЫ</string>
+    <string name="category_picker_select_label">ТАҢДАУ</string>
+</resources>

@@ -1,0 +1,47 @@
+appId: com.sirelon.sellsnap
+---
+# =====================================================================
+# Login on the OLX website inside the Chrome Custom Tab.
+#
+# The login FORM exposes stable HTML ids (username/password/Login) that
+# don't localize. The cookie dialogs (OneTrust / Didomi) expose stable
+# widget ids. The OAuth AUTHORIZE ("agree") button has NO id — it is
+# text-only and localized — so a small per-locale "agree" set is
+# unavoidable there (anchored so it never matches "don't agree").
+# Every page state that may or may not appear is guarded optional.
+# =====================================================================
+
+# --- Cookie consent: prefer stable widget ids, then per-locale accept text ---
+- tapOn:
+    id: "onetrust-accept-btn-handler"
+    optional: true
+- tapOn:
+    id: "didomi-notice-agree-button"
+    optional: true
+- tapOn:
+    text: "(?i)^\\s*(akceptuj wszystkie|akceptuj niezbędne|accept all|прийняти всі|aceitar tudo|acceptă tot|приемам всички)\\s*$"
+    optional: true
+
+# --- Login form — only if shown (skipped when Chrome already has an OLX session) ---
+- runFlow:
+    when:
+      visible: { id: "username" }
+    commands:
+      - tapOn: { id: "username" }
+      - inputText: "${OLX_EMAIL}"
+      - tapOn: { id: "password" }
+      - inputText: "${OLX_PASSWORD}"
+      - hideKeyboard
+      - tapOn: { id: "Login" }
+
+# --- OAuth authorize / grant-access. No id on the button, so match the localized
+#     "agree/authorize" label, anchored (^…$) so "Nie zgadzam się" / "don't allow"
+#     can never match. Optional in case OLX auto-redirects an already-granted app. ---
+- extendedWaitUntil:
+    visible:
+      text: "(?i)^\\s*(zgadzam si.|погоджу.*|дозвол.*|авториз.*|concordo|autoriz.*|permit.*|sunt de acord|съглас.*|разреш.*|agree|authorize|allow)\\s*$"
+    timeout: 20000
+    optional: true
+- tapOn:
+    text: "(?i)^\\s*(zgadzam si.|погоджу.*|дозвол.*|авториз.*|concordo|autoriz.*|permit.*|sunt de acord|съглас.*|разреш.*|agree|authorize|allow)\\s*$"
+    optional: true

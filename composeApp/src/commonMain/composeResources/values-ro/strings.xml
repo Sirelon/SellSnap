@@ -1,0 +1,268 @@
+<resources>
+    <!-- OnBoarding & Authentication -->
+    <string name="welcome_to_sellsnap">Bună, bine ai venit în SellSnap 👋</string>
+    <string name="welcome_subtitle">Fotografie intrată, anunț ieșit — AI face tastarea.</string>
+    <string name="why_connect_olx">De ce să conectezi contul OLX?</string>
+    <string name="benefit_publish">Publică direct pe OLX — fără copiat-lipit</string>
+    <string name="benefit_sync">Anunțurile tale rămân sincronizate, automat</string>
+    <string name="benefit_manage">Toate anunțurile într-un singur loc</string>
+    <string name="continue_as_guest">Încearcă fără cont</string>
+    <string name="guest_description">Poți crea anunțul și copia textul — va trebui doar să îl lipești singur în OLX.</string>
+    <string name="guest_mode_banner_title">Mod oaspete</string>
+    <string name="guest_mode_banner_message">Vrei să publici? Ai nevoie de un cont OLX. Deocamdată, copiază titlul, descrierea și prețul de mai jos și lipește-le în OLX.</string>
+    <string name="guest_connect_olx_cta">Conectează OLX pentru a posta dintr-o atingere</string>
+    <string name="guest_copy_hint">Atinge butoanele de copiere de lângă titlu, descriere și preț — apoi lipește-le în OLX când ești gata.</string>
+    <string name="continue_with_olx">Continuă cu OLX</string>
+    <string name="terms_privacy_prefix">Continuând, ești de acord cu </string>
+    <string name="terms_of_service">Termenii de serviciu</string>
+    <string name="privacy_policy">Politica de confidențialitate</string>
+    <string name="keyboard_done_action">Gata</string>
+    <string name="or_divider">sau</string>
+
+    <!-- Onboarding Screen Steps -->
+    <string name="onboarding_step1_title">Fotografiază 📸</string>
+    <string name="onboarding_step1_subtitle">Îndreaptă, fotografiază, gata. Orice vrei să vinzi — ne ocupăm noi de restul.</string>
+    <string name="onboarding_step2_title">AI scrie pentru tine ✍️</string>
+    <string name="onboarding_step2_subtitle">Un titlu, o descriere și un preț corect — gata înainte să se răcească cafeaua.</string>
+    <string name="onboarding_step3_title">Publică dintr-o atingere 🚀</string>
+    <string name="onboarding_step3_subtitle">O atingere și ești live pe OLX. Cumpărătorii, cunoașteți lucrurile.</string>
+
+    <!-- Generate Ad Screen -->
+    <string name="turn_stuff_into_olx_listings">Ai ceva de vândut? Fotografiază. Noi facem anunțul.</string>
+    <string name="snap_photo_ad_desc">Fă o fotografie. AI se ocupă de cuvinte.</string>
+    <string name="sellsnap_title">SellSnap</string>
+    <string name="tips_for_better_photos">Sfaturi foto 📷</string>
+    <string name="tip_lighting">Lumină bună = rezultate mai bune</string>
+    <string name="tip_angles">Fotografiază din mai multe unghiuri</string>
+    <string name="tip_defects">Nu ascunde zgârieturile — cumpărătorii apreciază sinceritatea</string>
+    <string name="take_photo">Fotografiază</string>
+
+    <!-- Preview Ad Screen -->
+    <string name="publish_on_olx">Publică pe OLX</string>
+    <string name="publish_errors">Publică · %1$d de corectat</string>
+    <string name="banner_ready_in">Gata în %1$s — citește-l înainte de a publica.</string>
+    <string name="validation_all_valid">Arată grozav — ești pregătit ✨</string>
+    <string name="validation_fields_remaining">%1$d de completat</string>
+    <string name="validation_error_title_too_short">Titlul trebuie să aibă cel puțin 10 caractere</string>
+    <string name="validation_error_desc_too_short">Descrierea trebuie să aibă cel puțin 30 de caractere</string>
+    <string name="validation_error_no_category">Alege o categorie</string>
+    <string name="validation_error_no_location">Adaugă o locație</string>
+    <string name="validation_errors_more">…și %1$d altele</string>
+    <string name="min_characters">Cel puțin %1$d caractere, te rugăm</string>
+    <string name="character_count_range">%1$d/%2$d</string>
+    <string name="change_button">Modifică</string>
+
+    <!-- Analyze Screen -->
+    <string name="bullet_item">• %1$s</string>
+
+    <!-- Photos Section -->
+    <string name="photos_count_format">%1$d/%2$d fotografii</string>
+    <string name="add_photo_cd">Adaugă fotografie</string>
+    <string name="add_photo_label">Adaugă</string>
+    <string name="remove_photo_cd">Elimină fotografie</string>
+    <string name="source_camera">Cameră</string>
+    <string name="source_gallery">Galerie</string>
+
+    <!-- OLX Auth Profile -->
+    <string name="profile_field_id">ID</string>
+    <string name="profile_field_name">Nume</string>
+    <string name="profile_field_email">Email</string>
+    <string name="profile_field_status">Status</string>
+    <string name="profile_field_phone">Telefon</string>
+    <string name="profile_field_business">Business</string>
+    <string name="profile_field_created_at">Creat la</string>
+    <string name="profile_field_last_login_at">Ultima autentificare</string>
+    <string name="profile_screen_title">Profil</string>
+    <string name="profile_guest_title">Profil oaspete</string>
+    <string name="profile_guest_description">Conectează OLX pentru a publica din SellSnap — detaliile contului tău vor apărea și ele aici.</string>
+    <string name="profile_olx_account">Cont OLX</string>
+    <string name="profile_location_title">Locație de vânzare</string>
+    <string name="profile_location_subtitle">O vom folosi ca locație implicită pentru următoarele anunțuri.</string>
+    <string name="profile_theme_title">Temă</string>
+    <string name="profile_theme_subtitle">Alege cum arată SellSnap pe acest dispozitiv.</string>
+    <string name="profile_theme_system">Sistem</string>
+    <string name="profile_theme_light">Luminoasă</string>
+    <string name="profile_theme_dark">Întunecată</string>
+    <string name="profile_logout">Deconectează-te</string>
+    <string name="profile_delete_account_data">Șterge datele contului SellSnap</string>
+    <string name="profile_delete_account_data_title">Ștergi datele contului SellSnap?</string>
+    <string name="profile_delete_account_data_message">Aceasta elimină conexiunea OLX salvată, memoria cache locală a profilului, sesiunea de oaspete și locația de vânzare de pe acest dispozitiv. Nu șterge contul tău OLX.</string>
+    <string name="profile_delete_account_data_confirm">Șterge datele</string>
+    <string name="profile_delete_account_data_cancel">Anulează</string>
+    <string name="profile_not_provided">Nesetat</string>
+    <string name="profile_value_yes">Da</string>
+    <string name="profile_value_no">Nu</string>
+
+    <!-- My OLX Ads -->
+    <string name="nav_my_ads">Anunțurile mele</string>
+    <string name="my_ads_screen_title">Anunțurile mele OLX</string>
+    <string name="my_ads_screen_subtitle">Toate anunțurile tale OLX, într-un singur loc.</string>
+    <string name="my_ads_empty_title">Niciun anunț OLX încă</string>
+    <string name="my_ads_empty_description">Creează primul anunț în SellSnap și va apărea aici după publicare.</string>
+    <string name="my_ads_create_listing">Anunț nou</string>
+    <string name="my_ads_connect_title">Conectează OLX pentru a-ți vedea anunțurile</string>
+    <string name="my_ads_connect_description">Anunțurile tale OLX publicate vor apărea aici după ce conectezi un cont.</string>
+    <string name="my_ads_connect_action">Conectează OLX</string>
+    <string name="my_ads_load_more">Încarcă mai multe</string>
+    <string name="my_ads_created_at">Creat</string>
+    <string name="my_ads_valid_to">Valabil până la</string>
+    <string name="label_value_format">%1$s: %2$s</string>
+    <string name="my_ads_untitled">Anunț OLX fără titlu</string>
+    <string name="my_ads_price_not_set">Prețul nu este setat</string>
+    <string name="my_ads_missing_url">Niciun link public încă — OLX îl procesează.</string>
+    <string name="my_ads_load_failed">Nu s-au putut încărca anunțurile OLX.</string>
+    <string name="my_ads_status_active">Activ</string>
+    <string name="my_ads_status_new">În curs de revizuire</string>
+    <string name="my_ads_status_limited">Limitat</string>
+    <string name="my_ads_status_removed_by_user">Eliminat</string>
+    <string name="my_ads_status_outdated">Expirat</string>
+    <string name="my_ads_status_unconfirmed">Neconfirmat</string>
+    <string name="my_ads_status_unpaid">Neplătit</string>
+    <string name="my_ads_status_moderated">Moderat</string>
+    <string name="my_ads_status_blocked">Blocat</string>
+    <string name="my_ads_status_disabled">Dezactivat</string>
+    <string name="my_ads_status_removed_by_moderator">Eliminat de moderator</string>
+    <string name="my_ads_status_unknown">În așteptare</string>
+
+    <!-- Navigation -->
+    <string name="back">Înapoi</string>
+
+    <!-- Capacity Result Screen -->
+    <string name="retry">Reîncearcă</string>
+
+    <!-- Analyze Screen -->
+    <string name="add_photos_title">Adaugă fotografii</string>
+
+    <!-- Generate Ad Screen -->
+    <string name="generate_with_ai">Generează cu AI</string>
+    <string name="add_photos_to_continue">Adaugă mai întâi o fotografie</string>
+    <string name="new_listing">Anunț nou</string>
+    <string name="new_listing_subtitle">Adaugă 1–8 fotografii. Noi ne ocupăm de restul.</string>
+    <string name="generic_error_retry">Ceva nu a funcționat. Încearcă din nou.</string>
+    <string name="ai_hint_label">Oferă AI un indiciu (opțional)</string>
+    <string name="ai_hint_placeholder">ex. Nike Air Max 90, mărimea 42, purtați 2 luni</string>
+    <string name="get_started">Să mergem</string>
+    <string name="next">Următorul</string>
+
+    <!-- AI Processing -->
+    <string name="ai_creating_ad_title">Pregătim anunțul tău</string>
+    <string name="ai_analyzing_photo">Analizăm fotografiile și scriem titlul, descrierea și prețul perfect…</string>
+    <string name="ai_step_uploading_photos">Se încarcă fotografiile</string>
+    <string name="ai_step_analyzing_image">Analizăm fotografiile</string>
+    <string name="ai_step_preparing_guest_ad">Punem totul laolaltă</string>
+    <string name="ai_step_generating_title">Creăm un titlu</string>
+    <string name="ai_step_writing_description">Scriem descrierea</string>
+    <string name="ai_step_calculating_price">Găsim un preț corect</string>
+    <string name="ai_processing_status_in_progress">Lucrăm la asta…</string>
+    <string name="ai_processing_status_done">Gata ✓</string>
+    <string name="ai_processing_tip_connect_olx_faster">Sfat pro: conectează OLX și următorul anunț va fi gata de 5× mai repede.</string>
+    <string name="ai_processing_tip_good_lighting">Sfat pro: lumina bună = rezultate AI mai clare.</string>
+    <string name="ai_processing_tip_capture_details">Sfat pro: detaliile în prim-plan și uzura ne ajută să scriem un text mai bun.</string>
+    <string name="ai_processing_tip_keep_background_clean">Sfat pro: un fundal curat face produsul să iasă în evidență.</string>
+    <string name="ai_processing_tip_first_photo_matters">Sfat pro: prima fotografie reprezintă 80%% din vânzare — fă-o pe cea mai bună 📸</string>
+    <string name="ai_processing_tip_reply_fast">Sfat pro: răspunde în decurs de o oră și cumpărătorul e al tău.</string>
+    <string name="ai_processing_tip_honesty_sells">Sfat pro: arată zgârieturile — cumpărătorii apreciază sinceritatea.</string>
+    <string name="ai_processing_tip_evening_post">Sfat pro: publică seara — atunci cumpărătorii răsfoiesc OLX.</string>
+    <string name="ai_processing_tip_include_accessories">Sfat pro: pune cutia sau încărcătorul în cadru — produsul pare mai valoros.</string>
+    <string name="ai_processing_tip_scale_reference">Sfat pro: pune o monedă în cadru — cumpărătorii înțeleg imediat dimensiunea.</string>
+    <string name="ai_processing_tip_wipe_item">Sfat pro: șterge produsul înainte de fotografiere — praful apare de două ori mai mare pe cameră.</string>
+    <string name="ai_processing_tip_daylight">Sfat pro: fotografiază lângă o fereastră — lumina naturală bate orice lampă 💡</string>
+
+    <!-- Permission Dialogs -->
+    <string name="camera_rationale_title">Putem folosi camera?</string>
+    <string name="camera_rationale_message">O folosim pentru a fotografia produsele tale pentru anunțurile OLX. Permite accesul pentru a continua.</string>
+    <string name="camera_settings_title">Activează camera în setări</string>
+    <string name="camera_settings_message_ios">Camera este blocată. Mergi la Setări → Confidențialitate → Cameră și activează SellSnap.</string>
+    <string name="camera_settings_message_android">Camera este blocată. Deschide setările aplicației și activează-o pentru SellSnap.</string>
+    <string name="not_now">Nu acum</string>
+    <string name="open_settings">Deschide setările</string>
+    <string name="cancel">Anulează</string>
+
+    <!-- Attributes -->
+    <string name="ad_attributes_label">Detalii</string>
+    <string name="attr_select_placeholder">Alege una…</string>
+    <string name="confirm">Confirmă</string>
+    <string name="error_attr_required">Avem nevoie de acesta</string>
+    <string name="error_attr_must_be_numeric">Doar cifre aici</string>
+    <string name="error_attr_below_minimum">Minimul este %1$s</string>
+    <string name="error_attr_above_maximum">Maximul este %1$s</string>
+    <string name="error_attr_invalid_selection">Acea opțiune nu funcționează</string>
+    <string name="error_attr_multiple_values_not_allowed">Doar una, te rugăm</string>
+
+    <!-- Preview Ad Screen -->
+    <string name="publish_confirm_title">Ești gata să publici?</string>
+    <string name="publish_confirm_subtitle">Anunțul tău va apărea pe OLX în 1–2 minute.</string>
+    <string name="publish_confirm_yes">Da, publică</string>
+    <string name="publish_confirm_back">Stai, vreau să editez</string>
+    <string name="preview_back_info_title">Renunți la acest ciornă?</string>
+    <string name="preview_back_info_message">Anunțul nu a fost publicat încă. Dacă pleci acum, ciorna va fi ștearsă — vei începe de la zero pe ecranul de generare.</string>
+    <string name="preview_back_info_stay">Continuă editarea</string>
+    <string name="preview_back_info_leave">Renunță la ciornă</string>
+    <string name="publishing">Se publică…</string>
+    <string name="copy_pill_default">Copiază</string>
+    <string name="copy_pill_copied">Copiat ✓</string>
+    <string name="error_pill_default">Eroare</string>
+    <string name="ad_title_label">Titlu</string>
+    <string name="ad_description_label">Descriere</string>
+    <string name="ad_your_price">Prețul tău</string>
+    <string name="ad_price_ai_estimated_range">AI sugerează: %1$s – %2$s</string>
+    <string name="ad_category_label">Categorie</string>
+    <string name="ad_location_label">Locație</string>
+    <string name="location_detecting">Te localizăm…</string>
+    <string name="location_not_available">Nu îți găsim locația</string>
+    <string name="location_rationale_title">Avem nevoie de locația ta</string>
+    <string name="location_rationale_message">Pentru a sugera cel mai apropiat oraș pentru anunțul tău, avem nevoie să îți accesăm locația.</string>
+    <string name="location_settings_title">Activează locația în setări</string>
+    <string name="location_settings_message_android">Locația este blocată. Deschide setările aplicației și activează-o pentru SellSnap.</string>
+    <string name="location_settings_message_ios">Locația este blocată. Mergi la Setări → Confidențialitate → Servicii de localizare și activează SellSnap.</string>
+
+    <!-- Error Messages -->
+    <string name="error_location_fetch_failed">Nu am putut găsi locația ta.</string>
+    <string name="error_publish_missing_category_or_location">Aproape gata — adaugă o categorie și o locație înainte de publicare.</string>
+    <string name="error_publish_missing_contact_name">Profilul tău OLX nu are un nume. Intră acolo, adaugă unul și vom reîncerca.</string>
+    <string name="error_category_suggestion_failed">Nu am putut sugera o categorie.</string>
+    <string name="error_attributes_load_failed">Nu s-au putut încărca detaliile.</string>
+    <string name="error_user_profile_fetch_failed">Nu s-a putut încărca profilul tău.</string>
+    <string name="error_olx_auth_prepare_failed">Nu s-a putut iniția autentificarea OLX.</string>
+    <string name="error_olx_auth_complete_failed">Nu s-a putut finaliza autentificarea în OLX.</string>
+    <string name="error_selected_files_process_failed">Nu s-au putut încărca fotografiile respective.</string>
+    <string name="error_upload_file_failed">Nu s-a putut încărca una dintre fotografii.</string>
+    <string name="error_publish_failed">Publicarea nu a reușit. Mai încearcă o dată.</string>
+    <string name="error_generate_ad_failed">Nu s-a putut genera anunțul. Încerci din nou?</string>
+
+    <!-- Publish Success Screen -->
+    <string name="publish_success_title">Ești live! 🎉</string>
+    <string name="publish_success_subtitle">Anunțul tău este pe OLX. Primele vizualizări ar trebui să apară în 10–15 minute.</string>
+    <string name="publish_success_subtitle_new">Trimis la moderare — anunțul tău va fi publicat după o revizuire rapidă.</string>
+    <string name="publish_success_subtitle_limited">Anunțul e gata! Vei avea nevoie de un pachet OLX pentru a-l activa.</string>
+    <string name="publish_success_listing_url_label">Link anunț</string>
+    <string name="publish_success_status_label">Status</string>
+    <string name="publish_success_status_new">În curs de revizuire</string>
+    <string name="publish_success_status_new_caption">Va fi publicat după moderare</string>
+    <string name="publish_success_status_limited">Limitat</string>
+    <string name="publish_success_status_limited_caption">Ia un pachet pe OLX pentru a-l activa</string>
+    <string name="publish_success_status_unknown">În așteptare</string>
+    <string name="publish_success_status_unknown_caption">Verifică-l pe OLX</string>
+    <string name="publish_success_total_time_label">Timp total</string>
+    <string name="publish_success_total_time_caption">De la fotografie la live</string>
+    <string name="publish_success_view_on_olx">Vezi pe OLX</string>
+    <string name="publish_success_create_another">Vinde altceva</string>
+    <string name="time_unit_seconds">%1$ds</string>
+    <string name="time_unit_minutes_seconds">%1$dm %2$ds</string>
+    <string name="time_duration_seconds">%1$d %2$s</string>
+    <string name="time_duration_minutes">%1$d %2$s</string>
+    <string name="time_duration_minutes_seconds">%1$d %2$s și %3$d %4$s</string>
+    <string name="time_unit_second_one">secundă</string>
+    <string name="time_unit_second_other">secunde</string>
+    <string name="time_unit_minute_one">minut</string>
+    <string name="time_unit_minute_other">minute</string>
+
+    <!-- Category Picker Sheet -->
+    <string name="category_picker_search_placeholder">Caută categorii</string>
+    <string name="category_picker_all">Toate</string>
+    <string name="category_picker_reset">Resetează</string>
+    <string name="category_picker_select">Alege aceasta</string>
+    <string name="category_picker_select_with_name">Alege · %1$s</string>
+    <string name="category_picker_selected_label">ALEASĂ</string>
+    <string name="category_picker_select_label">ALEGE</string>
+</resources>

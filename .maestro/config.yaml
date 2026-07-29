@@ -1,0 +1,6 @@
+# Maestro workspace config. Only top-level runnable flows are listed here so that
+# `maestro test .maestro/` does not try to run the reusable files under subflows/
+# as standalone flows. (appId is declared per-flow, not here.)
+flows:
+  - login.yaml
+  - guest.yaml

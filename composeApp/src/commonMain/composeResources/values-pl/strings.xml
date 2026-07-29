@@ -1,0 +1,268 @@
+<resources>
+    <!-- OnBoarding & Authentication -->
+    <string name="welcome_to_sellsnap">Hej, witaj w SellSnap 👋</string>
+    <string name="welcome_subtitle">Wrzuć zdjęcie, dostań ogłoszenie — AI robi resztę.</string>
+    <string name="why_connect_olx">Po co łączyć konto OLX?</string>
+    <string name="benefit_publish">Publikuj prosto na OLX — bez kopiowania</string>
+    <string name="benefit_sync">Twoje ogłoszenia synchronizują się same</string>
+    <string name="benefit_manage">Wszystkie reklamy w jednym miejscu</string>
+    <string name="continue_as_guest">Wypróbuj bez konta</string>
+    <string name="guest_description">Możesz stworzyć ogłoszenie i skopiować tekst — wystarczy wkleić go samodzielnie na OLX.</string>
+    <string name="guest_mode_banner_title">Tryb gościa</string>
+    <string name="guest_mode_banner_message">Chcesz opublikować? Potrzebujesz konta OLX. Na razie skopiuj tytuł, opis i cenę poniżej i wklej je na OLX.</string>
+    <string name="guest_connect_olx_cta">Połącz OLX, by publikować jednym kliknięciem</string>
+    <string name="guest_copy_hint">Kliknij przyciski kopiowania przy tytule, opisie i cenie — potem wklej je na OLX, kiedy będziesz gotowy.</string>
+    <string name="continue_with_olx">Kontynuuj z OLX</string>
+    <string name="terms_privacy_prefix">Kontynuując, akceptujesz nasze </string>
+    <string name="terms_of_service">Warunki korzystania</string>
+    <string name="privacy_policy">Politykę prywatności</string>
+    <string name="keyboard_done_action">Gotowe</string>
+    <string name="or_divider">lub</string>
+
+    <!-- Onboarding Screen Steps -->
+    <string name="onboarding_step1_title">Zrób zdjęcie 📸</string>
+    <string name="onboarding_step1_subtitle">Wyceluj, zrób zdjęcie, gotowe. Cokolwiek chcesz sprzedać — zajmiemy się resztą.</string>
+    <string name="onboarding_step2_title">AI pisze za ciebie ✍️</string>
+    <string name="onboarding_step2_subtitle">Tytuł, opis i uczciwa cena — gotowe, zanim kawa ostygnie.</string>
+    <string name="onboarding_step3_title">Opublikuj jednym kliknięciem 🚀</string>
+    <string name="onboarding_step3_subtitle">Jedno kliknięcie i jesteś na OLX. Kupujący, poznajcie swoje skarby.</string>
+
+    <!-- Generate Ad Screen -->
+    <string name="turn_stuff_into_olx_listings">Masz co sprzedać? Sfotografuj. My się tym zajmiemy.</string>
+    <string name="snap_photo_ad_desc">Zrób zdjęcie. AI zajmie się słowami.</string>
+    <string name="sellsnap_title">SellSnap</string>
+    <string name="tips_for_better_photos">Wskazówki foto 📷</string>
+    <string name="tip_lighting">Dobre światło = lepsze wyniki</string>
+    <string name="tip_angles">Fotografuj z kilku kątów</string>
+    <string name="tip_defects">Nie ukrywaj zarysowań — kupujący cenią szczerość</string>
+    <string name="take_photo">Zrób zdjęcie</string>
+
+    <!-- Preview Ad Screen -->
+    <string name="publish_on_olx">Opublikuj na OLX</string>
+    <string name="publish_errors">Publikuj · %1$d do poprawki</string>
+    <string name="banner_ready_in">Gotowe w %1$s — przejrzyj przed publikacją.</string>
+    <string name="validation_all_valid">Świetnie — wszystko gotowe ✨</string>
+    <string name="validation_fields_remaining">%1$d do uzupełnienia</string>
+    <string name="validation_error_title_too_short">Tytuł musi mieć co najmniej 10 znaków</string>
+    <string name="validation_error_desc_too_short">Opis musi mieć co najmniej 30 znaków</string>
+    <string name="validation_error_no_category">Wybierz kategorię</string>
+    <string name="validation_error_no_location">Dodaj lokalizację</string>
+    <string name="validation_errors_more">…i %1$d więcej</string>
+    <string name="min_characters">Minimum %1$d znaków</string>
+    <string name="character_count_range">%1$d/%2$d</string>
+    <string name="change_button">Zmień</string>
+
+    <!-- Analyze Screen -->
+    <string name="bullet_item">• %1$s</string>
+
+    <!-- Photos Section -->
+    <string name="photos_count_format">%1$d/%2$d zdjęć</string>
+    <string name="add_photo_cd">Dodaj zdjęcie</string>
+    <string name="add_photo_label">Dodaj</string>
+    <string name="remove_photo_cd">Usuń zdjęcie</string>
+    <string name="source_camera">Aparat</string>
+    <string name="source_gallery">Galeria</string>
+
+    <!-- OLX Auth Profile -->
+    <string name="profile_field_id">ID</string>
+    <string name="profile_field_name">Imię</string>
+    <string name="profile_field_email">E-mail</string>
+    <string name="profile_field_status">Status</string>
+    <string name="profile_field_phone">Telefon</string>
+    <string name="profile_field_business">Firma</string>
+    <string name="profile_field_created_at">Data założenia</string>
+    <string name="profile_field_last_login_at">Ostatnie logowanie</string>
+    <string name="profile_screen_title">Profil</string>
+    <string name="profile_guest_title">Profil gościa</string>
+    <string name="profile_guest_description">Połącz OLX, by publikować z SellSnap — Twoje dane konta pojawią się tutaj.</string>
+    <string name="profile_olx_account">Konto OLX</string>
+    <string name="profile_location_title">Lokalizacja sprzedaży</string>
+    <string name="profile_location_subtitle">Użyjemy jej jako domyślnego miejsca dla Twoich kolejnych ogłoszeń.</string>
+    <string name="profile_theme_title">Motyw</string>
+    <string name="profile_theme_subtitle">Wybierz, jak SellSnap wygląda na tym urządzeniu.</string>
+    <string name="profile_theme_system">Systemowy</string>
+    <string name="profile_theme_light">Jasny</string>
+    <string name="profile_theme_dark">Ciemny</string>
+    <string name="profile_logout">Wyloguj się</string>
+    <string name="profile_delete_account_data">Usuń dane konta SellSnap</string>
+    <string name="profile_delete_account_data_title">Usunąć dane konta SellSnap?</string>
+    <string name="profile_delete_account_data_message">Usuwa to zapisane połączenie z OLX, lokalną pamięć podręczną profilu, sesję gościa i lokalizację sprzedaży z tego urządzenia. Nie usuwa Twojego konta OLX.</string>
+    <string name="profile_delete_account_data_confirm">Usuń dane</string>
+    <string name="profile_delete_account_data_cancel">Anuluj</string>
+    <string name="profile_not_provided">Nie ustawiono</string>
+    <string name="profile_value_yes">Tak</string>
+    <string name="profile_value_no">Nie</string>
+
+    <!-- My OLX Ads -->
+    <string name="nav_my_ads">Moje ogłoszenia</string>
+    <string name="my_ads_screen_title">Moje ogłoszenia OLX</string>
+    <string name="my_ads_screen_subtitle">Twoje ogłoszenia OLX, wszystkie w jednym miejscu.</string>
+    <string name="my_ads_empty_title">Brak ogłoszeń OLX</string>
+    <string name="my_ads_empty_description">Utwórz swoje pierwsze ogłoszenie w SellSnap, a pojawi się tu po publikacji.</string>
+    <string name="my_ads_create_listing">Nowe ogłoszenie</string>
+    <string name="my_ads_connect_title">Połącz OLX, by zobaczyć swoje ogłoszenia</string>
+    <string name="my_ads_connect_description">Twoje opublikowane ogłoszenia OLX pojawią się tutaj po połączeniu konta.</string>
+    <string name="my_ads_connect_action">Połącz OLX</string>
+    <string name="my_ads_load_more">Załaduj więcej</string>
+    <string name="my_ads_created_at">Utworzono</string>
+    <string name="my_ads_valid_to">Ważne do</string>
+    <string name="label_value_format">%1$s: %2$s</string>
+    <string name="my_ads_untitled">Ogłoszenie OLX bez tytułu</string>
+    <string name="my_ads_price_not_set">Cena nie ustawiona</string>
+    <string name="my_ads_missing_url">Brak publicznego linku — OLX wciąż przetwarza ogłoszenie.</string>
+    <string name="my_ads_load_failed">Nie udało się załadować ogłoszeń OLX.</string>
+    <string name="my_ads_status_active">Aktywne</string>
+    <string name="my_ads_status_new">W trakcie weryfikacji</string>
+    <string name="my_ads_status_limited">Ograniczone</string>
+    <string name="my_ads_status_removed_by_user">Usunięte</string>
+    <string name="my_ads_status_outdated">Wygasłe</string>
+    <string name="my_ads_status_unconfirmed">Niepotwierdzone</string>
+    <string name="my_ads_status_unpaid">Nieopłacone</string>
+    <string name="my_ads_status_moderated">Moderowane</string>
+    <string name="my_ads_status_blocked">Zablokowane</string>
+    <string name="my_ads_status_disabled">Wyłączone</string>
+    <string name="my_ads_status_removed_by_moderator">Usunięte przez moderatora</string>
+    <string name="my_ads_status_unknown">Oczekujące</string>
+
+    <!-- Navigation -->
+    <string name="back">Wstecz</string>
+
+    <!-- Capacity Result Screen -->
+    <string name="retry">Spróbuj ponownie</string>
+
+    <!-- Analyze Screen -->
+    <string name="add_photos_title">Dodaj zdjęcia</string>
+
+    <!-- Generate Ad Screen -->
+    <string name="generate_with_ai">Generuj z AI</string>
+    <string name="add_photos_to_continue">Najpierw dodaj zdjęcie</string>
+    <string name="new_listing">Nowe ogłoszenie</string>
+    <string name="new_listing_subtitle">Dodaj 1–8 zdjęć. My zajmiemy się resztą.</string>
+    <string name="generic_error_retry">Coś poszło nie tak. Spróbuj ponownie.</string>
+    <string name="ai_hint_label">Podpowiedz AI (opcjonalnie)</string>
+    <string name="ai_hint_placeholder">np. Nike Air Max 90, rozmiar 42, noszone 2 miesiące</string>
+    <string name="get_started">Zaczynamy</string>
+    <string name="next">Dalej</string>
+
+    <!-- AI Processing -->
+    <string name="ai_creating_ad_title">Przygotowujemy Twoje ogłoszenie</string>
+    <string name="ai_analyzing_photo">Analizujemy Twoje zdjęcia i piszemy idealny tytuł, opis i cenę…</string>
+    <string name="ai_step_uploading_photos">Przesyłanie zdjęć</string>
+    <string name="ai_step_analyzing_image">Analizowanie zdjęć</string>
+    <string name="ai_step_preparing_guest_ad">Składanie całości</string>
+    <string name="ai_step_generating_title">Tworzenie tytułu</string>
+    <string name="ai_step_writing_description">Pisanie opisu</string>
+    <string name="ai_step_calculating_price">Szacowanie ceny</string>
+    <string name="ai_processing_status_in_progress">Pracujemy nad tym…</string>
+    <string name="ai_processing_status_done">Gotowe ✓</string>
+    <string name="ai_processing_tip_connect_olx_faster">Wskazówka: połącz OLX, a następne ogłoszenie wyślesz 5× szybciej.</string>
+    <string name="ai_processing_tip_good_lighting">Wskazówka: dobre światło = lepsze wyniki AI.</string>
+    <string name="ai_processing_tip_capture_details">Wskazówka: zbliżenia szczegółów i śladów użytkowania pomagają napisać lepszy opis.</string>
+    <string name="ai_processing_tip_keep_background_clean">Wskazówka: czyste tło sprawia, że przedmiot lepiej się wyróżnia.</string>
+    <string name="ai_processing_tip_first_photo_matters">Wskazówka: pierwsze zdjęcie to 80%% sukcesu sprzedaży — zrób je najlepiej 📸</string>
+    <string name="ai_processing_tip_reply_fast">Wskazówka: odpowiedz w ciągu godziny, a kupujący jest Twój.</string>
+    <string name="ai_processing_tip_honesty_sells">Wskazówka: pokaż zarysowania — kupujący cenią szczerość.</string>
+    <string name="ai_processing_tip_evening_post">Wskazówka: publikuj wieczorem — wtedy kupujący przeglądają OLX.</string>
+    <string name="ai_processing_tip_include_accessories">Wskazówka: dodaj pudełko lub ładowarkę do zdjęcia — przedmiot wyglada na droższy.</string>
+    <string name="ai_processing_tip_scale_reference">Wskazówka: połóż monetę przy przedmiocie — kupujący od razu ocenią rozmiar.</string>
+    <string name="ai_processing_tip_wipe_item">Wskazówka: wytrzyj przedmiot przed fotografowaniem — kurz wygląda dwa razy większy na zdjęciu.</string>
+    <string name="ai_processing_tip_daylight">Wskazówka: fotografuj przy oknie — dzienne światło bije każdą lampę 💡</string>
+
+    <!-- Permission Dialogs -->
+    <string name="camera_rationale_title">Czy możemy użyć aparatu?</string>
+    <string name="camera_rationale_message">Używamy go, by fotografować Twoje przedmioty do ogłoszeń OLX. Zezwól na dostęp, aby kontynuować.</string>
+    <string name="camera_settings_title">Włącz aparat w ustawieniach</string>
+    <string name="camera_settings_message_ios">Dostęp do aparatu jest zablokowany. Przejdź do Ustawień → Prywatność → Aparat i włącz SellSnap.</string>
+    <string name="camera_settings_message_android">Dostęp do aparatu jest zablokowany. Otwórz ustawienia aplikacji i włącz go dla SellSnap.</string>
+    <string name="not_now">Nie teraz</string>
+    <string name="open_settings">Otwórz ustawienia</string>
+    <string name="cancel">Anuluj</string>
+
+    <!-- Attributes -->
+    <string name="ad_attributes_label">Szczegóły</string>
+    <string name="attr_select_placeholder">Wybierz…</string>
+    <string name="confirm">Potwierdź</string>
+    <string name="error_attr_required">To pole jest wymagane</string>
+    <string name="error_attr_must_be_numeric">Tylko liczby</string>
+    <string name="error_attr_below_minimum">Minimum to %1$s</string>
+    <string name="error_attr_above_maximum">Maksimum to %1$s</string>
+    <string name="error_attr_invalid_selection">Ta opcja nie jest dostępna</string>
+    <string name="error_attr_multiple_values_not_allowed">Tylko jedna wartość</string>
+
+    <!-- Preview Ad Screen -->
+    <string name="publish_confirm_title">Gotowy do publikacji?</string>
+    <string name="publish_confirm_subtitle">Twoje ogłoszenie pojawi się na OLX w ciągu 1–2 minut.</string>
+    <string name="publish_confirm_yes">Tak, publikuj</string>
+    <string name="publish_confirm_back">Poczekaj, chcę edytować</string>
+    <string name="preview_back_info_title">Odrzucić ten szkic?</string>
+    <string name="preview_back_info_message">To ogłoszenie nie zostało jeszcze opublikowane. Jeśli wyjdziesz, szkic zostanie usunięty — zaczniesz od nowa na ekranie generowania.</string>
+    <string name="preview_back_info_stay">Kontynuuj edycję</string>
+    <string name="preview_back_info_leave">Odrzuć szkic</string>
+    <string name="publishing">Publikowanie…</string>
+    <string name="copy_pill_default">Kopiuj</string>
+    <string name="copy_pill_copied">Skopiowano ✓</string>
+    <string name="error_pill_default">Ups</string>
+    <string name="ad_title_label">Tytuł</string>
+    <string name="ad_description_label">Opis</string>
+    <string name="ad_your_price">Twoja cena</string>
+    <string name="ad_price_ai_estimated_range">AI sugeruje: %1$s – %2$s</string>
+    <string name="ad_category_label">Kategoria</string>
+    <string name="ad_location_label">Lokalizacja</string>
+    <string name="location_detecting">Szukamy Cię…</string>
+    <string name="location_not_available">Nie można znaleźć lokalizacji</string>
+    <string name="location_rationale_title">Potrzebujemy Twojej lokalizacji</string>
+    <string name="location_rationale_message">Aby zaproponować najbliższe miasto dla Twojego ogłoszenia, potrzebujemy dostępu do lokalizacji.</string>
+    <string name="location_settings_title">Włącz lokalizację w ustawieniach</string>
+    <string name="location_settings_message_android">Lokalizacja jest zablokowana. Otwórz ustawienia aplikacji i włącz ją dla SellSnap.</string>
+    <string name="location_settings_message_ios">Lokalizacja jest zablokowana. Przejdź do Ustawień → Prywatność → Usługi lokalizacji i włącz SellSnap.</string>
+
+    <!-- Error Messages -->
+    <string name="error_location_fetch_failed">Nie udało się znaleźć Twojej lokalizacji.</string>
+    <string name="error_publish_missing_category_or_location">Prawie gotowe — dodaj kategorię i lokalizację przed publikacją.</string>
+    <string name="error_publish_missing_contact_name">W Twoim profilu OLX brakuje imienia. Wejdź tam, dodaj je i spróbujemy ponownie.</string>
+    <string name="error_category_suggestion_failed">Nie udało się zaproponować kategorii.</string>
+    <string name="error_attributes_load_failed">Nie udało się załadować szczegółów.</string>
+    <string name="error_user_profile_fetch_failed">Nie udało się załadować Twojego profilu.</string>
+    <string name="error_olx_auth_prepare_failed">Nie udało się uruchomić logowania OLX.</string>
+    <string name="error_olx_auth_complete_failed">Nie udało się zakończyć logowania do OLX.</string>
+    <string name="error_selected_files_process_failed">Nie udało się załadować tych zdjęć.</string>
+    <string name="error_upload_file_failed">Nie udało się przesłać jednego ze zdjęć.</string>
+    <string name="error_publish_failed">Publikacja nie powiodła się. Spróbuj jeszcze raz.</string>
+    <string name="error_generate_ad_failed">Nie udało się wygenerować ogłoszenia. Spróbować ponownie?</string>
+
+    <!-- Publish Success Screen -->
+    <string name="publish_success_title">Jesteś na żywo! 🎉</string>
+    <string name="publish_success_subtitle">Twoje ogłoszenie jest na OLX. Pierwsze wyświetlenia powinny pojawić się w ciągu 10–15 minut.</string>
+    <string name="publish_success_subtitle_new">Trafia do moderacji — ogłoszenie zostanie opublikowane po szybkiej weryfikacji.</string>
+    <string name="publish_success_subtitle_limited">Ogłoszenie gotowe! Potrzebujesz pakietu OLX, aby je aktywować.</string>
+    <string name="publish_success_listing_url_label">Link do ogłoszenia</string>
+    <string name="publish_success_status_label">Status</string>
+    <string name="publish_success_status_new">W trakcie weryfikacji</string>
+    <string name="publish_success_status_new_caption">Publikacja po moderacji</string>
+    <string name="publish_success_status_limited">Ograniczone</string>
+    <string name="publish_success_status_limited_caption">Kup pakiet na OLX, aby aktywować</string>
+    <string name="publish_success_status_unknown">Oczekujące</string>
+    <string name="publish_success_status_unknown_caption">Sprawdź na OLX</string>
+    <string name="publish_success_total_time_label">Łączny czas</string>
+    <string name="publish_success_total_time_caption">Od zdjęcia do publikacji</string>
+    <string name="publish_success_view_on_olx">Zobacz na OLX</string>
+    <string name="publish_success_create_another">Sprzedaj coś innego</string>
+    <string name="time_unit_seconds">%1$ds</string>
+    <string name="time_unit_minutes_seconds">%1$dm %2$ds</string>
+    <string name="time_duration_seconds">%1$d %2$s</string>
+    <string name="time_duration_minutes">%1$d %2$s</string>
+    <string name="time_duration_minutes_seconds">%1$d %2$s i %3$d %4$s</string>
+    <string name="time_unit_second_one">sekunda</string>
+    <string name="time_unit_second_other">sekund</string>
+    <string name="time_unit_minute_one">minuta</string>
+    <string name="time_unit_minute_other">minut</string>
+
+    <!-- Category Picker Sheet -->
+    <string name="category_picker_search_placeholder">Szukaj kategorii</string>
+    <string name="category_picker_all">Wszystkie</string>
+    <string name="category_picker_reset">Resetuj</string>
+    <string name="category_picker_select">Wybierz tę</string>
+    <string name="category_picker_select_with_name">Wybierz · %1$s</string>
+    <string name="category_picker_selected_label">WYBRANO</string>
+    <string name="category_picker_select_label">WYBIERZ</string>
+</resources>
