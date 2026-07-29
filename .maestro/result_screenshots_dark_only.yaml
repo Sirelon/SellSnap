@@ -16,7 +16,14 @@ tags:
 - extendedWaitUntil:
     visible:
       id: "home_root"
-    timeout: 15000
+    timeout: 30000
+
+- runFlow:
+    when:
+      true: ${ORIENTATION == 'landscape'}
+    commands:
+      - setOrientation: LANDSCAPE_LEFT
+      - waitForAnimationToEnd
 
 # Start guard: if nav state restored to PreviewAd, navigate back to GenerateAd
 - runFlow:
@@ -45,15 +52,19 @@ tags:
     visible:
       id: "ai_processing_screen"
     timeout: 10000
+    optional: true
 
-- takeScreenshot:
-    path: "screenshots/${PLATFORM}/${COUNTRY}/analysing_start_${THEME}"
-
-- waitForAnimationToEnd:
-    timeout: 8000
-
-- takeScreenshot:
-    path: "screenshots/${PLATFORM}/${COUNTRY}/analysing_progress_${THEME}"
+- runFlow:
+    when:
+      visible:
+        id: "ai_processing_screen"
+    commands:
+      - takeScreenshot:
+          path: "screenshots/${PLATFORM}/${COUNTRY}/analysing_start_${THEME}"
+      - waitForAnimationToEnd:
+          timeout: 8000
+      - takeScreenshot:
+          path: "screenshots/${PLATFORM}/${COUNTRY}/analysing_progress_${THEME}"
 
 - extendedWaitUntil:
     visible:

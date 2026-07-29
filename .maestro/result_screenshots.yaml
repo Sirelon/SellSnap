@@ -15,25 +15,38 @@ tags:
 
 - runFlow: subflows/wait_for_photos.yaml
 
+- runFlow:
+    when:
+      true: ${ORIENTATION == 'landscape'}
+    commands:
+      - setOrientation: LANDSCAPE_LEFT
+      - waitForAnimationToEnd
+
 - tapOn:
     id: "generate_ad_submit_button"
 
+# AI processing screen may already be gone on fast runs (warm cache, quick OpenAI response).
+# Make the wait optional and gate the analysing screenshots on visibility.
 - extendedWaitUntil:
     visible:
       id: "ai_processing_screen"
     timeout: 10000
+    optional: true
 
-# Analysing screen — initial state (early steps, upload just started)
-- takeScreenshot:
-    path: "screenshots/${PLATFORM}/${COUNTRY}/analysing_start_${THEME}"
-
-# Wait ~8 s to capture meaningful progress (real OpenAI takes 30-120 s total)
-- waitForAnimationToEnd:
-    timeout: 8000
-
-# Analysing screen — mid-progress state (more steps completed)
-- takeScreenshot:
-    path: "screenshots/${PLATFORM}/${COUNTRY}/analysing_progress_${THEME}"
+- runFlow:
+    when:
+      visible:
+        id: "ai_processing_screen"
+    commands:
+      # Analysing screen — initial state
+      - takeScreenshot:
+          path: "screenshots/${PLATFORM}/${COUNTRY}/analysing_start_${THEME}"
+      # Wait ~8 s to capture meaningful progress
+      - waitForAnimationToEnd:
+          timeout: 8000
+      # Analysing screen — mid-progress state
+      - takeScreenshot:
+          path: "screenshots/${PLATFORM}/${COUNTRY}/analysing_progress_${THEME}"
 
 # Real OpenAI analysis can take up to 120 s
 - extendedWaitUntil:

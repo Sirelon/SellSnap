@@ -17,13 +17,20 @@ appId: com.sirelon.sellsnap
 #     the " · olx.pt" suffix — so the early tap re-tapped the app and reported
 #     COMPLETED, masking the miss. Alternatives are now exact words, never
 #     prefixes, so an app button with a " · domain" suffix cannot match.
+#
+# The Continue button text ("Dalej", "Continuar", etc.) is also the a11y label for
+# the localized app sidebar button, so matching by Continue text taps the sidebar.
+# Instead: detect the dialog via its Cancel button (unique to the sheet, never on the
+# sidebar), then tap BELOW it to land on the Continue button inside the dialog.
+# Cancel button text by locale: pl=Anuluj pt=Cancelar ro=Anulare ua=Скасувати bg=Отказ
 - extendedWaitUntil:
     visible:
-      text: "(?i)^\\s*(continue|continuar|continuați|continuă|dalej|kontynuuj|продължи|продължаване|продовжити)\\s*$"
+      text: "(?i)^(Anuluj|Cancelar|Anulare|Anulați|Скасувати|Відмова|Відміна|Отказ|Отмяна|Cancel)$"
     timeout: 15000
     optional: true
 - tapOn:
-    text: "(?i)^\\s*(continue|continuar|continuați|continuă|dalej|kontynuuj|продължи|продължаване|продовжити)\\s*$"
+    below:
+      text: "(?i)^(Anuluj|Cancelar|Anulare|Anulați|Скасувати|Відмова|Відміна|Отказ|Отмяна|Cancel)$"
     optional: true
 - waitForAnimationToEnd:
     timeout: 2000
@@ -56,6 +63,22 @@ appId: com.sirelon.sellsnap
 - tapOn:
     text: "(?i)^\\s*(akceptuj wszystkie|akceptuj niezbędne|accept all|прийняти всі|aceitar tudo|acceptă tot.*|приеми.*|приемам.*)\\s*$"
     optional: true
+
+# --- Auth sheet retry: sheet is async and sometimes appears AFTER the first tap ---
+# The first extendedWaitUntil at the top taps the sheet if it's already visible, but
+# on iPad/iOS 26 the sheet can appear 2-4 s after country_picker_continue_button fires.
+# This second pass catches the delayed appearance before the login form check.
+- extendedWaitUntil:
+    visible:
+      text: "(?i)^(Anuluj|Cancelar|Anulare|Anulați|Скасувати|Відмова|Відміна|Отказ|Отмяна|Cancel)$"
+    timeout: 8000
+    optional: true
+- tapOn:
+    below:
+      text: "(?i)^(Anuluj|Cancelar|Anulare|Anulați|Скасувати|Відмова|Відміна|Отказ|Отмяна|Cancel)$"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 2000
 
 # --- Login form — only if shown (skipped when OLX session already exists) ---
 # Wait for the page to fully render after cookie dismissal.
