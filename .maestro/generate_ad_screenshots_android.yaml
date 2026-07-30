@@ -11,11 +11,21 @@ tags:
 
 # Login without clearState (script already cleared state and set locale)
 - runFlow: subflows/launch_through_consent_no_clear.yaml
+- scrollUntilVisible:
+    element:
+      id: "landing_continue_olx_button"
+    direction: DOWN
+    timeout: 10000
 - tapOn:
     id: "landing_continue_olx_button"
 - extendedWaitUntil:
     visible:
+      id: "country_row_pt"
+    timeout: 10000
+- scrollUntilVisible:
+    element:
       id: "country_row_${COUNTRY}"
+    direction: DOWN
     timeout: 10000
 - tapOn:
     id: "country_row_${COUNTRY}"

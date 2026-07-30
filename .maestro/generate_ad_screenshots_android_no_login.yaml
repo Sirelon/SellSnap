@@ -1,0 +1,31 @@
+appId: com.sirelon.sellsnap
+name: GenerateAd Screenshots (Android, no login)
+tags:
+  - screenshot
+  - photos
+---
+# No login — app must already be on home_root from a previous manual login.
+# COUNTRY, PLATFORM, THEME required at runtime.
+# Requires screenshotMode = true — GenerateAd seeds its own test photos on open.
+
+- launchApp
+- extendedWaitUntil:
+    visible:
+      id: "home_root"
+    timeout: 30000
+
+- runFlow: subflows/wait_for_photos.yaml
+
+# Top screenshot: photos grid visible
+- takeScreenshot:
+    path: "screenshots/${PLATFORM}/${COUNTRY}/generate_ad_top_${THEME}"
+
+- scrollUntilVisible:
+    element:
+      id: "generate_ad_prompt"
+    direction: DOWN
+    timeout: 10000
+
+# Bottom screenshot: prompt section visible
+- takeScreenshot:
+    path: "screenshots/${PLATFORM}/${COUNTRY}/generate_ad_bottom_${THEME}"
