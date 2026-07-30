@@ -15,7 +15,7 @@ androidx-espresso = "3.7.0"
 androidx-lifecycle = "2.11.0"
 androidx-testExt = "1.3.0"
 coil3 = "3.5.0"
-composeHotReload = "1.1.1"
+composeHotReload = "1.2.0"
 # https://github.com/JetBrains/compose-multiplatform/releases
 composeMultiplatform = "1.12.0-beta02"
 junit = "4.13.2"
@@ -28,7 +28,7 @@ kotlinx-coroutines = "1.11.0"
 kotlinx-serialization = "1.11.0"
 # https://github.com/ktorio/ktor/releases
 ktor = "3.5.1"
-logback = "1.5.38"
+logback = "1.6.0"
 # https://mvnrepository.com/artifact/org.jetbrains.compose.material3/material3
 material3 = "1.12.0-alpha03"
 # https://mvnrepository.com/artifact/org.jetbrains.compose.material3.adaptive/adaptive
@@ -41,9 +41,9 @@ lifecycleViewmodelNav3 = "2.11.0"
 # https://mvnrepository.com/artifact/org.jetbrains.androidx.navigation3/navigation3-ui
 navigation3Ui = "1.2.0-alpha02"
 # https://github.com/MohamedRejeb/Calf/releases
-calf = "0.12.0"
+calf = "0.13.0"
 # https://github.com/supabase-community/supabase-kt/releases
-supabase = "3.6.0"
+supabase = "3.7.0"
 # https://github.com/yshrsmz/BuildKonfig/releases
 buildKonfig = "0.22.0"
 
