@@ -39,6 +39,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalInspectionMode
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
@@ -128,7 +129,7 @@ fun AiProcessingScreen(
     isGuestMode: Boolean,
     modifier: Modifier = Modifier,
 ) {
-    AppBackgroundGradient(modifier = modifier.fillMaxSize()) {
+    AppBackgroundGradient(modifier = modifier.fillMaxSize().testTag("ai_processing_screen")) {
         AiProcessingContent(
             completedSteps = completedSteps,
             isGuestMode = isGuestMode,

@@ -1,0 +1,54 @@
+appId: com.sirelon.sellsnap
+name: GenerateAd Screenshots (Android)
+tags:
+  - screenshot
+  - photos
+---
+# clearState + locale are handled by the script before this flow runs.
+# OLX_EMAIL, OLX_PASSWORD, COUNTRY, PLATFORM, THEME required at runtime.
+# Requires screenshotMode = true — GenerateAd then seeds its own test photos, so the
+# device gallery does not need to be populated and no picker is driven.
+
+# Login without clearState (script already cleared state and set locale)
+- runFlow: subflows/launch_through_consent_no_clear.yaml
+- scrollUntilVisible:
+    element:
+      id: "landing_continue_olx_button"
+    direction: DOWN
+    timeout: 10000
+- tapOn:
+    id: "landing_continue_olx_button"
+- extendedWaitUntil:
+    visible:
+      id: "country_row_pt"
+    timeout: 10000
+- scrollUntilVisible:
+    element:
+      id: "country_row_${COUNTRY}"
+    direction: DOWN
+    timeout: 10000
+- tapOn:
+    id: "country_row_${COUNTRY}"
+- tapOn:
+    id: "country_picker_continue_button"
+- runFlow: subflows/olx_web_login.yaml
+- extendedWaitUntil:
+    visible:
+      id: "home_root"
+    timeout: 45000
+
+- runFlow: subflows/wait_for_photos.yaml
+
+# Top screenshot: photos grid visible
+- takeScreenshot:
+    path: "screenshots/${PLATFORM}/${COUNTRY}/generate_ad_top_${THEME}"
+
+- scrollUntilVisible:
+    element:
+      id: "generate_ad_prompt"
+    direction: DOWN
+    timeout: 10000
+
+# Bottom screenshot: prompt section visible
+- takeScreenshot:
+    path: "screenshots/${PLATFORM}/${COUNTRY}/generate_ad_bottom_${THEME}"

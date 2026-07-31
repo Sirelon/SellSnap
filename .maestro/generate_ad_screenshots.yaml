@@ -1,0 +1,34 @@
+appId: com.sirelon.sellsnap
+name: GenerateAd Screenshots (iOS)
+tags:
+  - screenshot
+  - photos
+---
+# OLX_EMAIL, OLX_PASSWORD, COUNTRY, PLATFORM, ORIENTATION, THEME required at runtime.
+# Requires screenshotMode = true — GenerateAd then seeds its own test photos, so the
+# device gallery does not need to be populated and no picker is driven.
+
+- runFlow: login.yaml
+
+- runFlow: subflows/wait_for_photos.yaml
+
+- runFlow:
+    when:
+      true: ${ORIENTATION == 'landscape'}
+    commands:
+      - setOrientation: LANDSCAPE_LEFT
+      - waitForAnimationToEnd
+
+# Top screenshot: photos grid visible
+- takeScreenshot:
+    path: "screenshots/${PLATFORM}/${COUNTRY}/generate_ad_top_${THEME}"
+
+- scrollUntilVisible:
+    element:
+      id: "generate_ad_prompt"
+    direction: DOWN
+    timeout: 10000
+
+# Bottom screenshot: prompt section visible
+- takeScreenshot:
+    path: "screenshots/${PLATFORM}/${COUNTRY}/generate_ad_bottom_${THEME}"

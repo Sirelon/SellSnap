@@ -1,0 +1,12 @@
+# Adds a fixed set of test images to the device gallery.
+# Place test assets in .maestro/assets/ and list them below.
+# Paths are relative to this file (i.e. ../assets/...).
+#
+# Use from another flow:
+#   - runFlow: subflows/add_media.yaml
+appId: com.sirelon.sellsnap
+---
+- addMedia:
+    - "../assets/photo_1.jpg"
+    - "../assets/photo_2.jpg"
+    - "../assets/photo_3.jpg"

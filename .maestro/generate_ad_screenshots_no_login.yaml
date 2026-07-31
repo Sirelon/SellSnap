@@ -1,0 +1,35 @@
+appId: com.sirelon.sellsnap
+name: GenerateAd Screenshots (no login, reuse session)
+tags:
+  - screenshot
+---
+# Like generate_ad_screenshots.yaml but skips clearState/login.
+# Precondition: user is already logged in and app is on home_root.
+# COUNTRY, PLATFORM, ORIENTATION, THEME required at runtime.
+# Requires screenshotMode = true — GenerateAd seeds its own test photos, so this works
+# unchanged on iPhone, iPad and Android.
+
+- launchApp
+
+- runFlow: subflows/wait_for_photos.yaml
+
+- runFlow:
+    when:
+      true: ${ORIENTATION == 'landscape'}
+    commands:
+      - setOrientation: LANDSCAPE_LEFT
+      - waitForAnimationToEnd
+
+# Top screenshot: photos grid visible
+- takeScreenshot:
+    path: "screenshots/${PLATFORM}/${COUNTRY}/generate_ad_top_${THEME}"
+
+- scrollUntilVisible:
+    element:
+      id: "generate_ad_prompt"
+    direction: DOWN
+    timeout: 10000
+
+# Bottom screenshot: prompt section visible
+- takeScreenshot:
+    path: "screenshots/${PLATFORM}/${COUNTRY}/generate_ad_bottom_${THEME}"

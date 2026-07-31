@@ -33,4 +33,4 @@ tags:
 - extendedWaitUntil:
     visible:
       id: "home_root"
-    timeout: 45000
+    timeout: 300000

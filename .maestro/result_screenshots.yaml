@@ -1,0 +1,121 @@
+appId: com.sirelon.sellsnap
+name: GenerateAd Result Screenshots (iOS)
+tags:
+  - screenshot
+  - result
+---
+# OLX_EMAIL, COUNTRY, PLATFORM, THEME required at runtime.
+# Requires: app built with screenshotMode = true (see ScreenshotMode.kt), which both seeds
+# the 3 bundled test photos into GenerateAd (no picker, no device gallery needed) and makes
+# preview_ad_back_button navigate directly back to GenerateAd (skips BackInfo).
+#
+# Login sets the correct market/locale so OpenAI generates content in the right language.
+
+- runFlow: login.yaml
+
+- runFlow: subflows/wait_for_photos.yaml
+
+- runFlow:
+    when:
+      true: ${ORIENTATION == 'landscape'}
+    commands:
+      - setOrientation: LANDSCAPE_LEFT
+      - waitForAnimationToEnd
+
+- tapOn:
+    id: "generate_ad_submit_button"
+
+# AI processing screen may already be gone on fast runs (warm cache, quick OpenAI response).
+# Make the wait optional and gate the analysing screenshots on visibility.
+- extendedWaitUntil:
+    visible:
+      id: "ai_processing_screen"
+    timeout: 10000
+    optional: true
+
+- runFlow:
+    when:
+      visible:
+        id: "ai_processing_screen"
+    commands:
+      # Analysing screen — initial state
+      - takeScreenshot:
+          path: "screenshots/${PLATFORM}/${COUNTRY}/analysing_start_${THEME}"
+      # Wait ~8 s to capture meaningful progress
+      - waitForAnimationToEnd:
+          timeout: 8000
+      # Analysing screen — mid-progress state
+      - takeScreenshot:
+          path: "screenshots/${PLATFORM}/${COUNTRY}/analysing_progress_${THEME}"
+
+# Real OpenAI analysis can take up to 120 s
+- extendedWaitUntil:
+    visible:
+      id: "preview_ad_screen"
+    timeout: 120000
+
+# Wait for a carousel image to actually be on screen. These are remote Supabase
+# URLs and the login's clearState wipes Coil's disk cache, so every run is a cold
+# fetch. `waitForAnimationToEnd` cannot work here — ImageShimmer runs an infinite
+# transition while loading, so the wait never settles and merely burns its timeout,
+# which is why result_top used to capture an empty gradient.
+# Optional so a failed image load degrades to the old behaviour instead of hanging.
+- extendedWaitUntil:
+    visible:
+      id: "async_image_loaded"
+    timeout: 30000
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 1000
+
+# Result screen — top (title/photos visible)
+- takeScreenshot:
+    path: "screenshots/${PLATFORM}/${COUNTRY}/result_top_${THEME}"
+
+# Scroll to the last card (location) so the bottom section is visible. A blind
+# `swipe` silently no-ops when the gesture lands on a child that eats the drag —
+# that produced result_bottom files byte-identical to result_top.
+# 40 s, not 15 s: bg content is the tallest (extra delivery row + Cyrillic wrapping)
+# and 15 s at the default scroll speed expired just before the card came into view.
+# visibilityPercentage below 100 so the sticky publish CTA overlapping the card's
+# lower edge cannot block the match.
+- scrollUntilVisible:
+    element:
+      id: "preview_ad_location_card"
+    direction: DOWN
+    visibilityPercentage: 60
+    timeout: 40000
+- waitForAnimationToEnd:
+    timeout: 1000
+
+# Result screen — bottom (price, category, attributes, location visible)
+- takeScreenshot:
+    path: "screenshots/${PLATFORM}/${COUNTRY}/result_bottom_${THEME}"
+
+- tapOn:
+    id: "preview_ad_publish_button"
+
+- extendedWaitUntil:
+    visible:
+      id: "preview_ad_publish_confirm_sheet"
+    timeout: 10000
+
+# Result screen — publish confirm dialog
+- takeScreenshot:
+    path: "screenshots/${PLATFORM}/${COUNTRY}/result_publish_dialog_${THEME}"
+
+# Cleanup: dismiss dialog, then tap back button — in screenshotMode navigates
+# directly to GenerateAd (skips BackInfo sheet) so dark-mode run starts cleanly.
+- tapOn:
+    id: "preview_ad_publish_confirm_dismiss"
+
+- waitForAnimationToEnd:
+    timeout: 1500
+
+- tapOn:
+    id: "preview_ad_back_button"
+
+- extendedWaitUntil:
+    visible:
+      id: "home_root"
+    timeout: 10000

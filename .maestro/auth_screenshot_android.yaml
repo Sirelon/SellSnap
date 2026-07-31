@@ -1,0 +1,17 @@
+appId: com.sirelon.sellsnap
+name: Auth Screen Screenshot (Android)
+tags:
+  - screenshot
+---
+# clearState + locale are handled by the script before this flow runs.
+- runFlow: subflows/launch_through_consent_no_clear.yaml
+
+- runFlow:
+    when:
+      true: ${ORIENTATION == 'landscape'}
+    commands:
+      - setOrientation: LANDSCAPE_LEFT
+      - waitForAnimationToEnd
+
+- takeScreenshot:
+    path: "screenshots/${PLATFORM}/${COUNTRY}/auth_${THEME}"

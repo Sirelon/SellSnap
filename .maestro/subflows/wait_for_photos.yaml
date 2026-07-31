@@ -1,0 +1,17 @@
+appId: com.sirelon.sellsnap
+---
+# Waits until the 3 test photos are loaded into the GenerateAd photo grid.
+#
+# Requires the app to be built with screenshotMode = true (see ScreenshotMode.kt):
+# GenerateAd then seeds the bundled test photos itself and no photo picker is involved
+# on any platform. Nothing to tap, nothing device- or locale-specific.
+#
+# generate_ad_photo_remove exists once per loaded photo, so index: 2 asserts that all
+# three are present — generate_ad_photos_grid would only prove the container exists.
+# The timeout is generous because seeding writes, persists and uploads each photo.
+
+- extendedWaitUntil:
+    visible:
+      id: "generate_ad_photo_remove"
+      index: 2
+    timeout: 30000

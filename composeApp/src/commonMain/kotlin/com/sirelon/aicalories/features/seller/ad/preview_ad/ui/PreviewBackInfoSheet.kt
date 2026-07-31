@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import com.sirelon.sellsnap.designsystem.AppDimens
 import com.sirelon.sellsnap.designsystem.AppTheme
 import com.sirelon.sellsnap.designsystem.buttons.AppButton
@@ -47,7 +48,7 @@ fun PreviewBackInfoSheet(
             onClick = onStay,
         )
         AppButton(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().testTag("preview_ad_back_info_leave"),
             style = AppButtonDefaults.outline(),
             text = stringResource(Res.string.preview_back_info_leave),
             onClick = onLeave,

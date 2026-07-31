@@ -1,0 +1,22 @@
+appId: com.sirelon.sellsnap
+tags:
+  - screenshot
+  - photos
+# COUNTRY, OLX_EMAIL, OLX_PASSWORD are required at runtime — same as login.yaml.
+# scripts/maestro-login.sh shows the invocation pattern.
+# NOTE: do NOT add a COUNTRY default in a flow-level env: block — a declared
+# default shadows the -e override in Maestro (see login.yaml for context).
+---
+# Full OLX login: cold launch -> onboarding -> consent -> country picker -> OLX web
+# login -> home_root (GenerateAd is the default tab). Env vars flow through.
+- runFlow: login.yaml
+
+# GenerateAd seeds the 3 bundled test photos itself in screenshotMode — no picker.
+- runFlow: subflows/wait_for_photos.yaml
+
+# Scroll to the bottom of the GenerateAd screen.
+- scrollUntilVisible:
+    element:
+      id: "generate_ad_prompt"
+    direction: DOWN
+    timeout: 10000

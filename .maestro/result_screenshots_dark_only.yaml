@@ -1,0 +1,123 @@
+appId: com.sirelon.sellsnap
+name: GenerateAd Result Screenshots - Dark (no login)
+tags:
+  - screenshot
+  - result
+---
+# Takes dark-mode result screenshots WITHOUT clearing state or logging in.
+# Precondition: result_screenshots.yaml already ran for this country — app is on
+# home_root (GenerateAd screen) with the correct country session active.
+# Appearance has been switched to dark before this flow runs.
+# COUNTRY, PLATFORM, THEME required at runtime.
+# Requires: app built with screenshotMode = true.
+
+- launchApp
+
+- extendedWaitUntil:
+    visible:
+      id: "home_root"
+    timeout: 30000
+
+- runFlow:
+    when:
+      true: ${ORIENTATION == 'landscape'}
+    commands:
+      - setOrientation: LANDSCAPE_LEFT
+      - waitForAnimationToEnd
+
+# Start guard: if nav state restored to PreviewAd, navigate back to GenerateAd
+- runFlow:
+    when:
+      visible:
+        id: "preview_ad_screen"
+    commands:
+      - tapOn:
+          id: "preview_ad_publish_confirm_dismiss"
+          optional: true
+      - waitForAnimationToEnd:
+          timeout: 1500
+      - tapOn:
+          id: "preview_ad_back_button"
+      - extendedWaitUntil:
+          visible:
+            id: "home_root"
+          timeout: 10000
+
+- runFlow: subflows/wait_for_photos.yaml
+
+- tapOn:
+    id: "generate_ad_submit_button"
+
+- extendedWaitUntil:
+    visible:
+      id: "ai_processing_screen"
+    timeout: 10000
+    optional: true
+
+- runFlow:
+    when:
+      visible:
+        id: "ai_processing_screen"
+    commands:
+      - takeScreenshot:
+          path: "screenshots/${PLATFORM}/${COUNTRY}/analysing_start_${THEME}"
+      - waitForAnimationToEnd:
+          timeout: 8000
+      - takeScreenshot:
+          path: "screenshots/${PLATFORM}/${COUNTRY}/analysing_progress_${THEME}"
+
+- extendedWaitUntil:
+    visible:
+      id: "preview_ad_screen"
+    timeout: 120000
+
+# See result_screenshots.yaml — waitForAnimationToEnd can't settle against the
+# shimmer's infinite transition, so wait on the image's own loaded state instead.
+- extendedWaitUntil:
+    visible:
+      id: "async_image_loaded"
+    timeout: 30000
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 1000
+
+- takeScreenshot:
+    path: "screenshots/${PLATFORM}/${COUNTRY}/result_top_${THEME}"
+
+# See result_screenshots.yaml for why 40 s / 60 % rather than 15 s / 100 %.
+- scrollUntilVisible:
+    element:
+      id: "preview_ad_location_card"
+    direction: DOWN
+    visibilityPercentage: 60
+    timeout: 40000
+- waitForAnimationToEnd:
+    timeout: 1000
+
+- takeScreenshot:
+    path: "screenshots/${PLATFORM}/${COUNTRY}/result_bottom_${THEME}"
+
+- tapOn:
+    id: "preview_ad_publish_button"
+
+- extendedWaitUntil:
+    visible:
+      id: "preview_ad_publish_confirm_sheet"
+    timeout: 10000
+
+- takeScreenshot:
+    path: "screenshots/${PLATFORM}/${COUNTRY}/result_publish_dialog_${THEME}"
+
+- tapOn:
+    id: "preview_ad_publish_confirm_dismiss"
+
+- waitForAnimationToEnd:
+    timeout: 1500
+
+- tapOn:
+    id: "preview_ad_back_button"
+
+- extendedWaitUntil:
+    visible:
+      id: "home_root"
+    timeout: 10000

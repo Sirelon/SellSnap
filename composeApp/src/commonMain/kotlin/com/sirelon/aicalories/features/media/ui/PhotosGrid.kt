@@ -32,6 +32,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.Dp
@@ -60,7 +61,7 @@ fun PhotosGrid(
     maxPhotos: Int = MAX_PHOTOS,
     interactionEnabled: Boolean = true,
 ) {
-    BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
+    BoxWithConstraints(modifier = modifier.fillMaxWidth().testTag("generate_ad_photos_grid")) {
         val itemWidth = (maxWidth - AppDimens.Spacing.l * (GRID_COLUMNS - 1)) / GRID_COLUMNS
         val cellModifier = Modifier.size(itemWidth)
 
@@ -138,7 +139,10 @@ private fun RemovePhotoButton(
     onClick: () -> Unit,
 ) {
     Surface(
-        modifier = modifier.padding(AppDimens.Spacing.s),
+        // One of these exists per loaded photo, so screenshot flows use it as a
+        // locale-independent "all N photos are in the grid" signal (matched with an index).
+        // generate_ad_photos_grid only proves the container exists, not that it has content.
+        modifier = modifier.padding(AppDimens.Spacing.s).testTag("generate_ad_photo_remove"),
         onClick = onClick,
         enabled = enabled,
         shape = CircleShape,
