@@ -49,6 +49,7 @@ ALL_COUNTRIES=(
   "pl|pl|pl_PL"
   "bg|bg|bg_BG"
   "ro|ro|ro_RO"
+  "ua|uk|uk_UA"
 )
 
 # Allow overriding with COUNTRIES="bg pl" for partial runs

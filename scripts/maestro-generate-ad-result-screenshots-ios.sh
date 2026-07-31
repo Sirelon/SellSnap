@@ -51,6 +51,7 @@ ALL_COUNTRIES=(
   "pl|pl|pl_PL|52.2297,21.0122"      # Warsaw
   "bg|bg|bg_BG|42.6977,23.3219"      # Sofia
   "ro|ro|ro_RO|44.4268,26.1025"      # Bucharest
+  "ua|uk|uk_UA|50.4501,30.5234"      # Kyiv
 )
 
 # Allow overriding with COUNTRIES="bg pl" for partial runs
