@@ -1,0 +1,308 @@
+{
+  "uk": {
+    "screenshots": {
+      "Screenshot_20260519_231837.png": {
+        "headline": ["Продавайте", "швидше з AI"],
+        "sub": "Фото на вході, оголошення на виході",
+        "pills": ["Фото", "AI"]
+      },
+      "Screenshot_20260519_232500.png": {
+        "headline": ["Нове оголошення", "за хвилину"],
+        "sub": "Додайте фото, решту підкаже AI",
+        "pills": ["Камера", "Галерея"]
+      },
+      "Screenshot_20260519_232525.png": {
+        "headline": ["AI пише текст", "поки ви чекаєте"],
+        "sub": "Назва, опис і ціна без рутини",
+        "pills": ["Назва", "Опис"]
+      },
+      "Screenshot_20260519_232545.png": {
+        "headline": ["Перевірте все", "перед запуском"],
+        "sub": "Редагуйте текст, ціну й деталі",
+        "pills": ["Ціна", "Деталі"]
+      },
+      "Screenshot_20260519_232644.png": {
+        "headline": ["Опублікуйте", "в один тап"],
+        "sub": "Готове оголошення без зайвої роботи",
+        "pills": ["Опис", "Публікація"]
+      },
+      "Screenshot_20260519_233853.png": {
+        "headline": ["Публікуйте", "без сумнівів"],
+        "sub": "Фінальна перевірка перед OLX",
+        "pills": ["Перевірка", "OLX"]
+      },
+      "Screenshot_20260519_233904.png": {
+        "headline": ["Оголошення", "вже онлайн"],
+        "sub": "Статус і посилання завжди під рукою",
+        "pills": ["Статус", "OLX"]
+      }
+    },
+    "fallback": [
+      {
+        "headline": ["Створюйте", "оголошення швидше"],
+        "sub": "AI допоможе з текстом, ціною й деталями",
+        "pills": ["Фото", "AI"]
+      },
+      {
+        "headline": ["Менше рутини", "більше продажів"],
+        "sub": "Готуйте оголошення з готових підказок",
+        "pills": ["Опис", "Ціна"]
+      }
+    ]
+  },
+  "en": {
+    "screenshots": {
+      "Screenshot_20260519_231837.png": {
+        "headline": ["Sell faster", "with AI"],
+        "sub": "Photo in, listing out",
+        "pills": ["Photo", "AI"]
+      },
+      "Screenshot_20260519_232500.png": {
+        "headline": ["New listing", "in a minute"],
+        "sub": "Add a photo, AI handles the rest",
+        "pills": ["Camera", "Gallery"]
+      },
+      "Screenshot_20260519_232525.png": {
+        "headline": ["AI writes text", "while you wait"],
+        "sub": "Title, description and price — no hassle",
+        "pills": ["Title", "Description"]
+      },
+      "Screenshot_20260519_232545.png": {
+        "headline": ["Review everything", "before posting"],
+        "sub": "Edit text, price and details",
+        "pills": ["Price", "Details"]
+      },
+      "Screenshot_20260519_232644.png": {
+        "headline": ["Publish", "in one tap"],
+        "sub": "A ready listing with zero extra work",
+        "pills": ["Description", "Publish"]
+      },
+      "Screenshot_20260519_233853.png": {
+        "headline": ["Publish", "with confidence"],
+        "sub": "Final check before OLX",
+        "pills": ["Review", "OLX"]
+      },
+      "Screenshot_20260519_233904.png": {
+        "headline": ["Your listing", "is live"],
+        "sub": "Status and link always at hand",
+        "pills": ["Status", "OLX"]
+      }
+    },
+    "fallback": [
+      {
+        "headline": ["Create listings", "faster"],
+        "sub": "AI helps with text, price and details",
+        "pills": ["Photo", "AI"]
+      },
+      {
+        "headline": ["Less busywork", "more sales"],
+        "sub": "Prepare listings with ready-made suggestions",
+        "pills": ["Description", "Price"]
+      }
+    ]
+  },
+  "pl": {
+    "screenshots": {
+      "Screenshot_20260519_231837.png": {
+        "headline": ["Sprzedawaj", "szybciej z AI"],
+        "sub": "Zdjęcie na wejściu, ogłoszenie na wyjściu",
+        "pills": ["Zdjęcie", "AI"]
+      },
+      "Screenshot_20260519_232500.png": {
+        "headline": ["Nowe ogłoszenie", "w minutę"],
+        "sub": "Dodaj zdjęcie, resztę podpowie AI",
+        "pills": ["Aparat", "Galeria"]
+      },
+      "Screenshot_20260519_232525.png": {
+        "headline": ["AI pisze tekst", "gdy Ty czekasz"],
+        "sub": "Tytuł, opis i cena bez wysiłku",
+        "pills": ["Tytuł", "Opis"]
+      },
+      "Screenshot_20260519_232545.png": {
+        "headline": ["Sprawdź wszystko", "przed publikacją"],
+        "sub": "Edytuj tekst, cenę i szczegóły",
+        "pills": ["Cena", "Szczegóły"]
+      },
+      "Screenshot_20260519_232644.png": {
+        "headline": ["Opublikuj", "jednym dotknięciem"],
+        "sub": "Gotowe ogłoszenie bez zbędnej pracy",
+        "pills": ["Opis", "Publikacja"]
+      },
+      "Screenshot_20260519_233853.png": {
+        "headline": ["Publikuj", "bez obaw"],
+        "sub": "Ostateczna weryfikacja przed OLX",
+        "pills": ["Weryfikacja", "OLX"]
+      },
+      "Screenshot_20260519_233904.png": {
+        "headline": ["Ogłoszenie", "już online"],
+        "sub": "Status i link zawsze pod ręką",
+        "pills": ["Status", "OLX"]
+      }
+    },
+    "fallback": [
+      {
+        "headline": ["Twórz ogłoszenia", "szybciej"],
+        "sub": "AI pomoże z tekstem, ceną i szczegółami",
+        "pills": ["Zdjęcie", "AI"]
+      },
+      {
+        "headline": ["Mniej rutyny", "więcej sprzedaży"],
+        "sub": "Przygotuj ogłoszenia z gotowymi podpowiedziami",
+        "pills": ["Opis", "Cena"]
+      }
+    ]
+  },
+  "ro": {
+    "screenshots": {
+      "Screenshot_20260519_231837.png": {
+        "headline": ["Vinde mai repede", "cu AI"],
+        "sub": "Foto la intrare, anunț la ieșire",
+        "pills": ["Foto", "AI"]
+      },
+      "Screenshot_20260519_232500.png": {
+        "headline": ["Anunț nou", "într-un minut"],
+        "sub": "Adaugă o poză, AI se ocupă de rest",
+        "pills": ["Cameră", "Galerie"]
+      },
+      "Screenshot_20260519_232525.png": {
+        "headline": ["AI scrie textul", "cât aștepți"],
+        "sub": "Titlu, descriere și preț — fără efort",
+        "pills": ["Titlu", "Descriere"]
+      },
+      "Screenshot_20260519_232545.png": {
+        "headline": ["Verifică totul", "înainte de publicare"],
+        "sub": "Editează textul, prețul și detaliile",
+        "pills": ["Preț", "Detalii"]
+      },
+      "Screenshot_20260519_232644.png": {
+        "headline": ["Publică", "dintr-o atingere"],
+        "sub": "Anunț gata fără muncă în plus",
+        "pills": ["Descriere", "Publicare"]
+      },
+      "Screenshot_20260519_233853.png": {
+        "headline": ["Publică", "fără ezitare"],
+        "sub": "Verificare finală înainte de OLX",
+        "pills": ["Verificare", "OLX"]
+      },
+      "Screenshot_20260519_233904.png": {
+        "headline": ["Anunțul tău", "e deja online"],
+        "sub": "Stare și link mereu la îndemână",
+        "pills": ["Stare", "OLX"]
+      }
+    },
+    "fallback": [
+      {
+        "headline": ["Creează anunțuri", "mai repede"],
+        "sub": "AI te ajută cu textul, prețul și detaliile",
+        "pills": ["Foto", "AI"]
+      },
+      {
+        "headline": ["Mai puțină rutină", "mai multe vânzări"],
+        "sub": "Pregătește anunțuri cu sugestii gata făcute",
+        "pills": ["Descriere", "Preț"]
+      }
+    ]
+  },
+  "bg": {
+    "screenshots": {
+      "Screenshot_20260519_231837.png": {
+        "headline": ["Продавайте", "по-бързо с AI"],
+        "sub": "Снимка на входа, обява на изхода",
+        "pills": ["Снимка", "AI"]
+      },
+      "Screenshot_20260519_232500.png": {
+        "headline": ["Нова обява", "за минута"],
+        "sub": "Добавете снимка, AI прави останалото",
+        "pills": ["Камера", "Галерия"]
+      },
+      "Screenshot_20260519_232525.png": {
+        "headline": ["AI пише текста", "докато чакате"],
+        "sub": "Заглавие, описание и цена без усилие",
+        "pills": ["Заглавие", "Описание"]
+      },
+      "Screenshot_20260519_232545.png": {
+        "headline": ["Проверете всичко", "преди публикуване"],
+        "sub": "Редактирайте текст, цена и детайли",
+        "pills": ["Цена", "Детайли"]
+      },
+      "Screenshot_20260519_232644.png": {
+        "headline": ["Публикувайте", "с едно докосване"],
+        "sub": "Готова обява без излишна работа",
+        "pills": ["Описание", "Публикация"]
+      },
+      "Screenshot_20260519_233853.png": {
+        "headline": ["Публикувайте", "без съмнения"],
+        "sub": "Финална проверка преди OLX",
+        "pills": ["Проверка", "OLX"]
+      },
+      "Screenshot_20260519_233904.png": {
+        "headline": ["Обявата ви", "вече е онлайн"],
+        "sub": "Статус и линк винаги под ръка",
+        "pills": ["Статус", "OLX"]
+      }
+    },
+    "fallback": [
+      {
+        "headline": ["Създавайте обяви", "по-бързо"],
+        "sub": "AI помага с текст, цена и детайли",
+        "pills": ["Снимка", "AI"]
+      },
+      {
+        "headline": ["По-малко рутина", "повече продажби"],
+        "sub": "Подгответе обяви с готови предложения",
+        "pills": ["Описание", "Цена"]
+      }
+    ]
+  },
+  "pt": {
+    "screenshots": {
+      "Screenshot_20260519_231837.png": {
+        "headline": ["Venda mais rápido", "com IA"],
+        "sub": "Foto na entrada, anúncio na saída",
+        "pills": ["Foto", "IA"]
+      },
+      "Screenshot_20260519_232500.png": {
+        "headline": ["Novo anúncio", "num minuto"],
+        "sub": "Adicione uma foto, a IA faz o resto",
+        "pills": ["Câmara", "Galeria"]
+      },
+      "Screenshot_20260519_232525.png": {
+        "headline": ["A IA escreve", "enquanto espera"],
+        "sub": "Título, descrição e preço sem esforço",
+        "pills": ["Título", "Descrição"]
+      },
+      "Screenshot_20260519_232545.png": {
+        "headline": ["Reveja tudo", "antes de publicar"],
+        "sub": "Edite texto, preço e detalhes",
+        "pills": ["Preço", "Detalhes"]
+      },
+      "Screenshot_20260519_232644.png": {
+        "headline": ["Publique", "com um toque"],
+        "sub": "Anúncio pronto sem trabalho extra",
+        "pills": ["Descrição", "Publicar"]
+      },
+      "Screenshot_20260519_233853.png": {
+        "headline": ["Publique", "com confiança"],
+        "sub": "Verificação final antes do OLX",
+        "pills": ["Verificação", "OLX"]
+      },
+      "Screenshot_20260519_233904.png": {
+        "headline": ["O seu anúncio", "está online"],
+        "sub": "Estado e link sempre à mão",
+        "pills": ["Estado", "OLX"]
+      }
+    },
+    "fallback": [
+      {
+        "headline": ["Crie anúncios", "mais rápido"],
+        "sub": "A IA ajuda com texto, preço e detalhes",
+        "pills": ["Foto", "IA"]
+      },
+      {
+        "headline": ["Menos rotina", "mais vendas"],
+        "sub": "Prepare anúncios com sugestões prontas",
+        "pills": ["Descrição", "Preço"]
+      }
+    ]
+  }
+}

@@ -344,6 +344,35 @@ Most features use some combination of:
 - Change price formatting / thousand-separator behavior:
   - `designsystem/InputTransformations.kt` (`DigitOnlyInputTransformation`, `ThousandSeparatorOutputTransformation`)
 
+## Design Assets & Scripts
+
+### `design/` directory layout
+- `Screenshots/` — raw app screenshots captured by Maestro flows (subfolders: `iphone/`, `ipad/`, `tablet/`).
+- `StoreScreenshots/` — finished Google Play store listing images (1080×1920 JPG) and the script that generates them.
+- `StoreScreenshotsIOS/` — finished App Store screenshots for iPhone.
+- `StoreScreenshotsIPad/` — finished App Store screenshots for iPad.
+- `app-icons/` — app icon source files.
+- `ClaudeDesign/` — Claude Design project files.
+- `google-play-feature-graphic*.png` — Google Play feature graphic (1024×500).
+
+### Store screenshot generator
+`design/StoreScreenshots/generate-google-play-screenshots.mjs` — Node.js script that composites raw screenshots into store-ready Google Play listing images.
+
+**What it does:** reads PNGs from `design/Screenshots/`, wraps each in a phone frame on a branded gradient background, adds localized headline text, subtitle, pill badges, and decorative elements, then renders via headless Chrome and resizes with ImageMagick to produce final 1080×1920 JPGs.
+
+**Dependencies:** Google Chrome (headless), ImageMagick (`magick` CLI), the Manrope font bundled in `composeApp/src/commonMain/composeResources/font/`.
+
+**Supported languages:** uk, en, pl, ro, bg, pt (6 of the 8 app locales — excludes kk and ru).
+
+**Run:**
+- All languages: `node design/StoreScreenshots/generate-google-play-screenshots.mjs`
+- Specific language: `node design/StoreScreenshots/generate-google-play-screenshots.mjs --lang=en`
+- Multiple: `node design/StoreScreenshots/generate-google-play-screenshots.mjs --lang=uk,en,pl`
+
+**Output:** per-language subfolders under `design/StoreScreenshots/` (e.g. `en/`, `pl/`). Ukrainian-only runs output to the root `StoreScreenshots/` folder for backwards compatibility.
+
+**Copy:** all translations live in `design/StoreScreenshots/copy.json`, keyed by language code → screenshot filename. Layout (phone position, rotation, doodle style, pill positions/colors) is in the script itself. Update `copy.json` when screenshot text changes.
+
 ## Documentation / Lookup Rules
 - For Android or Google APIs/libraries, use the Google dev MCP tools instead of memory or generic web search.
 - Good examples:
