@@ -7,4 +7,4 @@ package com.sirelon.sellsnap.features.seller.ad
 //  - PreviewAdScreen bypasses the publish confirmation and navigates straight back
 //    to GenerateAd
 // AI generation is NOT faked: every run makes real OpenAI calls.
-internal var screenshotMode = false
+internal var screenshotMode = true
