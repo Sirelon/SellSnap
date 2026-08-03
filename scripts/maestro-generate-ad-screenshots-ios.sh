@@ -21,12 +21,15 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 ENV_FILE=".maestro/.env"
-if [[ -f "$ENV_FILE" ]]; then
-  set -a; source "$ENV_FILE"; set +a
+if [[ ! -f "$ENV_FILE" ]]; then
+  echo "ERROR: $ENV_FILE not found. Create it from the template:" >&2
+  echo "         cp .maestro/.env.example .maestro/.env   # then fill OLX_EMAIL / OLX_PASSWORD" >&2
+  exit 1
 fi
+set -a; source "$ENV_FILE"; set +a
 
-: "${OLX_EMAIL:?OLX_EMAIL is required}"
-: "${OLX_PASSWORD:?OLX_PASSWORD is required}"
+: "${OLX_EMAIL:?set OLX_EMAIL in .maestro/.env (see .maestro/.env.example)}"
+: "${OLX_PASSWORD:?set OLX_PASSWORD in .maestro/.env (see .maestro/.env.example)}"
 
 # Every photo flow depends on screenshotMode = true: GenerateAd then seeds the bundled
 # test photos itself instead of driving the OS picker. Checks source, so it cannot catch

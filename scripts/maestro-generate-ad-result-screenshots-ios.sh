@@ -25,6 +25,10 @@ cd "$(dirname "$0")/.."
 ENV_FILE=".maestro/.env"
 if [[ -f "$ENV_FILE" ]]; then
   set -a; source "$ENV_FILE"; set +a
+else
+  # Not fatal: per-country emails may also come from the environment.
+  echo "NOTE: $ENV_FILE not found — create it with" >&2
+  echo "        cp .maestro/.env.example .maestro/.env" >&2
 fi
 
 # Every photo flow depends on screenshotMode = true: GenerateAd then seeds the bundled
@@ -154,7 +158,6 @@ xcrun simctl ui "$UDID" appearance light
 echo ""
 echo "Screenshots → screenshots/$PLATFORM/<country>/"
 echo "  analysing_start_{light,dark}.png"
-echo "  analysing_progress_{light,dark}.png"
 echo "  result_top_{light,dark}.png"
 echo "  result_bottom_{light,dark}.png"
 echo "  result_publish_dialog_{light,dark}.png"

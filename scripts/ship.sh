@@ -4,6 +4,14 @@ cd "$(dirname "$0")/.."
 
 ANDROID_BUILD="androidApp/build.gradle.kts"
 IOS_CONFIG="iosApp/Configuration/Config.xcconfig"
+SCREENSHOT_MODE_FILE="composeApp/src/commonMain/kotlin/com/sirelon/aicalories/features/seller/ad/ScreenshotMode.kt"
+
+# Capture-time debug flag: seeds bundled photos and skips the publish confirmation.
+# It must never ship enabled.
+if ! grep -q "screenshotMode = false" "$SCREENSHOT_MODE_FILE"; then
+  echo "ERROR: screenshotMode must be false before shipping ($SCREENSHOT_MODE_FILE)." >&2
+  exit 1
+fi
 
 # Read current build number and increment
 CURRENT=$(grep -o 'versionCode = [0-9]*' "$ANDROID_BUILD" | grep -o '[0-9]*')

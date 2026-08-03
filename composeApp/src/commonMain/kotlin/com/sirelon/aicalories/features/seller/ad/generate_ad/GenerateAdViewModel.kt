@@ -243,7 +243,11 @@ class GenerateAdViewModel(
     private fun onFileResult(event: GenerateAdContract.GenerateAdEvent.UploadFilesResult) {
         viewModelScope.launch {
             mediaUploadHelper
-                .prepareFiles(selectionResult = event.result)
+                // Screenshot-mode photos are bundled resources with a known-supported format
+                // (see ScreenshotPhotos.kt), so the format check — and the Calf Android-context
+                // requirement it carries — is skipped for them. Unaffected when screenshotMode
+                // is false: validateFormat then evaluates to true, i.e. the prior behavior.
+                .prepareFiles(selectionResult = event.result, validateFormat = !screenshotMode)
                 .mapCatching { files -> files.mapNotNull { draftMediaFileStore.persist(it) } }
                 .onSuccess { persistedFiles ->
                     if (persistedFiles.isNotEmpty() && currentState().uploads.isEmpty()) {

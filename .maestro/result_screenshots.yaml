@@ -33,6 +33,11 @@ tags:
     timeout: 10000
     optional: true
 
+# Only one shot of this screen. A second "mid-progress" capture after a fixed wait
+# is a race: when generation finishes first the app has already navigated to
+# PreviewAd, so the file is the result screen under an analysing_* name (it came
+# out byte-identical to result_top in 6 of the committed locale/theme pairs).
+# analysing_start shows the checklist and is what the store set actually uses.
 - runFlow:
     when:
       visible:
@@ -41,12 +46,6 @@ tags:
       # Analysing screen — initial state
       - takeScreenshot:
           path: "screenshots/${PLATFORM}/${COUNTRY}/analysing_start_${THEME}"
-      # Wait ~8 s to capture meaningful progress
-      - waitForAnimationToEnd:
-          timeout: 8000
-      # Analysing screen — mid-progress state
-      - takeScreenshot:
-          path: "screenshots/${PLATFORM}/${COUNTRY}/analysing_progress_${THEME}"
 
 # Real OpenAI analysis can take up to 120 s
 - extendedWaitUntil:

@@ -25,6 +25,7 @@ COUNTRY="$(printf '%s' "$COUNTRY" | tr '[:upper:]' '[:lower:]')"
 
 if [[ -z "${OLX_EMAIL:-}" || -z "${OLX_PASSWORD:-}" ]]; then
   echo "ERROR: OLX_EMAIL and OLX_PASSWORD must be set (in .maestro/.env or the environment)." >&2
+  echo "       cp .maestro/.env.example .maestro/.env   # then fill both values" >&2
   exit 1
 fi
 

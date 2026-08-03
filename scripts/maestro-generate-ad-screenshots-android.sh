@@ -21,11 +21,14 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 ENV_FILE=".maestro/.env"
-if [[ -f "$ENV_FILE" ]]; then
-  set -a; source "$ENV_FILE"; set +a
+if [[ ! -f "$ENV_FILE" ]]; then
+  echo "ERROR: $ENV_FILE not found. Create it from the template:" >&2
+  echo "         cp .maestro/.env.example .maestro/.env   # then fill OLX_EMAIL / OLX_PASSWORD" >&2
+  exit 1
 fi
+set -a; source "$ENV_FILE"; set +a
 
-: "${OLX_EMAIL:?OLX_EMAIL is required}"
+: "${OLX_EMAIL:?set OLX_EMAIL in .maestro/.env (see .maestro/.env.example)}"
 
 SCREENSHOT_MODE_FILE="composeApp/src/commonMain/kotlin/com/sirelon/aicalories/features/seller/ad/ScreenshotMode.kt"
 if ! grep -q "screenshotMode = true" "$SCREENSHOT_MODE_FILE"; then
@@ -34,11 +37,39 @@ if ! grep -q "screenshotMode = true" "$SCREENSHOT_MODE_FILE"; then
   exit 1
 fi
 
-DEVICE="${DEVICE:-emulator-5554}"
+DEVICE="${DEVICE:-$(adb devices | awk 'NR > 1 && $2 == "device" { print $1; exit }')}"
+if [[ -z "$DEVICE" ]]; then
+  echo "ERROR: no adb device attached (and DEVICE is not set)." >&2
+  exit 1
+fi
 PLATFORM="${PLATFORM:-android-phone}"
 ORIENTATION="portrait"
 FLOW_SETUP=".maestro/setup_for_country_android.yaml"
 FLOW_SCREENSHOTS=".maestro/generate_ad_screenshots_android_no_login.yaml"
+
+# Per-app locales (cmd locale) only exist on API 33+. Below that the call fails
+# with "Can't find service: locale" and every country would be captured in
+# whatever language the device resolves — silently, since the flows are id-based.
+API_LEVEL="$(adb -s "$DEVICE" shell getprop ro.build.version.sdk | tr -d '\r')"
+if [[ "$API_LEVEL" -lt 33 ]]; then
+  echo "ERROR: per-app locales need API 33+ ($DEVICE is API $API_LEVEL)." >&2
+  echo "       Use an API 33+ emulator for multi-locale runs, or run a single country" >&2
+  echo "       with the device language set by hand." >&2
+  exit 1
+fi
+
+# Sets the app locale and verifies it stuck: cmd locale reports failure only
+# through its exit code, and a wrong locale is invisible until the screenshots
+# are reviewed.
+set_app_locale() {
+  local tag="$1" actual
+  adb -s "$DEVICE" shell cmd locale set-app-locales com.sirelon.sellsnap --locales "$tag" >/dev/null 2>&1
+  actual="$(adb -s "$DEVICE" shell cmd locale get-app-locales com.sirelon.sellsnap 2>/dev/null | tr -d '\r')"
+  case "$actual" in
+    *"$tag"*) return 0 ;;
+    *) echo "  ✗ locale $tag not applied (got: ${actual:-none})" >&2; return 1 ;;
+  esac
+}
 
 ALL_COUNTRIES=(
   "ua|uk-UA"
@@ -60,17 +91,23 @@ else
   COUNTRY_ENTRIES=("${ALL_COUNTRIES[@]}")
 fi
 
-# Phone: portrait. Tablet: landscape at lower density.
-if [ "$PLATFORM" = "android-tablet" ]; then
-  echo "Resizing emulator to tablet landscape (1920x1200, 240dpi)..."
-  adb -s "$DEVICE" shell wm size 1920x1200
-  adb -s "$DEVICE" shell wm density 240
-  sleep 2
+# Phone: portrait. Tablet: landscape at lower density. Emulator only — overriding
+# a physical panel would mix aspect ratios into one store folder (an A50 captures
+# 1080x2340 natively, the emulator set is 1080x2400).
+if [[ "$DEVICE" == emulator-* ]]; then
+  if [ "$PLATFORM" = "android-tablet" ]; then
+    echo "Resizing emulator to tablet landscape (1920x1200, 240dpi)..."
+    adb -s "$DEVICE" shell wm size 1920x1200
+    adb -s "$DEVICE" shell wm density 240
+    sleep 2
+  else
+    echo "Resizing emulator to phone portrait (1080x1920, 420dpi)..."
+    adb -s "$DEVICE" shell wm size 1080x1920
+    adb -s "$DEVICE" shell wm density 420
+    sleep 2
+  fi
 else
-  echo "Resizing emulator to phone portrait (1080x1920, 420dpi)..."
-  adb -s "$DEVICE" shell wm size 1080x1920
-  adb -s "$DEVICE" shell wm density 420
-  sleep 2
+  echo "Physical device $DEVICE — keeping the native panel size and density."
 fi
 
 FAILED=()
@@ -98,7 +135,10 @@ for entry in "${COUNTRY_ENTRIES[@]}"; do
   fi
 
   # Set locale after clearState (pm clear wipes app locale too)
-  adb -s "$DEVICE" shell cmd locale set-app-locales com.sirelon.sellsnap --locales "$locale" >/dev/null 2>&1 || true
+  if ! set_app_locale "$locale"; then
+    FAILED+=("light/$country" "dark/$country")
+    continue
+  fi
 
   osascript -e "display notification \"Type OLX password in emulator for $country\" with title \"ACTION: Android $country login\" sound name \"Glass\"" 2>/dev/null || true
   say "Action for $country: type your OLX password in the emulator and press Return." 2>/dev/null || true
@@ -152,9 +192,13 @@ for entry in "${COUNTRY_ENTRIES[@]}"; do
 done
 
 echo ""
-echo "Resetting emulator to default dimensions and light mode..."
-adb -s "$DEVICE" shell wm size reset
-adb -s "$DEVICE" shell wm density reset
+if [[ "$DEVICE" == emulator-* ]]; then
+  echo "Resetting emulator to default dimensions and light mode..."
+  adb -s "$DEVICE" shell wm size reset
+  adb -s "$DEVICE" shell wm density reset
+else
+  echo "Resetting to light mode..."
+fi
 adb -s "$DEVICE" shell cmd uimode night no
 
 echo ""

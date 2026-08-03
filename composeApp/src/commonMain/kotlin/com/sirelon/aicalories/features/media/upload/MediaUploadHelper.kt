@@ -24,9 +24,16 @@ class MediaUploadHelper(
     /**
      * Validates and converts selected files without uploading them.
      * Store the returned list in your ViewModel and call [uploadPreparedFiles] when ready.
+     *
+     * @param validateFormat When false, skips the supported-format check below. Only safe for
+     * files whose format is already known good (e.g. bundled screenshot-mode photos): the check
+     * calls Calf's [KmpFile.getFileExtension], which on Android needs Calf's internal Android
+     * context — populated only when a Calf composable such as the real file picker has been
+     * composed. Screenshot-mode seeding never composes one, so calling it there throws.
      */
     suspend fun prepareFiles(
         selectionResult: Result<List<KmpFile>>,
+        validateFormat: Boolean = true,
     ): Result<List<KmpFile>> {
         val selectedFiles = selectionResult.getOrElse { error ->
             return Result.failure(Exception(error.message ?: "Unable to access selected files."))
@@ -36,11 +43,13 @@ class MediaUploadHelper(
             return Result.failure(Exception("No files were selected."))
         }
 
-        val unsupportedFiles = selectedFiles.filterNot {
-            it.isSupportedOrConvertible()
-        }
-        if (unsupportedFiles.isNotEmpty()) {
-            return Result.failure(Exception("Only JPG, PNG, or WEBP images are supported."))
+        if (validateFormat) {
+            val unsupportedFiles = selectedFiles.filterNot {
+                it.isSupportedOrConvertible()
+            }
+            if (unsupportedFiles.isNotEmpty()) {
+                return Result.failure(Exception("Only JPG, PNG, or WEBP images are supported."))
+            }
         }
 
         return runCatching {
