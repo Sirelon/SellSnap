@@ -28,6 +28,10 @@ cd "$(dirname "$0")/.."
 ENV_FILE=".maestro/.env"
 if [[ -f "$ENV_FILE" ]]; then
   set -a; source "$ENV_FILE"; set +a
+else
+  # Not fatal: per-country emails may also come from the environment.
+  echo "NOTE: $ENV_FILE not found — create it with" >&2
+  echo "        cp .maestro/.env.example .maestro/.env" >&2
 fi
 
 SCREENSHOT_MODE_FILE="composeApp/src/commonMain/kotlin/com/sirelon/aicalories/features/seller/ad/ScreenshotMode.kt"
@@ -173,9 +177,15 @@ echo "Resetting simulator to light appearance..."
 xcrun simctl ui "$UDID" appearance light
 
 echo ""
+echo "Normalising orientation..."
+# simctl writes the RAW FRAMEBUFFER of a landscape iPad: a 2064x2752 portrait PNG whose UI
+# is rotated 90° CCW, with no EXIF orientation tag. Every consumer sees it sideways. Un-rotate
+# here so screenshots/ipad/** is always true landscape. Idempotent.
+./scripts/normalize-ipad-screenshots.sh
+
+echo ""
 echo "Screenshots → screenshots/$PLATFORM/<country>/"
 echo "  analysing_start_{light,dark}.png"
-echo "  analysing_progress_{light,dark}.png"
 echo "  result_top_{light,dark}.png"
 echo "  result_bottom_{light,dark}.png"
 echo "  result_publish_dialog_{light,dark}.png"

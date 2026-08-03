@@ -107,6 +107,13 @@ echo "Resetting simulator to light appearance..."
 xcrun simctl ui "$UDID" appearance light
 
 echo ""
+echo "Normalising orientation..."
+# simctl writes the RAW FRAMEBUFFER of a landscape iPad: a 2064x2752 portrait PNG whose UI
+# is rotated 90° CCW, with no EXIF orientation tag. Every consumer sees it sideways. Un-rotate
+# here so screenshots/ipad/** is always true landscape. Idempotent.
+./scripts/normalize-ipad-screenshots.sh
+
+echo ""
 echo "Screenshots → screenshots/$PLATFORM/<country>/generate_ad_{top,bottom}_{light,dark}.png"
 if [ ${#FAILED[@]} -gt 0 ]; then
   echo "Failed: ${FAILED[*]}"
