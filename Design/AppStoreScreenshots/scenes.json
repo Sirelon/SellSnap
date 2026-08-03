@@ -1,0 +1,140 @@
+{
+  "_readme": [
+    "THE MANIFEST. This file is the whole point of the rewrite: it binds each source screen",
+    "to a specific copy block from Design/StoreScreenshots/copy.json by NAME, never by index.",
+    "",
+    "  id      - output filename stem, also the human name of the scene",
+    "  screen  - source screenshot base name under screenshots/<device>/<locale>/",
+    "  theme   - 'light' | 'dark' | omitted (auth.png has no theme variant)",
+    "  copy    - a readable copy-block alias (see COPY_BLOCKS in the generator) or 'fallback:N'",
+    "  why     - the justification that the caption is TRUE of this exact screen. If you cannot",
+    "            write this line honestly, the pairing is wrong — drop the scene instead.",
+    "",
+    "Order in the array = order in the App Store. Scenes follow the real user flow.",
+    "Deliberately unused: copy block 'live' ('Your listing is live' / 'Status and link always",
+    "at hand'). No captured screen shows a published listing — the furthest state in the app",
+    "is the pre-publish confirmation sheet. Captioning any of these as 'live' would be the exact",
+    "screenshot/caption lie this manifest exists to prevent."
+  ],
+
+  "iphone": [
+    {
+      "id": "welcome",
+      "screen": "auth",
+      "copy": "hero",
+      "doodle": "circle",
+      "pillIconColors": ["#F08030", "#FBBF24"],
+      "why": "The welcome screen's own subtitle is literally 'photo in -> listing out', which is verbatim the 'Photo in, listing out' sub. Sign-in and guest mode are both offered, so 'Sell faster with AI' reads as the promise, not a claim about state."
+    },
+    {
+      "id": "add-photos",
+      "screen": "generate_ad_top",
+      "theme": "light",
+      "copy": "new_listing",
+      "doodle": "burst",
+      "pillIconColors": ["#F08030", "#FBBF24"],
+      "why": "This IS the new-listing input screen: 'Nowe ogloszenie', 'Dodaj 1-8 zdjec', three real photo thumbnails, Aparat / Galeria buttons and the 'Generuj z AI' CTA. Pills 'Camera'/'Gallery' name buttons actually on screen."
+    },
+    {
+      "id": "ai-writes",
+      "screen": "analysing_start",
+      "theme": "dark",
+      "copy": "ai_writes",
+      "doodle": "frame",
+      "pillIconColors": ["#F08030", "#1B8E5A"],
+      "why": "The screen says 'we are analysing your photos and writing the perfect title, description and price' and lists exactly those steps. 'AI writes text while you wait' + 'Title, description and price' is a description of what is on screen, not a claim."
+    },
+    {
+      "id": "ai-steps",
+      "screen": "analysing_progress",
+      "theme": "light",
+      "copy": "fallback:0",
+      "doodle": "frame",
+      "pillIconColors": ["#1B8E5A", "#FBBF24"],
+      "why": "Same screen later: the checklist has flipped to green ticks on upload / analyse / title / description / price. 'AI helps with text, price and details' enumerates the visible ticked steps."
+    },
+    {
+      "id": "review",
+      "screen": "result_top",
+      "theme": "light",
+      "copy": "review",
+      "doodle": "circle",
+      "pillIconColors": ["#FBBF24", "#1B8E5A"],
+      "why": "Shows the generated title and description in editable cards above the price, with the publish CTA still pending. 'Review everything before posting' / 'Edit text, price and details' is exactly the available action."
+    },
+    {
+      "id": "details",
+      "screen": "result_bottom",
+      "theme": "dark",
+      "copy": "publish_tap",
+      "doodle": "circle",
+      "pillIconColors": ["#1B8E5A", "#FBBF24"],
+      "why": "Bottom of the same screen: prefilled Details (condition, brand, size), Location, an 'everything is ready' banner and the single green 'Opublikuj na OLX' button. 'Publish in one tap' / 'A ready listing with zero extra work' is literally the state shown."
+    },
+    {
+      "id": "confirm",
+      "screen": "result_publish_dialog",
+      "theme": "dark",
+      "copy": "final_check",
+      "doodle": "burst",
+      "pillIconColors": ["#FBBF24", "#1B8E5A"],
+      "why": "The confirmation sheet 'Ready to publish?' showing final title, OLX category path and price with 'Yes, publish' / 'Wait, I want to edit'. 'Final check before OLX' is precisely this sheet. Note it is still PRE-publish, so no 'live' wording."
+    }
+  ],
+
+  "ipad": [
+    {
+      "id": "welcome",
+      "screen": "auth",
+      "copy": "hero",
+      "doodle": "circle",
+      "pillIconColors": ["#F08030", "#FBBF24"],
+      "why": "Same welcome screen as on iPhone, landscape: 'photo in -> listing out' is on the screen itself, with OLX sign-in and guest mode both offered."
+    },
+    {
+      "id": "add-photos",
+      "screen": "generate_ad_top",
+      "theme": "light",
+      "copy": "new_listing",
+      "doodle": "burst",
+      "pillIconColors": ["#F08030", "#FBBF24"],
+      "why": "The one genuinely tablet-adaptive screen: persistent left navigation rail, three-across photo grid, side-by-side Aparat / Galeria. Pills 'Camera'/'Gallery' name visible buttons. Best proof this is a real iPad app, so it carries the tablet story."
+    },
+    {
+      "id": "ai-writes",
+      "screen": "analysing_start",
+      "theme": "dark",
+      "copy": "ai_writes",
+      "doodle": "frame",
+      "pillIconColors": ["#F08030", "#1B8E5A"],
+      "why": "The analysing screen states 'we are analysing your photos and writing the ideal title, description and price' above the five-step pipeline, so 'AI writes text while you wait' + 'Title, description and price' describes what is on screen. MUST be analysing_start, not analysing_progress: on iPad the progress capture raced the AI and grabbed the result screen instead in bg, pt and ro (byte-identical to result_top_dark in bg/pt). analysing_start_dark is a genuine analysing screen in every locale."
+    },
+    {
+      "id": "review",
+      "screen": "result_top",
+      "theme": "dark",
+      "copy": "review",
+      "doodle": "circle",
+      "pillIconColors": ["#FBBF24", "#1B8E5A"],
+      "why": "The payoff frame: 'Gotowe w 26 sekund', generated title and description in editable cards, price, publish CTA. 'Review everything before posting' / 'Edit text, price and details' is exactly the offered action. Dark chosen because the light variant clips the price glyph."
+    },
+    {
+      "id": "details",
+      "screen": "result_bottom",
+      "theme": "light",
+      "copy": "publish_tap",
+      "doodle": "circle",
+      "pillIconColors": ["#1B8E5A", "#FBBF24"],
+      "why": "Bottom of the same screen with the prefilled Szczegoly attribute card and the publish CTA. Light chosen because the dark variant sits at a different scroll offset with no Szczegoly card at all."
+    },
+    {
+      "id": "confirm",
+      "screen": "result_publish_dialog",
+      "theme": "dark",
+      "copy": "final_check",
+      "doodle": "burst",
+      "pillIconColors": ["#FBBF24", "#1B8E5A"],
+      "why": "The pre-publish confirmation sheet with final title, OLX category path and price. 'Final check before OLX' is literally this sheet. Still pre-publish, so no 'live' wording."
+    }
+  ]
+}
