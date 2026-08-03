@@ -332,3 +332,9 @@ render.experimental.xml
 .maestro/.env
 fastlane/google-play-key.json
 fastlane/*.p8
+
+# Store-screenshot generator byproducts. The SVGs inline their source PNGs as base64,
+# so each one is multiple MB; they are regenerated on every run and are not deliverables.
+Design/StoreScreenshots/*.svg
+Design/AppStoreScreenshots/**/*.svg
+*.raw.png
