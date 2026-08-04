@@ -6,15 +6,18 @@
     "  id      - output filename stem, also the human name of the scene",
     "  screen  - source screenshot base name under screenshots/<device>/<locale>/",
     "  theme   - 'light' | 'dark' | omitted (auth.png has no theme variant)",
+    "  themeByLocale - per-locale theme override, for locales whose captures are one theme only",
+    "  onlyLocales   - restrict a scene to the locales that actually have its source screen",
     "  copy    - a readable copy-block alias (see COPY_BLOCKS in the generator) or 'fallback:N'",
     "  why     - the justification that the caption is TRUE of this exact screen. If you cannot",
     "            write this line honestly, the pairing is wrong — drop the scene instead.",
     "",
-    "Order in the array = order in the App Store. Scenes follow the real user flow.",
-    "Deliberately unused: copy block 'live' ('Your listing is live' / 'Status and link always",
-    "at hand'). No captured screen shows a published listing — the furthest state in the app",
-    "is the pre-publish confirmation sheet. Captioning any of these as 'live' would be the exact",
-    "screenshot/caption lie this manifest exists to prevent."
+    "Order in the array = order in the store listing. Scenes follow the real user flow.",
+    "Copy block 'live' ('Your listing is live' / 'Status and link always at hand') is used by",
+    "exactly ONE scene: android-phone 'live', restricted to ua, the only locale with a capture",
+    "of a published listing. Every other locale's furthest captured state is the pre-publish",
+    "confirmation sheet, and captioning that as 'live' would be the exact screenshot/caption lie",
+    "this manifest exists to prevent."
   ],
 
   "iphone": [
@@ -135,6 +138,73 @@
       "doodle": "burst",
       "pillIconColors": ["#FBBF24", "#1B8E5A"],
       "why": "The pre-publish confirmation sheet with final title, OLX category path and price. 'Final check before OLX' is literally this sheet. Still pre-publish, so no 'live' wording."
+    }
+  ],
+  "android-phone": [
+    {
+      "id": "welcome",
+      "screen": "auth",
+      "themeByLocale": { "ua": "dark" },
+      "copy": "hero",
+      "doodle": "circle",
+      "pillIconColors": ["#F08030", "#FBBF24"],
+      "why": "Verified on the pl capture: 'Hej, witaj w SellSnap' with the subtitle 'Wrzuc zdjecie, dostan ogloszenie — AI robi reszte', which is verbatim the 'Photo in, listing out' sub. Both 'Kontynuuj z OLX' and guest mode are offered, so 'Sell faster with AI' reads as the promise, not a claim about state."
+    },
+    {
+      "id": "add-photos",
+      "screen": "generate_ad_top",
+      "theme": "light",
+      "themeByLocale": { "ua": "dark" },
+      "copy": "new_listing",
+      "doodle": "burst",
+      "pillIconColors": ["#F08030", "#FBBF24"],
+      "why": "This IS the new-listing input screen: 'Nowe ogloszenie', 'Dodaj 1-8 zdjec. My zajmiemy sie reszta.', three real photo thumbnails, the '+ Dodaj' tile and the 'Generuj z AI' CTA. Pills 'Camera'/'Gallery' name the two ways to add the photos this screen is asking for."
+    },
+    {
+      "id": "ai-writes",
+      "screen": "analysing_start",
+      "theme": "dark",
+      "copy": "ai_writes",
+      "doodle": "frame",
+      "pillIconColors": ["#F08030", "#1B8E5A"],
+      "why": "'Przygotowujemy Twoje ogloszenie' / 'Analizujemy Twoje zdjecia i piszemy idealny tytul, opis i cene...' plus the live step list (Przesylanie zdjec done, Analizowanie zdjec in progress, Tworzenie tytulu, Pisanie opisu, Szacowanie ceny). 'AI writes text while you wait' + 'Title, description and price' is a readout of the screen. analysing_progress is deliberately NOT used: it races the AI and can capture the result screen instead, and ro/bg have no such capture at all."
+    },
+    {
+      "id": "review",
+      "screen": "result_top",
+      "theme": "light",
+      "themeByLocale": { "ua": "dark" },
+      "copy": "review",
+      "doodle": "circle",
+      "pillIconColors": ["#FBBF24", "#1B8E5A"],
+      "why": "The payoff frame: photo carousel, 'Gotowe w 21 sekund — przejrzyj przed publikacja.', then the generated Tytul and Opis in editable cards each with Kopiuj/AI affordances. 'Review everything before posting' / 'Edit text, price and details' is exactly what the screen invites — and the banner itself says review before publishing."
+    },
+    {
+      "id": "details",
+      "screen": "result_bottom",
+      "theme": "dark",
+      "copy": "fallback:1",
+      "doodle": "circle",
+      "pillIconColors": ["#1B8E5A", "#FBBF24"],
+      "why": "Bottom of the same screen: the OLX Kategoria path plus a Szczegoly card already filled in from the photos (Stan: Uzywane, Marka: New Balance, Rozmiar 40, Kolor Brazowy). 'Prepare listings with ready-made suggestions' is literally that card, and 'Less busywork, more sales' claims no state. NOT captioned 'Publish in one tap' like the iPhone set: these Android captures have no simulated location, so the CTA reads 'Publikuj - 1 do poprawki' (1 to fix) and a one-tap claim over it would be false. Caveat: the copy block's pills are Description/Price, which are on the screen above this scroll offset rather than in frame."
+    },
+    {
+      "id": "confirm",
+      "screen": "result_publish_dialog",
+      "theme": "dark",
+      "copy": "final_check",
+      "doodle": "burst",
+      "pillIconColors": ["#FBBF24", "#1B8E5A"],
+      "why": "The 'Gotowy do publikacji?' sheet: the three photos, final title, OLX category path, price and a green 'Tak, publikuj' next to 'Poczekaj, chce edytowac'. 'Publish with confidence' / 'Final check before OLX' is literally this sheet. Still pre-publish, so no 'live' wording."
+    },
+    {
+      "id": "live",
+      "screen": "published",
+      "onlyLocales": ["ua"],
+      "copy": "live",
+      "doodle": "burst",
+      "pillIconColors": ["#1B8E5A", "#FBBF24"],
+      "why": "The ONLY capture in the whole pipeline that shows a published listing, so the 'live' copy block finally has an honest home: green tick, 'Opublikovano!', the listing card with its price, the copyable olx.ua link, and a Status tile reading 'Ochikuye - pereverte ogoloshennya na OLX'. 'Your listing is live' / 'Status and link always at hand' is a readout of that screen. Restricted to ua with onlyLocales because no other locale has this capture — the other four stop at the pre-publish sheet."
     }
   ]
 }

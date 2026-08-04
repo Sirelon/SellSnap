@@ -6,7 +6,7 @@ Upload the files in the order shown. Filenames are already numbered `01…07` in
 
 | Folder | App Store Connect slot | Pixel size | Localizations present |
 | --- | --- | --- | --- |
-| `iphone-6.9/` | iPhone 6.9-inch display | 1290 × 2796 (portrait) | `bg`, `pl`, `pt` — 7 files each |
+| `iphone-6.9/` | iPhone 6.9-inch display | 1290 × 2796 (portrait) | `bg`, `pl`, `pt`, `ro` — 7 files each |
 | `ipad-13/` | iPad 13-inch display | 2752 × 2064 (landscape) | `bg`, `pl`, `pt`, `ro`, `ua` — 6 files each |
 
 Locale folder → App Store Connect localization:
@@ -19,7 +19,7 @@ Locale folder → App Store Connect localization:
 
 ## 2. Known gaps
 
-- **No Romanian iPhone set.** `iphone-6.9/` contains only `bg`, `pl`, `pt`. The underlying Romanian iPhone app screenshots were never captured, so there is nothing to render from.
+- **No Ukrainian iPhone set.** `iphone-6.9/` contains `bg`, `pl`, `pt`, `ro`. The underlying Ukrainian iPhone app screenshots were never captured (`screenshots/iphone/ua/` holds only `auth.png`), so there is nothing to render from. Romanian was captured on 2026-08-04 and is now complete.
 - **iPad has 6 shots, iPhone has 7.** The iPhone-only extra is `04-ai-steps.jpg`; the iPad set has no equivalent scene.
 - **`ipad-13/ua/` is a bonus regeneration.** The Ukrainian listing is already shipped, so re-uploading it is optional.
 - **Portuguese `02-add-photos.jpg` has a clipped header.** The underlying pt capture sits at a different scroll offset than pl/bg, so the "Adicione 1 a 8 fotos" heading is cut off and the status bar overlaps the photo thumbnails. `pt/01-welcome.jpg` likewise lost its hero image. Both are still on-message and legible — upload them, or re-capture the Portuguese iPhone screenshots first if you want them pixel-clean.
@@ -51,9 +51,17 @@ Locale folder → App Store Connect localization:
 
 ## 4. Romanian
 
-### iPhone 6.9-inch
+### iPhone 6.9-inch — `iphone-6.9/ro/`
 
-*No Romanian iPhone screenshots exist — skip this slot for the Romanian localization.*
+| # | File | Headline (on image) | Sub-line (on image) | Chips | App screen shown |
+| --- | --- | --- | --- | --- | --- |
+| 1 | `01-welcome.jpg` | Vinde mai repede / cu AI | Foto la intrare, anunț la ieșire | Foto · AI | Welcome / sign-in (`auth`) |
+| 2 | `02-add-photos.jpg` | Anunț nou / într-un minut | Adaugă o poză, AI se ocupă de rest | Cameră · Galerie | New listing — add photos (`generate_ad_top`, light) |
+| 3 | `03-ai-writes.jpg` | AI scrie textul / cât aștepți | Titlu, descriere și preț — fără efort | Titlu · Descriere | AI analysing — starting (`analysing_start`, dark) |
+| 4 | `04-ai-steps.jpg` | Creează anunțuri / mai repede | AI te ajută cu textul, prețul și detaliile | Foto · AI | AI analysing — steps ticked (`analysing_progress`, light) |
+| 5 | `05-review.jpg` | Verifică totul / înainte de publicare | Editează textul, prețul și detaliile | Preț · Detalii | Result — title + description (`result_top`, light) |
+| 6 | `06-details.jpg` | Publică / dintr-o atingere | Anunț gata fără muncă în plus | Descriere · Publicare | Result — details + publish button (`result_bottom`, dark) |
+| 7 | `07-confirm.jpg` | Publică / fără ezitare | Verificare finală înainte de OLX | Verificare · OLX | Pre-publish confirmation sheet (`result_publish_dialog`, dark) |
 
 ### iPad 13-inch — `ipad-13/ro/`
 

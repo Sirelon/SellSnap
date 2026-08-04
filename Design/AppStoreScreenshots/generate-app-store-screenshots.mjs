@@ -20,6 +20,11 @@
  *   node generate-app-store-screenshots.mjs --device=iphone
  *   node generate-app-store-screenshots.mjs --locale=pl,ro
  *   node generate-app-store-screenshots.mjs --device=ipad --locale=pl --sheet
+ *   node generate-app-store-screenshots.mjs --device=android-phone --sheet --doc
+ *
+ * Flags: --sheet writes a contact sheet per locale to previews/; --doc regenerates
+ * PLAY_STORE_TEXT.md from scenes.json + copy.json; --allow-similar bypasses the
+ * duplicate-screen guard.
  *
  * Requires: node 18+, headless Google Chrome, ImageMagick (`magick`).
  */
@@ -135,6 +140,44 @@ const DEVICES = {
       bigCircle: { cx: 2520, cy: 190, r: 300 },
       warmCircle: { cx: 170, cy: 1900, r: 320 },
       stars: [{ x: 2650, y: 740, size: 100 }, { x: 96, y: 1230, size: 72, fill: "#FFF8F2" }],
+    },
+  },
+  "android-phone": {
+    label: "Google Play phone",
+    outDir: "android-phone",
+    sourceDir: "android-phone",
+    // 1080x1920 is 9:16 — inside Play's accepted range (min 1080px, max 3840px on the long
+    // edge) and the size the already-shipped Play set uses. renderScale 2 keeps text crisp.
+    //
+    // The vertical rhythm is NOT the iPhone profile scaled: 9:16 is much shorter than the
+    // iPhone's 9:19.5, so scaling the iPhone y-values proportionally puts the pill row on
+    // top of the device bezel. Everything below is laid out for this canvas specifically.
+    canvas: { w: 1080, h: 1920 },
+    renderScale: 2,
+    // 552x1196 = 0.4615, the aspect ratio of the 1080x2340 captures, so `slice` crops
+    // nothing. auth.png is 1080x2400 (captured on a different panel) and loses ~2% of its
+    // height — acceptable, and the only screen where it happens.
+    screen: { w: 552, h: 1196 },
+    frame: 28,
+    cornerOuter: 74,
+    cornerInner: 52,
+    // y=560 with a 1252-tall bezel ends at 1812, leaving 108px for the ±5° rotation
+    // (a corner drops ~53px at this width) plus the drop shadow.
+    device: { y: 560, rotateCycle: [-5, 3, 0, 0, -3, 2, 0, 4] },
+    text: { x: 65, headlineY: 138, headlineSizes: [72, 64, 56], lineGap: 10, subY: 348, subSize: 34, headlineRightReserve: 190 },
+    pill: { y: 424, h: 68, radius: 34, fontSize: 30, padLeft: 68, padRight: 28, iconCx: 38, iconR: 17, gap: 22 },
+    badge: { x: 800, y: 442, r: 68, inner: 46 },
+    // No iPhone-style pill notch — these are Android captures and a pill reads as the wrong
+    // platform on a Play listing. `null` draws the small centred camera dot on the top bezel,
+    // which is what the Samsung panel these were captured on actually has.
+    notch: null,
+    // No bottom sweep: the pill row ends at 492 and the bezel starts at 560 — 68px is not
+    // enough for a curved stroke that would not clip one of them.
+    doodleBand: { top: 52, bottom: null },
+    decor: {
+      bigCircle: { cx: 955, cy: 150, r: 172 },
+      warmCircle: { cx: 116, cy: 1750, r: 204 },
+      stars: [{ x: 926, y: 316, size: 80 }, { x: 72, y: 1545, size: 50, fill: "#FFF8F2" }],
     },
   },
 };
@@ -390,8 +433,29 @@ function availableLocales(profile) {
     .sort();
 }
 
+/**
+ * A scene's theme for one locale. `themeByLocale` exists because capture coverage is not
+ * uniform: the Ukrainian Android set (recovered from the pre-2026-06-01 Design/Screenshots
+ * folder) is dark-only, while the other four locales have both themes. Overriding one locale
+ * beats forcing every locale to dark just to accommodate it.
+ */
+function themeFor(scene, locale) {
+  return scene.themeByLocale?.[locale] ?? scene.theme;
+}
+
+/**
+ * Scenes for one locale. `onlyLocales` restricts a scene to the locales that actually have
+ * its source screen — without it, a scene only one locale can satisfy would make every other
+ * locale fail the missing-sources check and get skipped entirely. Play (and App Store Connect)
+ * accept a different screenshot count per language, so an extra frame in one locale is fine.
+ */
+function scenesFor(scenes, locale) {
+  return scenes.filter((scene) => !scene.onlyLocales || scene.onlyLocales.includes(locale));
+}
+
 function sceneFile(profile, locale, scene) {
-  const name = scene.theme ? `${scene.screen}_${scene.theme}.png` : `${scene.screen}.png`;
+  const theme = themeFor(scene, locale);
+  const name = theme ? `${scene.screen}_${theme}.png` : `${scene.screen}.png`;
   return join(sourceRoot, profile.sourceDir, locale, name);
 }
 
@@ -455,17 +519,18 @@ for (const deviceName of deviceNames) {
       continue;
     }
 
-    const missing = scenes.filter((scene) => !existsSync(sceneFile(profile, locale, scene)));
+    const localeScenes = scenesFor(scenes, locale);
+    const missing = localeScenes.filter((scene) => !existsSync(sceneFile(profile, locale, scene)));
     if (missing.length) {
       console.warn(
-        `  ! ${deviceName}/${locale}: missing ${missing.length}/${scenes.length} source screenshots ` +
+        `  ! ${deviceName}/${locale}: missing ${missing.length}/${localeScenes.length} source screenshots ` +
         `(${missing.map((m) => m.screen).join(", ")}) — SKIPPED, would produce a partial set`,
       );
       report.push({ device: deviceName, locale, status: "skipped", missing: missing.map((m) => m.screen) });
       continue;
     }
 
-    const clashes = findSimilarScenes(profile, locale, scenes);
+    const clashes = findSimilarScenes(profile, locale, localeScenes);
     if (clashes.length && !allowSimilar) {
       for (const [a, b] of clashes) {
         console.error(
@@ -482,7 +547,7 @@ for (const deviceName of deviceNames) {
     rmSync(outDir, { recursive: true, force: true });
     mkdirSync(outDir, { recursive: true });
 
-    scenes.forEach((scene, index) => {
+    localeScenes.forEach((scene, index) => {
       const block = resolveCopy(langCopy, scene.copy, lang, scene.id);
       const stem = `${String(index + 1).padStart(2, "0")}-${scene.id}`;
       const svgPath = join(outDir, `${stem}.svg`);
@@ -505,10 +570,11 @@ for (const deviceName of deviceNames) {
       render(svgPath, jpgPath, profile);
       unlinkSync(svgPath); // intermediate; multi-MB because sources are inlined base64
       generated += 1;
-      console.log(`  ${profile.outDir}/${locale}/${basename(jpgPath)}  <- ${scene.screen}${scene.theme ? `_${scene.theme}` : ""}`);
+      const usedTheme = themeFor(scene, locale);
+      console.log(`  ${profile.outDir}/${locale}/${basename(jpgPath)}  <- ${scene.screen}${usedTheme ? `_${usedTheme}` : ""}`);
     });
 
-    report.push({ device: deviceName, locale, status: "ok", count: scenes.length });
+    report.push({ device: deviceName, locale, status: "ok", count: localeScenes.length });
 
     if (wantSheet) {
       const sheetDir = join(here, "previews");
@@ -522,7 +588,7 @@ for (const deviceName of deviceNames) {
         // `-label ""` means no text is actually drawn.
         "-font", fontPath,
         "-label", "",
-        ...scenes.map((s, i) => join(outDir, `${String(i + 1).padStart(2, "0")}-${s.id}.jpg`)),
+        ...localeScenes.map((s, i) => join(outDir, `${String(i + 1).padStart(2, "0")}-${s.id}.jpg`)),
         "-tile", "4x",
         "-geometry", "+8+8",
         "-background", "#FFF8F2",
@@ -532,6 +598,84 @@ for (const deviceName of deviceNames) {
       console.log(`  sheet -> previews/${basename(sheet)}`);
     }
   }
+}
+
+/* -------------------------------------------------------------------------- */
+/* --doc: regenerate PLAY_STORE_TEXT.md from the manifest                     */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * APP_STORE_TEXT.md is hand-maintained and went stale the first time a scene's theme
+ * changed (five iPad rows, caught only by grepping). The Play doc is emitted from
+ * scenes.json + copy.json instead, so it cannot drift. Run with --doc after rendering.
+ */
+const LOCALE_NAMES = { bg: "Bulgarian", pl: "Polish", pt: "Portuguese (Portugal)", ro: "Romanian", ua: "Ukrainian", en: "English" };
+const SCREEN_NAMES = {
+  auth: "Welcome / sign-in",
+  generate_ad_top: "New listing — add photos",
+  analysing_progress: "AI analysing — steps ticked",
+  analysing_start: "AI analysing — starting",
+  result_top: "Result — title + description",
+  result_bottom: "Result — category + AI-filled details",
+  result_publish_dialog: "Pre-publish confirmation sheet",
+  published: "Published listing — status + OLX link",
+};
+
+function writePlayDoc(okLocales) {
+  const profile = DEVICES["android-phone"];
+  const scenes = allScenes["android-phone"];
+  const lines = [
+    "# SellSnap — Google Play screenshot upload guide",
+    "",
+    "Phone screenshots for the Play Console listing. Upload in filename order — Play shows them in the order you upload.",
+    "",
+    "**Generated by `generate-app-store-screenshots.mjs --doc` from `scenes.json` + `copy.json`.**",
+    "Do not hand-edit: re-run the generator instead. `APP_STORE_TEXT.md` is the hand-maintained",
+    "one and it went stale the first time a scene changed.",
+    "",
+    "## 1. What to upload where",
+    "",
+    "| Folder | Play Console slot | Pixel size | Localizations present |",
+    "| --- | --- | --- | --- |",
+    `| \`android-phone/\` | Phone screenshots | ${profile.canvas.w} × ${profile.canvas.h} (portrait) | ` +
+      `${okLocales.map((l) => `\`${l}\` (${scenesFor(scenes, l).length})`).join(", ")} |`,
+    "",
+    "Locale folder → Play Console language:",
+    "",
+    ...okLocales.map((l) => `- \`${l}\` = ${LOCALE_NAMES[l] ?? l}`),
+    "",
+    "## 2. Known gaps",
+    "",
+    "- **No tablet set.** `screenshots/android-tablet/<locale>/` holds only `auth.png`, so there are no 7\"/10\" assets. Optional for Play, but required to be listed as tablet-optimised.",
+    "- **`analysing_progress` is deliberately unused** — the capture races the AI and can grab the result screen instead; `ro` and `bg` have no such capture at all.",
+    "- **The publish CTA shows the error state** (`Publish · 1 to fix`) on `review` and `details` in pl/ro/bg/pt: those captures had no simulated location, which is a required field. That is why `details` is not captioned \"Publish in one tap\" like the iPhone set. Re-capture with a mock location for the green CTA.",
+    "- **The Ukrainian sources are from the 2026-05-19 build** (recovered from `Design/Screenshots` at commit 56d53a27^), dark-only, and show a different item than the other locales. They are the only captures that reach the published-listing screen. Each Play language shows only its own set, so the cross-locale difference is invisible to users — but the UI itself has moved on since May.",
+    "",
+  ];
+  for (const locale of okLocales) {
+    lines.push(`## ${LOCALE_NAMES[locale] ?? locale} — \`android-phone/${locale}/\``, "",
+      "| # | File | Headline (on image) | Sub-line (on image) | Chips | App screen shown |",
+      "| --- | --- | --- | --- | --- | --- |");
+    scenesFor(scenes, locale).forEach((scene, i) => {
+      const block = resolveCopy(allCopy[LOCALE_TO_LANG[locale]], scene.copy, LOCALE_TO_LANG[locale], scene.id);
+      const theme = themeFor(scene, locale);
+      const n = String(i + 1).padStart(2, "0");
+      lines.push(
+        `| ${i + 1} | \`${n}-${scene.id}.jpg\` | ${block.headline.join(" / ")} | ${block.sub} | ` +
+        `${block.pills.join(" · ")} | ${SCREEN_NAMES[scene.screen] ?? scene.screen} (\`${scene.screen}\`${theme ? `, ${theme}` : ""}) |`,
+      );
+    });
+    lines.push("");
+  }
+  const docPath = join(here, "PLAY_STORE_TEXT.md");
+  writeFileSync(docPath, lines.join("\n"));
+  console.log(`  doc -> ${basename(docPath)}`);
+}
+
+if (flag("doc")) {
+  const okLocales = report.filter((r) => r.device === "android-phone" && r.status === "ok").map((r) => r.locale);
+  if (okLocales.length) writePlayDoc(okLocales);
+  else console.warn("  ! --doc: no android-phone locale rendered, PLAY_STORE_TEXT.md left alone");
 }
 
 console.log(`\n${generated} screenshots written.`);

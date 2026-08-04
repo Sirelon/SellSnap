@@ -406,3 +406,43 @@ pre-publish confirmation sheet. That last one was the brief's central requiremen
 
 Further per-file iPad observations from the cataloguer are in
 `.claude/tmp/ipad-screenshots-followups.md`.
+
+## 2026-08-04 — Google Play phone profile added
+
+`android-phone` is now a device profile in `generate-app-store-screenshots.mjs`
+(1080x1920, 6 scenes, sources from `screenshots/android-phone/<locale>/`), replacing
+`Design/StoreScreenshots/generate-google-play-screenshots.mjs` for phone assets. Rendered for
+pl/ro/bg/pt; ua skipped (never captured). Doc: `PLAY_STORE_TEXT.md`, generated from
+`scenes.json` + `copy.json` rather than hand-written.
+
+Two insights worth keeping:
+
+13. **Do not scale a phone profile from the iPhone one.** 9:16 is far shorter than the
+    iPhone's 9:19.5, so proportionally scaled y-values drop the pill row onto the device
+    bezel. The vertical rhythm has to be laid out per aspect ratio: text block in the top
+    ~25%, pills ending by y=492, bezel from y=560 with 108px of slack below for rotation and
+    the drop shadow. `doodleBand.bottom` is null for the same reason as the iPad.
+
+14. **A caption can be falsified by the app's own error state, not just by the wrong screen.**
+    The Android result captures have no simulated location, so the CTA reads
+    `Publish · 1 to fix`. The iPhone set's "Publish in one tap" over that would be a lie, so
+    `android-phone`'s `details` scene uses `fallback:1` ("Less busywork, more sales" /
+    "Prepare listings with ready-made suggestions"), which is true of the AI-filled details
+    card actually in frame. Check the CTA state, not only the screen identity.
+
+15. **A missing locale may not be missing — check git history and `Design/Screenshots`.**
+    `screenshots/android-phone/ua/` held only `auth.png`, but the full Ukrainian Android set
+    was sitting in `Design/Screenshots/Screenshot_20260519_*.png`, deleted in 56d53a27 — the
+    very files `copy.json`'s keys are named after. Recovered with
+    `git show 56d53a27^:<path>`. It is the only capture set that reaches the published-listing
+    screen, so the `live` copy block ("Your listing is live") finally has an honest home.
+16. **Uneven capture coverage needs two manifest escape hatches, not a lowest common
+    denominator.** The recovered ua set is dark-only and has an extra screen. Rather than
+    forcing every locale to dark and dropping the extra frame, scenes now support
+    `themeByLocale` (per-locale theme override) and `onlyLocales` (restrict a scene to the
+    locales that have its source). Both stores accept a different screenshot count per
+    language. Without `onlyLocales`, one locale-specific scene would fail the
+    missing-sources check for every *other* locale and skip them all.
+17. **`PLAY_STORE_TEXT.md` is emitted by `--doc`,** from `scenes.json` + `copy.json` — the
+    fix that §"Trap: APP_STORE_TEXT.md drifts" asked for, applied to the Play doc only so far.
+    Doing the same for `APP_STORE_TEXT.md` is still open.

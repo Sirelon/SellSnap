@@ -33,11 +33,6 @@ tags:
     timeout: 10000
     optional: true
 
-# Only one shot of this screen. A second "mid-progress" capture after a fixed wait
-# is a race: when generation finishes first the app has already navigated to
-# PreviewAd, so the file is the result screen under an analysing_* name (it came
-# out byte-identical to result_top in 6 of the committed locale/theme pairs).
-# analysing_start shows the checklist and is what the store set actually uses.
 - runFlow:
     when:
       visible:
@@ -46,6 +41,25 @@ tags:
       # Analysing screen — initial state
       - takeScreenshot:
           path: "screenshots/${PLATFORM}/${COUNTRY}/analysing_start_${THEME}"
+
+# Mid-progress state. The iPhone store manifest binds its "ai-steps" scene to
+# analysing_progress_light, so this capture cannot simply be dropped — but an
+# unguarded fixed wait IS a race: when generation finishes first the app has
+# already navigated to PreviewAd and the file becomes the result screen under an
+# analysing_* name (byte-identical to result_top in 6 committed locale/theme
+# pairs). The re-check below is the fix: no shot unless we are still on the
+# analysing screen. A locale that generates too fast ends up with no
+# analysing_progress file, which the generator reports as a missing source —
+# loud and correct, unlike a mislabelled one.
+- waitForAnimationToEnd:
+    timeout: 8000
+- runFlow:
+    when:
+      visible:
+        id: "ai_processing_screen"
+    commands:
+      - takeScreenshot:
+          path: "screenshots/${PLATFORM}/${COUNTRY}/analysing_progress_${THEME}"
 
 # Real OpenAI analysis can take up to 120 s
 - extendedWaitUntil:
