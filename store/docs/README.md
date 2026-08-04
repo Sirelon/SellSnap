@@ -3,7 +3,7 @@
 Generated App Store assets for **iPhone** and **iPad**, one folder per store localization.
 
 - **What to upload where, and the caption text of every image →
-  [`APP_STORE_TEXT.md`](APP_STORE_TEXT.md)**
+  [`store/copy/app-store.md`](store/copy/app-store.md)**
 - How this was built, what broke, what to watch out for → [`PROGRESS.md`](PROGRESS.md)
 - Subagent research notes → [`notes/`](notes/)
 
@@ -16,7 +16,7 @@ previews/<device>-<locale>-contact-sheet.jpg      review grids, do NOT upload
 ```
 
 Files are numbered in upload order. `bg` · `pl` · `pt` · `ro` · `ua` are app locale codes;
-`APP_STORE_TEXT.md` maps them to App Store Connect localization names.
+`store/copy/app-store.md` maps them to App Store Connect localization names.
 
 iPhone covers **bg, pl, pt** only — the Romanian iPhone source screenshots were never
 captured. See `PROGRESS.md` §7.
@@ -24,11 +24,11 @@ captured. See `PROGRESS.md` §7.
 ## Regenerating
 
 ```bash
-cd Design/AppStoreScreenshots
+cd store/tools
 
-node generate-app-store-screenshots.mjs                          # everything
-node generate-app-store-screenshots.mjs --device=iphone
-node generate-app-store-screenshots.mjs --locale=pl,ro --sheet    # + contact sheets
+node generate-store-screenshots.mjs                          # everything
+node generate-store-screenshots.mjs --device=iphone
+node generate-store-screenshots.mjs --locale=pl,ro --sheet    # + contact sheets
 ```
 
 Needs headless Google Chrome, ImageMagick (`magick`) and node 18+. Chrome prints harmless
@@ -44,7 +44,7 @@ will not emit a partial set.
 ```jsonc
 {
   "id": "confirm",                       // -> 07-confirm.jpg
-  "screen": "result_publish_dialog",     // -> screenshots/iphone/<locale>/result_publish_dialog_dark.png
+  "screen": "result_publish_dialog",     // -> store/captures/iphone/<locale>/result_publish_dialog_dark.png
   "theme": "dark",
   "copy": "final_check",                 // -> copy.json[<lang>].screenshots[...] via COPY_BLOCKS
   "why": "..."                           // why this caption is TRUE of this exact screen
@@ -60,16 +60,15 @@ Two rules keep captions honest:
    than reaching for a vaguer caption. Two copy blocks in `copy.json` are deliberately
    unused for exactly this reason — see `PROGRESS.md` §4.3.
 
-Caption text comes from `Design/StoreScreenshots/copy.json`, which is shared with the Play
-Store generator and is **not** modified by this pipeline.
+Caption text comes from `store/copy/copy.json` and is **not** modified by this pipeline.
 
 ## Related
 
 | Path | Purpose |
 | --- | --- |
-| `screenshots/<device>/<locale>/` | Maestro-captured raw app screenshots (the input) |
+| `store/captures/<device>/<locale>/` | Maestro-captured raw app screenshots (the input) |
 | `scripts/maestro-*-ipad.sh`, `scripts/maestro-*-ios.sh` | capture the raw screenshots |
 | `scripts/normalize-ipad-screenshots.sh` | un-rotates sideways iPad captures; idempotent, called by the iPad capture scripts |
-| `Design/StoreScreenshots/` | Google Play generator (still index-paired, legacy sources) |
-| `Design/StoreScreenshotsIOS/`, `Design/StoreScreenshotsIPad/` | shipped Ukrainian assets, kept for reference. Their generators were retired — see the `SUPERSEDED.md` in each |
+| `store/copy/copy.json` | localized captions (shared, key names are frozen) |
+| `store/assets/` | rendered output: `app-store/{iphone-6.9,ipad-13}/`, `play-store/phone/` |
 | `.claude/skills/app-store-screenshots/` | the skill: workflow, preflight checks, `reference.md` with geometry and known source defects |

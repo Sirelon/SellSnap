@@ -10,7 +10,7 @@ Hard rule: generated assets must contain zero text in any language. No Polish, U
 
 - `composeApp/src/commonMain/composeResources/drawable/img_onboarding_1.webp` is a 400x266 raster image and is currently unused.
 - Runtime seller screens mostly use vector icons and code-built compositions. Actual listing photos come from user uploads and flow through preview, publish confirmation, and success screens.
-- The prototype has explicit placeholder product imagery in `Design/ClaudeDesign/project/placeholders.jsx`. Kotlin previews also use remote Unsplash sneaker URLs in `PreviewAdScreen.kt`.
+- The prototype has explicit placeholder product imagery in `brand/claude-design/project/placeholders.jsx`. Kotlin previews also use remote Unsplash sneaker URLs in `PreviewAdScreen.kt`.
 - Do not bake UI text into generated images. Seller copy is localized through `strings.xml`, and Ukrainian/English text should remain editable in resources. External models may invent Polish-looking text if not constrained, so keep repeating the zero-text rule.
 - Avoid OLX logos or third-party brand logos in generated imagery. Use generic marketplace cards, phone UI blocks, camera motifs, checks, tags, and product photos.
 

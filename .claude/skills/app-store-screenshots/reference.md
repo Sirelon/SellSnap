@@ -65,8 +65,8 @@ Override with `--allow-similar` only after looking at both images.
 ## copy.json structure
 
 Keys are the filenames of the **legacy 2026-05-19 Android screenshots**, which no longer exist
-on disk — they are positions in the flow wearing filename costumes. Do not rename them;
-`Design/StoreScreenshots/generate-google-play-screenshots.mjs` still reads them. Readable
+on disk — they are positions in the flow wearing filename costumes. Do not rename them:
+every translation is keyed by them. Readable
 aliases live in `COPY_BLOCKS` in the App Store generator.
 
 | alias | copy (en) | used by |

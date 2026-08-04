@@ -13,4 +13,4 @@ tags:
       - waitForAnimationToEnd
 
 - takeScreenshot:
-    path: "screenshots/${PLATFORM}/${COUNTRY}/auth_${THEME}"
+    path: "store/captures/${PLATFORM}/${COUNTRY}/auth_${THEME}"

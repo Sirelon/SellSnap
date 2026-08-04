@@ -1,10 +1,10 @@
 {
   "_readme": [
     "THE MANIFEST. This file is the whole point of the rewrite: it binds each source screen",
-    "to a specific copy block from Design/StoreScreenshots/copy.json by NAME, never by index.",
+    "to a specific copy block from store/copy/copy.json by NAME, never by index.",
     "",
     "  id      - output filename stem, also the human name of the scene",
-    "  screen  - source screenshot base name under screenshots/<device>/<locale>/",
+    "  screen  - source screenshot base name under store/captures/<device>/<locale>/",
     "  theme   - 'light' | 'dark' | omitted (auth.png has no theme variant)",
     "  themeByLocale - per-locale theme override, for locales whose captures are one theme only",
     "  onlyLocales   - restrict a scene to the locales that actually have its source screen",

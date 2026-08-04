@@ -116,7 +116,7 @@ for entry in "${COUNTRY_ENTRIES[@]}"; do
   country="${entry%%|*}"
   locale="${entry##*|}"
 
-  mkdir -p "screenshots/$PLATFORM/$country"
+  mkdir -p "store/captures/$PLATFORM/$country"
 
   echo ""
   echo "════════════════════════════════════════"
@@ -202,7 +202,7 @@ fi
 adb -s "$DEVICE" shell cmd uimode night no
 
 echo ""
-echo "Screenshots saved to screenshots/$PLATFORM/<country>/generate_ad_{top,bottom}_{light,dark}.png"
+echo "Screenshots saved to store/captures/$PLATFORM/<country>/generate_ad_{top,bottom}_{light,dark}.png"
 if [ ${#FAILED[@]} -gt 0 ]; then
   echo "Failed: ${FAILED[*]}"
   exit 1

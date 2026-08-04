@@ -40,7 +40,7 @@ tags:
     commands:
       # Analysing screen — initial state
       - takeScreenshot:
-          path: "screenshots/${PLATFORM}/${COUNTRY}/analysing_start_${THEME}"
+          path: "store/captures/${PLATFORM}/${COUNTRY}/analysing_start_${THEME}"
 
 # Mid-progress state. The iPhone store manifest binds its "ai-steps" scene to
 # analysing_progress_light, so this capture cannot simply be dropped — but an
@@ -59,7 +59,7 @@ tags:
         id: "ai_processing_screen"
     commands:
       - takeScreenshot:
-          path: "screenshots/${PLATFORM}/${COUNTRY}/analysing_progress_${THEME}"
+          path: "store/captures/${PLATFORM}/${COUNTRY}/analysing_progress_${THEME}"
 
 # Real OpenAI analysis can take up to 120 s
 - extendedWaitUntil:
@@ -83,7 +83,7 @@ tags:
 
 # Result screen — top (title/photos visible)
 - takeScreenshot:
-    path: "screenshots/${PLATFORM}/${COUNTRY}/result_top_${THEME}"
+    path: "store/captures/${PLATFORM}/${COUNTRY}/result_top_${THEME}"
 
 # Scroll to the last card (location) so the bottom section is visible. A blind
 # `swipe` silently no-ops when the gesture lands on a child that eats the drag —
@@ -103,7 +103,7 @@ tags:
 
 # Result screen — bottom (price, category, attributes, location visible)
 - takeScreenshot:
-    path: "screenshots/${PLATFORM}/${COUNTRY}/result_bottom_${THEME}"
+    path: "store/captures/${PLATFORM}/${COUNTRY}/result_bottom_${THEME}"
 
 - tapOn:
     id: "preview_ad_publish_button"
@@ -115,7 +115,7 @@ tags:
 
 # Result screen — publish confirm dialog
 - takeScreenshot:
-    path: "screenshots/${PLATFORM}/${COUNTRY}/result_publish_dialog_${THEME}"
+    path: "store/captures/${PLATFORM}/${COUNTRY}/result_publish_dialog_${THEME}"
 
 # Cleanup: dismiss dialog, then tap back button — in screenshotMode navigates
 # directly to GenerateAd (skips BackInfo sheet) so dark-mode run starts cleanly.

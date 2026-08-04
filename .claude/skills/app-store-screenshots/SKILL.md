@@ -7,7 +7,7 @@ description: Turn captured app screenshots into branded, caption-framed App Stor
 
 Composites raw per-locale app screenshots into store-ready images: branded gradient, headline,
 sub-line, two chips, tick badge, device mock. Reads localized copy from
-`Design/StoreScreenshots/copy.json`.
+`store/copy/copy.json`.
 
 **The whole point of this skill is one rule.** Everything else is detail.
 
@@ -24,19 +24,19 @@ sub-line, two chips, tick badge, device mock. Reads localized copy from
 
 | Path | Role |
 | --- | --- |
-| `Design/AppStoreScreenshots/generate-app-store-screenshots.mjs` | the generator |
-| `Design/AppStoreScreenshots/scenes.json` | **the manifest** — screen → copy block, per device |
-| `Design/AppStoreScreenshots/PROGRESS.md` | full history, 12 numbered insights, follow-ups |
-| `Design/AppStoreScreenshots/APP_STORE_TEXT.md` | upload guide: file → caption → localization |
-| `Design/StoreScreenshots/copy.json` | localized copy. **Shared with the Play generator — do not rename its keys** |
-| `screenshots/<device>/<locale>/*.png` | the raw captures (input) |
+| `store/tools/generate-store-screenshots.mjs` | the generator |
+| `store/tools/scenes.json` | **the manifest** — screen → copy block, per device |
+| `store/docs/PROGRESS.md` | full history, 12 numbered insights, follow-ups |
+| `store/copy/app-store.md` | upload guide: file → caption → localization |
+| `store/copy/copy.json` | localized copy. **Do not rename its keys** — every translation is keyed by them |
+| `store/captures/<device>/<locale>/*.png` | the raw captures (input) |
 | `scripts/normalize-ipad-screenshots.sh` | un-rotates sideways iPad captures; idempotent |
 | `reference.md` (next to this file) | device geometry, thresholds, known source defects |
 
 ```bash
-cd Design/AppStoreScreenshots
-node generate-app-store-screenshots.mjs                        # everything available
-node generate-app-store-screenshots.mjs --device=ipad --locale=pl --sheet
+cd store/tools
+node generate-store-screenshots.mjs                        # everything available
+node generate-store-screenshots.mjs --device=ipad --locale=pl --sheet
 ```
 
 Needs headless Chrome, ImageMagick, node 18+. Chrome spams harmless shutdown noise —
@@ -69,7 +69,7 @@ Edit `scenes.json`. Each entry:
 ```jsonc
 {
   "id": "confirm",                      // -> 07-confirm.jpg
-  "screen": "result_publish_dialog",    // -> screenshots/<device>/<locale>/<screen>_<theme>.png
+  "screen": "result_publish_dialog",    // -> store/captures/<device>/<locale>/<screen>_<theme>.png
   "theme": "dark",                      // omit if the screen has no theme variants
   "copy": "final_check",                // COPY_BLOCKS alias in the generator, or "fallback:N"
   "doodle": "burst",                    // circle | frame | burst
@@ -91,7 +91,7 @@ and `fallback:1` because nothing on any screen makes it *specifically* true.
 
 The most common request ("add Romanian screenshots"). Nothing in the generator needs editing.
 
-1. Confirm the captures exist: `ls screenshots/{iphone,ipad}/<locale>/` — expect 15 files.
+1. Confirm the captures exist: `ls store/captures/{iphone,ipad}/<locale>/` — expect 15 files.
    If it holds only `auth.png`, the set was never captured; that is a capture task, not this
    skill. Stop and say so.
 2. iPad only: `scripts/normalize-ipad-screenshots.sh` (safe to re-run).
@@ -99,11 +99,11 @@ The most common request ("add Romanian screenshots"). Nothing in the generator n
    that language. Add the mapping if missing; **do not invent copy** — if the language is
    absent, that is a translation task to raise with the user.
 4. Run the preflight checks above on the new locale specifically.
-5. `node generate-app-store-screenshots.mjs --locale=<locale> --sheet`
-6. View the contact sheet. Then add the locale's rows to `APP_STORE_TEXT.md` (see the trap
+5. `node generate-store-screenshots.mjs --locale=<locale> --sheet`
+6. View the contact sheet. Then add the locale's rows to `store/copy/app-store.md` (see the trap
    below).
 
-## Trap: `APP_STORE_TEXT.md` drifts
+## Trap: `store/copy/app-store.md` drifts
 
 It is **hand-maintained**, and its "App screen shown" column duplicates `scenes.json`. Change a
 scene's `screen` or `theme` and every row for that scene across every locale silently goes
@@ -158,7 +158,7 @@ mistaken for render artefacts. Read the observations; re-derive the severity you
 - No two images in a folder show the same app screen.
 - No caption claims a state later than what its screen shows — check the whole set for
   "published"/"live" wording specifically.
-- `APP_STORE_TEXT.md` regenerated or hand-checked against `scenes.json`; stale rows after a
+- `store/copy/app-store.md` regenerated or hand-checked against `scenes.json`; stale rows after a
   scene swap are easy to miss.
 - No `.svg` or `.raw.png` left behind.
 - New insights appended to `PROGRESS.md`; app bugs spotted in the screenshots logged to

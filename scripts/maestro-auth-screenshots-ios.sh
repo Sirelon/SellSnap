@@ -44,7 +44,7 @@ for theme in $THEMES; do
     lang="${rest%%|*}"
     locale="${rest##*|}"
 
-    mkdir -p "screenshots/$PLATFORM/$country"
+    mkdir -p "store/captures/$PLATFORM/$country"
     printf "  %s (%s) " "$country" "$locale"
 
     xcrun simctl spawn "$UDID" defaults write -g AppleLanguages "(\"$lang\")" 2>/dev/null
@@ -70,7 +70,7 @@ echo "Resetting simulator to light appearance..."
 xcrun simctl ui "$UDID" appearance light
 
 echo ""
-echo "Screenshots saved to screenshots/$PLATFORM/<country>/auth_<theme>.png"
+echo "Screenshots saved to store/captures/$PLATFORM/<country>/auth_<theme>.png"
 if [ ${#FAILED[@]} -gt 0 ]; then
   echo "Failed: ${FAILED[*]}"
   exit 1

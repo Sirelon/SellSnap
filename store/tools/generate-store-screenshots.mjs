@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 /**
- * App Store screenshot generator (iPhone 6.9" + iPad 13", all locales).
+ * Store screenshot generator (App Store iPhone 6.9" + iPad 13", Google Play phone; all locales).
  *
- * Reads the Maestro-captured per-locale screenshots from `screenshots/<device>/<locale>/`
+ * Reads the Maestro-captured per-locale screenshots from `store/captures/<device>/<locale>/`
  * and composites each one into a branded frame with a headline / sub / pills taken from
- * `Design/StoreScreenshots/copy.json`.
+ * `store/copy/copy.json`. Output goes to `store/assets/{app-store,play-store}/...`.
  *
  * WHY THIS SCRIPT EXISTS instead of the three older ones:
  *   1. The old scripts pair screenshot -> caption BY SORTED FILENAME INDEX. That is
@@ -16,14 +16,14 @@
  *   3. The old iPad script assumes LANDSCAPE sources. The Maestro captures are PORTRAIT.
  *
  * Usage:
- *   node generate-app-store-screenshots.mjs                      # every device, every locale it can find
- *   node generate-app-store-screenshots.mjs --device=iphone
- *   node generate-app-store-screenshots.mjs --locale=pl,ro
- *   node generate-app-store-screenshots.mjs --device=ipad --locale=pl --sheet
- *   node generate-app-store-screenshots.mjs --device=android-phone --sheet --doc
+ *   node store/tools/generate-store-screenshots.mjs                      # every device, every locale it can find
+ *   node store/tools/generate-store-screenshots.mjs --device=iphone
+ *   node store/tools/generate-store-screenshots.mjs --locale=pl,ro
+ *   node store/tools/generate-store-screenshots.mjs --device=ipad --locale=pl --sheet
+ *   node store/tools/generate-store-screenshots.mjs --device=android-phone --sheet --doc
  *
- * Flags: --sheet writes a contact sheet per locale to previews/; --doc regenerates
- * PLAY_STORE_TEXT.md from scenes.json + copy.json; --allow-similar bypasses the
+ * Flags: --sheet writes a contact sheet per locale to store/previews/; --doc regenerates
+ * store/copy/play-store.md from scenes.json + copy.json; --allow-similar bypasses the
  * duplicate-screen guard.
  *
  * Requires: node 18+, headless Google Chrome, ImageMagick (`magick`).
@@ -35,10 +35,13 @@ import { basename, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
-const root = join(here, "..", "..");
+const storeRoot = join(here, "..");
+const root = join(storeRoot, "..");
 
-const sourceRoot = join(root, "screenshots");
-const copyPath = join(root, "Design/StoreScreenshots/copy.json");
+const sourceRoot = join(storeRoot, "captures");
+const assetsRoot = join(storeRoot, "assets");
+const previewsRoot = join(storeRoot, "previews");
+const copyPath = join(storeRoot, "copy/copy.json");
 const scenesPath = join(here, "scenes.json");
 const fontPath = join(root, "composeApp/src/commonMain/composeResources/font/manrope_variable.ttf");
 const chromePath = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
@@ -51,8 +54,7 @@ const LOCALE_TO_LANG = { bg: "bg", pl: "pl", pt: "pt", ro: "ro", ua: "uk", en: "
  * which no longer exist on disk — the keys are really just positions in the flow wearing
  * filename costumes. These readable aliases are what scenes.json refers to, so the
  * manifest can be reviewed by a human without decoding timestamps. copy.json itself is
- * deliberately left untouched: generate-google-play-screenshots.mjs still reads it by
- * the original keys.
+ * deliberately left untouched — renaming the keys would only churn every translation.
  */
 const COPY_BLOCKS = {
   hero: "Screenshot_20260519_231837.png",        // "Sell faster with AI" / "Photo in, listing out"
@@ -92,6 +94,7 @@ const DEVICES = {
   iphone: {
     label: "iPhone 6.9\"",
     outDir: "iphone-6.9",
+    assetDir: "app-store/iphone-6.9",
     sourceDir: "iphone",
     canvas: { w: 1290, h: 2796 },
     renderScale: 2,
@@ -114,6 +117,7 @@ const DEVICES = {
   ipad: {
     label: "iPad 13\"",
     outDir: "ipad-13",
+    assetDir: "app-store/ipad-13",
     sourceDir: "ipad",
     // LANDSCAPE. The iPad app runs landscape and the captures are landscape once
     // scripts/normalize-ipad-screenshots.sh has un-rotated them. 2752x2064 is an accepted
@@ -145,6 +149,7 @@ const DEVICES = {
   "android-phone": {
     label: "Google Play phone",
     outDir: "android-phone",
+    assetDir: "play-store/phone",
     sourceDir: "android-phone",
     // 1080x1920 is 9:16 — inside Play's accepted range (min 1080px, max 3840px on the long
     // edge) and the size the already-shipped Play set uses. renderScale 2 keeps text crisp.
@@ -436,7 +441,8 @@ function availableLocales(profile) {
 /**
  * A scene's theme for one locale. `themeByLocale` exists because capture coverage is not
  * uniform: the Ukrainian Android set (recovered from the pre-2026-06-01 Design/Screenshots
- * folder) is dark-only, while the other four locales have both themes. Overriding one locale
+ * folder, since deleted — see git history) is dark-only, while the other four locales have
+ * both themes. Overriding one locale
  * beats forcing every locale to dark just to accommodate it.
  */
 function themeFor(scene, locale) {
@@ -543,7 +549,7 @@ for (const deviceName of deviceNames) {
       continue;
     }
 
-    const outDir = join(here, profile.outDir, locale);
+    const outDir = join(assetsRoot, profile.assetDir, locale);
     rmSync(outDir, { recursive: true, force: true });
     mkdirSync(outDir, { recursive: true });
 
@@ -571,13 +577,13 @@ for (const deviceName of deviceNames) {
       unlinkSync(svgPath); // intermediate; multi-MB because sources are inlined base64
       generated += 1;
       const usedTheme = themeFor(scene, locale);
-      console.log(`  ${profile.outDir}/${locale}/${basename(jpgPath)}  <- ${scene.screen}${usedTheme ? `_${usedTheme}` : ""}`);
+      console.log(`  ${profile.assetDir}/${locale}/${basename(jpgPath)}  <- ${scene.screen}${usedTheme ? `_${usedTheme}` : ""}`);
     });
 
     report.push({ device: deviceName, locale, status: "ok", count: localeScenes.length });
 
     if (wantSheet) {
-      const sheetDir = join(here, "previews");
+      const sheetDir = previewsRoot;
       mkdirSync(sheetDir, { recursive: true });
       const sheet = join(sheetDir, `${profile.outDir}-${locale}-contact-sheet.jpg`);
       execFileSync("magick", [
@@ -601,11 +607,11 @@ for (const deviceName of deviceNames) {
 }
 
 /* -------------------------------------------------------------------------- */
-/* --doc: regenerate PLAY_STORE_TEXT.md from the manifest                     */
+/* --doc: regenerate store/copy/play-store.md from the manifest               */
 /* -------------------------------------------------------------------------- */
 
 /**
- * APP_STORE_TEXT.md is hand-maintained and went stale the first time a scene's theme
+ * store/copy/app-store.md is hand-maintained and went stale the first time a scene's theme
  * changed (five iPad rows, caught only by grepping). The Play doc is emitted from
  * scenes.json + copy.json instead, so it cannot drift. Run with --doc after rendering.
  */
@@ -629,8 +635,8 @@ function writePlayDoc(okLocales) {
     "",
     "Phone screenshots for the Play Console listing. Upload in filename order — Play shows them in the order you upload.",
     "",
-    "**Generated by `generate-app-store-screenshots.mjs --doc` from `scenes.json` + `copy.json`.**",
-    "Do not hand-edit: re-run the generator instead. `APP_STORE_TEXT.md` is the hand-maintained",
+    "**Generated by `store/tools/generate-store-screenshots.mjs --doc` from `scenes.json` + `copy.json`.**",
+    "Do not hand-edit: re-run the generator instead. `app-store.md` is the hand-maintained",
     "one and it went stale the first time a scene changed.",
     "",
     "## 1. What to upload where",
@@ -667,7 +673,7 @@ function writePlayDoc(okLocales) {
     });
     lines.push("");
   }
-  const docPath = join(here, "PLAY_STORE_TEXT.md");
+  const docPath = join(storeRoot, "copy/play-store.md");
   writeFileSync(docPath, lines.join("\n"));
   console.log(`  doc -> ${basename(docPath)}`);
 }
@@ -675,7 +681,7 @@ function writePlayDoc(okLocales) {
 if (flag("doc")) {
   const okLocales = report.filter((r) => r.device === "android-phone" && r.status === "ok").map((r) => r.locale);
   if (okLocales.length) writePlayDoc(okLocales);
-  else console.warn("  ! --doc: no android-phone locale rendered, PLAY_STORE_TEXT.md left alone");
+  else console.warn("  ! --doc: no android-phone locale rendered, play-store.md left alone");
 }
 
 console.log(`\n${generated} screenshots written.`);

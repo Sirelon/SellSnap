@@ -6,7 +6,7 @@
 #   ./scripts/maestro-auth-screenshots.sh
 #   DEVICE=emulator-5554 ./scripts/maestro-auth-screenshots.sh
 #
-# Output: screenshots/auth/<locale>.png (relative to project root)
+# Output: store/captures/auth/<locale>.png (relative to project root)
 
 set -euo pipefail
 
@@ -22,7 +22,7 @@ LOCALES=(
 )
 
 FLOW=".maestro/auth_screenshot.yaml"
-OUTPUT_DIR="screenshots/auth"
+OUTPUT_DIR="store/captures/auth"
 
 mkdir -p "$OUTPUT_DIR"
 

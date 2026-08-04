@@ -130,7 +130,7 @@ for entry in "${COUNTRY_ENTRIES[@]}"; do
   locale="${rest%%|*}"
   coords="${rest#*|}"
 
-  mkdir -p "screenshots/$PLATFORM/$country"
+  mkdir -p "store/captures/$PLATFORM/$country"
 
   echo ""
   echo "════════════════════════════════════════"
@@ -223,7 +223,7 @@ fi
 adb -s "$DEVICE" shell cmd uimode night no
 
 echo ""
-echo "Screenshots saved to screenshots/$PLATFORM/<country>/"
+echo "Screenshots saved to store/captures/$PLATFORM/<country>/"
 echo "  analysing_start_{light,dark}.png"
 echo "  result_top_{light,dark}.png  result_bottom_{light,dark}.png"
 echo "  result_publish_dialog_{light,dark}.png"

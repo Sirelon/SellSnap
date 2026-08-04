@@ -351,34 +351,50 @@ Most features use some combination of:
 - Change price formatting / thousand-separator behavior:
   - `designsystem/InputTransformations.kt` (`DigitOnlyInputTransformation`, `ThousandSeparatorOutputTransformation`)
 
-## Design Assets & Scripts
+## Store Assets & Design Assets
 
-### `design/` directory layout
-- `Screenshots/` — raw app screenshots captured by Maestro flows (subfolders: `iphone/`, `ipad/`, `tablet/`).
-- `StoreScreenshots/` — finished Google Play store listing images (1080×1920 JPG) and the script that generates them.
-- `StoreScreenshotsIOS/` — finished App Store screenshots for iPhone.
-- `StoreScreenshotsIPad/` — finished App Store screenshots for iPad.
+Everything that ships to App Store Connect / Play Console lives under `store/`. Brand source
+material that is not a store asset lives under `brand/`.
+
+### `store/` directory layout
+- `copy/` — all listing text. `store-listing.md` (descriptions per language), `app-store.md` and
+  `play-store.md` (screenshot upload guides), `copy.json` (the localized screenshot captions the
+  generator reads).
+- `captures/<device>/<locale>/` — raw app screenshots written by the Maestro flows. Devices:
+  `iphone/`, `ipad/`, `android-phone/`, `android-tablet/`. **Input, never uploaded.**
+- `assets/app-store/{iphone-6.9,ipad-13}/<locale>/` — finished App Store screenshots.
+- `assets/play-store/phone/<locale>/` — finished Play Store phone screenshots (1080×1920 JPG).
+- `assets/play-store/feature-graphic/` — Google Play feature graphic (1024×500 and source).
+- `tools/` — `generate-store-screenshots.mjs` (the only generator) and `scenes.json` (its manifest).
+- `docs/` — `PROGRESS.md` (history + insights), `README.md`, `notes/` (per-device screen inventories).
+- `previews/` — per-device/locale contact sheets for reviewing a render.
+
+### `brand/` directory layout
 - `app-icons/` — app icon source files.
-- `ClaudeDesign/` — Claude Design project files.
-- `google-play-feature-graphic*.png` — Google Play feature graphic (1024×500).
+- `claude-design/` — Claude Design project files (UI prototype, not store assets).
 
 ### Store screenshot generator
-`design/StoreScreenshots/generate-google-play-screenshots.mjs` — Node.js script that composites raw screenshots into store-ready Google Play listing images.
+`store/tools/generate-store-screenshots.mjs` — Node.js script that composites raw captures into
+store-ready App Store and Play Store images.
 
-**What it does:** reads PNGs from `design/Screenshots/`, wraps each in a phone frame on a branded gradient background, adds localized headline text, subtitle, pill badges, and decorative elements, then renders via headless Chrome and resizes with ImageMagick to produce final 1080×1920 JPGs.
+**What it does:** reads `store/captures/<device>/<locale>/<screen>_<theme>.png`, wraps each in a
+device frame on a branded gradient background, adds localized headline / subtitle / pill badges,
+renders via headless Chrome and downsamples with ImageMagick. Screenshot → caption pairing is an
+explicit semantic manifest (`scenes.json`) — **never** by filename index.
 
 **Dependencies:** Google Chrome (headless), ImageMagick (`magick` CLI), the Manrope font bundled in `composeApp/src/commonMain/composeResources/font/`.
 
-**Supported languages:** uk, en, pl, ro, bg, pt (6 of the 8 app locales — excludes kk and ru).
+**Run** (from the repo root):
+- Everything it can find: `node store/tools/generate-store-screenshots.mjs`
+- One device: `node store/tools/generate-store-screenshots.mjs --device=android-phone`
+- One locale + contact sheet: `node store/tools/generate-store-screenshots.mjs --locale=pl --sheet`
+- Regenerate `store/copy/play-store.md` from the manifest: add `--doc`
 
-**Run:**
-- All languages: `node design/StoreScreenshots/generate-google-play-screenshots.mjs`
-- Specific language: `node design/StoreScreenshots/generate-google-play-screenshots.mjs --lang=en`
-- Multiple: `node design/StoreScreenshots/generate-google-play-screenshots.mjs --lang=uk,en,pl`
+**Copy:** all translations live in `store/copy/copy.json`, keyed by language code → legacy
+screenshot filename (the keys are flow positions, not real files — do not rename them). Layout is
+in the script's device profiles. Update `copy.json` when screenshot text changes.
 
-**Output:** per-language subfolders under `design/StoreScreenshots/` (e.g. `en/`, `pl/`). Ukrainian-only runs output to the root `StoreScreenshots/` folder for backwards compatibility.
-
-**Copy:** all translations live in `design/StoreScreenshots/copy.json`, keyed by language code → screenshot filename. Layout (phone position, rotation, doodle style, pill positions/colors) is in the script itself. Update `copy.json` when screenshot text changes.
+Full workflow, preflight checks and known source defects: `.claude/skills/app-store-screenshots/`.
 
 ## Documentation / Lookup Rules
 - For Android or Google APIs/libraries, use the Google dev MCP tools instead of memory or generic web search.

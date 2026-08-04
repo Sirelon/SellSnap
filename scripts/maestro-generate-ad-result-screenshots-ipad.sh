@@ -99,7 +99,7 @@ for entry in "${COUNTRY_ENTRIES[@]}"; do
     *)  cont_label="Continue" ;;
   esac
 
-  mkdir -p "screenshots/$PLATFORM/$country"
+  mkdir -p "store/captures/$PLATFORM/$country"
 
   echo ""
   echo "════════════════════════════════════════"
@@ -180,11 +180,11 @@ echo ""
 echo "Normalising orientation..."
 # simctl writes the RAW FRAMEBUFFER of a landscape iPad: a 2064x2752 portrait PNG whose UI
 # is rotated 90° CCW, with no EXIF orientation tag. Every consumer sees it sideways. Un-rotate
-# here so screenshots/ipad/** is always true landscape. Idempotent.
+# here so store/captures/ipad/** is always true landscape. Idempotent.
 ./scripts/normalize-ipad-screenshots.sh
 
 echo ""
-echo "Screenshots → screenshots/$PLATFORM/<country>/"
+echo "Screenshots → store/captures/$PLATFORM/<country>/"
 echo "  analysing_start_{light,dark}.png"
 echo "  result_top_{light,dark}.png"
 echo "  result_bottom_{light,dark}.png"

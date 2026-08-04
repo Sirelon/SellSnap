@@ -65,7 +65,7 @@ tags:
         id: "ai_processing_screen"
     commands:
       - takeScreenshot:
-          path: "screenshots/${PLATFORM}/${COUNTRY}/analysing_start_${THEME}"
+          path: "store/captures/${PLATFORM}/${COUNTRY}/analysing_start_${THEME}"
 
 - extendedWaitUntil:
     visible:
@@ -83,7 +83,7 @@ tags:
     timeout: 1000
 
 - takeScreenshot:
-    path: "screenshots/${PLATFORM}/${COUNTRY}/result_top_${THEME}"
+    path: "store/captures/${PLATFORM}/${COUNTRY}/result_top_${THEME}"
 
 # See result_screenshots.yaml for why 40 s / 60 % rather than 15 s / 100 %.
 - scrollUntilVisible:
@@ -96,7 +96,7 @@ tags:
     timeout: 1000
 
 - takeScreenshot:
-    path: "screenshots/${PLATFORM}/${COUNTRY}/result_bottom_${THEME}"
+    path: "store/captures/${PLATFORM}/${COUNTRY}/result_bottom_${THEME}"
 
 - tapOn:
     id: "preview_ad_publish_button"
@@ -107,7 +107,7 @@ tags:
     timeout: 10000
 
 - takeScreenshot:
-    path: "screenshots/${PLATFORM}/${COUNTRY}/result_publish_dialog_${THEME}"
+    path: "store/captures/${PLATFORM}/${COUNTRY}/result_publish_dialog_${THEME}"
 
 - tapOn:
     id: "preview_ad_publish_confirm_dismiss"

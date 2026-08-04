@@ -91,7 +91,7 @@ for theme in $THEMES; do
     country="${entry%%|*}"
     locale="${entry##*|}"
 
-    mkdir -p "screenshots/$PLATFORM/$country"
+    mkdir -p "store/captures/$PLATFORM/$country"
     printf "  %s (%s) " "$country" "$locale"
 
     # Step 1: clear state via Maestro (safe pm clear)
@@ -131,7 +131,7 @@ echo "Resetting to light mode..."
 adb -s "$DEVICE" shell cmd uimode night no
 
 echo ""
-echo "Screenshots saved to screenshots/$PLATFORM/<country>/auth_<theme>.png"
+echo "Screenshots saved to store/captures/$PLATFORM/<country>/auth_<theme>.png"
 if [ ${#FAILED[@]} -gt 0 ]; then
   echo "Failed: ${FAILED[*]}"
   exit 1

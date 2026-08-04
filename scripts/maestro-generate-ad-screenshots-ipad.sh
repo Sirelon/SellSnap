@@ -58,7 +58,7 @@ for entry in "${COUNTRY_ENTRIES[@]+"${COUNTRY_ENTRIES[@]}"}"; do
   lang="${rest%%|*}"
   locale="${rest##*|}"
 
-  mkdir -p "screenshots/$PLATFORM/$country"
+  mkdir -p "store/captures/$PLATFORM/$country"
 
   echo ""
   echo "════════════════════════════════════════"
@@ -110,11 +110,11 @@ echo ""
 echo "Normalising orientation..."
 # simctl writes the RAW FRAMEBUFFER of a landscape iPad: a 2064x2752 portrait PNG whose UI
 # is rotated 90° CCW, with no EXIF orientation tag. Every consumer sees it sideways. Un-rotate
-# here so screenshots/ipad/** is always true landscape. Idempotent.
+# here so store/captures/ipad/** is always true landscape. Idempotent.
 ./scripts/normalize-ipad-screenshots.sh
 
 echo ""
-echo "Screenshots → screenshots/$PLATFORM/<country>/generate_ad_{top,bottom}_{light,dark}.png"
+echo "Screenshots → store/captures/$PLATFORM/<country>/generate_ad_{top,bottom}_{light,dark}.png"
 if [ ${#FAILED[@]} -gt 0 ]; then
   echo "Failed: ${FAILED[*]}"
   exit 1

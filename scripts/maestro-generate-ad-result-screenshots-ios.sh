@@ -92,7 +92,7 @@ for entry in "${COUNTRY_ENTRIES[@]}"; do
     continue
   fi
 
-  mkdir -p "screenshots/$PLATFORM/$country"
+  mkdir -p "store/captures/$PLATFORM/$country"
 
   echo ""
   echo "════════════════════════════════════════"
@@ -156,7 +156,7 @@ echo "Resetting simulator to light appearance..."
 xcrun simctl ui "$UDID" appearance light
 
 echo ""
-echo "Screenshots → screenshots/$PLATFORM/<country>/"
+echo "Screenshots → store/captures/$PLATFORM/<country>/"
 echo "  analysing_start_{light,dark}.png"
 echo "  result_top_{light,dark}.png"
 echo "  result_bottom_{light,dark}.png"

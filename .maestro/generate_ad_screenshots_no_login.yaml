@@ -22,7 +22,7 @@ tags:
 
 # Top screenshot: photos grid visible
 - takeScreenshot:
-    path: "screenshots/${PLATFORM}/${COUNTRY}/generate_ad_top_${THEME}"
+    path: "store/captures/${PLATFORM}/${COUNTRY}/generate_ad_top_${THEME}"
 
 - scrollUntilVisible:
     element:
@@ -32,4 +32,4 @@ tags:
 
 # Bottom screenshot: prompt section visible
 - takeScreenshot:
-    path: "screenshots/${PLATFORM}/${COUNTRY}/generate_ad_bottom_${THEME}"
+    path: "store/captures/${PLATFORM}/${COUNTRY}/generate_ad_bottom_${THEME}"

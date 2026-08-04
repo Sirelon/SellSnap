@@ -19,7 +19,7 @@ Locale folder → App Store Connect localization:
 
 ## 2. Known gaps
 
-- **No Ukrainian iPhone set.** `iphone-6.9/` contains `bg`, `pl`, `pt`, `ro`. The underlying Ukrainian iPhone app screenshots were never captured (`screenshots/iphone/ua/` holds only `auth.png`), so there is nothing to render from. Romanian was captured on 2026-08-04 and is now complete.
+- **No Ukrainian iPhone set.** `iphone-6.9/` contains `bg`, `pl`, `pt`, `ro`. The underlying Ukrainian iPhone app screenshots were never captured (`store/captures/iphone/ua/` holds only `auth.png`), so there is nothing to render from. Romanian was captured on 2026-08-04 and is now complete.
 - **iPad has 6 shots, iPhone has 7.** The iPhone-only extra is `04-ai-steps.jpg`; the iPad set has no equivalent scene.
 - **`ipad-13/ua/` is a bonus regeneration.** The Ukrainian listing is already shipped, so re-uploading it is optional.
 - **Portuguese `02-add-photos.jpg` has a clipped header.** The underlying pt capture sits at a different scroll offset than pl/bg, so the "Adicione 1 a 8 fotos" heading is cut off and the status bar overlaps the photo thumbnails. `pt/01-welcome.jpg` likewise lost its hero image. Both are still on-message and legible — upload them, or re-capture the Portuguese iPhone screenshots first if you want them pixel-clean.

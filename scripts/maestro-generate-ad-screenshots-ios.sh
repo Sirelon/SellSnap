@@ -76,7 +76,7 @@ for entry in "${COUNTRY_ENTRIES[@]}"; do
   lang="${rest%%|*}"
   locale="${rest##*|}"
 
-  mkdir -p "screenshots/$PLATFORM/$country"
+  mkdir -p "store/captures/$PLATFORM/$country"
 
   echo ""
   echo "════════════════════════════════════════"
@@ -134,7 +134,7 @@ echo "Resetting simulator to light appearance..."
 xcrun simctl ui "$UDID" appearance light
 
 echo ""
-echo "Screenshots → screenshots/$PLATFORM/<country>/generate_ad_{top,bottom}_{light,dark}.png"
+echo "Screenshots → store/captures/$PLATFORM/<country>/generate_ad_{top,bottom}_{light,dark}.png"
 if [ ${#FAILED[@]} -gt 0 ]; then
   echo "Failed: ${FAILED[*]}"
   exit 1

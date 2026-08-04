@@ -1,6 +1,6 @@
 # AppTheme Color Mapping
 
-SellSnap prototype tokens referenced by `Design/ClaudeDesign/project/ui.jsx`, `screens1.jsx`, `screens2.jsx`, `screens3.jsx`, and `sheets.jsx` map directly to `AppTheme.colors` as follows.
+SellSnap prototype tokens referenced by `brand/claude-design/project/ui.jsx`, `screens1.jsx`, `screens2.jsx`, `screens3.jsx`, and `sheets.jsx` map directly to `AppTheme.colors` as follows.
 
 | Prototype token | AppTheme token | Light | Dark | Notes |
 | --- | --- | --- | --- | --- |

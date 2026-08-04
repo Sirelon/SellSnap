@@ -1,6 +1,6 @@
 # App Store screenshot generation — progress & insights log
 
-Living log for the session that built `Design/AppStoreScreenshots/`.
+Living log for the session that built `store/assets/`.
 Purpose: this file is the raw material for a future **skill**. It records what was
 true, what was surprising, what broke, and what a future run must not repeat.
 
@@ -23,8 +23,8 @@ Russian and Kazakh are out of scope.
 
 | Location | What it is | Naming | Used by |
 | --- | --- | --- | --- |
-| `Design/Screenshots/{iphone,ipad,tablet}/` | **Legacy, gen-1.** Hand-taken simulator screenshots, Ukrainian only, dated 2026-06-03. | `Screenshot 2026-06-03 at 14.07.14.png` | the 3 existing generator scripts |
-| `screenshots/{iphone,ipad,android-phone,android-tablet}/<locale>/` | **Current, gen-2.** Maestro-automated, per-locale, semantic filenames, light+dark. Added in `6e6b1d4`. | `result_top_dark.png` | nothing yet — **this task wires it up** |
+| `Design/Screenshots/{iphone,ipad,tablet}/` (deleted 2026-08-04, in git history) | **Legacy, gen-1.** Hand-taken simulator screenshots, Ukrainian only, dated 2026-06-03. | `Screenshot 2026-06-03 at 14.07.14.png` | the 3 existing generator scripts |
+| `store/captures/{iphone,ipad,android-phone,android-tablet}/<locale>/` | **Current, gen-2.** Maestro-automated, per-locale, semantic filenames, light+dark. Added in `6e6b1d4`. | `result_top_dark.png` | nothing yet — **this task wires it up** |
 
 > **Insight #1 — the big one.** All three generator scripts that existed at the start pair a
 > screenshot to its caption **by sorted filename index** (`copy[index]`).
@@ -36,7 +36,7 @@ Russian and Kazakh are out of scope.
 
 ### 2.2 Source screenshot availability — THIS IS THE HARD CONSTRAINT
 
-`screenshots/<device>/<locale>/`, 15 files = 8 unique screens × (light+dark), except
+`store/captures/<device>/<locale>/`, 15 files = 8 unique screens × (light+dark), except
 `auth.png` which has no theme variant.
 
 | device | bg | pl | pt | ro | ua |
@@ -94,7 +94,7 @@ SVG string → headless Chrome `--screenshot` → ImageMagick downsample → JPE
 - Source PNGs are inlined as base64 data URIs. An iPad PNG is ~1–3 MB → ~4 MB of
   base64 in the SVG. Works, but SVGs are large; they are intermediate artefacts.
 
-### 2.5 Existing copy source: `Design/StoreScreenshots/copy.json`
+### 2.5 Existing copy source: `store/copy/copy.json`
 
 Shape: `{ <lang>: { screenshots: { <legacy-filename>: {headline[], sub, pills[]} }, fallback: [ …2 blocks… ] } }`
 
@@ -122,7 +122,7 @@ Shape: `{ <lang>: { screenshots: { <legacy-filename>: {headline[], sub, pills[]}
 | 1 | cataloguer | View all 15 iPhone `pl` screenshots; record visible UI, truthful claim, forbidden claim, flow order, hero picks, light/dark pick | `notes/agent-iphone-screen-inventory.md` |
 | 2 | cataloguer | Same for all 15 iPad `pl` screenshots + verdict on portrait vs landscape presentation | `notes/agent-ipad-screen-inventory.md` |
 | 3 | visual QA | Review all 51 rendered outputs for overflow, clipping, illegibility, caption/screen mismatch, duplicates | `notes/agent-visual-qa.md` |
-| 4 | technical writer | Build the upload guide mechanically from `scenes.json` + `copy.json`, strings copied verbatim | `APP_STORE_TEXT.md` |
+| 4 | technical writer | Build the upload guide mechanically from `scenes.json` + `copy.json`, strings copied verbatim | `store/copy/app-store.md` |
 
 **What delegation was good for:** the two cataloguers found the iPad rotation bug and the
 md5 duplication — both invisible from code and both would have shipped. The writer agent
@@ -262,7 +262,7 @@ dark, dark).
 
 | Decision | Rationale |
 | --- | --- |
-| New generator `generate-app-store-screenshots.mjs`; the two iOS/iPad generators retired in the follow-up cleanup, the Play Store one kept | Both retired scripts were Ukrainian-only *and* index-paired, so keeping them meant keeping a live copy of the bug this work removed. The Play generator is still in use and still keyed to the legacy filenames. |
+| New generator `generate-store-screenshots.mjs`; the two iOS/iPad generators retired in the follow-up cleanup, the Play Store one kept | Both retired scripts were Ukrainian-only *and* index-paired, so keeping them meant keeping a live copy of the bug this work removed. The Play generator is still in use and still keyed to the legacy filenames. |
 | Pair copy by **semantic manifest**, never by index | Root cause of the whole class of caption bugs. See Insight #1. |
 | `copy.json` left byte-for-byte unchanged | It is the shared source of truth for the Play Store script. Readable aliases live in `COPY_BLOCKS` in the generator instead of renaming keys. |
 | iPhone output **1290 × 2796** | The 6.9" slot Apple requires for new submissions. The shipped UA set is 1284 × 2778 (6.5", now optional). |
@@ -367,7 +367,7 @@ pre-publish confirmation sheet. That last one was the brief's central requiremen
    Re-capturing needs a manual OLX login on a simulator, and OLX.ro is suspended.
    Until then the Romanian App Store listing has no iPhone screenshots and will fall back
    to the default localisation's set.
-2. **No English screenshot set.** `screenshots/<device>/en/` does not exist, so if the
+2. **No English screenshot set.** `store/captures/<device>/en/` does not exist, so if the
    store's default localisation is English it has no screenshots either. `copy.json`
    already has full `en` copy — the moment English captures exist, `--locale=en` just works.
 2a. **Re-capture the Portuguese iPhone set.** `iphone/pt/auth.png` and
@@ -409,10 +409,11 @@ Further per-file iPad observations from the cataloguer are in
 
 ## 2026-08-04 — Google Play phone profile added
 
-`android-phone` is now a device profile in `generate-app-store-screenshots.mjs`
-(1080x1920, 6 scenes, sources from `screenshots/android-phone/<locale>/`), replacing
-`Design/StoreScreenshots/generate-google-play-screenshots.mjs` for phone assets. Rendered for
-pl/ro/bg/pt; ua skipped (never captured). Doc: `PLAY_STORE_TEXT.md`, generated from
+`android-phone` is now a device profile in `generate-store-screenshots.mjs`
+(1080x1920, 6 scenes, sources from `store/captures/android-phone/<locale>/`), replacing
+the old `Design/StoreScreenshots/generate-google-play-screenshots.mjs` for phone assets
+(that script and its gen-1 sources were deleted on 2026-08-04). Rendered for
+pl/ro/bg/pt; ua skipped (never captured). Doc: `store/copy/play-store.md`, generated from
 `scenes.json` + `copy.json` rather than hand-written.
 
 Two insights worth keeping:
@@ -430,8 +431,8 @@ Two insights worth keeping:
     "Prepare listings with ready-made suggestions"), which is true of the AI-filled details
     card actually in frame. Check the CTA state, not only the screen identity.
 
-15. **A missing locale may not be missing — check git history and `Design/Screenshots`.**
-    `screenshots/android-phone/ua/` held only `auth.png`, but the full Ukrainian Android set
+15. **A missing locale may not be missing — check git history** (the gen-1 `Design/Screenshots` folder referenced below was itself deleted on 2026-08-04 during the `store/` restructure)**.**
+    `store/captures/android-phone/ua/` held only `auth.png`, but the full Ukrainian Android set
     was sitting in `Design/Screenshots/Screenshot_20260519_*.png`, deleted in 56d53a27 — the
     very files `copy.json`'s keys are named after. Recovered with
     `git show 56d53a27^:<path>`. It is the only capture set that reaches the published-listing
@@ -443,6 +444,6 @@ Two insights worth keeping:
     locales that have its source). Both stores accept a different screenshot count per
     language. Without `onlyLocales`, one locale-specific scene would fail the
     missing-sources check for every *other* locale and skip them all.
-17. **`PLAY_STORE_TEXT.md` is emitted by `--doc`,** from `scenes.json` + `copy.json` — the
-    fix that §"Trap: APP_STORE_TEXT.md drifts" asked for, applied to the Play doc only so far.
-    Doing the same for `APP_STORE_TEXT.md` is still open.
+17. **`store/copy/play-store.md` is emitted by `--doc`,** from `scenes.json` + `copy.json` — the
+    fix that §"Trap: store/copy/app-store.md drifts" asked for, applied to the Play doc only so far.
+    Doing the same for `store/copy/app-store.md` is still open.
