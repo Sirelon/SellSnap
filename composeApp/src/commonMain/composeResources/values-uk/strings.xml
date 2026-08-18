@@ -98,8 +98,8 @@
     <string name="profile_delete_account_data_confirm">Видалити дані</string>
     <string name="profile_delete_account_data_cancel">Скасувати</string>
     <string name="profile_privacy_data_title">Приватність і дані</string>
-    <string name="profile_analytics_consent_title">Ділитися аналітикою та звітами про збої</string>
-    <string name="profile_analytics_consent_subtitle">Анонімні дані використання, що допомагають покращувати SellSnap. Змінюйте будь-коли.</string>
+    <string name="profile_analytics_consent_title">Ділитися аналітикою використання</string>
+    <string name="profile_analytics_consent_subtitle">Анонімні дані використання, що допомагають покращувати SellSnap. Вимкнено за замовчуванням — змінюйте будь-коли.</string>
     <string name="profile_contact_data_request">Зв'язатися щодо ваших даних</string>
     <string name="profile_not_provided">Не задано</string>
     <string name="profile_value_yes">Так</string>

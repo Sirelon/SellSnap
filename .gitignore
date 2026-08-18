@@ -338,3 +338,4 @@ fastlane/*.p8
 Design/StoreScreenshots/*.svg
 Design/AppStoreScreenshots/**/*.svg
 *.raw.png
+.claude/tmp/

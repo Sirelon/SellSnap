@@ -4,11 +4,12 @@
 <dict>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
-	<!-- GDPR: Firebase collection is off by default until the user opts in (see AnalyticsConsentRepository). -->
+	<!-- Analytics is off by default until the user opts in; crash reporting is on by default
+	     under legitimate interest and can be turned off (see AnalyticsConsentRepository). -->
 	<key>FIREBASE_ANALYTICS_COLLECTION_ENABLED</key>
 	<false/>
 	<key>FirebaseCrashlyticsCollectionEnabled</key>
-	<false/>
+	<true/>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>

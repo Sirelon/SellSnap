@@ -7,6 +7,9 @@ interface Analytics {
     fun recordException(throwable: Throwable, message: String? = null)
     fun log(message: String)
 
-    /** Enables or disables analytics + crash-reporting collection. Off until the user consents. */
-    fun setCollectionEnabled(enabled: Boolean)
+    /** Enables or disables analytics collection. Off until the user opts in (consent). */
+    fun setAnalyticsCollectionEnabled(enabled: Boolean)
+
+    /** Enables or disables crash-reporting collection. On by default; the user may opt out. */
+    fun setCrashlyticsCollectionEnabled(enabled: Boolean)
 }
