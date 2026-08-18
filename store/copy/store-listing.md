@@ -1,6 +1,8 @@
 # SellSnap — Store listing text (App Store + Google Play)
 
-Copy-paste text for every listing field, in all 8 app languages. Written for SellSnap 2.0 (build 7).
+Copy-paste text for every listing field, in all 8 app languages. Written for SellSnap 2.1 (build 8).
+
+The per-language **What's New** blocks below are also the source of truth pushed to the stores automatically: Android reads `fastlane/metadata/android/<locale>/changelogs/<version_code>.txt`, iOS reads `fastlane/metadata/ios/<locale>/release_notes.txt` (App Store) and the same file feeds TestFlight's localized build info. The `sellsnap-release` skill regenerates both the files and this section on every release.
 
 ## Field limits cheat-sheet
 
@@ -68,15 +70,13 @@ From snap to live on OLX in about a minute. Download SellSnap and turn your clut
 SellSnap is an independent app and is not affiliated with or endorsed by OLX. Publishing requires an OLX account.
 ```
 
-**What's New (v2.0):**
+**What's New (v2.1):**
 
 ```
-SellSnap 2.0 — now in 5 OLX markets
+SellSnap 2.1 — stability improvements
 
-• Pick your country: Ukraine, Poland, Romania, Bulgaria, or Portugal — the AI writes listings in your market's language and prices in the local currency
-• Category suggestions and icons tuned per country
-• New privacy controls: analytics consent (off by default) and one-tap deletion of your local data
-• Bug fixes and polish throughout
+• Improved crash reporting, so we catch and fix issues faster
+• Security and dependency updates
 ```
 
 ---
@@ -124,15 +124,13 @@ SellSnap підтримує OLX в Україні, Польщі, Румунії,
 SellSnap — незалежний застосунок, не афілійований з OLX. Для публікації потрібен акаунт OLX.
 ```
 
-**What's New (v2.0):**
+**What's New (v2.1):**
 
 ```
-SellSnap 2.0 — тепер у 5 країнах OLX
+SellSnap 2.1 — покращення стабільності
 
-• Оберіть країну: Україна, Польща, Румунія, Болгарія чи Португалія — AI створює оголошення мовою вашого ринку та у місцевій валюті
-• Підбір категорій та іконки, налаштовані для кожної країни
-• Нові налаштування приватності: згода на аналітику (вимкнена за замовчуванням) і видалення локальних даних одним тапом
-• Виправлення помилок і дрібні покращення
+• Краще звітування про збої — виправляємо проблеми швидше
+• Оновлення безпеки та залежностей
 ```
 
 ---
@@ -180,15 +178,13 @@ Od zdjęcia do ogłoszenia na OLX w około minutę. Pobierz SellSnap i zamień n
 SellSnap to niezależna aplikacja, niepowiązana z OLX. Do publikacji wymagane jest konto OLX.
 ```
 
-**What's New (v2.0):**
+**What's New (v2.1):**
 
 ```
-SellSnap 2.0 — teraz w 5 krajach OLX
+SellSnap 2.1 — poprawki stabilności
 
-• Wybierz kraj: Polska, Ukraina, Rumunia, Bułgaria lub Portugalia — AI tworzy ogłoszenia w języku Twojego rynku i w lokalnej walucie
-• Podpowiedzi kategorii i ikony dopasowane do każdego kraju
-• Nowe ustawienia prywatności: zgoda na analitykę (domyślnie wyłączona) i usuwanie danych lokalnych jednym dotknięciem
-• Poprawki błędów i drobne ulepszenia
+• Lepsze raportowanie awarii, dzięki czemu szybciej naprawiamy problemy
+• Aktualizacje bezpieczeństwa i zależności
 ```
 
 ---
@@ -236,15 +232,13 @@ De la poză la anunț publicat pe OLX în aproximativ un minut. Descarcă SellSn
 SellSnap este o aplicație independentă, neafiliată cu OLX. Publicarea necesită un cont OLX.
 ```
 
-**What's New (v2.0):**
+**What's New (v2.1):**
 
 ```
-SellSnap 2.0 — acum în 5 țări OLX
+SellSnap 2.1 — îmbunătățiri de stabilitate
 
-• Alege țara: România, Ucraina, Polonia, Bulgaria sau Portugalia — AI creează anunțuri în limba pieței tale și în moneda locală
-• Sugestii de categorii și pictograme adaptate fiecărei țări
-• Setări noi de confidențialitate: consimțământ pentru analitice (dezactivat implicit) și ștergerea datelor locale dintr-o atingere
-• Corecturi de erori și mici îmbunătățiri
+• Raportare a erorilor îmbunătățită, ca să rezolvăm problemele mai repede
+• Actualizări de securitate și de dependențe
 ```
 
 ---
@@ -292,15 +286,13 @@ SellSnap поддържа OLX в България, Украйна, Полша, �
 SellSnap е независимо приложение и не е свързано с OLX. За публикуване е необходим акаунт в OLX.
 ```
 
-**What's New (v2.0):**
+**What's New (v2.1):**
 
 ```
-SellSnap 2.0 — вече в 5 държави с OLX
+SellSnap 2.1 — подобрения в стабилността
 
-• Изберете държава: България, Украйна, Полша, Румъния или Португалия — AI създава обяви на езика на вашия пазар и в местната валута
-• Предложения за категории и икони, настроени за всяка държава
-• Нови настройки за поверителност: съгласие за аналитика (изключено по подразбиране) и изтриване на локалните данни с едно докосване
-• Поправки на грешки и малки подобрения
+• По-добро отчитане на сривове — отстраняваме проблемите по-бързо
+• Актуализации на сигурността и зависимостите
 ```
 
 ---
@@ -348,15 +340,13 @@ Da foto ao anúncio publicado no OLX em cerca de um minuto. Descarregue o SellSn
 O SellSnap é uma aplicação independente, sem qualquer afiliação com o OLX. Para publicar é necessária uma conta OLX.
 ```
 
-**What's New (v2.0):**
+**What's New (v2.1):**
 
 ```
-SellSnap 2.0 — agora em 5 países OLX
+SellSnap 2.1 — melhorias de estabilidade
 
-• Escolha o país: Portugal, Ucrânia, Polónia, Roménia ou Bulgária — a IA cria anúncios no idioma do seu mercado e na moeda local
-• Sugestões de categorias e ícones ajustados a cada país
-• Novas definições de privacidade: consentimento de estatísticas (desativado por predefinição) e eliminação dos dados locais com um toque
-• Correções de erros e pequenas melhorias
+• Relatórios de falhas melhorados, para resolvermos problemas mais depressa
+• Atualizações de segurança e de dependências
 ```
 
 ---
@@ -404,15 +394,13 @@ SellSnap поддерживает OLX в Украине, Польше, Румы�
 SellSnap — независимое приложение, не аффилированное с OLX. Для публикации нужен аккаунт OLX.
 ```
 
-**What's New (v2.0):**
+**What's New (v2.1):**
 
 ```
-SellSnap 2.0 — теперь в 5 странах OLX
+SellSnap 2.1 — улучшения стабильности
 
-• Выберите страну: Украина, Польша, Румыния, Болгария или Португалия — AI создаёт объявления на языке вашего рынка и в местной валюте
-• Подбор категорий и иконки, настроенные для каждой страны
-• Новые настройки приватности: согласие на аналитику (выключено по умолчанию) и удаление локальных данных одним касанием
-• Исправления ошибок и мелкие улучшения
+• Улучшенные отчёты о сбоях — исправляем проблемы быстрее
+• Обновления безопасности и зависимостей
 ```
 
 ---
@@ -458,13 +446,11 @@ OLX аккаунтыңыз жоқ па? Қонақ режимін пайдала
 SellSnap — OLX-пен байланысы жоқ тәуелсіз қосымша. Жариялау үшін OLX аккаунты қажет.
 ```
 
-**What's New (v2.0):**
+**What's New (v2.1):**
 
 ```
-SellSnap 2.0 — енді 5 OLX елінде
+SellSnap 2.1 — тұрақтылықты жақсарту
 
-• Елді таңдаңыз: Украина, Польша, Румыния, Болгария немесе Португалия — AI хабарландыруларды нарығыңыздың тілінде және жергілікті валютада жасайды
-• Әр елге бейімделген санат ұсыныстары мен белгішелер
-• Жаңа құпиялылық параметрлері: аналитикаға келісім (әдепкі бойынша өшірулі) және жергілікті деректерді бір түртумен өшіру
-• Қателер түзетілді, ұсақ жақсартулар енгізілді
+• Ақаулар туралы есеп беру жақсарды — мәселелерді жылдамырақ шешеміз
+• Қауіпсіздік пен тәуелділіктерге жаңартулар
 ```

@@ -19,6 +19,26 @@ ASC_KEY_FILEPATH = File.expand_path("AuthKey_G5TTXS7GV3.p8", __dir__)
 # (synced into the Xcode project below before every build).
 VERSION_PROPERTIES = File.expand_path("../version.properties", __dir__)
 
+# Per-locale release notes / promotional text live outside the repo tree
+# (.claude/tmp/ is gitignored) - they're regenerated fresh every release by the
+# sellsnap-release skill, not meant to be tracked or pushed.
+# android/<locale>/changelogs/<version_code>.txt is read automatically by
+# upload_to_play_store (supply) via metadata_path, below.
+# ios/<locale>/{release_notes,promotional_text}.txt is read automatically by
+# upload_to_app_store (deliver) via metadata_path, below, once skip_metadata is
+# false. pilot (TestFlight) has no such folder convention, so read the same
+# release_notes.txt files by hand and pass them as localized_build_info.
+RELEASE_METADATA_DIR = File.expand_path("../.claude/tmp/release-metadata", __dir__)
+ANDROID_METADATA_DIR = File.join(RELEASE_METADATA_DIR, "android")
+IOS_METADATA_DIR = File.join(RELEASE_METADATA_DIR, "ios")
+
+def testflight_whats_new
+  Dir.glob("#{IOS_METADATA_DIR}/*/release_notes.txt").each_with_object({}) do |path, hash|
+    locale = File.basename(File.dirname(path)).to_sym
+    hash[locale] = { whats_new: File.read(path).strip }
+  end
+end
+
 # ---------------------------------------------------------------------------
 # iOS
 # ---------------------------------------------------------------------------
@@ -64,7 +84,7 @@ platform :ios do
     end
     upload_to_testflight(
       skip_waiting_for_build_processing: true,
-      changelog: ENV["CHANGELOG"] || "Bug fixes and improvements"
+      localized_build_info: testflight_whats_new
     )
   end
 
@@ -83,8 +103,10 @@ platform :ios do
       app_identifier: APP_IDENTIFIER,
       submit_for_review: false,
       automatic_release: false,
-      skip_metadata: true,
-      skip_screenshots: true
+      skip_metadata: false,
+      skip_screenshots: true,
+      metadata_path: IOS_METADATA_DIR,
+      force: true
     )
   end
 end
@@ -101,7 +123,8 @@ platform :android do
       track: "internal",
       aab: ANDROID_AAB,
       json_key: GOOGLE_PLAY_KEY,
-      skip_upload_apk: true
+      skip_upload_apk: true,
+      metadata_path: ANDROID_METADATA_DIR
     )
   end
 
