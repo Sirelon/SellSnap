@@ -11,6 +11,8 @@ object AnalyticsEvents {
     const val AD_GENERATION_SUCCEEDED = "ad_generation_succeeded"
     const val AD_GENERATION_FAILED = "ad_generation_failed"
 
+    const val PHOTO_UPLOAD_FAILED = "photo_upload_failed"
+
     const val AD_PUBLISH_STARTED = "ad_publish_started"
     const val AD_PUBLISH_SUCCEEDED = "ad_publish_succeeded"
     const val AD_PUBLISH_FAILED = "ad_publish_failed"

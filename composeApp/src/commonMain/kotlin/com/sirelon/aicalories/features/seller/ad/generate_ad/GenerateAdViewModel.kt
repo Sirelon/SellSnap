@@ -238,7 +238,7 @@ class GenerateAdViewModel(
         }
     }
 
-    private fun UploadedFile.toPublicUrl(): String = mediaUploadHelper.publicUrl(path)
+    private suspend fun UploadedFile.toPublicUrl(): String = mediaUploadHelper.publicUrl(path)
 
     private fun onFileResult(event: GenerateAdContract.GenerateAdEvent.UploadFilesResult) {
         viewModelScope.launch {
@@ -300,6 +300,7 @@ class GenerateAdViewModel(
             }
 
             is MediaUploadUpdate.Failure -> {
+                analytics.recordException(update.cause, AnalyticsEvents.PHOTO_UPLOAD_FAILED)
                 handleUploadFailure(file = update.file, message = getString(Res.string.error_upload_file_failed))
             }
 
