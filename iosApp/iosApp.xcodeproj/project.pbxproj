@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		D4E5F6A7B8C9D0E1F2A3B4C5 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = B2C3D4E5F6A7B8C9D0E1F2A3 /* FirebaseAnalytics */; };
 		E5F6A7B8C9D0E1F2A3B4C5D6 /* FirebaseCrashlytics in Frameworks */ = {isa = PBXBuildFile; productRef = C3D4E5F6A7B8C9D0E1F2A3B4 /* FirebaseCrashlytics */; };
+		CBB82538187C54E239CCA645 /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = 44411D86816D71C6EA27A02D /* FirebaseStorage */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -50,6 +51,7 @@
 			files = (
 				D4E5F6A7B8C9D0E1F2A3B4C5 /* FirebaseAnalytics in Frameworks */,
 				E5F6A7B8C9D0E1F2A3B4C5D6 /* FirebaseCrashlytics in Frameworks */,
+				CBB82538187C54E239CCA645 /* FirebaseStorage in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -97,6 +99,7 @@
 			packageProductDependencies = (
 				B2C3D4E5F6A7B8C9D0E1F2A3 /* FirebaseAnalytics */,
 				C3D4E5F6A7B8C9D0E1F2A3B4 /* FirebaseCrashlytics */,
+				44411D86816D71C6EA27A02D /* FirebaseStorage */,
 			);
 			productName = iosApp;
 			productReference = B84C507A1C2DE7D835D0359B /* SellSnap.app */;
@@ -429,6 +432,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = A1B2C3D4E5F6A7B8C9D0E1F2 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseCrashlytics;
+		};
+		44411D86816D71C6EA27A02D /* FirebaseStorage */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A1B2C3D4E5F6A7B8C9D0E1F2 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseStorage;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

@@ -4,7 +4,6 @@ import com.mohamedrejeb.calf.io.KmpFile
 import com.mohamedrejeb.calf.io.getName
 import com.mohamedrejeb.calf.io.getPath
 import com.sirelon.sellsnap.features.media.ImageFormatConverter
-import io.github.jan.supabase.storage.UploadStatus
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
@@ -19,7 +18,7 @@ class MediaUploadHelper(
     private val repository: MediaUploadRepository,
 ) {
 
-    fun publicUrl(path: String): String = repository.publicUrl(path)
+    suspend fun publicUrl(path: String): String = repository.publicUrl(path)
 
     /**
      * Validates and converts selected files without uploading them.
@@ -62,7 +61,7 @@ class MediaUploadHelper(
     }
 
     /**
-     * Uploads all previously prepared files to Supabase in parallel.
+     * Uploads all previously prepared files in parallel.
      * Call this when the user confirms (e.g. taps a confirm button).
      */
     fun uploadPreparedFiles(files: List<KmpFile>): Flow<MediaUploadUpdate> = channelFlow {
@@ -81,7 +80,7 @@ class MediaUploadHelper(
                 repository.uploadFile(file)
                     .onEach { status ->
                         when (status) {
-                            is UploadStatus.Progress -> {
+                            is PhotoUploadStatus.Progress -> {
                                 send(
                                     MediaUploadUpdate.Progress(
                                         file = file,
@@ -90,13 +89,13 @@ class MediaUploadHelper(
                                 )
                             }
 
-                            is UploadStatus.Success -> {
+                            is PhotoUploadStatus.Success -> {
                                 send(
                                     MediaUploadUpdate.Success(
                                         file = file,
                                         uploadedFile = UploadedFile(
-                                            id = status.response.id,
-                                            path = status.response.path,
+                                            id = status.id,
+                                            path = status.path,
                                         ),
                                     ),
                                 )
@@ -104,10 +103,12 @@ class MediaUploadHelper(
                         }
                     }
                     .catch { error ->
+                        println("MediaUploadHelper: upload failed for ${file.getName()}: ${error.stackTraceToString()}")
                         send(
                             MediaUploadUpdate.Failure(
-                                file,
-                                error.message ?: "Failed to upload file."
+                                file = file,
+                                message = error.message ?: "Failed to upload file.",
+                                cause = error,
                             )
                         )
                     }
@@ -147,14 +148,15 @@ sealed interface MediaUploadUpdate {
     data class Failure(
         val file: KmpFile,
         val message: String,
+        val cause: Throwable,
     ) : MediaUploadUpdate
 
     data class Error(val message: String) : MediaUploadUpdate
 }
 
-private fun UploadStatus.Progress.toProgressPercent(): Double {
-    return if (contentLength > 0) {
-        (totalBytesSend.toDouble() / contentLength.toDouble()) * 100.0
+private fun PhotoUploadStatus.Progress.toProgressPercent(): Double {
+    return if (totalBytes > 0) {
+        (bytesSent.toDouble() / totalBytes.toDouble()) * 100.0
     } else {
         0.0
     }

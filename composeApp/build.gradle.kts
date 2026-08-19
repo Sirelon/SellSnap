@@ -108,12 +108,23 @@ kotlin {
                 implementation(libs.ktor.client.js)
             }
         }
+        // Shared by androidMain + iosMain only: GitLive's Firebase Storage/Installations modules
+        // publish no jvm or wasmJs target, so this stays out of dataStoreMain (which jvm depends on).
+        val mobileMain = create("mobileMain") {
+            dependsOn(commonMain.get())
+            dependencies {
+                implementation(libs.gitlive.firebase.storage)
+                implementation(libs.gitlive.firebase.installations)
+            }
+        }
         val iosMain = create("iosMain") {
             dependsOn(dataStoreMain)
+            dependsOn(mobileMain)
         }
 
         jvmMain.get().dependsOn(dataStoreMain)
         androidMain.get().dependsOn(dataStoreMain)
+        androidMain.get().dependsOn(mobileMain)
         androidMain.dependencies {
             implementation(libs.androidx.activity.compose)
             implementation(libs.androidx.core.ktx)
