@@ -2,9 +2,19 @@
 set -e
 cd "$(dirname "$0")/.."
 
-ANDROID_BUILD="androidApp/build.gradle.kts"
-IOS_CONFIG="iosApp/Configuration/Config.xcconfig"
+VERSION_PROPERTIES="version.properties"
 SCREENSHOT_MODE_FILE="composeApp/src/commonMain/kotlin/com/sirelon/aicalories/features/seller/ad/ScreenshotMode.kt"
+# Play Console's actual configured store-listing locales - confirmed via
+# download_from_play_store, not the full set of in-app-supported languages.
+# It has no en-US or ru-RU listing at all (no title, nothing), so pushing a
+# changelog for either fails the whole edit. Adding those as real Play Store
+# listings is a separate, deliberate decision - not implied by this list.
+ANDROID_LOCALES=(uk pl-PL ro bg pt-PT kk)
+RELEASE_METADATA_DIR=".claude/tmp/release-metadata"
+IOS_RELEASE_NOTES_VERSION_FILE="$RELEASE_METADATA_DIR/ios/RELEASE_NOTES_VERSION"
+
+echo "Compiling..."
+./gradlew :composeApp:compileAndroidMain -q
 
 # Capture-time debug flag: seeds bundled photos and skips the publish confirmation.
 # It must never ship enabled.
@@ -13,17 +23,33 @@ if ! grep -q "screenshotMode = false" "$SCREENSHOT_MODE_FILE"; then
   exit 1
 fi
 
-# Read current build number and increment
-CURRENT=$(grep -o 'versionCode = [0-9]*' "$ANDROID_BUILD" | grep -o '[0-9]*')
+# version.properties is the single source of truth for VERSION_NAME/VERSION_CODE.
+# Android reads it directly; iOS syncs it via the Fastlane sync_version lane.
+CURRENT=$(grep '^VERSION_CODE=' "$VERSION_PROPERTIES" | cut -d= -f2)
 NEW=$((CURRENT + 1))
 
-sed -i '' "s/versionCode = $CURRENT/versionCode = $NEW/" "$ANDROID_BUILD"
-sed -i '' "s/CURRENT_PROJECT_VERSION=$CURRENT/CURRENT_PROJECT_VERSION=$NEW/" "$IOS_CONFIG"
+# What's New must exist for every Play Store locale under the NEW build number,
+# and the iOS release notes must be marked current for it - otherwise a language
+# would silently ship with no changelog. Generate these with the sellsnap-release
+# skill before running this script directly.
+for locale in "${ANDROID_LOCALES[@]}"; do
+  changelog="$RELEASE_METADATA_DIR/android/$locale/changelogs/$NEW.txt"
+  if [ ! -s "$changelog" ]; then
+    echo "ERROR: missing What's New for $locale at $changelog." >&2
+    exit 1
+  fi
+done
+
+if [ "$(cat "$IOS_RELEASE_NOTES_VERSION_FILE" 2>/dev/null)" != "$NEW" ]; then
+  echo "ERROR: iOS release notes are not marked current for build $NEW ($IOS_RELEASE_NOTES_VERSION_FILE)." >&2
+  exit 1
+fi
+
+sed -i '' "s/^VERSION_CODE=.*/VERSION_CODE=$NEW/" "$VERSION_PROPERTIES"
 
 # Optionally bump marketing version: ./scripts/ship.sh 1.4
 if [ -n "$1" ]; then
-  sed -i '' "s/versionName = \"[^\"]*\"/versionName = \"$1\"/" "$ANDROID_BUILD"
-  sed -i '' "s/MARKETING_VERSION=.*/MARKETING_VERSION=$1/" "$IOS_CONFIG"
+  sed -i '' "s/^VERSION_NAME=.*/VERSION_NAME=$1/" "$VERSION_PROPERTIES"
   echo "Version: $1, build: $CURRENT → $NEW"
 else
   echo "Build: $CURRENT → $NEW"

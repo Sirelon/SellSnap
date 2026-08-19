@@ -104,8 +104,8 @@
     <string name="profile_delete_account_data_confirm">Delete data</string>
     <string name="profile_delete_account_data_cancel">Cancel</string>
     <string name="profile_privacy_data_title">Privacy &amp; data</string>
-    <string name="profile_analytics_consent_title">Share analytics &amp; crash reports</string>
-    <string name="profile_analytics_consent_subtitle">Anonymous usage data that helps us improve SellSnap. Change anytime.</string>
+    <string name="profile_analytics_consent_title">Share usage analytics</string>
+    <string name="profile_analytics_consent_subtitle">Anonymous usage data that helps us improve SellSnap. Off by default — change anytime.</string>
     <string name="profile_contact_data_request">Contact us about your data</string>
     <string name="profile_not_provided">Not set</string>
     <string name="profile_value_yes">Yes</string>

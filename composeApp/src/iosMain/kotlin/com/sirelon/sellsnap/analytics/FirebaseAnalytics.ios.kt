@@ -22,13 +22,10 @@ internal class FirebaseAnalyticsImpl : Analytics {
     }
 
     override fun setUserId(userId: String?) {
+        // Analytics only: crash reports are kept free of user identifiers so they can be
+        // collected under legitimate interest without consent.
         withAnalytics {
             Firebase.analytics.setUserId(userId)
-        }
-        if (userId != null) {
-            withCrashlytics {
-                Firebase.crashlytics.setUserId(userId)
-            }
         }
     }
 
@@ -53,8 +50,11 @@ internal class FirebaseAnalyticsImpl : Analytics {
         }
     }
 
-    override fun setCollectionEnabled(enabled: Boolean) {
+    override fun setAnalyticsCollectionEnabled(enabled: Boolean) {
         withAnalytics { Firebase.analytics.setAnalyticsCollectionEnabled(enabled) }
+    }
+
+    override fun setCrashlyticsCollectionEnabled(enabled: Boolean) {
         withCrashlytics { Firebase.crashlytics.setCrashlyticsCollectionEnabled(enabled) }
     }
 }

@@ -23,7 +23,11 @@ class AnalyticsConsentRepository(
             val saved = store.read()
             // Only update if no explicit setConsent() call has already landed (race guard).
             _consent.update { current -> if (current == AnalyticsConsent.Undecided) saved else current }
-            analytics.setCollectionEnabled(_consent.value == AnalyticsConsent.Granted)
+            analytics.setAnalyticsCollectionEnabled(_consent.value == AnalyticsConsent.Granted)
+
+            // Crash reporting always runs (anonymous, legitimate interest). Force it on to also
+            // re-enable anyone who had opted out in an earlier build that exposed a toggle.
+            analytics.setCrashlyticsCollectionEnabled(true)
         }
     }
 
@@ -33,16 +37,16 @@ class AnalyticsConsentRepository(
     fun setConsent(granted: Boolean) {
         val value = if (granted) AnalyticsConsent.Granted else AnalyticsConsent.Denied
         _consent.value = value
-        analytics.setCollectionEnabled(granted)
+        analytics.setAnalyticsCollectionEnabled(granted)
         applicationScope.launch {
             store.write(value)
         }
     }
 
-    /** Resets consent to [AnalyticsConsent.Undecided] and disables collection. Called on data erasure. */
+    /** Resets analytics consent to [AnalyticsConsent.Undecided] and disables analytics. Called on data erasure. */
     fun resetConsent() {
         _consent.value = AnalyticsConsent.Undecided
-        analytics.setCollectionEnabled(false)
+        analytics.setAnalyticsCollectionEnabled(false)
         applicationScope.launch {
             store.write(AnalyticsConsent.Undecided)
         }

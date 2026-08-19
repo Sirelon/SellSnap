@@ -1,13 +1,13 @@
 
 [versions]
-agp = "9.2.1"
+agp = "9.3.1"
 android-compileSdk = "37"
 android-minSdk = "24"
 android-targetSdk = "37"
 # https://developer.android.com/jetpack/androidx/releases/activity
 androidx-activity = "1.13.0"
-androidx-datastore = "1.2.1"
-androidx-appcompat = "1.7.1"
+androidx-datastore = "1.3.0-alpha10"
+androidx-appcompat = "1.8.0"
 # https://developer.android.com/jetpack/androidx/releases/core
 androidx-core = "1.19.0"
 androidx-espresso = "3.7.0"
@@ -17,7 +17,7 @@ androidx-testExt = "1.3.0"
 coil3 = "3.5.0"
 composeHotReload = "1.2.0"
 # https://github.com/JetBrains/compose-multiplatform/releases
-composeMultiplatform = "1.12.0-beta02"
+composeMultiplatform = "1.12.0-rc01"
 junit = "4.13.2"
 # https://github.com/InsertKoinIO/koin/releases
 koin = "4.2.2"
@@ -27,15 +27,15 @@ kotlinx-coroutines = "1.11.0"
 # https://github.com/Kotlin/kotlinx.serialization/releases
 kotlinx-serialization = "1.11.0"
 # https://github.com/ktorio/ktor/releases
-ktor = "3.5.1"
-logback = "1.6.0"
+ktor = "3.5.2"
+logback = "1.6.3"
 # https://mvnrepository.com/artifact/org.jetbrains.compose.material3/material3
 material3 = "1.12.0-alpha03"
 # https://mvnrepository.com/artifact/org.jetbrains.compose.material3.adaptive/adaptive
 material3-adaptive = "1.3.0-beta02"
 materialIconsExtended = "1.7.3"
 # https://developer.android.com/jetpack/androidx/releases/navigation3#1.1.2
-navigation3Runtime = "1.2.0-alpha06"
+navigation3Runtime = "1.2.0-alpha07"
 # https://developer.android.com/jetpack/androidx/releases/lifecycle
 lifecycleViewmodelNav3 = "2.11.0"
 # https://mvnrepository.com/artifact/org.jetbrains.androidx.navigation3/navigation3-ui
@@ -47,13 +47,13 @@ supabase = "3.7.0"
 # https://github.com/yshrsmz/BuildKonfig/releases
 buildKonfig = "0.22.0"
 
-compose = "1.12.0-beta02"
+compose = "1.12.0-rc01"
 playServicesLocation = "21.4.0"
 # https://github.com/GitLiveApp/firebase-kotlin-sdk/releases
-gitliveFirebase = "2.5.0"
+gitliveFirebase = "2.6.0"
 googleServices = "4.5.0"
 crashlyticsPlugin = "3.0.7"
-firebaseBom = "34.16.0"
+firebaseBom = "34.17.0"
 
 [libraries]
 androidx-navigation3-runtime = { module = "androidx.navigation3:navigation3-runtime", version.ref = "navigation3Runtime" }
