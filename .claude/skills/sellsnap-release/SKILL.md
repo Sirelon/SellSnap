@@ -24,23 +24,44 @@ manual, separate actions the user triggers themselves when ready.
 
 ## 0. Locale codes (looked up once, reuse — don't re-derive)
 
-Google Play and App Store Connect use different locale strings for the same language,
-and Apple's set is a subset (no Bulgarian, no Kazakh). Confirmed against fastlane's own
-source (`FastlaneCore::Languages::ALL_LANGUAGES`) and Google/Apple's locale docs:
+Google Play and App Store Connect use different locale strings for the same language.
+More importantly, **neither store's set is "all 8 in-app languages"** — each store only
+has whatever listing locales someone actually configured for it, which is smaller than
+and different from the in-app-supported language list. Confirmed for Play by actually
+downloading the live listing (`bundle exec fastlane run download_from_play_store
+package_name:com.sirelon.sellsnap json_key:fastlane/google-play-key.json
+metadata_path:<fresh-empty-dir>` — use a directory that doesn't already exist, supply
+silently no-ops on one that does):
 
-| Language | Google Play locale | App Store / TestFlight locale |
-| --- | --- | --- |
-| English | `en-US` | `en-US` |
-| Ukrainian | `uk` | `uk` |
-| Polish | `pl-PL` | `pl` |
-| Romanian | `ro` | `ro` |
-| Bulgarian | `bg` | — (not supported by Apple) |
-| Portuguese (Portugal) | `pt-PT` | `pt-PT` |
-| Russian | `ru-RU` | `ru` |
-| Kazakh | `kk` | — (not supported by Apple) |
+| Language | Google Play locale | Play listing exists? | App Store / TestFlight locale | Apple support |
+| --- | --- | --- | --- | --- |
+| English | `en-US` | **No** — no title configured, confirmed by download | `en-US` | assumed yes, not independently verified |
+| Ukrainian | `uk` | Yes | `uk` | yes |
+| Polish | `pl-PL` | Yes | `pl` | yes |
+| Romanian | `ro` | Yes | `ro` | yes |
+| Bulgarian | `bg` | Yes | — | not supported by Apple |
+| Portuguese (Portugal) | `pt-PT` | Yes | `pt-PT` | yes |
+| Russian | `ru-RU` | **No** — no title configured, confirmed by download | `ru` | assumed yes, not independently verified |
+| Kazakh | `kk` | Yes | — | not supported by Apple |
 
-8 Play locales, 6 App Store locales. This matches the notes already in
-`store/copy/store-listing.md` and `store/copy/app-store.md`.
+**Android: 6 real locales** — `uk, pl-PL, ro, bg, pt-PT, kk`. Do not add `en-US` or
+`ru-RU` back to the Android changelog automation without first actually creating those
+Play Store listings (title, descriptions, everything — see `store/copy/store-listing.md`
+for drafted copy) — pushing just a changelog for a locale with no base listing fails the
+whole edit (Google validates atomically at commit time, not per-locale, so the failure
+can surface on whichever locale it happens to check first, not necessarily the one
+that's actually missing something).
+
+**iOS: 6 assumed locales** — `en-US, uk, pl, ro, pt-PT, ru`, matching
+`store/copy/app-store.md`'s notes. This has **not** been verified against the live App
+Store Connect listing the way Play was (no equivalent read-only download was run) — if
+`ios beta` ever fails with a similar "locale doesn't exist" error, verify it the same
+way before assuming the fix is symmetrical to Android's.
+
+If the discovered reality ever changes (e.g. English/Russian Play listings get added
+properly), update this table and `ANDROID_LOCALES` in `scripts/ship.sh` together — they
+must stay in sync or the guard in step 7 will check locales that no longer match what
+`metadata_path` actually contains.
 
 ## 1. Where the text actually goes
 
@@ -52,7 +73,7 @@ use, so these never end up tracked or pushed to the repo).
 
 | File | Read by | Notes |
 | --- | --- | --- |
-| `.claude/tmp/release-metadata/android/<play-locale>/changelogs/<version_code>.txt` | `upload_to_play_store` (supply), automatically via `metadata_path: ANDROID_METADATA_DIR` | Filename **must** be the new numeric version code, e.g. `9.txt`. One file per Play locale (8 files). |
+| `.claude/tmp/release-metadata/android/<play-locale>/changelogs/<version_code>.txt` | `upload_to_play_store` (supply), automatically via `metadata_path: ANDROID_METADATA_DIR` | Filename **must** be the new numeric version code, e.g. `9.txt`. One file per real Play locale (6 — see step 0, not all 8 in-app languages). supply scans every locale folder that exists under this path, so don't leave stray folders for locales Play doesn't actually have a listing for. |
 | `.claude/tmp/release-metadata/ios/<appstore-locale>/release_notes.txt` | `upload_to_app_store` (deliver, `ios release` lane, via `metadata_path: IOS_METADATA_DIR`) **and** the `ios beta` lane's `localized_build_info` (hand-read in the Fastfile, since pilot has no folder convention) | Same file, same text serves both TestFlight's "What to Test" and the eventual App Store release notes. One file per App Store locale (6 files), overwritten each release — no version number in the filename. |
 | `.claude/tmp/release-metadata/ios/RELEASE_NOTES_VERSION` | `scripts/ship.sh` (guard only, not read by fastlane) | Plain text, just the version code, e.g. `9`. Proves the iOS notes were actually refreshed for this build before shipping. |
 | `.claude/tmp/release-metadata/ios/<appstore-locale>/promotional_text.txt` | `upload_to_app_store` (deliver, `ios release` lane only — **not** read by the beta/TestFlight lane, Apple has no such concept for TestFlight) | See step 4 — leave alone by default. |
@@ -104,7 +125,11 @@ skip it, Google Play still needs the file.
 
 ## 5. Write the files
 
-For all 8 Play locales: `.claude/tmp/release-metadata/android/<play-locale>/changelogs/<NEW_CODE>.txt`.
+For the 6 real Play locales (`uk, pl-PL, ro, bg, pt-PT, kk` — not `en-US`/`ru-RU`, see
+step 0): `.claude/tmp/release-metadata/android/<play-locale>/changelogs/<NEW_CODE>.txt`.
+English and Russian drafts still get written to `store/copy/store-listing.md` (every
+language's section stays current there) — they just don't get a Play changelog file,
+since pushing one for a locale with no base listing breaks the whole Play upload.
 
 For all 6 App Store locales: overwrite `.claude/tmp/release-metadata/ios/<appstore-locale>/release_notes.txt`,
 then overwrite `.claude/tmp/release-metadata/ios/RELEASE_NOTES_VERSION` with `<NEW_CODE>` (bare

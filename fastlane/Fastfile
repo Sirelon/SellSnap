@@ -14,6 +14,20 @@ ASC_ISSUER_ID    = "8873b38c-775e-4a3e-baf5-4e2bada765a8"
 # their string params against, so anchor these to __dir__ explicitly.
 ASC_KEY_FILEPATH = File.expand_path("AuthKey_G5TTXS7GV3.p8", __dir__)
 
+# The Xcode project also has a Crashlytics dSYM upload Run Script build phase,
+# but that fires the SDK's own async "run" script (fire-and-forget, logged only
+# to Console.app) - fine for a local Xcode build left open, not reliable in a
+# non-interactive fastlane run that exits right after. upload_symbols_to_crashlytics
+# below is the synchronous, fastlane-driven backstop; keeping both is intentional,
+# duplicate uploads for the same build are a harmless no-op on Firebase's side.
+# Firebase ships via SPM here (no Podfile/Pods/), so the upload-symbols binary
+# isn't auto-discoverable the way a Pods install would be - it lives under
+# DerivedData/SourcePackages, which is why derived_data_path is pinned below
+# instead of left at gym's normal randomized-hash default.
+IOS_DERIVED_DATA_PATH = "iosApp/build/DerivedData"
+CRASHLYTICS_UPLOAD_SYMBOLS_BINARY = "#{IOS_DERIVED_DATA_PATH}/SourcePackages/checkouts/firebase-ios-sdk/Crashlytics/upload-symbols"
+GOOGLE_SERVICE_INFO_PLIST = "iosApp/iosApp/GoogleService-Info.plist"
+
 # version.properties (repo root) is the single source of truth for the app
 # version, shared by Android (read directly in build.gradle.kts) and iOS
 # (synced into the Xcode project below before every build).
@@ -71,6 +85,14 @@ platform :ios do
     )
   end
 
+  private_lane :upload_dsyms_to_crashlytics do
+    upload_symbols_to_crashlytics(
+      dsym_path: lane_context[SharedValues::DSYM_OUTPUT_PATH],
+      gsp_path: GOOGLE_SERVICE_INFO_PLIST,
+      binary_path: CRASHLYTICS_UPLOAD_SYMBOLS_BINARY
+    )
+  end
+
   desc "Build and upload a new beta to TestFlight"
   lane :beta do
     sync_version
@@ -79,11 +101,20 @@ platform :ios do
         project: IOS_PROJECT,
         scheme: IOS_SCHEME,
         export_method: "app-store",
+        derived_data_path: IOS_DERIVED_DATA_PATH,
         xcargs: "-allowProvisioningUpdates"
       )
     end
+    upload_dsyms_to_crashlytics
+    # No skip_waiting_for_build_processing here: pilot's "partial wait" (needed
+    # before build info can be attached at all) only checks the plain
+    # `changelog` option, not `localized_build_info` - confirmed against
+    # fastlane's build_manager.rb. With skip_waiting_for_build_processing and
+    # no `changelog`, it returns immediately and localized_build_info is
+    # silently never applied (discovered exactly this way in testing - the
+    # binary uploaded fine, but What's New didn't attach). Waiting for full
+    # processing is the only documented way to reliably get it applied.
     upload_to_testflight(
-      skip_waiting_for_build_processing: true,
       localized_build_info: testflight_whats_new
     )
   end
@@ -96,9 +127,11 @@ platform :ios do
         project: IOS_PROJECT,
         scheme: IOS_SCHEME,
         export_method: "app-store",
+        derived_data_path: IOS_DERIVED_DATA_PATH,
         xcargs: "-allowProvisioningUpdates"
       )
     end
+    upload_dsyms_to_crashlytics
     upload_to_app_store(
       app_identifier: APP_IDENTIFIER,
       submit_for_review: false,

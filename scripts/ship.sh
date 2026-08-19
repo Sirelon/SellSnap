@@ -4,7 +4,12 @@ cd "$(dirname "$0")/.."
 
 VERSION_PROPERTIES="version.properties"
 SCREENSHOT_MODE_FILE="composeApp/src/commonMain/kotlin/com/sirelon/aicalories/features/seller/ad/ScreenshotMode.kt"
-ANDROID_LOCALES=(en-US uk pl-PL ro bg pt-PT ru-RU kk)
+# Play Console's actual configured store-listing locales - confirmed via
+# download_from_play_store, not the full set of in-app-supported languages.
+# It has no en-US or ru-RU listing at all (no title, nothing), so pushing a
+# changelog for either fails the whole edit. Adding those as real Play Store
+# listings is a separate, deliberate decision - not implied by this list.
+ANDROID_LOCALES=(uk pl-PL ro bg pt-PT kk)
 RELEASE_METADATA_DIR=".claude/tmp/release-metadata"
 IOS_RELEASE_NOTES_VERSION_FILE="$RELEASE_METADATA_DIR/ios/RELEASE_NOTES_VERSION"
 

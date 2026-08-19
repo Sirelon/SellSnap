@@ -1,8 +1,8 @@
 # SellSnap — Store listing text (App Store + Google Play)
 
-Copy-paste text for every listing field, in all 8 app languages. Written for SellSnap 2.1 (build 8).
+Copy-paste text for every listing field, in all 8 app languages. Written for SellSnap 2.2 (build 9).
 
-The per-language **What's New** blocks below are also the source of truth pushed to the stores automatically: Android reads `fastlane/metadata/android/<locale>/changelogs/<version_code>.txt`, iOS reads `fastlane/metadata/ios/<locale>/release_notes.txt` (App Store) and the same file feeds TestFlight's localized build info. The `sellsnap-release` skill regenerates both the files and this section on every release.
+The per-language **What's New** blocks below match what's pushed to the stores automatically from `.claude/tmp/release-metadata/` (gitignored, regenerated fresh each release): Android reads `android/<locale>/changelogs/<version_code>.txt`, iOS reads `ios/<locale>/release_notes.txt` (App Store) and the same file feeds TestFlight's localized build info. The `sellsnap-release` skill regenerates both those files and this section on every release.
 
 ## Field limits cheat-sheet
 
@@ -70,10 +70,10 @@ From snap to live on OLX in about a minute. Download SellSnap and turn your clut
 SellSnap is an independent app and is not affiliated with or endorsed by OLX. Publishing requires an OLX account.
 ```
 
-**What's New (v2.1):**
+**What's New (v2.2):**
 
 ```
-SellSnap 2.1 — stability improvements
+SellSnap 2.2 — stability improvements
 
 • Improved crash reporting, so we catch and fix issues faster
 • Security and dependency updates
@@ -124,10 +124,10 @@ SellSnap підтримує OLX в Україні, Польщі, Румунії,
 SellSnap — незалежний застосунок, не афілійований з OLX. Для публікації потрібен акаунт OLX.
 ```
 
-**What's New (v2.1):**
+**What's New (v2.2):**
 
 ```
-SellSnap 2.1 — покращення стабільності
+SellSnap 2.2 — покращення стабільності
 
 • Краще звітування про збої — виправляємо проблеми швидше
 • Оновлення безпеки та залежностей
@@ -178,10 +178,10 @@ Od zdjęcia do ogłoszenia na OLX w około minutę. Pobierz SellSnap i zamień n
 SellSnap to niezależna aplikacja, niepowiązana z OLX. Do publikacji wymagane jest konto OLX.
 ```
 
-**What's New (v2.1):**
+**What's New (v2.2):**
 
 ```
-SellSnap 2.1 — poprawki stabilności
+SellSnap 2.2 — poprawki stabilności
 
 • Lepsze raportowanie awarii, dzięki czemu szybciej naprawiamy problemy
 • Aktualizacje bezpieczeństwa i zależności
@@ -232,10 +232,10 @@ De la poză la anunț publicat pe OLX în aproximativ un minut. Descarcă SellSn
 SellSnap este o aplicație independentă, neafiliată cu OLX. Publicarea necesită un cont OLX.
 ```
 
-**What's New (v2.1):**
+**What's New (v2.2):**
 
 ```
-SellSnap 2.1 — îmbunătățiri de stabilitate
+SellSnap 2.2 — îmbunătățiri de stabilitate
 
 • Raportare a erorilor îmbunătățită, ca să rezolvăm problemele mai repede
 • Actualizări de securitate și de dependențe
@@ -286,10 +286,10 @@ SellSnap поддържа OLX в България, Украйна, Полша, �
 SellSnap е независимо приложение и не е свързано с OLX. За публикуване е необходим акаунт в OLX.
 ```
 
-**What's New (v2.1):**
+**What's New (v2.2):**
 
 ```
-SellSnap 2.1 — подобрения в стабилността
+SellSnap 2.2 — подобрения в стабилността
 
 • По-добро отчитане на сривове — отстраняваме проблемите по-бързо
 • Актуализации на сигурността и зависимостите
@@ -340,10 +340,10 @@ Da foto ao anúncio publicado no OLX em cerca de um minuto. Descarregue o SellSn
 O SellSnap é uma aplicação independente, sem qualquer afiliação com o OLX. Para publicar é necessária uma conta OLX.
 ```
 
-**What's New (v2.1):**
+**What's New (v2.2):**
 
 ```
-SellSnap 2.1 — melhorias de estabilidade
+SellSnap 2.2 — melhorias de estabilidade
 
 • Relatórios de falhas melhorados, para resolvermos problemas mais depressa
 • Atualizações de segurança e de dependências
@@ -394,10 +394,10 @@ SellSnap поддерживает OLX в Украине, Польше, Румы�
 SellSnap — независимое приложение, не аффилированное с OLX. Для публикации нужен аккаунт OLX.
 ```
 
-**What's New (v2.1):**
+**What's New (v2.2):**
 
 ```
-SellSnap 2.1 — улучшения стабильности
+SellSnap 2.2 — улучшения стабильности
 
 • Улучшенные отчёты о сбоях — исправляем проблемы быстрее
 • Обновления безопасности и зависимостей
@@ -446,10 +446,10 @@ OLX аккаунтыңыз жоқ па? Қонақ режимін пайдала
 SellSnap — OLX-пен байланысы жоқ тәуелсіз қосымша. Жариялау үшін OLX аккаунты қажет.
 ```
 
-**What's New (v2.1):**
+**What's New (v2.2):**
 
 ```
-SellSnap 2.1 — тұрақтылықты жақсарту
+SellSnap 2.2 — тұрақтылықты жақсарту
 
 • Ақаулар туралы есеп беру жақсарды — мәселелерді жылдамырақ шешеміз
 • Қауіпсіздік пен тәуелділіктерге жаңартулар
