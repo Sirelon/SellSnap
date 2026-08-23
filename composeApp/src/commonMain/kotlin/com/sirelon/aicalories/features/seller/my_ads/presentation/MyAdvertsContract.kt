@@ -12,6 +12,11 @@ interface MyAdvertsContract {
         val adverts: List<MyAdvertItem> = emptyList(),
         val canLoadMore: Boolean = false,
         val errorMessage: String? = null,
+        /** Display name of the OLX account these adverts belong to (SIR-83 U8/D8) - `null` before
+         * [com.sirelon.sellsnap.features.seller.profile.data.SellerAccountRepository.user] has
+         * emitted, possibly blank if the account has no name on file. UI falls back to a generic
+         * label in either case. */
+        val accountName: String? = null,
     )
 
     sealed interface Event {

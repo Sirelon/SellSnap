@@ -19,6 +19,7 @@ import com.sirelon.sellsnap.features.seller.currency.domain.OlxCurrency
 import com.sirelon.sellsnap.features.seller.location.data.response.OlxLocationResponse
 import com.sirelon.sellsnap.features.seller.location.data.response.OlxLocationsRootResponse
 import io.ktor.client.HttpClient
+import io.ktor.client.request.bearerAuth
 import io.ktor.client.request.get
 import io.ktor.client.request.parameter
 import io.ktor.client.request.post
@@ -42,6 +43,22 @@ class OlxApiClient(
 
     suspend fun getAuthenticatedUser(): OlxUser {
         val response = httpClient.get("users/me")
+        response.ensureSuccess()
+
+        val user = response.decodeBody<OlxUserRootResponse>("authenticated user").data
+            ?: throw missingResponseData("authenticated user", "data")
+        return user.toDomain()
+    }
+
+    /**
+     * Same call, with an explicit bearer token instead of relying on this client's own Auth
+     * plugin. Used during add-account/reconnect (SIR-83): at that point the freshly exchanged
+     * token is deliberately not in the account store yet, since whether it's a duplicate isn't
+     * known until this call returns, so it can't be resolved via the authorized client's
+     * account-store-backed [io.ktor.client.plugins.auth.providers.bearer] provider.
+     */
+    suspend fun getAuthenticatedUser(accessToken: String): OlxUser {
+        val response = httpClient.get("users/me") { bearerAuth(accessToken) }
         response.ensureSuccess()
 
         val user = response.decodeBody<OlxUserRootResponse>("authenticated user").data

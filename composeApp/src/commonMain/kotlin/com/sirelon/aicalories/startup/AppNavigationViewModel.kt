@@ -3,10 +3,12 @@ package com.sirelon.sellsnap.startup
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sirelon.sellsnap.features.seller.ad.AdFlowTimerStore
+import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountMigration
 import com.sirelon.sellsnap.features.seller.auth.data.OlxApiClient
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAuthRepository
 import com.sirelon.sellsnap.features.seller.auth.data.OlxCountryStore
 import com.sirelon.sellsnap.features.seller.auth.domain.SellerSessionMode
+import com.sirelon.sellsnap.features.seller.profile.data.SellerAccountRepository
 import com.sirelon.sellsnap.navigation.AppDestination
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -20,6 +22,8 @@ class AppNavigationViewModel(
     private val adFlowTimerStore: AdFlowTimerStore,
     private val olxCountryStore: OlxCountryStore,
     private val analyticsConsentRepository: AnalyticsConsentRepository,
+    private val olxAccountMigration: OlxAccountMigration,
+    private val sellerAccountRepository: SellerAccountRepository,
 ) : ViewModel() {
 
     private val _backStack = MutableStateFlow<List<AppDestination>>(listOf(AppDestination.Splash))
@@ -28,7 +32,14 @@ class AppNavigationViewModel(
     init {
         viewModelScope.launch {
             olxCountryStore.loadFromStorage()
+            olxAccountMigration.migrateIfNeeded()
             resolveStartupDestination()
+        }
+        // Fire-and-forget: must not delay startup routing above. Keeps accounts that are still
+        // being used, but not currently active, from silently dying past OLX's ~30-day unused
+        // refresh-token window (SIR-83 keep-alive).
+        viewModelScope.launch {
+            runCatching { sellerAccountRepository.runKeepAliveRefresh() }
         }
     }
 
@@ -105,12 +116,16 @@ class AppNavigationViewModel(
     private suspend fun sessionDestination(): AppDestination = runCatching {
         val session = authRepository.currentSession()
         when (session.mode) {
-            SellerSessionMode.Authenticated -> runCatching {
-                olxApiClient.getAuthenticatedUser()
+            // F4/D7 fix: Authenticated now means "at least one account is on file for the active
+            // country" (see OlxAuthRepository.currentSession), regardless of whether its token is
+            // healthy - so this always routes to Seller, never back to SellerLanding. The
+            // getAuthenticatedUser() call below just warms the profile cache and, via the
+            // authorized client's bearer-refresh plugin, proactively detects and marks a dead
+            // token NeedsReconnect; its failure (network blip or otherwise) must not bounce an
+            // existing seller back to the landing/guest screen.
+            SellerSessionMode.Authenticated -> {
+                runCatching { olxApiClient.getAuthenticatedUser() }.exceptionOrNull()?.printStackTrace()
                 AppDestination.Seller
-            }.getOrElse {
-                it.printStackTrace()
-                AppDestination.SellerLanding
             }
 
             SellerSessionMode.Guest -> AppDestination.Seller

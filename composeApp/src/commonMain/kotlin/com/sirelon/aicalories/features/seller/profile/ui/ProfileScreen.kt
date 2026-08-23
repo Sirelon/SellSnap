@@ -1,6 +1,7 @@
 package com.sirelon.sellsnap.features.seller.profile.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,8 +17,10 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.RadioButton
@@ -31,7 +34,9 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -43,13 +48,16 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mohamedrejeb.calf.permissions.CoarseLocation
 import com.mohamedrejeb.calf.permissions.Permission
 import com.sirelon.sellsnap.designsystem.AppAsyncImage
+import com.sirelon.sellsnap.designsystem.AppAvatar
 import com.sirelon.sellsnap.designsystem.AppCard
 import com.sirelon.sellsnap.designsystem.AppDimens
 import com.sirelon.sellsnap.designsystem.AppScaffold
 import com.sirelon.sellsnap.designsystem.AppTheme
 import com.sirelon.sellsnap.designsystem.AppThemeMode
 import com.sirelon.sellsnap.designsystem.Cell
+import com.sirelon.sellsnap.designsystem.ErrorPill
 import com.sirelon.sellsnap.designsystem.ObserveAsEvents
+import com.sirelon.sellsnap.designsystem.Pill
 import com.sirelon.sellsnap.designsystem.buttons.AppButton
 import com.sirelon.sellsnap.designsystem.buttons.AppButtonDefaults
 import com.sirelon.sellsnap.designsystem.buttons.AppButtonStyle
@@ -62,13 +70,16 @@ import com.sirelon.sellsnap.features.seller.auth.domain.OlxUser
 import com.sirelon.sellsnap.features.seller.location.OlxLocation
 import com.sirelon.sellsnap.features.seller.profile.presentation.ProfileContract
 import com.sirelon.sellsnap.features.seller.profile.presentation.ProfileContract.ProfileEvent
+import com.sirelon.sellsnap.features.seller.profile.presentation.ProfileContract.SellerAccountUiModel
 import com.sirelon.sellsnap.features.seller.profile.presentation.ProfileViewModel
 import com.sirelon.sellsnap.legal.LegalLinks
+import kotlinx.coroutines.delay
 import com.sirelon.sellsnap.generated.resources.Res
 import com.sirelon.sellsnap.generated.resources.back
 import com.sirelon.sellsnap.generated.resources.change_button
 import com.sirelon.sellsnap.generated.resources.continue_with_olx
 import com.sirelon.sellsnap.generated.resources.ic_arrow_left
+import com.sirelon.sellsnap.generated.resources.ic_check
 import com.sirelon.sellsnap.generated.resources.ic_refresh_cw
 import com.sirelon.sellsnap.generated.resources.ic_user
 import com.sirelon.sellsnap.generated.resources.location_detecting
@@ -115,6 +126,33 @@ import com.sirelon.sellsnap.generated.resources.profile_theme_title
 import com.sirelon.sellsnap.generated.resources.profile_value_no
 import com.sirelon.sellsnap.generated.resources.profile_value_yes
 import com.sirelon.sellsnap.generated.resources.retry
+import com.sirelon.sellsnap.generated.resources.profile_account_active_badge
+import com.sirelon.sellsnap.generated.resources.profile_account_add_button
+import com.sirelon.sellsnap.generated.resources.account_business_badge
+import com.sirelon.sellsnap.generated.resources.profile_account_cap_reached_message
+import com.sirelon.sellsnap.generated.resources.account_needs_reconnect_badge
+import com.sirelon.sellsnap.generated.resources.profile_accounts_section_title
+import com.sirelon.sellsnap.generated.resources.profile_account_set_active
+import com.sirelon.sellsnap.generated.resources.profile_active_account_details_title
+import com.sirelon.sellsnap.generated.resources.profile_add_account_confirm_cancel
+import com.sirelon.sellsnap.generated.resources.profile_add_account_confirm_continue
+import com.sirelon.sellsnap.generated.resources.profile_add_account_confirm_note
+import com.sirelon.sellsnap.generated.resources.profile_add_account_confirm_subtitle
+import com.sirelon.sellsnap.generated.resources.profile_add_account_confirm_title
+import com.sirelon.sellsnap.generated.resources.profile_auth_failed_dismiss
+import com.sirelon.sellsnap.generated.resources.profile_auth_failed_message
+import com.sirelon.sellsnap.generated.resources.profile_auth_failed_recovery_action
+import com.sirelon.sellsnap.generated.resources.profile_auth_failed_recovery_message
+import com.sirelon.sellsnap.generated.resources.profile_auth_failed_recovery_title
+import com.sirelon.sellsnap.generated.resources.profile_auth_failed_retry
+import com.sirelon.sellsnap.generated.resources.profile_auth_failed_retry_countdown
+import com.sirelon.sellsnap.generated.resources.profile_auth_failed_title
+import com.sirelon.sellsnap.generated.resources.profile_disconnect_confirm_action
+import com.sirelon.sellsnap.generated.resources.profile_disconnect_confirm_cancel
+import com.sirelon.sellsnap.generated.resources.profile_disconnect_confirm_message
+import com.sirelon.sellsnap.generated.resources.profile_disconnect_confirm_olx_link
+import com.sirelon.sellsnap.generated.resources.profile_disconnect_confirm_title
+import com.sirelon.sellsnap.generated.resources.profile_reconnect_account_action
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
@@ -125,6 +163,12 @@ fun ProfileScreenRoute(
     onOpenOlxAuth: (String) -> Unit,
     onLogout: () -> Unit,
     onDeleteAccountDataRequested: () -> Unit,
+    // SIR-83: a second launcher forcing a fresh OLX login, used for add-account and reconnect
+    // only (D5) - first connect above keeps using [onOpenOlxAuth]'s non-forced session.
+    onOpenOlxAuthForceReauth: (String) -> Unit,
+    onAddAccountRequested: () -> Unit,
+    onDisconnectRequested: (Int) -> Unit,
+    onAddAccountFailed: () -> Unit,
     reason: String? = null,
 ) {
     val viewModel: ProfileViewModel = koinViewModel()
@@ -142,7 +186,7 @@ fun ProfileScreenRoute(
     ObserveAsEvents(viewModel.effects) { effect ->
         when (effect) {
             is ProfileContract.ProfileEffect.LaunchOlxAuthFlow -> {
-                onOpenOlxAuth(effect.url)
+                if (effect.forceReauth) onOpenOlxAuthForceReauth(effect.url) else onOpenOlxAuth(effect.url)
             }
 
             is ProfileContract.ProfileEffect.ShowMessage -> {
@@ -150,6 +194,8 @@ fun ProfileScreenRoute(
             }
 
             ProfileContract.ProfileEffect.NavigateToLanding -> onLogout()
+
+            ProfileContract.ProfileEffect.AuthorizationFailed -> onAddAccountFailed()
         }
     }
 
@@ -167,6 +213,8 @@ fun ProfileScreenRoute(
                 }
             },
             onDeleteAccountDataRequested = onDeleteAccountDataRequested,
+            onAddAccountRequested = onAddAccountRequested,
+            onDisconnectRequested = onDisconnectRequested,
             onOpenPrivacy = { uriHandler.openUri(LegalLinks.PRIVACY_URL) },
             onOpenTerms = { uriHandler.openUri(LegalLinks.TERMS_URL) },
             onContactDataRequest = { uriHandler.openUri(LegalLinks.DATA_REQUEST_MAILTO) },
@@ -205,6 +253,8 @@ private fun ProfileScreen(
     onEvent: (ProfileEvent) -> Unit,
     onChangeLocation: () -> Unit,
     onDeleteAccountDataRequested: () -> Unit,
+    onAddAccountRequested: () -> Unit,
+    onDisconnectRequested: (Int) -> Unit,
     onOpenPrivacy: () -> Unit,
     onOpenTerms: () -> Unit,
     onContactDataRequest: () -> Unit,
@@ -257,12 +307,20 @@ private fun ProfileScreen(
                 }
             }
 
-            if (state.user == null) {
+            if (state.user == null && state.accounts.isEmpty()) {
                 GuestCard(onLogin = { onEvent(ProfileEvent.LoginClicked) })
             } else {
-                AccountCard(
-                    user = state.user,
-                    onLogout = { onEvent(ProfileEvent.LogoutClicked) },
+                AccountsSection(
+                    accounts = state.accounts,
+                    activeUser = state.user,
+                    canAddAccount = state.canAddAccount,
+                    expandedReconnectLocalIndex = state.expandedReconnectLocalIndex,
+                    onDisconnectSingleAccount = { onEvent(ProfileEvent.LogoutClicked) },
+                    onSetActiveAccount = { onEvent(ProfileEvent.SetActiveAccountClicked(it)) },
+                    onToggleReconnectRow = { onEvent(ProfileEvent.NeedsReconnectRowClicked(it)) },
+                    onReconnectAccount = { onEvent(ProfileEvent.ReconnectClicked(it)) },
+                    onDisconnectAccount = onDisconnectRequested,
+                    onAddAccountClick = onAddAccountRequested,
                 )
             }
 
@@ -311,7 +369,7 @@ private fun GuestCard(onLogin: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.xl4),
             horizontalAlignment = Alignment.Start,
         ) {
-            ProfileAvatar(avatarUrl = null, fallbackInitial = null)
+            AppAvatar(avatarUrl = null, fallbackInitial = null)
             Text(
                 text = stringResource(Res.string.profile_guest_title),
                 style = AppTheme.typography.title,
@@ -348,7 +406,7 @@ private fun AccountCard(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing.xl4),
             ) {
-                ProfileAvatar(
+                AppAvatar(
                     avatarUrl = user.avatar,
                     fallbackInitial = user.name.firstOrNull()?.uppercaseChar()?.toString(),
                 )
@@ -371,21 +429,7 @@ private fun AccountCard(
                 }
             }
 
-            ProfileField(label = stringResource(Res.string.profile_field_id), value = user.id.toString())
-            ProfileField(label = stringResource(Res.string.profile_field_name), value = user.name)
-            ProfileField(label = stringResource(Res.string.profile_field_email), value = user.email)
-            ProfileField(label = stringResource(Res.string.profile_field_status), value = user.status)
-            ProfileField(label = stringResource(Res.string.profile_field_phone), value = user.phone)
-            ProfileField(label = stringResource(Res.string.profile_field_created_at), value = user.createdAt)
-            ProfileField(label = stringResource(Res.string.profile_field_last_login_at), value = user.lastLoginAt)
-            ProfileField(
-                label = stringResource(Res.string.profile_field_business),
-                value = if (user.isBusiness) {
-                    stringResource(Res.string.profile_value_yes)
-                } else {
-                    stringResource(Res.string.profile_value_no)
-                },
-            )
+            AccountFieldDump(user)
 
             AppButton(
                 text = stringResource(Res.string.profile_logout),
@@ -397,6 +441,252 @@ private fun AccountCard(
                     backgroundColor = AppTheme.colors.error,
                     contentColor = AppTheme.colors.onError,
                 ),
+            )
+        }
+    }
+}
+
+@Composable
+private fun AccountFieldDump(user: OlxUser) {
+    ProfileField(label = stringResource(Res.string.profile_field_id), value = user.id.toString())
+    ProfileField(label = stringResource(Res.string.profile_field_name), value = user.name)
+    ProfileField(label = stringResource(Res.string.profile_field_email), value = user.email)
+    ProfileField(label = stringResource(Res.string.profile_field_status), value = user.status)
+    ProfileField(label = stringResource(Res.string.profile_field_phone), value = user.phone)
+    ProfileField(label = stringResource(Res.string.profile_field_created_at), value = user.createdAt)
+    ProfileField(label = stringResource(Res.string.profile_field_last_login_at), value = user.lastLoginAt)
+    ProfileField(
+        label = stringResource(Res.string.profile_field_business),
+        value = if (user.isBusiness) {
+            stringResource(Res.string.profile_value_yes)
+        } else {
+            stringResource(Res.string.profile_value_no)
+        },
+    )
+}
+
+/**
+ * SIR-83 U1: renders exactly today's single-account [AccountCard] when there's zero or one
+ * connected account (the feature must be invisible below two accounts - PRD §3, Q20), and the
+ * accounts list (active marked + first, per-row Set-as-active/Disconnect/Reconnect actions) once
+ * a second account exists. The active account's full field dump keeps rendering underneath the
+ * list either way, from [activeUser] (the repository's reactive, network-fetched [OlxUser]) -
+ * the lightweight [SellerAccountUiModel] rows never carry those fields.
+ */
+@Composable
+private fun AccountsSection(
+    accounts: List<SellerAccountUiModel>,
+    activeUser: OlxUser?,
+    canAddAccount: Boolean,
+    expandedReconnectLocalIndex: Int?,
+    onDisconnectSingleAccount: () -> Unit,
+    onSetActiveAccount: (Int) -> Unit,
+    onToggleReconnectRow: (Int) -> Unit,
+    onReconnectAccount: (Int) -> Unit,
+    onDisconnectAccount: (Int) -> Unit,
+    onAddAccountClick: () -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.xl3)) {
+        if (accounts.size <= 1) {
+            if (activeUser != null) {
+                AccountCard(user = activeUser, onLogout = onDisconnectSingleAccount)
+            }
+        } else {
+            Text(
+                text = stringResource(Res.string.profile_accounts_section_title),
+                style = AppTheme.typography.title,
+                color = AppTheme.colors.onSurface,
+            )
+            AccountsListCard(
+                accounts = accounts,
+                expandedReconnectLocalIndex = expandedReconnectLocalIndex,
+                onSetActiveAccount = onSetActiveAccount,
+                onToggleReconnectRow = onToggleReconnectRow,
+                onReconnectAccount = onReconnectAccount,
+                onDisconnectAccount = onDisconnectAccount,
+            )
+        }
+
+        AddAccountAffordance(canAddAccount = canAddAccount, onClick = onAddAccountClick)
+
+        if (accounts.size > 1 && activeUser != null) {
+            Text(
+                text = stringResource(Res.string.profile_active_account_details_title),
+                style = AppTheme.typography.title,
+                color = AppTheme.colors.onSurface,
+            )
+            AppCard(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(vertical = AppDimens.Spacing.xl2)) {
+                    AccountFieldDump(activeUser)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AccountsListCard(
+    accounts: List<SellerAccountUiModel>,
+    expandedReconnectLocalIndex: Int?,
+    onSetActiveAccount: (Int) -> Unit,
+    onToggleReconnectRow: (Int) -> Unit,
+    onReconnectAccount: (Int) -> Unit,
+    onDisconnectAccount: (Int) -> Unit,
+) {
+    AppCard(modifier = Modifier.fillMaxWidth()) {
+        Column {
+            accounts.forEachIndexed { index, account ->
+                AccountRow(
+                    account = account,
+                    isExpanded = expandedReconnectLocalIndex == account.localIndex,
+                    onSetActiveAccount = { onSetActiveAccount(account.localIndex) },
+                    onToggleReconnectRow = { onToggleReconnectRow(account.localIndex) },
+                    onReconnectAccount = { onReconnectAccount(account.localIndex) },
+                    onDisconnectAccount = { onDisconnectAccount(account.localIndex) },
+                )
+                if (index != accounts.lastIndex) {
+                    HorizontalDivider(
+                        color = AppTheme.colors.onSurface.copy(alpha = 0.08f),
+                    )
+                }
+            }
+        }
+    }
+}
+
+/** One row in the multi-account list (PRD U1/D9). Tapping a `Needs reconnect` row toggles its
+ * inline "Reconnect <account>" action in place (D9) - it never switches the active account. */
+@Composable
+private fun AccountRow(
+    account: SellerAccountUiModel,
+    isExpanded: Boolean,
+    onSetActiveAccount: () -> Unit,
+    onToggleReconnectRow: () -> Unit,
+    onReconnectAccount: () -> Unit,
+    onDisconnectAccount: () -> Unit,
+) {
+    val displayName = account.displayName.takeIf { it.isNotBlank() }
+        ?: stringResource(Res.string.profile_olx_account)
+    Column {
+        Cell(
+            modifier = Modifier.fillMaxWidth(),
+            transparent = true,
+            onClick = if (account.needsReconnect) onToggleReconnectRow else null,
+            leading = {
+                AppAvatar(
+                    avatarUrl = account.avatarUrl,
+                    fallbackInitial = displayName.firstOrNull()?.uppercaseChar()?.toString(),
+                )
+            },
+            headline = {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing.xs),
+                ) {
+                    Text(
+                        text = displayName,
+                        style = AppTheme.typography.body,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    if (account.isActive) {
+                        Pill(
+                            text = stringResource(Res.string.profile_account_active_badge),
+                            iconResource = Res.drawable.ic_check,
+                            color = AppTheme.colors.primary,
+                        )
+                    }
+                    if (account.isBusiness) {
+                        Pill(
+                            text = stringResource(Res.string.account_business_badge),
+                            iconResource = Res.drawable.ic_user,
+                            color = AppTheme.colors.onSecondaryContainer,
+                        )
+                    }
+                }
+            },
+            supporting = {
+                Column {
+                    Text(
+                        text = account.email?.takeIf { it.isNotBlank() }
+                            ?: stringResource(Res.string.profile_not_provided),
+                        style = AppTheme.typography.caption,
+                        color = AppTheme.colors.onSurfaceMuted,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    if (account.needsReconnect) {
+                        ErrorPill(label = stringResource(Res.string.account_needs_reconnect_badge))
+                    } else if (!account.isActive) {
+                        Text(
+                            text = stringResource(Res.string.profile_account_set_active),
+                            style = AppTheme.typography.caption,
+                            color = AppTheme.colors.primary,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier
+                                .padding(top = AppDimens.Spacing.xs)
+                                .clickable(onClick = onSetActiveAccount),
+                        )
+                    }
+                }
+            },
+            trailing = {
+                Text(
+                    text = stringResource(Res.string.profile_logout),
+                    style = AppTheme.typography.caption,
+                    color = AppTheme.colors.error,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.clickable(onClick = onDisconnectAccount),
+                )
+            },
+        )
+        if (isExpanded && account.needsReconnect) {
+            AppButton(
+                text = stringResource(Res.string.profile_reconnect_account_action, displayName),
+                onClick = onReconnectAccount,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = AppDimens.Spacing.xl5)
+                    .padding(bottom = AppDimens.Spacing.xl3),
+                style = AppButtonDefaults.secondary(),
+            )
+        }
+    }
+}
+
+@Composable
+private fun AddAccountAffordance(
+    canAddAccount: Boolean,
+    onClick: () -> Unit,
+) {
+    Column {
+        Cell(
+            modifier = Modifier.fillMaxWidth(),
+            transparent = true,
+            onClick = if (canAddAccount) onClick else null,
+            leading = {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = null,
+                    tint = if (canAddAccount) AppTheme.colors.primary else AppTheme.colors.onSurfaceMuted,
+                )
+            },
+            headline = {
+                Text(
+                    text = stringResource(Res.string.profile_account_add_button),
+                    style = AppTheme.typography.body,
+                    fontWeight = FontWeight.Bold,
+                    color = if (canAddAccount) AppTheme.colors.primary else AppTheme.colors.onSurfaceMuted,
+                )
+            },
+        )
+        if (!canAddAccount) {
+            Text(
+                text = stringResource(Res.string.profile_account_cap_reached_message),
+                style = AppTheme.typography.caption,
+                color = AppTheme.colors.onSurfaceMuted,
+                modifier = Modifier.padding(horizontal = AppDimens.Spacing.xl5),
             )
         }
     }
@@ -455,6 +745,215 @@ fun DeleteAccountDataConfirmSheet(
                 enabled = !isDeleting,
             ) {
                 Text(text = stringResource(Res.string.profile_delete_account_data_cancel))
+            }
+        }
+    }
+}
+
+/**
+ * SIR-83 U2: confirms adding a second/third OLX account before starting a forced-fresh-login
+ * OAuth flow (D5). Wired as a top-level [com.sirelon.sellsnap.navigation.AppDestination] bottom
+ * sheet in `App.kt`, next to [DeleteAccountDataConfirmSheet] - see that file for how [onContinue]
+ * drives `createAuthorizationRequest()` + the force-reauth launcher.
+ */
+@Composable
+fun AddOlxAccountConfirmSheet(
+    siteLabel: String,
+    onContinue: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = AppDimens.Spacing.xl5)
+            .padding(bottom = AppDimens.Spacing.xl5),
+        verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.xl4),
+    ) {
+        Text(
+            text = stringResource(Res.string.profile_add_account_confirm_title),
+            style = AppTheme.typography.headline,
+            color = AppTheme.colors.onBackground,
+        )
+        Text(
+            text = stringResource(Res.string.profile_add_account_confirm_subtitle, siteLabel),
+            style = AppTheme.typography.body,
+            color = AppTheme.colors.onSurfaceMuted,
+        )
+        AppCard(modifier = Modifier.fillMaxWidth()) {
+            Text(
+                text = stringResource(Res.string.profile_add_account_confirm_note),
+                style = AppTheme.typography.caption,
+                color = AppTheme.colors.onSurface,
+                modifier = Modifier.padding(AppDimens.Spacing.xl4),
+            )
+        }
+        AppButton(
+            modifier = Modifier.fillMaxWidth(),
+            text = stringResource(Res.string.profile_add_account_confirm_continue),
+            onClick = onContinue,
+            style = AppButtonDefaults.primary(),
+        )
+        Box(
+            modifier = Modifier.fillMaxWidth(),
+            contentAlignment = Alignment.Center,
+        ) {
+            TextButton(onClick = onDismiss) {
+                Text(text = stringResource(Res.string.profile_add_account_confirm_cancel))
+            }
+        }
+    }
+}
+
+/**
+ * SIR-83 U3: shown after a failed add/reconnect authorization attempt, and also (re-shown) when
+ * the seller taps Add/Reconnect while an earlier failure's cooldown is still in force - never an
+ * automatic retry either way. [remainingCooldownSeconds]/[consecutiveFailures] are suppliers
+ * rather than snapshots so this composable can tick the countdown by re-reading the repository's
+ * live, persisted state once a second (PRD: survives a force-quit mid-cooldown, Q7) instead of
+ * running a blind local timer. After a 2nd consecutive failure the primary action stops offering
+ * another in-app attempt and points at OLX's own recovery page instead (no cooldown gates that
+ * link - opening a web page isn't an authorization attempt).
+ */
+@Composable
+fun OlxAccountAuthFailedSheet(
+    remainingCooldownSeconds: () -> Long,
+    consecutiveFailures: () -> Int,
+    onRetry: () -> Unit,
+    onOpenOlxRecovery: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var cooldown by remember { mutableStateOf(remainingCooldownSeconds()) }
+    val failures = remember { consecutiveFailures() }
+
+    LaunchedEffect(Unit) {
+        while (cooldown > 0) {
+            delay(1_000L)
+            cooldown = remainingCooldownSeconds()
+        }
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = AppDimens.Spacing.xl5)
+            .padding(bottom = AppDimens.Spacing.xl5),
+        verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.xl4),
+    ) {
+        val recoveryMode = failures >= 2
+        Text(
+            text = if (recoveryMode) {
+                stringResource(Res.string.profile_auth_failed_recovery_title)
+            } else {
+                stringResource(Res.string.profile_auth_failed_title)
+            },
+            style = AppTheme.typography.headline,
+            color = AppTheme.colors.onBackground,
+        )
+        Text(
+            text = if (recoveryMode) {
+                stringResource(Res.string.profile_auth_failed_recovery_message)
+            } else {
+                stringResource(Res.string.profile_auth_failed_message)
+            },
+            style = AppTheme.typography.body,
+            color = AppTheme.colors.onSurfaceMuted,
+        )
+        if (recoveryMode) {
+            AppButton(
+                modifier = Modifier.fillMaxWidth(),
+                text = stringResource(Res.string.profile_auth_failed_recovery_action),
+                onClick = onOpenOlxRecovery,
+                style = AppButtonDefaults.primary(),
+            )
+        } else {
+            AppButton(
+                modifier = Modifier.fillMaxWidth(),
+                text = if (cooldown > 0) {
+                    stringResource(Res.string.profile_auth_failed_retry_countdown, cooldown.toInt())
+                } else {
+                    stringResource(Res.string.profile_auth_failed_retry)
+                },
+                onClick = onRetry,
+                enabled = cooldown <= 0,
+                style = AppButtonDefaults.primary(),
+            )
+        }
+        Box(
+            modifier = Modifier.fillMaxWidth(),
+            contentAlignment = Alignment.Center,
+        ) {
+            TextButton(onClick = onDismiss) {
+                Text(text = stringResource(Res.string.profile_auth_failed_dismiss))
+            }
+        }
+    }
+}
+
+/**
+ * SIR-83 U5/D10: confirms disconnecting one account. Copy is careful to say SellSnap only forgets
+ * local access - OLX exposes no revocation endpoint (TRD §6), so this must never claim SellSnap
+ * revokes access on OLX's side. [onOpenOlxSettings] is the honest completion of that: a secondary
+ * link to OLX's own account settings, the only place a seller can actually withdraw access.
+ */
+@Composable
+fun DisconnectOlxAccountConfirmSheet(
+    accountName: String?,
+    isDisconnecting: Boolean,
+    onConfirm: () -> Unit,
+    onOpenOlxSettings: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val displayName = accountName?.takeIf { it.isNotBlank() } ?: stringResource(Res.string.profile_olx_account)
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = AppDimens.Spacing.xl5)
+            .padding(bottom = AppDimens.Spacing.xl5),
+        verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.xl4),
+    ) {
+        Text(
+            text = stringResource(Res.string.profile_disconnect_confirm_title, displayName),
+            style = AppTheme.typography.headline,
+            color = AppTheme.colors.onBackground,
+        )
+        Text(
+            text = stringResource(Res.string.profile_disconnect_confirm_message),
+            style = AppTheme.typography.body,
+            color = AppTheme.colors.onSurfaceMuted,
+        )
+        TextButton(onClick = onOpenOlxSettings) {
+            Text(text = stringResource(Res.string.profile_disconnect_confirm_olx_link))
+        }
+        if (isDisconnecting) {
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center,
+            ) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(AppDimens.Size.xl6),
+                    color = AppTheme.colors.primary,
+                )
+            }
+        }
+        AppButton(
+            modifier = Modifier.fillMaxWidth(),
+            text = stringResource(Res.string.profile_disconnect_confirm_action),
+            onClick = onConfirm,
+            enabled = !isDisconnecting,
+            style = AppButtonStyle(
+                backgroundColor = AppTheme.colors.error,
+                contentColor = AppTheme.colors.onError,
+            ),
+        )
+        Box(
+            modifier = Modifier.fillMaxWidth(),
+            contentAlignment = Alignment.Center,
+        ) {
+            TextButton(
+                onClick = onDismiss,
+                enabled = !isDisconnecting,
+            ) {
+                Text(text = stringResource(Res.string.profile_disconnect_confirm_cancel))
             }
         }
     }
@@ -698,6 +1197,7 @@ private fun ProfileField(
     value: String?,
 ) {
     Cell(
+        transparent = true,
         headline = {
             Text(
                 text = value?.takeIf { it.isNotBlank() }
@@ -717,41 +1217,3 @@ private fun ProfileField(
     )
 }
 
-@Composable
-private fun ProfileAvatar(
-    avatarUrl: String?,
-    fallbackInitial: String?,
-) {
-    val primaryBright = AppTheme.colors.primaryBright
-    val primary = AppTheme.colors.primary
-    val brush = remember(primaryBright, primary) {
-        Brush.linearGradient(listOf(primaryBright, primary))
-    }
-    Box(
-        modifier = Modifier
-            .size(AppDimens.Size.xl14)
-            .clip(CircleShape)
-            .background(brush),
-        contentAlignment = Alignment.Center,
-    ) {
-        if (!avatarUrl.isNullOrBlank()) {
-            AppAsyncImage(
-                model = avatarUrl,
-                modifier = Modifier.fillMaxSize(),
-            )
-        } else if (!fallbackInitial.isNullOrBlank()) {
-            Text(
-                text = fallbackInitial,
-                style = AppTheme.typography.title,
-                fontWeight = FontWeight.Bold,
-                color = AppTheme.colors.onPrimary,
-            )
-        } else {
-            Icon(
-                painter = painterResource(Res.drawable.ic_user),
-                contentDescription = null,
-                tint = AppTheme.colors.onPrimary,
-            )
-        }
-    }
-}
