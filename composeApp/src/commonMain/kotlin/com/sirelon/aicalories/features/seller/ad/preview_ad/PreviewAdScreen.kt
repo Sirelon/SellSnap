@@ -26,7 +26,6 @@ import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.Card
 import androidx.compose.material3.IconButton
@@ -39,6 +38,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -118,6 +118,7 @@ import com.sirelon.sellsnap.generated.resources.ad_price_ai_estimated_range
 import com.sirelon.sellsnap.generated.resources.ad_title_label
 import com.sirelon.sellsnap.generated.resources.bullet_item
 import com.sirelon.sellsnap.generated.resources.ad_your_price
+import com.sirelon.sellsnap.generated.resources.back
 import com.sirelon.sellsnap.generated.resources.banner_ready_in
 import com.sirelon.sellsnap.generated.resources.cancel
 import com.sirelon.sellsnap.generated.resources.copy_pill_copied
@@ -132,6 +133,7 @@ import com.sirelon.sellsnap.generated.resources.guest_connect_olx_cta
 import com.sirelon.sellsnap.generated.resources.guest_copy_hint
 import com.sirelon.sellsnap.generated.resources.guest_mode_banner_message
 import com.sirelon.sellsnap.generated.resources.guest_mode_banner_title
+import com.sirelon.sellsnap.generated.resources.ic_arrow_left
 import com.sirelon.sellsnap.generated.resources.ic_arrow_right
 import com.sirelon.sellsnap.generated.resources.ic_chevron_right
 import com.sirelon.sellsnap.generated.resources.ic_circle_alert
@@ -413,15 +415,20 @@ private fun PreviewAdContentRoute(
             .testTag("preview_ad_screen")
             .dismissKeyboardOnTapOutside(dismissKeyboard),
         topBar = {
-            IconButton(
-                onClick = onBack,
-                modifier = Modifier.testTag("preview_ad_back_button"),
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.ArrowBack,
-                    contentDescription = null,
-                )
-            }
+            TopAppBar(
+                title = {},
+                navigationIcon = {
+                    IconButton(
+                        onClick = onBack,
+                        modifier = Modifier.testTag("preview_ad_back_button"),
+                    ) {
+                        Icon(
+                            painter = painterResource(Res.drawable.ic_arrow_left),
+                            contentDescription = stringResource(Res.string.back),
+                        )
+                    }
+                },
+            )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
