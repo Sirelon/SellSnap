@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -19,7 +20,6 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
@@ -767,16 +767,27 @@ private fun PreviewAdContent(
         AdDescriptionCard(
             descriptionState = descriptionState,
             isInvalid = isDescriptionInvalid,
-            isRegenerating = state.isRegeneratingDescription,
-            onRegenerateClick = { onEvent(PreviewAdEvent.RegenerateDescription) },
         )
 
-        ThumbsVoteRow(
-            isUpSelected = state.selectedVote == GeneratedContentVote.Up,
-            isDownSelected = state.selectedVote == GeneratedContentVote.Down,
-            onUpVote = { onEvent(PreviewAdEvent.VoteGeneratedContent(GeneratedContentVote.Up)) },
-            onDownVote = { onEvent(PreviewAdEvent.VoteGeneratedContent(GeneratedContentVote.Down)) },
-        )
+        // FlowRow, not Row: the three labels together run ~310dp in ru and the row has 328dp
+        // on a 360dp phone, so anything wider (larger font scale, a narrower device) has to
+        // wrap rather than clip.
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing.s),
+            verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.s),
+        ) {
+            RegeneratePill(
+                isLoading = state.isRegeneratingDescription,
+                onClick = { onEvent(PreviewAdEvent.RegenerateDescription) },
+            )
+
+            ThumbsVoteRow(
+                isUpSelected = state.selectedVote == GeneratedContentVote.Up,
+                isDownSelected = state.selectedVote == GeneratedContentVote.Down,
+                onUpVote = { onEvent(PreviewAdEvent.VoteGeneratedContent(GeneratedContentVote.Up)) },
+                onDownVote = { onEvent(PreviewAdEvent.VoteGeneratedContent(GeneratedContentVote.Down)) },
+            )
+        }
 
         if (state.isSessionResolved && state.isGuest) {
             GuestCopyHint()
@@ -923,8 +934,6 @@ private fun AdTitleCard(
 private fun AdDescriptionCard(
     descriptionState: TextFieldState,
     isInvalid: Boolean,
-    isRegenerating: Boolean = false,
-    onRegenerateClick: (() -> Unit)? = null,
 ) {
     PreviewSectionInputCard(
         label = stringResource(Res.string.ad_description_label),
@@ -934,9 +943,6 @@ private fun AdDescriptionCard(
         headerTrailing = {
             if (isInvalid) {
                 ErrorPill()
-            }
-            if (onRegenerateClick != null) {
-                RegeneratePill(isLoading = isRegenerating, onClick = onRegenerateClick)
             }
             CopyPill(value = descriptionState.text.toString())
             AiGeneratedBadge()
@@ -1216,13 +1222,6 @@ fun CopyPill(
     }
 }
 
-/**
- * Icon-only, sharing [LoadingPill]'s footprint so the two states swap without a layout jump.
- * The description header already carries Copy + AI and, while the text is too short, an
- * ErrorPill; a translated label ("Wygeneruj ponownie", "Перегенерувати") needs roughly the
- * ~120dp of slack that row has left on a 360dp phone, which squeezes the section label and
- * clips the trailing pills. The label lives on as the icon's content description.
- */
 @Composable
 private fun RegeneratePill(
     isLoading: Boolean,
@@ -1232,21 +1231,13 @@ private fun RegeneratePill(
     if (isLoading) {
         LoadingPill(modifier = modifier)
     } else {
-        Surface(
-            modifier = modifier,
-            shape = CircleShape,
-            color = AppTheme.colors.surfaceLow,
+        Pill(
+            color = AppTheme.colors.primary,
+            text = stringResource(Res.string.regenerate_pill_default),
+            iconResource = Res.drawable.ic_refresh_cw,
             onClick = onClick,
-        ) {
-            Icon(
-                painter = painterResource(Res.drawable.ic_refresh_cw),
-                contentDescription = stringResource(Res.string.regenerate_pill_default),
-                tint = AppTheme.colors.primary,
-                modifier = Modifier
-                    .padding(AppDimens.Spacing.s)
-                    .size(AppDimens.Size.xl),
-            )
-        }
+            modifier = modifier,
+        )
     }
 }
 
