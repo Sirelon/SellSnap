@@ -17,6 +17,8 @@ data class OlxAttributeState(
     val error: ValidationError? = null,
 )
 
+enum class GeneratedContentVote { Up, Down }
+
 interface PreviewAdContract {
 
     @Immutable
@@ -36,6 +38,9 @@ interface PreviewAdContract {
         val locationLoading: Boolean = false,
         val attributeItems: List<OlxAttributeState> = emptyList(),
         val isGuest: Boolean = false,
+        val isRegeneratingDescription: Boolean = false,
+        val regenerationCount: Int = 0,
+        val selectedVote: GeneratedContentVote? = null,
     )
 
     sealed interface PreviewAdEvent {
@@ -49,11 +54,14 @@ interface PreviewAdContract {
 
         data object FetchLocation : PreviewAdEvent
         data object RefreshLocationClicked : PreviewAdEvent
+        data object RegenerateDescription : PreviewAdEvent
 
         data class AttributeValueChanged(
             val attributeCode: String,
             val values: List<OlxAttributeValue>,
         ) : PreviewAdEvent
+
+        data class VoteGeneratedContent(val vote: GeneratedContentVote) : PreviewAdEvent
     }
 
     sealed interface PreviewAdEffect {

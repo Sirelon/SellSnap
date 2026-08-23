@@ -19,6 +19,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
@@ -82,9 +83,11 @@ import com.sirelon.sellsnap.designsystem.performErrorFeedback
 import com.sirelon.sellsnap.designsystem.performSuccessFeedback
 import com.sirelon.sellsnap.designsystem.DigitOnlyInputTransformation
 import com.sirelon.sellsnap.designsystem.ErrorPill
+import com.sirelon.sellsnap.designsystem.LoadingPill
 import com.sirelon.sellsnap.designsystem.ObserveAsEvents
 import com.sirelon.sellsnap.designsystem.Pill
 import com.sirelon.sellsnap.designsystem.ThousandSeparatorOutputTransformation
+import com.sirelon.sellsnap.designsystem.ThumbsVoteRow
 import com.sirelon.sellsnap.designsystem.TransparentInput
 import com.sirelon.sellsnap.designsystem.buttons.AppButton
 import com.sirelon.sellsnap.designsystem.buttons.AppButtonDefaults
@@ -122,6 +125,7 @@ import com.sirelon.sellsnap.generated.resources.banner_ready_in
 import com.sirelon.sellsnap.generated.resources.cancel
 import com.sirelon.sellsnap.generated.resources.copy_pill_copied
 import com.sirelon.sellsnap.generated.resources.copy_pill_default
+import com.sirelon.sellsnap.generated.resources.regenerate_pill_default
 import com.sirelon.sellsnap.generated.resources.error_attr_above_maximum
 import com.sirelon.sellsnap.generated.resources.error_attr_below_minimum
 import com.sirelon.sellsnap.generated.resources.error_attr_invalid_selection
@@ -138,6 +142,7 @@ import com.sirelon.sellsnap.generated.resources.ic_circle_alert
 import com.sirelon.sellsnap.generated.resources.ic_circle_check_big
 import com.sirelon.sellsnap.generated.resources.ic_copy
 import com.sirelon.sellsnap.generated.resources.ic_layout_grid
+import com.sirelon.sellsnap.generated.resources.ic_refresh_cw
 import com.sirelon.sellsnap.generated.resources.ic_sparkles
 import com.sirelon.sellsnap.generated.resources.location_detecting
 import com.sirelon.sellsnap.generated.resources.location_not_available
@@ -762,6 +767,15 @@ private fun PreviewAdContent(
         AdDescriptionCard(
             descriptionState = descriptionState,
             isInvalid = isDescriptionInvalid,
+            isRegenerating = state.isRegeneratingDescription,
+            onRegenerateClick = { onEvent(PreviewAdEvent.RegenerateDescription) },
+        )
+
+        ThumbsVoteRow(
+            isUpSelected = state.selectedVote == GeneratedContentVote.Up,
+            isDownSelected = state.selectedVote == GeneratedContentVote.Down,
+            onUpVote = { onEvent(PreviewAdEvent.VoteGeneratedContent(GeneratedContentVote.Up)) },
+            onDownVote = { onEvent(PreviewAdEvent.VoteGeneratedContent(GeneratedContentVote.Down)) },
         )
 
         if (state.isSessionResolved && state.isGuest) {
@@ -909,6 +923,8 @@ private fun AdTitleCard(
 private fun AdDescriptionCard(
     descriptionState: TextFieldState,
     isInvalid: Boolean,
+    isRegenerating: Boolean = false,
+    onRegenerateClick: (() -> Unit)? = null,
 ) {
     PreviewSectionInputCard(
         label = stringResource(Res.string.ad_description_label),
@@ -918,6 +934,9 @@ private fun AdDescriptionCard(
         headerTrailing = {
             if (isInvalid) {
                 ErrorPill()
+            }
+            if (onRegenerateClick != null) {
+                RegeneratePill(isLoading = isRegenerating, onClick = onRegenerateClick)
             }
             CopyPill(value = descriptionState.text.toString())
             AiGeneratedBadge()
@@ -1197,6 +1216,39 @@ fun CopyPill(
     }
 }
 
+/**
+ * Icon-only, sharing [LoadingPill]'s footprint so the two states swap without a layout jump.
+ * The description header already carries Copy + AI and, while the text is too short, an
+ * ErrorPill; a translated label ("Wygeneruj ponownie", "Перегенерувати") needs roughly the
+ * ~120dp of slack that row has left on a 360dp phone, which squeezes the section label and
+ * clips the trailing pills. The label lives on as the icon's content description.
+ */
+@Composable
+private fun RegeneratePill(
+    isLoading: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    if (isLoading) {
+        LoadingPill(modifier = modifier)
+    } else {
+        Surface(
+            modifier = modifier,
+            shape = CircleShape,
+            color = AppTheme.colors.surfaceLow,
+            onClick = onClick,
+        ) {
+            Icon(
+                painter = painterResource(Res.drawable.ic_refresh_cw),
+                contentDescription = stringResource(Res.string.regenerate_pill_default),
+                tint = AppTheme.colors.primary,
+                modifier = Modifier
+                    .padding(AppDimens.Spacing.s)
+                    .size(AppDimens.Size.xl),
+            )
+        }
+    }
+}
 
 @Composable
 private fun ValidationError.toDisplayString(): String = when (this) {

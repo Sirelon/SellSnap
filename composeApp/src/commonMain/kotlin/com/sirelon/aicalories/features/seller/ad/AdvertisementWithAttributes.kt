@@ -9,4 +9,5 @@ import kotlinx.serialization.Serializable
 data class AdvertisementWithAttributes(
     val advertisement: Advertisement,
     val filledAttributes: Map<String, List<OlxAttributeValue>>,
+    val sellerPrompt: String = "",
 )
