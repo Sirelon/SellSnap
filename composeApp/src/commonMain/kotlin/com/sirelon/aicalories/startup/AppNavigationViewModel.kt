@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sirelon.sellsnap.features.seller.ad.AdFlowTimerStore
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountMigration
-import com.sirelon.sellsnap.features.seller.auth.data.OlxApiClient
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAuthRepository
 import com.sirelon.sellsnap.features.seller.auth.data.OlxCountryStore
 import com.sirelon.sellsnap.features.seller.auth.domain.SellerSessionMode
@@ -17,7 +16,6 @@ import kotlinx.coroutines.launch
 
 class AppNavigationViewModel(
     private val authRepository: OlxAuthRepository,
-    private val olxApiClient: OlxApiClient,
     private val startupStore: AppStartupStore,
     private val adFlowTimerStore: AdFlowTimerStore,
     private val olxCountryStore: OlxCountryStore,
@@ -34,11 +32,12 @@ class AppNavigationViewModel(
             olxCountryStore.loadFromStorage()
             olxAccountMigration.migrateIfNeeded()
             resolveStartupDestination()
-        }
-        // Fire-and-forget: must not delay startup routing above. Keeps accounts that are still
-        // being used, but not currently active, from silently dying past OLX's ~30-day unused
-        // refresh-token window (SIR-83 keep-alive).
-        viewModelScope.launch {
+            // Runs after routing so it never delays startup, but still in this same coroutine -
+            // a separate launch here raced migrateIfNeeded() above and lost: the account store's
+            // recordFlow is only hydrated by loadFromStorage()/migration, both of which suspend,
+            // so a concurrent coroutine reading it first always saw the default empty record and
+            // silently swept nothing. Keeps accounts that are still being used, but not currently
+            // active, from dying past OLX's ~30-day unused refresh-token window (SIR-83 keep-alive).
             runCatching { sellerAccountRepository.runKeepAliveRefresh() }
         }
     }
@@ -124,7 +123,11 @@ class AppNavigationViewModel(
             // token NeedsReconnect; its failure (network blip or otherwise) must not bounce an
             // existing seller back to the landing/guest screen.
             SellerSessionMode.Authenticated -> {
-                runCatching { olxApiClient.getAuthenticatedUser() }.exceptionOrNull()?.printStackTrace()
+                // Also backfills the migrated (pre-SIR-83) account's olxUserId/profile on its
+                // first successful fetch after migration - see SellerAccountRepository.
+                // refreshProfile()'s doc. Without this, that account can never be matched by a
+                // later add-account attempt that resolves to the same OLX user.
+                sellerAccountRepository.refreshProfile().exceptionOrNull()?.printStackTrace()
                 AppDestination.Seller
             }
 

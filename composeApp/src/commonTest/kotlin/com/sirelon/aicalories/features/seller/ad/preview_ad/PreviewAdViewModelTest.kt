@@ -40,6 +40,9 @@ import com.sirelon.sellsnap.features.seller.location.DeviceLocation
 import com.sirelon.sellsnap.features.seller.location.LocationProvider
 import com.sirelon.sellsnap.features.seller.location.OlxLocation
 import com.sirelon.sellsnap.features.seller.location.data.LocationRepository
+import com.sirelon.sellsnap.features.seller.openai.OpenAIClient
+import com.aallam.openai.client.OpenAI
+import com.aallam.openai.client.OpenAIConfig
 import com.sirelon.sellsnap.features.seller.location.data.LocationStore
 import com.sirelon.sellsnap.features.seller.profile.data.SellerAccountRepository
 import com.sirelon.sellsnap.startup.AnalyticsConsentRepository
@@ -340,6 +343,11 @@ class PreviewAdViewModelTest {
             savedStateHandle = SavedStateHandle(),
             json = testJson,
             analytics = harness.analytics,
+            openAiClient = OpenAIClient(
+                openAI = OpenAI(config = OpenAIConfig(token = "test-token")),
+                json = testJson,
+                compactJson = testJson,
+            ),
         )
     }
 

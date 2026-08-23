@@ -175,7 +175,7 @@ class ProfileViewModel(
     private fun startAuthorization(forceReauth: Boolean) {
         viewModelScope.launch {
             setState { it.copy(isAuthenticating = true, errorMessage = null) }
-            runCatching { accountRepository.createAuthorizationRequest() }
+            runCatching { accountRepository.createAuthorizationRequest(forceReauth) }
                 .onSuccess { request ->
                     setState { it.copy(isAuthenticating = false) }
                     postEffect(ProfileEffect.LaunchOlxAuthFlow(request.url, forceReauth))

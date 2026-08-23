@@ -4,6 +4,7 @@ import com.sirelon.sellsnap.datastore.KeyValueStore
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountRecord
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountStore
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountsRecord
+import com.sirelon.sellsnap.features.seller.auth.data.OlxProfileSnapshot
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxTokens
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
@@ -79,6 +80,78 @@ class OlxAccountStoreTest {
         val record = store.readRaw()!!
         assertEquals(1, record.accounts.size)
         assertEquals("t2", record.accounts.single().tokens.accessToken)
+    }
+
+    @Test
+    fun `backfillIdentityIfMissing sets olxUserId and profile only when currently null`() = runBlocking {
+        val store = OlxAccountStore(InMemoryOlxKeyValueStore(), testJson)
+        store.write(
+            OlxAccountsRecord(
+                accounts = listOf(
+                    // The migrated pre-SIR-83 account: no olxUserId, no profile, ever.
+                    OlxAccountRecord(
+                        localIndex = 1,
+                        countryCode = "ua",
+                        olxUserId = null,
+                        tokens = sampleTokens("legacy"),
+                        lastUsedAtEpochSeconds = 0,
+                        lastRefreshedAtEpochSeconds = 0,
+                    ),
+                ),
+                activeByCountry = mapOf("ua" to 1),
+                nextLocalIndex = 2,
+            ),
+        )
+
+        val profile = OlxProfileSnapshot(name = "Oleg", email = "oleg@example.com", avatarUrl = null, isBusiness = false)
+        store.backfillIdentityIfMissing(localIndex = 1, olxUserId = 555L, profile = profile)
+
+        val backfilled = store.readRaw()!!.accounts.single()
+        assertEquals(555L, backfilled.olxUserId)
+        assertEquals("oleg@example.com", backfilled.profile?.email)
+
+        // A second backfill attempt with a different id must never clobber a real id.
+        store.backfillIdentityIfMissing(localIndex = 1, olxUserId = 999L, profile = profile)
+        assertEquals(555L, store.readRaw()!!.accounts.single().olxUserId)
+    }
+
+    @Test
+    fun `addOrUpdateAccount matches a not-yet-backfilled account by email so it never duplicates`() = runBlocking {
+        val store = OlxAccountStore(InMemoryOlxKeyValueStore(), testJson)
+        val profile = OlxProfileSnapshot(name = "Oleg", email = "oleg@example.com", avatarUrl = null, isBusiness = false)
+        store.write(
+            OlxAccountsRecord(
+                accounts = listOf(
+                    // Has a profile (e.g. from a prior partial fetch) but no id yet - the exact
+                    // window a broken Android force-relogin can land in before startup backfills it.
+                    OlxAccountRecord(
+                        localIndex = 1,
+                        countryCode = "ua",
+                        olxUserId = null,
+                        tokens = sampleTokens("legacy"),
+                        profile = profile,
+                        lastUsedAtEpochSeconds = 0,
+                        lastRefreshedAtEpochSeconds = 0,
+                    ),
+                ),
+                activeByCountry = mapOf("ua" to 1),
+                nextLocalIndex = 2,
+            ),
+        )
+
+        val result = store.addOrUpdateAccount(
+            countryCode = "ua",
+            olxUserId = 555L,
+            tokens = sampleTokens("new-token"),
+            profile = profile,
+            makeActive = true,
+        )
+
+        assertTrue(result.wasDuplicate)
+        assertEquals(1, result.account.localIndex)
+        val record = store.readRaw()!!
+        assertEquals(1, record.accounts.size)
+        assertEquals(555L, record.accounts.single().olxUserId)
     }
 
     @Test

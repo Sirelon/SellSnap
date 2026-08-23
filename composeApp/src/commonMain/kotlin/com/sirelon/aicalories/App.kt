@@ -87,7 +87,7 @@ fun App() {
             val addAccountAuthLauncher = rememberOlxAuthLauncher(forceReauth = true)
             fun startAddOrReconnectAuthorization() {
                 coroutineScope.launch {
-                    runCatching { accountRepository.createAuthorizationRequest() }
+                    runCatching { accountRepository.createAuthorizationRequest(forceReauth = true) }
                         .onSuccess { request -> addAccountAuthLauncher(request.url) }
                 }
             }

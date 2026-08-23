@@ -487,16 +487,20 @@ private fun AccountsSection(
     onAddAccountClick: () -> Unit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.xl3)) {
-        if (accounts.size <= 1) {
-            if (activeUser != null) {
-                AccountCard(user = activeUser, onLogout = onDisconnectSingleAccount)
+        if (accounts.size <= 1 && activeUser != null) {
+            AccountCard(user = activeUser, onLogout = onDisconnectSingleAccount)
+        } else if (accounts.isNotEmpty()) {
+            // F4/D7: a single account whose live profile fetch failed (dead token) still has a
+            // cached row here - rendering nothing would strand the seller on a Profile with only
+            // an "Add account" action and no way to reconnect or disconnect the account they
+            // already have, since startup now routes them to Seller rather than SellerLanding.
+            if (accounts.size > 1) {
+                Text(
+                    text = stringResource(Res.string.profile_accounts_section_title),
+                    style = AppTheme.typography.title,
+                    color = AppTheme.colors.onSurface,
+                )
             }
-        } else {
-            Text(
-                text = stringResource(Res.string.profile_accounts_section_title),
-                style = AppTheme.typography.title,
-                color = AppTheme.colors.onSurface,
-            )
             AccountsListCard(
                 accounts = accounts,
                 expandedReconnectLocalIndex = expandedReconnectLocalIndex,

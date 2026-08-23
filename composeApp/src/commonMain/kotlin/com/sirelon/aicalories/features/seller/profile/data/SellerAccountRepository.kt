@@ -69,8 +69,8 @@ class SellerAccountRepository internal constructor(
 
     suspend fun currentSession(): OlxSessionState = authRepository.currentSession()
 
-    suspend fun createAuthorizationRequest(): OlxAuthorizationRequest =
-        authRepository.createAuthorizationRequest()
+    suspend fun createAuthorizationRequest(forceReauth: Boolean = false): OlxAuthorizationRequest =
+        authRepository.createAuthorizationRequest(forceReauth)
 
     /** Pure UI gate for the "Add OLX account" button/action - at most [MAX_ACCOUNTS_PER_COUNTRY]
      * accounts per country. [addAccount] also re-checks this for a genuinely new account right
@@ -238,11 +238,28 @@ class SellerAccountRepository internal constructor(
         }
 
         try {
-            olxApiClient.getAuthenticatedUser()
-                .also { _user.value = it }
+            olxApiClient.getAuthenticatedUser().also { user ->
+                _user.value = user
+                backfillActiveAccountIdentityIfMissing(user)
+            }
         } catch (error: Throwable) {
             _user.value = null
             throw error
+        }
+    }
+
+    /**
+     * The migrated pre-SIR-83 account is stored with `olxUserId = null` (never recorded before
+     * this feature) - this fills it in from the first successful `users/me` after migration.
+     * Without it, addOrUpdateAccount's dedupe can never match this account against a later
+     * add-account attempt that resolves to the same OLX user (e.g. a force-relogin that didn't
+     * actually force a fresh login), so it creates a genuine duplicate instead of recognising it.
+     */
+    private suspend fun backfillActiveAccountIdentityIfMissing(user: OlxUser) {
+        val countryCode = olxCountryStore.current.code
+        val active = activeAccountSnapshot(countryCode)
+        if (active != null && active.olxUserId == null) {
+            accountStore.backfillIdentityIfMissing(active.localIndex, user.id, user.toSnapshot())
         }
     }
 
@@ -337,7 +354,8 @@ class SellerAccountRepository internal constructor(
                 )
             }.onSuccess { refreshedTokens ->
                 if (refreshedTokens != null) {
-                    accountStore.updateTokens(account.localIndex, refreshedTokens, now)
+                    // Background sweep, not seller activity - never touch lastUsedAtEpochSeconds.
+                    accountStore.updateTokens(account.localIndex, refreshedTokens, now, updateLastUsed = false)
                 }
             }.onFailure { error ->
                 val olxError = (error as? OlxApiException)?.error

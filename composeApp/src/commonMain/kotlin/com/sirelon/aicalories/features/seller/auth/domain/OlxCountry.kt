@@ -16,12 +16,6 @@ data class OlxCountry(
     val apiBaseUrl: String get() = "https://www.$domain/api/partner/"
     val authBaseUrl: String get() = "https://www.$domain/oauth/authorize/"
 
-    // Best-effort guess following the authBaseUrl/apiBaseUrl pattern - OLX does not document a
-    // logout URL for partner apps and the public site blocks unauthenticated bot traffic, so this
-    // is UNVERIFIED against a real login session. Used only for the Android force-relogin flow
-    // (SIR-83 add-account/reconnect); see .claude/tmp/sir-83-followups.md.
-    val logoutUrl: String get() = "https://www.$domain/logout/"
-
     // Redact credentials so they never leak through logs, analytics, or crash reports.
     override fun toString(): String =
         "OlxCountry(code=$code, domain=$domain, language=$language, currencyCode=$currencyCode)"

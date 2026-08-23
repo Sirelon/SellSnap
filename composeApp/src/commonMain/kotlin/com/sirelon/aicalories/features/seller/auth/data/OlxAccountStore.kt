@@ -60,12 +60,24 @@ internal class OlxAccountStore internal constructor(
         makeActive: Boolean,
     ): OlxAddOrUpdateResult = mutateWithResult { current ->
         val now = nowEpochSeconds()
+        // Primary match: same OLX user id. Fallback: an account in this country that has NO id
+        // yet (the migrated pre-SIR-83 account, before its first successful users/me) but the
+        // same email - without this, a broken add-account flow that returns the already-connected
+        // user creates a genuine duplicate instead of refreshing the existing entry, because the
+        // id-only match can never see past a still-null olxUserId.
         val existing = olxUserId?.let { userId ->
             current.accounts.find { it.countryCode == countryCode && it.olxUserId == userId }
+        } ?: profile?.email?.takeIf { it.isNotBlank() }?.let { email ->
+            current.accounts.find {
+                it.countryCode == countryCode && it.olxUserId == null && it.profile?.email == email
+            }
         }
 
         if (existing != null) {
             val updatedAccount = existing.copy(
+                // The email-fallback match can find an account whose olxUserId is still null;
+                // record the now-known id so a THIRD add attempt matches it by id directly too.
+                olxUserId = olxUserId ?: existing.olxUserId,
                 tokens = tokens,
                 profile = profile ?: existing.profile,
                 lastUsedAtEpochSeconds = now,
@@ -106,6 +118,29 @@ internal class OlxAccountStore internal constructor(
         }
     }
 
+    /**
+     * Backfills the identity of an account whose [OlxAccountRecord.olxUserId] is still null - the
+     * migrated pre-SIR-83 account never had one, and it's set here on its first successful
+     * `users/me` after migration (see [SellerAccountRepository]). Without this, [addOrUpdateAccount]'s
+     * dedupe (keyed on `olxUserId`) can never match that account against a later add-account
+     * attempt that resolves to the SAME OLX user, so a broken force-relogin (returning the
+     * already-connected account) creates a genuine duplicate entry instead of being recognised as
+     * one. No-ops if the account already has an id (never overwrites a real id) or doesn't exist.
+     */
+    suspend fun backfillIdentityIfMissing(localIndex: Int, olxUserId: Long, profile: OlxProfileSnapshot) {
+        mutate { current ->
+            current.copy(
+                accounts = current.accounts.map {
+                    if (it.localIndex == localIndex && it.olxUserId == null) {
+                        it.copy(olxUserId = olxUserId, profile = profile)
+                    } else {
+                        it
+                    }
+                },
+            )
+        }
+    }
+
     suspend fun setActive(countryCode: String, localIndex: Int) {
         mutate { current ->
             if (current.accounts.none { it.countryCode == countryCode && it.localIndex == localIndex }) {
@@ -115,7 +150,21 @@ internal class OlxAccountStore internal constructor(
         }
     }
 
-    suspend fun updateTokens(localIndex: Int, tokens: OlxTokens, lastRefreshedAtEpochSeconds: Long) {
+    /**
+     * [updateLastUsed] must be false for a background refresh the seller didn't initiate (the
+     * keep-alive sweep) - otherwise it looks like genuine activity, which caps
+     * `account_token_expired_unused`'s `days_since_last_use` at roughly the keep-alive staleness
+     * threshold (the exact number that event exists to measure) and skews [disconnect]'s
+     * most-recently-used promotion toward accounts the seller never actually touched. The
+     * reactive 401 refresh on the authorized client (an actual seller-triggered request) is
+     * genuine use, so it keeps the default.
+     */
+    suspend fun updateTokens(
+        localIndex: Int,
+        tokens: OlxTokens,
+        lastRefreshedAtEpochSeconds: Long,
+        updateLastUsed: Boolean = true,
+    ) {
         mutate { current ->
             current.copy(
                 accounts = current.accounts.map {
@@ -123,7 +172,7 @@ internal class OlxAccountStore internal constructor(
                         it.copy(
                             tokens = tokens,
                             lastRefreshedAtEpochSeconds = lastRefreshedAtEpochSeconds,
-                            lastUsedAtEpochSeconds = lastRefreshedAtEpochSeconds,
+                            lastUsedAtEpochSeconds = if (updateLastUsed) lastRefreshedAtEpochSeconds else it.lastUsedAtEpochSeconds,
                         )
                     } else {
                         it

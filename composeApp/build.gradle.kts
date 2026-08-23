@@ -135,7 +135,9 @@ kotlin {
             implementation(project.dependencies.platform(libs.firebase.bom))
             implementation(libs.gitlive.firebase.analytics)
             implementation(libs.gitlive.firebase.crashlytics)
-            implementation("androidx.browser:browser:1.8.0")
+            // 1.10.0+ for CustomTabsIntent ephemeral browsing (SIR-83 Android force-relogin, D5) -
+            // https://developer.chrome.com/docs/android/custom-tabs/guide-ephemeral-tab
+            implementation("androidx.browser:browser:1.10.0")
         }
         commonMain.dependencies {
             implementation(libs.supabase.compose.auth)

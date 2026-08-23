@@ -96,7 +96,6 @@ class PreviewAdViewModel(
     private val json: Json,
     private val analytics: Analytics,
     private val openAiClient: OpenAIClient,
-    private val countryStore: OlxCountryStore,
 ) : BaseViewModel<PreviewAdState, PreviewAdEvent, PreviewAdEffect>() {
 
     private val advertisement = filledAdvertisement.advertisement
@@ -515,7 +514,7 @@ class PreviewAdViewModel(
             val (_, generated) = openAiClient.analyzeThing(
                 images = advertisement.images,
                 sellerPrompt = filledAdvertisement.sellerPrompt,
-                country = countryStore.current,
+                country = olxCountryStore.current,
             )
             descriptionState.setTextAndPlaceCursorAtEnd(generated.description)
             // The vote belonged to the text we just replaced, so it starts over with the new one.

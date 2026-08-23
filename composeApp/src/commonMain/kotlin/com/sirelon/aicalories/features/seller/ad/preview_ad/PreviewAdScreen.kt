@@ -508,13 +508,6 @@ private fun PreviewAdContentRoute(
                         onClick = onConnectOlxClick,
                     )
                 } else if (state.isSessionResolved) {
-                    val targetAccount = state.targetAccount
-                    if (state.showTargetAccountRow && targetAccount != null) {
-                        PublishTargetAccountRow(
-                            account = targetAccount,
-                            onClick = onTargetAccountRowClick,
-                        )
-                    }
                     AppButton(
                         modifier = Modifier.fillMaxWidth().testTag("preview_ad_publish_button"),
                         style = if (isValid) AppButtonDefaults.success() else AppButtonDefaults.primary(),
@@ -565,6 +558,23 @@ private fun PreviewAdContentRoute(
                 elapsedMs = state.generationElapsedMs,
                 modifier = Modifier.padding(horizontal = AppDimens.Spacing.xl3),
             )
+
+            // SIR-83 U6: this is a normal scrollable card, not pinned to the bottom bar - a
+            // dynamically-shown row inside AppScaffold's bottomBar changes the bar's height
+            // after first layout, which Material3's Scaffold does not always re-settle against
+            // the scrollable content's bottom padding, so the row could visually overlap the
+            // card above it. Matches the design mock's placement (accounts.jsx/screens3.jsx),
+            // which renders it as page content right below the "ready in" banner, not fixed.
+            if (state.isSessionResolved && !state.isGuest) {
+                val targetAccount = state.targetAccount
+                if (state.showTargetAccountRow && targetAccount != null) {
+                    PublishTargetAccountRow(
+                        account = targetAccount,
+                        onClick = onTargetAccountRowClick,
+                        modifier = Modifier.padding(horizontal = AppDimens.Spacing.xl3),
+                    )
+                }
+            }
 
             AnimatedVisibility(
                 visible = showErrors && !isValid,

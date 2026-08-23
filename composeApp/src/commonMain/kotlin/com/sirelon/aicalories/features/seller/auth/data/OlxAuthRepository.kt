@@ -48,7 +48,7 @@ class OlxAuthRepository internal constructor(
     private val _sessionModeUpdates = MutableSharedFlow<SellerSessionMode>(replay = 0)
     val sessionModeFlow: Flow<SellerSessionMode> = _sessionModeUpdates.asSharedFlow()
 
-    suspend fun createAuthorizationRequest(): OlxAuthorizationRequest {
+    suspend fun createAuthorizationRequest(forceReauth: Boolean = false): OlxAuthorizationRequest {
         val state = Uuid.random().toString()
         val redirectUri = redirectHandler.buildRedirectUri()
         val clientId = credentialsProvider.getClientId()
@@ -59,6 +59,16 @@ class OlxAuthRepository internal constructor(
                 append("state", state)
                 append("scope", OlxConfig.scope)
                 append("redirect_uri", redirectUri)
+                if (forceReauth) {
+                    // TRD §1 route 1 (cheapest, try first): a standard-OIDC force-reauthentication
+                    // parameter. OLX's partner API is plain OAuth 2.0 rather than OIDC, so this is
+                    // not confirmed to be honoured - if ignored, the platform-level launcher
+                    // mechanisms (iOS ephemeral session; Android logout-URL preload) are the
+                    // fallback, and the add-account dedupe now handles an unforced re-auth
+                    // gracefully either way (SellerAccountRepository.addAccount).
+                    append("prompt", "login")
+                    append("max_age", "0")
+                }
             }
         }.buildString()
 

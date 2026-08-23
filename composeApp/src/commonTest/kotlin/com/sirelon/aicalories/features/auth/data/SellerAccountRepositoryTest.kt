@@ -147,6 +147,36 @@ class SellerAccountRepositoryTest {
     }
 
     @Test
+    fun `refreshProfile backfills the migrated account's olxUserId and profile on first success`() = runBlocking {
+        // The migrated pre-SIR-83 account has no olxUserId and no profile until its first
+        // successful users/me - without backfilling it here, a later add-account attempt that
+        // resolves to the SAME OLX user (e.g. because Android's force-relogin didn't actually
+        // force a fresh login) can never be matched against it, and creates a duplicate account.
+        val accountStore = OlxAccountStore(InMemoryOlxKeyValueStore(), testJson)
+        accountStore.write(
+            OlxAccountsRecord(
+                accounts = listOf(account(localIndex = 1, olxUserId = null, accessToken = "legacy-token")),
+                activeByCountry = mapOf("ua" to 1),
+                nextLocalIndex = 2,
+            ),
+        )
+        val harness = harness(tokenAndProfileEngine(profileOlxUserId = 555L), accountStore)
+
+        val result = harness.repository.refreshProfile()
+
+        assertTrue(result.isSuccess)
+        val backfilled = harness.accountStore.readRaw()!!.accounts.single()
+        assertEquals(555L, backfilled.olxUserId)
+        assertEquals("Seller", backfilled.profile?.name)
+
+        // Re-authorizing the SAME OLX user now correctly dedupes instead of creating a second entry.
+        val outcome = completeAddAccount(harness)
+        val duplicate = assertIs<AddAccountOutcome.ReconnectedDuplicate>(outcome)
+        assertEquals(1, duplicate.account.localIndex)
+        assertEquals(1, harness.accountStore.readRaw()!!.accounts.size)
+    }
+
+    @Test
     fun `addAccount adds a brand-new account and makes it active`() = runBlocking {
         val engine = tokenAndProfileEngine(profileOlxUserId = 501L)
         val harness = harness(engine, OlxAccountStore(InMemoryOlxKeyValueStore(), testJson))
@@ -408,7 +438,7 @@ class SellerAccountRepositoryTest {
 
     private fun account(
         localIndex: Int,
-        olxUserId: Long,
+        olxUserId: Long?,
         accessToken: String,
         refreshToken: String = "refresh-token",
         countryCode: String = "ua",
