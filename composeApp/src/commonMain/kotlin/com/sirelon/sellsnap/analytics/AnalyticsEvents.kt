@@ -16,4 +16,10 @@ object AnalyticsEvents {
     const val AD_PUBLISH_STARTED = "ad_publish_started"
     const val AD_PUBLISH_SUCCEEDED = "ad_publish_succeeded"
     const val AD_PUBLISH_FAILED = "ad_publish_failed"
+
+    const val AD_DESCRIPTION_REGENERATE_STARTED = "ad_description_regenerate_started"
+    const val AD_DESCRIPTION_REGENERATE_SUCCEEDED = "ad_description_regenerate_succeeded"
+    const val AD_DESCRIPTION_REGENERATE_FAILED = "ad_description_regenerate_failed"
+
+    const val AD_GENERATED_CONTENT_VOTED = "ad_generated_content_voted"
 }
