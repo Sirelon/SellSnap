@@ -81,6 +81,7 @@
     <string name="profile_field_created_at">Створено</string>
     <string name="profile_field_last_login_at">Останній вхід</string>
     <string name="profile_screen_title">Профіль</string>
+    <string name="settings_screen_title">Налаштування</string>
     <string name="profile_guest_title">Гостьовий профіль</string>
     <string name="profile_guest_description">Підключіть OLX, щоб публікувати з SellSnap — дані акаунта з'являться тут.</string>
     <string name="profile_olx_account">Акаунт OLX</string>

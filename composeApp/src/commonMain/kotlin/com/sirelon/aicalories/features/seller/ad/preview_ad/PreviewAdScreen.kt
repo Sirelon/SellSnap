@@ -6,17 +6,25 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.exclude
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.rememberScrollState
@@ -27,7 +35,6 @@ import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.Card
 import androidx.compose.material3.IconButton
@@ -121,6 +128,7 @@ import com.sirelon.sellsnap.generated.resources.ad_price_ai_estimated_range
 import com.sirelon.sellsnap.generated.resources.ad_title_label
 import com.sirelon.sellsnap.generated.resources.bullet_item
 import com.sirelon.sellsnap.generated.resources.ad_your_price
+import com.sirelon.sellsnap.generated.resources.back
 import com.sirelon.sellsnap.generated.resources.banner_ready_in
 import com.sirelon.sellsnap.generated.resources.cancel
 import com.sirelon.sellsnap.generated.resources.copy_pill_copied
@@ -136,6 +144,7 @@ import com.sirelon.sellsnap.generated.resources.guest_connect_olx_cta
 import com.sirelon.sellsnap.generated.resources.guest_copy_hint
 import com.sirelon.sellsnap.generated.resources.guest_mode_banner_message
 import com.sirelon.sellsnap.generated.resources.guest_mode_banner_title
+import com.sirelon.sellsnap.generated.resources.ic_arrow_left
 import com.sirelon.sellsnap.generated.resources.ic_arrow_right
 import com.sirelon.sellsnap.generated.resources.ic_chevron_right
 import com.sirelon.sellsnap.generated.resources.ic_circle_alert
@@ -417,17 +426,7 @@ private fun PreviewAdContentRoute(
             .fillMaxSize()
             .testTag("preview_ad_screen")
             .dismissKeyboardOnTapOutside(dismissKeyboard),
-        topBar = {
-            IconButton(
-                onClick = onBack,
-                modifier = Modifier.testTag("preview_ad_back_button"),
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.ArrowBack,
-                    contentDescription = null,
-                )
-            }
-        },
+        contentWindowInsets = WindowInsets.safeDrawing.exclude(WindowInsets.statusBars),
         snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
             Column(
@@ -478,10 +477,13 @@ private fun PreviewAdContentRoute(
             }
         },
     ) { paddingValues ->
-        Column(
+        Box(
             modifier = Modifier
                 .padding(paddingValues)
-                .consumeWindowInsets(paddingValues)
+                .consumeWindowInsets(paddingValues),
+        ) {
+        Column(
+            modifier = Modifier
                 .testTag("preview_ad_scrollable_content")
                 .verticalScroll(scrollState)
                 .padding(bottom = AppDimens.Spacing.xl3),
@@ -527,6 +529,24 @@ private fun PreviewAdContentRoute(
                         .testTag("preview_ad_validation_status"),
                     isValid = isValid,
                     errorCount = validationErrors.size,
+                )
+            }
+        }
+
+            IconButton(
+                onClick = onBack,
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .systemBarsPadding()
+                    .padding(AppDimens.Spacing.xl3)
+                    .size(AppDimens.Size.xl11)
+                    .background(Color.Black.copy(alpha = 0.35f), CircleShape)
+                    .testTag("preview_ad_back_button"),
+            ) {
+                Icon(
+                    painter = painterResource(Res.drawable.ic_arrow_left),
+                    contentDescription = stringResource(Res.string.back),
+                    tint = Color.White,
                 )
             }
         }
