@@ -229,6 +229,10 @@
     <string name="error_upload_file_failed">Nie udało się przesłać jednego ze zdjęć.</string>
     <string name="error_publish_failed">Publikacja nie powiodła się. Spróbuj jeszcze raz.</string>
     <string name="error_generate_ad_failed">Nie udało się wygenerować ogłoszenia. Spróbować ponownie?</string>
+    <string name="error_regenerate_description_failed">Nie udało się wygenerować opisu ponownie. Spróbować jeszcze raz?</string>
+    <string name="regenerate_pill_default">Wygeneruj ponownie</string>
+    <string name="vote_up_label">Pomocne</string>
+    <string name="vote_down_label">Niepomocne</string>
 
     <!-- Publish Success Screen -->
     <string name="publish_success_title">Jesteś na żywo! 🎉</string>

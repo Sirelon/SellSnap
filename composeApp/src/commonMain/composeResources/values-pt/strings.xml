@@ -229,6 +229,10 @@
     <string name="error_upload_file_failed">Não foi possível carregar uma das fotos.</string>
     <string name="error_publish_failed">A publicação não foi concluída. Tente novamente.</string>
     <string name="error_generate_ad_failed">Não foi possível gerar o anúncio. Tentar novamente?</string>
+    <string name="error_regenerate_description_failed">Não foi possível gerar a descrição novamente. Tentar de novo?</string>
+    <string name="regenerate_pill_default">Gerar novamente</string>
+    <string name="vote_up_label">Útil</string>
+    <string name="vote_down_label">Não útil</string>
 
     <!-- Publish Success Screen -->
     <string name="publish_success_title">Está no ar! 🎉</string>

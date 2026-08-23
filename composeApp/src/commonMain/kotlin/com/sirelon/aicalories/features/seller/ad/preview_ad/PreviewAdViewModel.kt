@@ -1,6 +1,7 @@
 package com.sirelon.sellsnap.features.seller.ad.preview_ad
 
 import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.runtime.snapshotFlow
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
@@ -19,6 +20,8 @@ import com.sirelon.sellsnap.features.seller.ad.preview_ad.PreviewAdContract.Prev
 import com.sirelon.sellsnap.features.seller.ad.preview_ad.PreviewAdContract.PreviewAdEvent.FetchLocation
 import com.sirelon.sellsnap.features.seller.ad.preview_ad.PreviewAdContract.PreviewAdEvent.Publish
 import com.sirelon.sellsnap.features.seller.ad.preview_ad.PreviewAdContract.PreviewAdEvent.RefreshLocationClicked
+import com.sirelon.sellsnap.features.seller.ad.preview_ad.PreviewAdContract.PreviewAdEvent.RegenerateDescription
+import com.sirelon.sellsnap.features.seller.ad.preview_ad.PreviewAdContract.PreviewAdEvent.VoteGeneratedContent
 import com.sirelon.sellsnap.features.seller.ad.preview_ad.PreviewAdContract.PreviewAdState
 import com.sirelon.sellsnap.features.seller.ad.publish_success.PublishSuccessData
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountRecord
@@ -38,6 +41,7 @@ import com.sirelon.sellsnap.features.seller.categories.domain.OlxCategory
 import com.sirelon.sellsnap.features.seller.currency.data.CurrencyRepository
 import com.sirelon.sellsnap.features.seller.location.data.LocationRepository
 import com.sirelon.sellsnap.features.seller.profile.data.SellerAccountRepository
+import com.sirelon.sellsnap.features.seller.openai.OpenAIClient
 import com.sirelon.sellsnap.generated.resources.Res
 import com.sirelon.sellsnap.generated.resources.action_reconnect_target_account
 import com.sirelon.sellsnap.generated.resources.error_attributes_load_failed
@@ -49,8 +53,10 @@ import com.sirelon.sellsnap.generated.resources.error_publish_missing_category_o
 import com.sirelon.sellsnap.generated.resources.error_publish_missing_contact_name
 import com.sirelon.sellsnap.generated.resources.error_publish_needs_reconnect
 import com.sirelon.sellsnap.generated.resources.publish_target_account_fallback_name
+import com.sirelon.sellsnap.generated.resources.error_regenerate_description_failed
 import com.sirelon.sellsnap.generated.resources.validation_error_desc_too_short
 import com.sirelon.sellsnap.generated.resources.validation_error_title_too_short
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
@@ -89,6 +95,8 @@ class PreviewAdViewModel(
     private val savedStateHandle: SavedStateHandle,
     private val json: Json,
     private val analytics: Analytics,
+    private val openAiClient: OpenAIClient,
+    private val countryStore: OlxCountryStore,
 ) : BaseViewModel<PreviewAdState, PreviewAdEvent, PreviewAdEffect>() {
 
     private val advertisement = filledAdvertisement.advertisement
@@ -266,6 +274,24 @@ class PreviewAdViewModel(
                     localIndex = event.localIndex,
                     fromPublishScreen = true,
                 )
+            }
+
+            RegenerateDescription -> viewModelScope.launch { regenerateDescription() }
+
+            is VoteGeneratedContent -> {
+                // Tapping the selected thumb clears the vote; only a real selection is worth
+                // an event, otherwise every undo double-counts the vote it was undoing.
+                val vote = if (currentState().selectedVote == event.vote) null else event.vote
+                setState { it.copy(selectedVote = vote) }
+                if (vote != null) {
+                    analytics.logEvent(
+                        AnalyticsEvents.AD_GENERATED_CONTENT_VOTED,
+                        mapOf(
+                            "vote" to vote.name,
+                            "regeneration_count" to currentState().regenerationCount,
+                        ),
+                    )
+                }
             }
 
             is PreviewAdEvent.AttributeValueChanged -> setState { currentState ->
@@ -479,6 +505,38 @@ class PreviewAdViewModel(
         avatarUrl = profile?.avatarUrl,
         isBusiness = profile?.isBusiness == true,
     )
+
+    private suspend fun regenerateDescription() {
+        if (currentState().isRegeneratingDescription) return
+
+        setState { it.copy(isRegeneratingDescription = true) }
+        analytics.logEvent(AnalyticsEvents.AD_DESCRIPTION_REGENERATE_STARTED)
+        try {
+            val (_, generated) = openAiClient.analyzeThing(
+                images = advertisement.images,
+                sellerPrompt = filledAdvertisement.sellerPrompt,
+                country = countryStore.current,
+            )
+            descriptionState.setTextAndPlaceCursorAtEnd(generated.description)
+            // The vote belonged to the text we just replaced, so it starts over with the new one.
+            setState {
+                it.copy(
+                    regenerationCount = it.regenerationCount + 1,
+                    selectedVote = null,
+                )
+            }
+            analytics.logEvent(AnalyticsEvents.AD_DESCRIPTION_REGENERATE_SUCCEEDED)
+        } catch (error: CancellationException) {
+            // Leaving the screen mid-request is not a failure and must not skew the metric.
+            throw error
+        } catch (error: Throwable) {
+            analytics.recordException(error, AnalyticsEvents.AD_DESCRIPTION_REGENERATE_FAILED)
+            analytics.logEvent(AnalyticsEvents.AD_DESCRIPTION_REGENERATE_FAILED)
+            postEffect(ShowMessage(getString(Res.string.error_regenerate_description_failed)))
+        } finally {
+            setState { it.copy(isRegeneratingDescription = false) }
+        }
+    }
 
     private suspend fun updateSelectedCategory(category: OlxCategory) {
         val path = mutableListOf(category.label)

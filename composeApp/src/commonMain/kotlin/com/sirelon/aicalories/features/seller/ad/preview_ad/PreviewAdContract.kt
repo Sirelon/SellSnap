@@ -41,6 +41,8 @@ data class PublishAccountPickerItem(
     val needsReconnect: Boolean,
 )
 
+enum class GeneratedContentVote { Up, Down }
+
 interface PreviewAdContract {
 
     @Immutable
@@ -66,6 +68,9 @@ interface PreviewAdContract {
         val targetAccount: PublishTargetAccount? = null,
         val showTargetAccountRow: Boolean = false,
         val accountPickerItems: List<PublishAccountPickerItem> = emptyList(),
+        val isRegeneratingDescription: Boolean = false,
+        val regenerationCount: Int = 0,
+        val selectedVote: GeneratedContentVote? = null,
     )
 
     sealed interface PreviewAdEvent {
@@ -79,6 +84,7 @@ interface PreviewAdContract {
 
         data object FetchLocation : PreviewAdEvent
         data object RefreshLocationClicked : PreviewAdEvent
+        data object RegenerateDescription : PreviewAdEvent
 
         data class AttributeValueChanged(
             val attributeCode: String,
@@ -88,6 +94,8 @@ interface PreviewAdContract {
         /** Seller picked another account from the publish screen's account picker (SIR-83 U6) -
          * switches the active account; the draft is not touched (D2). */
         data class SwitchAccountRequested(val localIndex: Int) : PreviewAdEvent
+
+        data class VoteGeneratedContent(val vote: GeneratedContentVote) : PreviewAdEvent
     }
 
     sealed interface PreviewAdEffect {

@@ -30,4 +30,10 @@ object AnalyticsEvents {
     // belong to the account named on the preview row (D6/A5) - the primary defence for G4
     // (publishing to the wrong OLX account). Must be zero in the wild.
     const val PUBLISH_ACCOUNT_MISMATCH_ABORTED = "publish_account_mismatch_aborted"
+
+    const val AD_DESCRIPTION_REGENERATE_STARTED = "ad_description_regenerate_started"
+    const val AD_DESCRIPTION_REGENERATE_SUCCEEDED = "ad_description_regenerate_succeeded"
+    const val AD_DESCRIPTION_REGENERATE_FAILED = "ad_description_regenerate_failed"
+
+    const val AD_GENERATED_CONTENT_VOTED = "ad_generated_content_voted"
 }

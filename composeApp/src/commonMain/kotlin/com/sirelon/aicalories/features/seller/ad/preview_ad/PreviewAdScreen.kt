@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -92,9 +93,11 @@ import com.sirelon.sellsnap.designsystem.performErrorFeedback
 import com.sirelon.sellsnap.designsystem.performSuccessFeedback
 import com.sirelon.sellsnap.designsystem.DigitOnlyInputTransformation
 import com.sirelon.sellsnap.designsystem.ErrorPill
+import com.sirelon.sellsnap.designsystem.LoadingPill
 import com.sirelon.sellsnap.designsystem.ObserveAsEvents
 import com.sirelon.sellsnap.designsystem.Pill
 import com.sirelon.sellsnap.designsystem.ThousandSeparatorOutputTransformation
+import com.sirelon.sellsnap.designsystem.ThumbsVoteRow
 import com.sirelon.sellsnap.designsystem.TransparentInput
 import com.sirelon.sellsnap.designsystem.buttons.AppButton
 import com.sirelon.sellsnap.designsystem.buttons.AppButtonDefaults
@@ -133,6 +136,7 @@ import com.sirelon.sellsnap.generated.resources.banner_ready_in
 import com.sirelon.sellsnap.generated.resources.cancel
 import com.sirelon.sellsnap.generated.resources.copy_pill_copied
 import com.sirelon.sellsnap.generated.resources.copy_pill_default
+import com.sirelon.sellsnap.generated.resources.regenerate_pill_default
 import com.sirelon.sellsnap.generated.resources.error_attr_above_maximum
 import com.sirelon.sellsnap.generated.resources.error_attr_below_minimum
 import com.sirelon.sellsnap.generated.resources.error_attr_invalid_selection
@@ -149,6 +153,7 @@ import com.sirelon.sellsnap.generated.resources.ic_circle_alert
 import com.sirelon.sellsnap.generated.resources.ic_circle_check_big
 import com.sirelon.sellsnap.generated.resources.ic_copy
 import com.sirelon.sellsnap.generated.resources.ic_layout_grid
+import com.sirelon.sellsnap.generated.resources.ic_refresh_cw
 import com.sirelon.sellsnap.generated.resources.ic_sparkles
 import com.sirelon.sellsnap.generated.resources.location_detecting
 import com.sirelon.sellsnap.generated.resources.location_not_available
@@ -831,6 +836,29 @@ private fun PreviewAdContent(
             isInvalid = isDescriptionInvalid,
         )
 
+        // FlowRow, not Row: the three labels together run ~310dp in ru and the row has 328dp
+        // on a 360dp phone, so anything wider (larger font scale, a narrower device) has to
+        // wrap rather than clip.
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing.s),
+            verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.s),
+            // The spinner that stands in for the regenerate pill is shorter than the vote
+            // pills, and FlowRow would otherwise hang every item from the top of the line.
+            itemVerticalAlignment = Alignment.CenterVertically,
+        ) {
+            RegeneratePill(
+                isLoading = state.isRegeneratingDescription,
+                onClick = { onEvent(PreviewAdEvent.RegenerateDescription) },
+            )
+
+            ThumbsVoteRow(
+                isUpSelected = state.selectedVote == GeneratedContentVote.Up,
+                isDownSelected = state.selectedVote == GeneratedContentVote.Down,
+                onUpVote = { onEvent(PreviewAdEvent.VoteGeneratedContent(GeneratedContentVote.Up)) },
+                onDownVote = { onEvent(PreviewAdEvent.VoteGeneratedContent(GeneratedContentVote.Down)) },
+            )
+        }
+
         if (state.isSessionResolved && state.isGuest) {
             GuestCopyHint()
         }
@@ -1321,6 +1349,24 @@ fun CopyPill(
     }
 }
 
+@Composable
+private fun RegeneratePill(
+    isLoading: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    if (isLoading) {
+        LoadingPill(modifier = modifier)
+    } else {
+        Pill(
+            color = AppTheme.colors.primary,
+            text = stringResource(Res.string.regenerate_pill_default),
+            iconResource = Res.drawable.ic_refresh_cw,
+            onClick = onClick,
+            modifier = modifier,
+        )
+    }
+}
 
 @Composable
 private fun ValidationError.toDisplayString(): String = when (this) {

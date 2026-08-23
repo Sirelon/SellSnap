@@ -247,6 +247,10 @@
     <string name="error_upload_file_failed">Couldn't upload one of the photos.</string>
     <string name="error_publish_failed">Publishing didn't go through. Give it another shot.</string>
     <string name="error_generate_ad_failed">Couldn't generate the ad. Try again?</string>
+    <string name="error_regenerate_description_failed">Couldn't regenerate the description. Try again?</string>
+    <string name="regenerate_pill_default">Regenerate</string>
+    <string name="vote_up_label">Helpful</string>
+    <string name="vote_down_label">Not helpful</string>
 
     <!-- Publish Success Screen -->
     <string name="publish_success_title">You're live! 🎉</string>

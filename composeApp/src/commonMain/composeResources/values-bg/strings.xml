@@ -229,6 +229,10 @@
     <string name="error_upload_file_failed">Не можах да кача една от снимките.</string>
     <string name="error_publish_failed">Публикуването не се получи. Опитай пак.</string>
     <string name="error_generate_ad_failed">Не можах да генерирам обявата. Опитай отново?</string>
+    <string name="error_regenerate_description_failed">Описанието не можа да се генерира отново. Опитай пак?</string>
+    <string name="regenerate_pill_default">Регенерирай</string>
+    <string name="vote_up_label">Полезно</string>
+    <string name="vote_down_label">Безполезно</string>
 
     <!-- Publish Success Screen -->
     <string name="publish_success_title">На живо си! 🎉</string>
