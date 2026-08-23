@@ -232,6 +232,10 @@
     <string name="error_upload_file_failed">Не вдалося завантажити одне з фото.</string>
     <string name="error_publish_failed">Не вдалося опублікувати. Спробуйте ще раз.</string>
     <string name="error_generate_ad_failed">Не вдалося згенерувати оголошення. Спробуєте ще раз?</string>
+    <string name="error_regenerate_description_failed">Не удалось перегенерировать описание. Попробовать ещё раз?</string>
+    <string name="regenerate_pill_default">Перегенерировать</string>
+    <string name="vote_up_label">Полезно</string>
+    <string name="vote_down_label">Не полезно</string>
 
     <!-- Publish Success Screen -->
     <string name="publish_success_title">Опубліковано! 🎉</string>
