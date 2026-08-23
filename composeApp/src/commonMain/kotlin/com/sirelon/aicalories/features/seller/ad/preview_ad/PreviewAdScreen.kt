@@ -775,6 +775,9 @@ private fun PreviewAdContent(
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing.s),
             verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.s),
+            // The spinner that stands in for the regenerate pill is shorter than the vote
+            // pills, and FlowRow would otherwise hang every item from the top of the line.
+            itemVerticalAlignment = Alignment.CenterVertically,
         ) {
             RegeneratePill(
                 isLoading = state.isRegeneratingDescription,
