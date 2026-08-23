@@ -6,6 +6,8 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
@@ -19,6 +21,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
@@ -38,6 +41,7 @@ import com.sirelon.sellsnap.features.seller.categories.presentation.CategoryPick
 import com.sirelon.sellsnap.features.seller.my_ads.ui.MyAdvertsScreenRoute
 import com.sirelon.sellsnap.navigation.BottomSheetSceneStrategy
 import com.sirelon.sellsnap.features.seller.profile.ui.ProfileScreenRoute
+import com.sirelon.sellsnap.features.seller.settings.ui.SettingsScreenRoute
 import com.sirelon.sellsnap.generated.resources.Res
 import com.sirelon.sellsnap.generated.resources.ic_camera
 import com.sirelon.sellsnap.generated.resources.ic_tag
@@ -45,6 +49,7 @@ import com.sirelon.sellsnap.generated.resources.ic_user
 import com.sirelon.sellsnap.generated.resources.nav_my_ads
 import com.sirelon.sellsnap.generated.resources.new_listing
 import com.sirelon.sellsnap.generated.resources.profile_screen_title
+import com.sirelon.sellsnap.generated.resources.settings_screen_title
 import com.sirelon.sellsnap.generated.resources.guest_connect_olx_cta
 import com.sirelon.sellsnap.features.seller.auth.data._currentOlxCountry
 import com.sirelon.sellsnap.platform.openUrl
@@ -101,12 +106,27 @@ fun AdRootScreen(
                     selected = selectedRootTab == tab,
                     onClick = { switchRootTab(tab) },
                     icon = {
-                        Icon(
-                            painter = painterResource(tab.icon),
-                            contentDescription = null,
+                        val icon = tab.icon
+                        if (icon != null) {
+                            Icon(
+                                painter = painterResource(icon),
+                                contentDescription = null,
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Default.Settings,
+                                contentDescription = null,
+                            )
+                        }
+                    },
+                    label = {
+                        Text(
+                            text = stringResource(tab.label),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
                         )
                     },
-                    label = { Text(stringResource(tab.label)) },
+                    alwaysShowLabel = false,
                 )
             }
         },
@@ -204,8 +224,15 @@ fun AdRootScreen(
                         },
                         onOpenOlxAuth = authLauncher,
                         onLogout = onLogout,
-                        onDeleteAccountDataRequested = onDeleteAccountDataRequested,
                         reason = destination.reason,
+                    )
+                }
+
+                entry<AdDestination.Settings>(
+                    metadata = topLevelMetadata,
+                ) {
+                    SettingsScreenRoute(
+                        onDeleteAccountDataRequested = onDeleteAccountDataRequested,
                     )
                 }
 
@@ -248,17 +275,19 @@ private fun isTopLevelTransition(
 
 private enum class SellerRootTab(
     val destination: AdDestination,
-    val icon: DrawableResource,
+    val icon: DrawableResource?,
     val label: StringResource,
 ) {
     GenerateAd(AdDestination.GenerateAd, Res.drawable.ic_camera, Res.string.new_listing),
     MyAdverts(AdDestination.MyAdverts, Res.drawable.ic_tag, Res.string.nav_my_ads),
     Profile(AdDestination.Profile(), Res.drawable.ic_user, Res.string.profile_screen_title),
+    Settings(AdDestination.Settings, icon = null, Res.string.settings_screen_title),
 }
 
 private fun NavKey?.toSellerRootTab(): SellerRootTab? = when (this) {
     AdDestination.GenerateAd -> SellerRootTab.GenerateAd
     AdDestination.MyAdverts -> SellerRootTab.MyAdverts
     is AdDestination.Profile -> if (reason == null) SellerRootTab.Profile else null
+    AdDestination.Settings -> SellerRootTab.Settings
     else -> null
 }

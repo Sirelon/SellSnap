@@ -1,6 +1,5 @@
 package com.sirelon.sellsnap.features.seller.profile.presentation
 
-import com.sirelon.sellsnap.designsystem.AppThemeMode
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxUser
 import com.sirelon.sellsnap.features.seller.location.OlxLocation
 
@@ -11,8 +10,6 @@ interface ProfileContract {
         val isLocationLoading: Boolean = false,
         val user: OlxUser? = null,
         val location: OlxLocation? = null,
-        val themeMode: AppThemeMode = AppThemeMode.System,
-        val analyticsConsentGranted: Boolean = false,
         val errorMessage: String? = null,
     ) {
         val isGuest: Boolean
@@ -24,8 +21,6 @@ interface ProfileContract {
         data object LogoutClicked : ProfileEvent
         data object ChangeLocationClicked : ProfileEvent
         data object RefreshClicked : ProfileEvent
-        data class ThemeModeSelected(val themeMode: AppThemeMode) : ProfileEvent
-        data class SetAnalyticsConsent(val enabled: Boolean) : ProfileEvent
     }
 
     sealed interface ProfileEffect {

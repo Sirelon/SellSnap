@@ -22,6 +22,9 @@ sealed interface AdDestination : NavKey {
     data class Profile(val reason: String? = null) : AdDestination
 
     @Serializable
+    data object Settings : AdDestination
+
+    @Serializable
     data class SellerPublishSuccess(
         val data: PublishSuccessData,
     ) : AdDestination
