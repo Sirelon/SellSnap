@@ -157,6 +157,7 @@ class GenerateAdViewModel(
                         AdvertisementWithAttributes(
                             advertisement = data.second,
                             filledAttributes = emptyMap(),
+                            sellerPrompt = state.value.prompt,
                         )
                     ).onEach {
                         setState { it.copy(completedSteps = GuestProcessingStepCount) }
@@ -179,7 +180,8 @@ class GenerateAdViewModel(
                         .map {
                             AdvertisementWithAttributes(
                                 advertisement = data.second,
-                                filledAttributes = it
+                                filledAttributes = it,
+                                sellerPrompt = state.value.prompt,
                             )
                         }
                 }
