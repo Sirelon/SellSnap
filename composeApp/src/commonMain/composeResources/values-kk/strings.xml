@@ -73,6 +73,7 @@
     <string name="profile_field_created_at">Тіркелген күні</string>
     <string name="profile_field_last_login_at">Соңғы кіру</string>
     <string name="profile_screen_title">Профиль</string>
+    <string name="settings_screen_title">Параметрлер</string>
     <string name="profile_guest_title">Қонақ профилі</string>
     <string name="profile_guest_description">SellSnap арқылы жариялау үшін OLX-ті қос — аккаунт деректерің де осында пайда болады.</string>
     <string name="profile_olx_account">OLX аккаунты</string>

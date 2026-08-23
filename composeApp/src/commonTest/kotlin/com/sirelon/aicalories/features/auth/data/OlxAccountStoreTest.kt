@@ -155,6 +155,40 @@ class OlxAccountStoreTest {
     }
 
     @Test
+    fun `updateTokens leaves lastUsedAtEpochSeconds untouched when updateLastUsed is false`() = runBlocking {
+        // A background keep-alive refresh is not seller activity - it must not look like use,
+        // or it caps account_token_expired_unused's days_since_last_use at the keep-alive
+        // staleness threshold and skews disconnect's most-recently-used promotion.
+        val store = OlxAccountStore(InMemoryOlxKeyValueStore(), testJson)
+        store.write(
+            OlxAccountsRecord(
+                accounts = listOf(
+                    OlxAccountRecord(
+                        localIndex = 1,
+                        countryCode = "ua",
+                        tokens = sampleTokens("old"),
+                        lastUsedAtEpochSeconds = 100,
+                        lastRefreshedAtEpochSeconds = 100,
+                    ),
+                ),
+                activeByCountry = mapOf("ua" to 1),
+                nextLocalIndex = 2,
+            ),
+        )
+
+        store.updateTokens(1, sampleTokens("keep-alive-refreshed"), lastRefreshedAtEpochSeconds = 999, updateLastUsed = false)
+
+        val afterKeepAlive = store.readRaw()!!.accounts.single()
+        assertEquals(999, afterKeepAlive.lastRefreshedAtEpochSeconds)
+        assertEquals(100, afterKeepAlive.lastUsedAtEpochSeconds)
+
+        // The reactive 401-refresh path (real seller activity) keeps the default and does update it.
+        store.updateTokens(1, sampleTokens("reactive-refreshed"), lastRefreshedAtEpochSeconds = 1500)
+        val afterReactive = store.readRaw()!!.accounts.single()
+        assertEquals(1500, afterReactive.lastUsedAtEpochSeconds)
+    }
+
+    @Test
     fun `concurrent updateTokens on different accounts both persist`() = runBlocking {
         val storage = DelayingKeyValueStore(InMemoryOlxKeyValueStore())
         val store = OlxAccountStore(storage, testJson)

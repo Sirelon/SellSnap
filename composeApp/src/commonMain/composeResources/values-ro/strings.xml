@@ -73,6 +73,7 @@
     <string name="profile_field_created_at">Creat la</string>
     <string name="profile_field_last_login_at">Ultima autentificare</string>
     <string name="profile_screen_title">Profil</string>
+    <string name="settings_screen_title">Setări</string>
     <string name="profile_guest_title">Profil oaspete</string>
     <string name="profile_guest_description">Conectează OLX pentru a publica din SellSnap — detaliile contului tău vor apărea și ele aici.</string>
     <string name="profile_olx_account">Cont OLX</string>

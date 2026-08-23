@@ -73,6 +73,7 @@
     <string name="profile_field_created_at">Data założenia</string>
     <string name="profile_field_last_login_at">Ostatnie logowanie</string>
     <string name="profile_screen_title">Profil</string>
+    <string name="settings_screen_title">Ustawienia</string>
     <string name="profile_guest_title">Profil gościa</string>
     <string name="profile_guest_description">Połącz OLX, by publikować z SellSnap — Twoje dane konta pojawią się tutaj.</string>
     <string name="profile_olx_account">Konto OLX</string>

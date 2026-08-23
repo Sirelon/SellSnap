@@ -17,9 +17,6 @@ import com.sirelon.sellsnap.generated.resources.error_olx_auth_prepare_failed
 import com.sirelon.sellsnap.generated.resources.error_user_profile_fetch_failed
 import com.sirelon.sellsnap.generated.resources.profile_olx_account
 import com.sirelon.sellsnap.generated.resources.profile_add_account_duplicate_message
-import com.sirelon.sellsnap.startup.AnalyticsConsent
-import com.sirelon.sellsnap.startup.AnalyticsConsentRepository
-import com.sirelon.sellsnap.startup.AppThemeRepository
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -27,8 +24,6 @@ import org.jetbrains.compose.resources.getString
 
 class ProfileViewModel(
     private val accountRepository: SellerAccountRepository,
-    private val themeRepository: AppThemeRepository,
-    private val analyticsConsentRepository: AnalyticsConsentRepository,
 ) : BaseViewModel<ProfileState, ProfileEvent, ProfileEffect>() {
 
     init {
@@ -49,24 +44,6 @@ class ProfileViewModel(
             .sessionModeFlow
             .onEach { mode ->
                 setState { it.copy(sessionMode = mode) }
-            }
-            .launchIn(viewModelScope)
-
-        themeRepository
-            .themeMode
-            .onEach { themeMode ->
-                setState {
-                    it.copy(themeMode = themeMode)
-                }
-            }
-            .launchIn(viewModelScope)
-
-        analyticsConsentRepository
-            .consent
-            .onEach { consent ->
-                setState {
-                    it.copy(analyticsConsentGranted = consent == AnalyticsConsent.Granted)
-                }
             }
             .launchIn(viewModelScope)
 
@@ -102,8 +79,6 @@ class ProfileViewModel(
             ProfileEvent.LogoutClicked -> logout()
             ProfileEvent.ChangeLocationClicked -> updateLocation()
             ProfileEvent.RefreshClicked -> refresh()
-            is ProfileEvent.ThemeModeSelected -> themeRepository.setThemeMode(event.themeMode)
-            is ProfileEvent.SetAnalyticsConsent -> analyticsConsentRepository.setConsent(event.enabled)
             is ProfileEvent.SetActiveAccountClicked -> setActiveAccount(event.localIndex)
             is ProfileEvent.NeedsReconnectRowClicked -> toggleReconnectRow(event.localIndex)
             is ProfileEvent.ReconnectClicked -> reconnect(event.localIndex)

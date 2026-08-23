@@ -87,6 +87,7 @@
     <string name="profile_field_created_at">Created at</string>
     <string name="profile_field_last_login_at">Last login</string>
     <string name="profile_screen_title">Profile</string>
+    <string name="settings_screen_title">Settings</string>
     <string name="profile_guest_title">Guest profile</string>
     <string name="profile_guest_description">Hook up OLX to publish from SellSnap — your account details will land here too.</string>
     <string name="profile_olx_account">OLX account</string>
