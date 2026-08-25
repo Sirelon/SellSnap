@@ -1,5 +1,6 @@
 package com.sirelon.sellsnap.features.seller.auth.data
 
+import com.sirelon.sellsnap.analytics.Analytics
 import com.sirelon.sellsnap.datastore.KeyValueStore
 import com.sirelon.sellsnap.datastore.createKeyValueStore
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxCountry
@@ -10,23 +11,32 @@ import com.sirelon.sellsnap.features.seller.auth.domain.OlxCountry
 @kotlin.concurrent.Volatile
 internal var _currentOlxCountry: OlxCountry = OlxCountry.defaultForLocale()
 
-class OlxCountryStore internal constructor(private val storage: KeyValueStore) {
-    constructor() : this(createKeyValueStore("olx_country"))
+class OlxCountryStore internal constructor(
+    private val storage: KeyValueStore,
+    private val analytics: Analytics,
+) {
+    constructor(analytics: Analytics) : this(createKeyValueStore("olx_country"), analytics)
 
     val current: OlxCountry get() = _currentOlxCountry
 
     suspend fun loadFromStorage() {
-        _currentOlxCountry = OlxCountry.fromCode(storage.getString(KEY)) ?: _currentOlxCountry
+        applyCountry(OlxCountry.fromCode(storage.getString(KEY)) ?: _currentOlxCountry)
     }
 
     suspend fun save(country: OlxCountry) {
-        _currentOlxCountry = country
+        applyCountry(country)
         storage.putString(KEY, country.code)
     }
 
     suspend fun clear() {
         storage.remove(KEY)
-        _currentOlxCountry = OlxCountry.defaultForLocale()
+        applyCountry(OlxCountry.defaultForLocale())
+    }
+
+    // Segments every subsequent analytics event by market, so the funnel can be sliced per OLX country.
+    private fun applyCountry(country: OlxCountry) {
+        _currentOlxCountry = country
+        analytics.setUserProperty("olx_country", country.code)
     }
 
     companion object {

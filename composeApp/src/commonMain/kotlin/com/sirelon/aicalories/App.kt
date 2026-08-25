@@ -25,6 +25,8 @@ import coil3.compose.setSingletonImageLoaderFactory
 import com.mohamedrejeb.calf.picker.coil.KmpFileFetcher
 import com.sirelon.sellsnap.analytics.Analytics
 import com.sirelon.sellsnap.analytics.AnalyticsEvents
+import com.sirelon.sellsnap.analytics.AnalyticsScreen
+import com.sirelon.sellsnap.analytics.TrackScreenViews
 import com.sirelon.sellsnap.designsystem.AppTheme
 import com.sirelon.sellsnap.designsystem.screens.LoadingOverlay
 import com.sirelon.sellsnap.di.appModule
@@ -70,6 +72,7 @@ fun App() {
         AppTheme(themeMode = themeMode) {
             val navVm: AppNavigationViewModel = koinViewModel()
             val accountRepository: SellerAccountRepository = koinInject()
+            val analytics: Analytics = koinInject()
             val backStackList by navVm.backStack.collectAsStateWithLifecycle()
             val coroutineScope = rememberCoroutineScope()
             var isDeletingAccountData by remember { mutableStateOf(false) }
@@ -92,6 +95,7 @@ fun App() {
                     navBackStack.addAll(backStackList)
                 }
             }
+            TrackScreenViews(navBackStack.lastOrNull() as? AnalyticsScreen)
 
             NavDisplay(
                 modifier = Modifier.fillMaxSize(),
@@ -110,7 +114,6 @@ fun App() {
                     }
 
                     entry<AppDestination.SellerOnboarding> {
-                        val analytics: Analytics = koinInject()
                         OnboardingScreen {
                             analytics.logEvent(AnalyticsEvents.ONBOARDING_COMPLETED)
                             navVm.onOnboardingCompleted()

@@ -13,3 +13,12 @@ interface Analytics {
     /** Enables or disables crash-reporting collection. On by default; the user may opt out. */
     fun setCrashlyticsCollectionEnabled(enabled: Boolean)
 }
+
+/**
+ * This app is single-activity/single-ViewController Compose Multiplatform, so Firebase's
+ * automatic per-Activity screen tracking never fires. Call this on every navigation change to
+ * report screens manually using Firebase's reserved `screen_view` event and param names.
+ */
+fun Analytics.logScreenView(screenName: String) {
+    logEvent("screen_view", mapOf("screen_name" to screenName, "screen_class" to screenName))
+}

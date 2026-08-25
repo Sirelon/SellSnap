@@ -82,6 +82,8 @@ import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
 import com.mohamedrejeb.calf.permissions.CoarseLocation
 import com.mohamedrejeb.calf.permissions.Permission
+import com.sirelon.sellsnap.analytics.AnalyticsScreen
+import com.sirelon.sellsnap.analytics.TrackScreenViews
 import com.sirelon.sellsnap.designsystem.AppCard
 import com.sirelon.sellsnap.designsystem.AppDimens
 import com.sirelon.sellsnap.designsystem.AppScaffold
@@ -212,6 +214,7 @@ fun PreviewAdScreen(
             SinglePaneSceneStrategy<NavKey>(),
         )
     }
+    TrackScreenViews(navBackStack.lastOrNull() as? AnalyticsScreen)
     LaunchedEffect(Unit) {
         if (navBackStack.lastOrNull() is PreviewAdDestination.Publishing) {
             navBackStack.removeAt(navBackStack.lastIndex)

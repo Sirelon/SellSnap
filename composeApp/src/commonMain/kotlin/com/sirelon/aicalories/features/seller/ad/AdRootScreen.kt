@@ -31,6 +31,8 @@ import androidx.navigation3.scene.DialogSceneStrategy
 import androidx.navigation3.scene.Scene
 import androidx.navigation3.scene.SinglePaneSceneStrategy
 import androidx.navigation3.ui.NavDisplay
+import com.sirelon.sellsnap.analytics.AnalyticsScreen
+import com.sirelon.sellsnap.analytics.TrackScreenViews
 import com.sirelon.sellsnap.designsystem.screens.ImagesPreview
 import com.sirelon.sellsnap.features.seller.ad.generate_ad.GenerateAdScreen
 import com.sirelon.sellsnap.features.seller.ad.preview_ad.PreviewAdScreen
@@ -70,6 +72,7 @@ fun AdRootScreen(
         adNavigationSavedStateConfiguration,
         AdDestination.GenerateAd,
     )
+    TrackScreenViews(navBackStack.lastOrNull() as? AnalyticsScreen)
     val connectOlxReason = stringResource(Res.string.guest_connect_olx_cta)
 
     val authLauncher = rememberOlxAuthLauncher()
