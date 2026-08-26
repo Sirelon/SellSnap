@@ -1,5 +1,6 @@
 package com.sirelon.sellsnap.features.auth.data
 
+import com.sirelon.sellsnap.analytics.Analytics
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountRecord
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountState
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountStore
@@ -210,11 +211,21 @@ class OlxHttpClientFactoryTest {
     }
 
     private suspend fun countryStore(countryCode: String = "ua"): OlxCountryStore =
-        OlxCountryStore(InMemoryOlxKeyValueStore()).apply { save(OlxCountry.fromCode(countryCode)!!) }
+        OlxCountryStore(InMemoryOlxKeyValueStore(), FakeAnalytics()).apply { save(OlxCountry.fromCode(countryCode)!!) }
 
     private class TestCredentialsProvider : OlxCredentialsProvider {
         override suspend fun getClientId(): String = "test-client-id"
 
         override suspend fun getClientSecret(): String = "test-client-secret"
+    }
+
+    private class FakeAnalytics : Analytics {
+        override fun logEvent(name: String, params: Map<String, Any>) {}
+        override fun setUserId(userId: String?) {}
+        override fun setUserProperty(name: String, value: String?) {}
+        override fun recordException(throwable: Throwable, message: String?) {}
+        override fun log(message: String) {}
+        override fun setAnalyticsCollectionEnabled(enabled: Boolean) {}
+        override fun setCrashlyticsCollectionEnabled(enabled: Boolean) {}
     }
 }

@@ -1,5 +1,6 @@
 package com.sirelon.sellsnap.features.auth.data
 
+import com.sirelon.sellsnap.analytics.Analytics
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountMigration
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountStore
 import com.sirelon.sellsnap.features.seller.auth.data.OlxCountryStore
@@ -19,7 +20,7 @@ class OlxAccountMigrationTest {
 
     @Test
     fun `migrateIfNeeded copies legacy tokens into one active account keyed to stored country`() = runBlocking {
-        val countryStore = OlxCountryStore(InMemoryOlxKeyValueStore()).apply { save(OlxCountry.PL) }
+        val countryStore = OlxCountryStore(InMemoryOlxKeyValueStore(), FakeAnalytics()).apply { save(OlxCountry.PL) }
         val legacyTokens = sampleTokens()
         val legacyTokenStore = OlxTokenStore(InMemoryOlxKeyValueStore(), testJson).apply { write(legacyTokens) }
         val accountStore = OlxAccountStore(InMemoryOlxKeyValueStore(), testJson)
@@ -40,7 +41,7 @@ class OlxAccountMigrationTest {
 
     @Test
     fun `migrateIfNeeded with no legacy blob produces empty accounts record`() = runBlocking {
-        val countryStore = OlxCountryStore(InMemoryOlxKeyValueStore())
+        val countryStore = OlxCountryStore(InMemoryOlxKeyValueStore(), FakeAnalytics())
         val legacyTokenStore = OlxTokenStore(InMemoryOlxKeyValueStore(), testJson)
         val accountStore = OlxAccountStore(InMemoryOlxKeyValueStore(), testJson)
         val migration = OlxAccountMigration(accountStore, legacyTokenStore, countryStore)
@@ -55,7 +56,7 @@ class OlxAccountMigrationTest {
 
     @Test
     fun `migrateIfNeeded is idempotent`() = runBlocking {
-        val countryStore = OlxCountryStore(InMemoryOlxKeyValueStore()).apply { save(OlxCountry.RO) }
+        val countryStore = OlxCountryStore(InMemoryOlxKeyValueStore(), FakeAnalytics()).apply { save(OlxCountry.RO) }
         val legacyTokenStore = OlxTokenStore(InMemoryOlxKeyValueStore(), testJson).apply { write(sampleTokens()) }
         val accountStore = OlxAccountStore(InMemoryOlxKeyValueStore(), testJson)
         val migration = OlxAccountMigration(accountStore, legacyTokenStore, countryStore)
@@ -73,13 +74,23 @@ class OlxAccountMigrationTest {
         val legacyStorage = InMemoryOlxKeyValueStore().apply { putString("tokens", "{not valid json") }
         val legacyTokenStore = OlxTokenStore(legacyStorage, testJson)
         val accountStore = OlxAccountStore(InMemoryOlxKeyValueStore(), testJson)
-        val migration = OlxAccountMigration(accountStore, legacyTokenStore, OlxCountryStore(InMemoryOlxKeyValueStore()))
+        val migration = OlxAccountMigration(accountStore, legacyTokenStore, OlxCountryStore(InMemoryOlxKeyValueStore(), FakeAnalytics()))
 
         migration.migrateIfNeeded()
 
         val record = accountStore.readRaw()!!
         assertTrue(record.accounts.isEmpty())
         assertTrue(record.activeByCountry.isEmpty())
+    }
+
+    private class FakeAnalytics : Analytics {
+        override fun logEvent(name: String, params: Map<String, Any>) {}
+        override fun setUserId(userId: String?) {}
+        override fun setUserProperty(name: String, value: String?) {}
+        override fun recordException(throwable: Throwable, message: String?) {}
+        override fun log(message: String) {}
+        override fun setAnalyticsCollectionEnabled(enabled: Boolean) {}
+        override fun setCrashlyticsCollectionEnabled(enabled: Boolean) {}
     }
 
     private fun sampleTokens(): OlxTokens = OlxTokens(

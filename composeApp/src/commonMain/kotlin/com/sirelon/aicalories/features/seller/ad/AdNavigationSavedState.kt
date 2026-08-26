@@ -16,6 +16,8 @@ val adNavigationSavedStateConfiguration: SavedStateConfiguration =
                 subclass(AdDestination.SelectCategory::class, AdDestination.SelectCategory.serializer())
                 subclass(AdDestination.Profile::class, AdDestination.Profile.serializer())
                 subclass(AdDestination.Settings::class, AdDestination.Settings.serializer())
+                subclass(AdDestination.WhatsNewPrompt::class, AdDestination.WhatsNewPrompt.serializer())
+                subclass(AdDestination.AllReleases::class, AdDestination.AllReleases.serializer())
                 subclass(AdDestination.SellerPublishSuccess::class, AdDestination.SellerPublishSuccess.serializer())
                 subclass(AdDestination.ImagesPreview::class, AdDestination.ImagesPreview.serializer())
             }

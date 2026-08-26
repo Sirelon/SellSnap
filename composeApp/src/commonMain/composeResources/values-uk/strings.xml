@@ -106,6 +106,16 @@
     <string name="profile_value_yes">Так</string>
     <string name="profile_value_no">Ні</string>
 
+    <!-- What's New -->
+    <string name="settings_version_history">Історія версій</string>
+    <string name="whats_new_screen_title">Що нового</string>
+    <string name="whats_new_dialog_title">Що нового у версії %1$s</string>
+    <string name="whats_new_got_it">Зрозуміло</string>
+    <string name="whats_new_view_all">Переглянути всі оновлення</string>
+    <string name="whats_new_installed_badge">Встановлено</string>
+    <string name="whats_new_empty_title">Тут поки що нічого немає</string>
+    <string name="whats_new_empty_description">Загляньте пізніше, щоб дізнатися про оновлення.</string>
+
     <!-- My OLX Ads -->
     <string name="nav_my_ads">Мої оголошення</string>
     <string name="my_ads_screen_title">Мої оголошення OLX</string>
@@ -241,6 +251,7 @@
     <string name="error_publish_missing_category_or_location">Майже готово — додайте категорію та місцезнаходження перед публікацією.</string>
     <string name="error_publish_missing_contact_name">У вашому профілі OLX немає імені. Зайдіть туди, додайте — і спробуємо ще раз.</string>
     <string name="error_category_suggestion_failed">Не вдалося запропонувати категорію.</string>
+    <string name="error_category_not_supported">Ми ще не підтримуємо цю категорію (наприклад, тварини, нерухомість, транспорт, робота, оренда). Спробуйте інший товар.</string>
     <string name="error_attributes_load_failed">Не вдалося завантажити деталі.</string>
     <string name="error_user_profile_fetch_failed">Не вдалося завантажити ваш профіль.</string>
     <string name="error_olx_auth_prepare_failed">Не вдалося розпочати вхід у OLX.</string>

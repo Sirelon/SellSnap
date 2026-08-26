@@ -8,10 +8,13 @@ class AnalyticsConsentStore internal constructor(
 ) {
     constructor() : this(createKeyValueStore("analytics_consent"))
 
+    // No stored value means a fresh install (or a pre-consent-flow install): default to opted in.
+    // An explicit AnalyticsConsent.Undecided written by resetConsent() (data erasure) is a real
+    // stored value and is returned as-is below, not caught by this fallback.
     suspend fun read(): AnalyticsConsent =
         storage.getString(KEY_CONSENT)
             ?.let { savedValue -> AnalyticsConsent.entries.firstOrNull { it.name == savedValue } }
-            ?: AnalyticsConsent.Undecided
+            ?: AnalyticsConsent.Granted
 
     suspend fun write(consent: AnalyticsConsent) {
         storage.putString(KEY_CONSENT, consent.name)

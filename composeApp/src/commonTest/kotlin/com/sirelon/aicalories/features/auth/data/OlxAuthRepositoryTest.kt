@@ -1,5 +1,6 @@
 package com.sirelon.sellsnap.features.auth.data
 
+import com.sirelon.sellsnap.analytics.Analytics
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountStore
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAuthRepository
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAuthSessionStore
@@ -136,7 +137,7 @@ class OlxAuthRepositoryTest {
     @Test
     fun `currentSession reports Authenticated whenever any account is on file for the active country regardless of token health`() =
         runBlocking {
-            val countryStore = OlxCountryStore(InMemoryOlxKeyValueStore()).apply { save(OlxCountry.UA) }
+            val countryStore = OlxCountryStore(InMemoryOlxKeyValueStore(), FakeAnalytics()).apply { save(OlxCountry.UA) }
             val accountStore = OlxAccountStore(InMemoryOlxKeyValueStore(), testJson)
             accountStore.addOrUpdateAccount(
                 countryCode = "ua",
@@ -159,7 +160,7 @@ class OlxAuthRepositoryTest {
 
     @Test
     fun `currentSession reports Unauthenticated when no account is on file for the active country`() = runBlocking {
-        val countryStore = OlxCountryStore(InMemoryOlxKeyValueStore()).apply { save(OlxCountry.UA) }
+        val countryStore = OlxCountryStore(InMemoryOlxKeyValueStore(), FakeAnalytics()).apply { save(OlxCountry.UA) }
         val accountStore = OlxAccountStore(InMemoryOlxKeyValueStore(), testJson)
         val repository = createRepository(
             engine = MockEngine { error("No HTTP call expected.") },
@@ -184,7 +185,7 @@ class OlxAuthRepositoryTest {
     private fun createRepository(
         engine: MockEngine,
         accountStore: OlxAccountStore = OlxAccountStore(InMemoryOlxKeyValueStore(), testJson),
-        countryStore: OlxCountryStore = OlxCountryStore(InMemoryOlxKeyValueStore()),
+        countryStore: OlxCountryStore = OlxCountryStore(InMemoryOlxKeyValueStore(), FakeAnalytics()),
         sessionStore: OlxAuthSessionStore = OlxAuthSessionStore(InMemoryOlxKeyValueStore(), testJson),
     ): OlxAuthRepository {
         return OlxAuthRepository(
@@ -203,6 +204,16 @@ class OlxAuthRepositoryTest {
         override suspend fun getClientId(): String = "test-client-id"
 
         override suspend fun getClientSecret(): String = "test-client-secret"
+    }
+
+    private class FakeAnalytics : Analytics {
+        override fun logEvent(name: String, params: Map<String, Any>) {}
+        override fun setUserId(userId: String?) {}
+        override fun setUserProperty(name: String, value: String?) {}
+        override fun recordException(throwable: Throwable, message: String?) {}
+        override fun log(message: String) {}
+        override fun setAnalyticsCollectionEnabled(enabled: Boolean) {}
+        override fun setCrashlyticsCollectionEnabled(enabled: Boolean) {}
     }
 
     private class TestRedirectHandler : OlxRedirectHandler {

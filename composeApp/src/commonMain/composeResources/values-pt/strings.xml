@@ -110,6 +110,16 @@
     <string name="profile_value_yes">Sim</string>
     <string name="profile_value_no">Não</string>
 
+    <!-- What's New -->
+    <string name="settings_version_history">Histórico de versões</string>
+    <string name="whats_new_screen_title">Novidades</string>
+    <string name="whats_new_dialog_title">Novidades na versão %1$s</string>
+    <string name="whats_new_got_it">Entendi</string>
+    <string name="whats_new_view_all">Ver todas as atualizações</string>
+    <string name="whats_new_installed_badge">Instalada</string>
+    <string name="whats_new_empty_title">Ainda não há nada aqui</string>
+    <string name="whats_new_empty_description">Volte mais tarde para ver as notas de lançamento.</string>
+
     <!-- My OLX Ads -->
     <string name="nav_my_ads">Os meus anúncios</string>
     <string name="my_ads_screen_title">Os meus anúncios OLX</string>
@@ -238,6 +248,7 @@
     <string name="error_publish_missing_category_or_location">Quase lá — adicione uma categoria e uma localização antes de publicar.</string>
     <string name="error_publish_missing_contact_name">O seu perfil OLX não tem nome. Vá lá, adicione um e tentamos novamente.</string>
     <string name="error_category_suggestion_failed">Não foi possível sugerir uma categoria.</string>
+    <string name="error_category_not_supported">Ainda não damos suporte a esta categoria (por exemplo, animais, imóveis, veículos, empregos, aluguer). Tenta outro artigo.</string>
     <string name="error_attributes_load_failed">Não foi possível carregar os detalhes.</string>
     <string name="error_user_profile_fetch_failed">Não foi possível carregar o seu perfil.</string>
     <string name="error_olx_auth_prepare_failed">Não foi possível iniciar o início de sessão no OLX.</string>

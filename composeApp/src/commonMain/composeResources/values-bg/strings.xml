@@ -110,6 +110,16 @@
     <string name="profile_value_yes">Да</string>
     <string name="profile_value_no">Не</string>
 
+    <!-- What's New -->
+    <string name="settings_version_history">История на версиите</string>
+    <string name="whats_new_screen_title">Какво е новото</string>
+    <string name="whats_new_dialog_title">Новото във версия %1$s</string>
+    <string name="whats_new_got_it">Разбрах</string>
+    <string name="whats_new_view_all">Виж всички актуализации</string>
+    <string name="whats_new_installed_badge">Инсталирана</string>
+    <string name="whats_new_empty_title">Все още няма нищо</string>
+    <string name="whats_new_empty_description">Проверете по-късно за бележки по изданието.</string>
+
     <!-- My OLX Ads -->
     <string name="nav_my_ads">Моите обяви</string>
     <string name="my_ads_screen_title">Моите OLX обяви</string>
@@ -238,6 +248,7 @@
     <string name="error_publish_missing_category_or_location">Почти готово — добави категория и местоположение преди публикуване.</string>
     <string name="error_publish_missing_contact_name">В OLX профила ти липсва име. Влез там, добави го и ще опитаме отново.</string>
     <string name="error_category_suggestion_failed">Не можах да предложа категория.</string>
+    <string name="error_category_not_supported">Все още не поддържаме тази категория (напр. животни, имоти, превозни средства, работа, наеми). Опитай с друг артикул.</string>
     <string name="error_attributes_load_failed">Не можах да заредя детайлите.</string>
     <string name="error_user_profile_fetch_failed">Не можах да заредя профила ти.</string>
     <string name="error_olx_auth_prepare_failed">Не можах да стартирам влизането в OLX.</string>

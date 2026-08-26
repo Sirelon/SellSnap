@@ -110,6 +110,16 @@
     <string name="profile_value_yes">Иә</string>
     <string name="profile_value_no">Жоқ</string>
 
+    <!-- What's New -->
+    <string name="settings_version_history">Нұсқалар тарихы</string>
+    <string name="whats_new_screen_title">Не жаңалық</string>
+    <string name="whats_new_dialog_title">%1$s нұсқасындағы жаңалықтар</string>
+    <string name="whats_new_got_it">Түсінікті</string>
+    <string name="whats_new_view_all">Барлық жаңартуларды көру</string>
+    <string name="whats_new_installed_badge">Орнатылған</string>
+    <string name="whats_new_empty_title">Әзірге ештеңе жоқ</string>
+    <string name="whats_new_empty_description">Шығарылым жазбалары үшін кейінірек қайта тексеріңіз.</string>
+
     <!-- My OLX Ads -->
     <string name="nav_my_ads">Менің хабарландыруларым</string>
     <string name="my_ads_screen_title">Менің OLX хабарландыруларым</string>
@@ -238,6 +248,7 @@
     <string name="error_publish_missing_category_or_location">Жарияладан бұрын санат пен орынды қос.</string>
     <string name="error_publish_missing_contact_name">OLX профиліңде аты жоқ. Кіріп, атыңды қос — қайталап көреміз.</string>
     <string name="error_category_suggestion_failed">Санатты ұсына алмадық.</string>
+    <string name="error_category_not_supported">Біз бұл санатты әлі қолдамаймыз (мысалы, жануарлар, жылжымайтын мүлік, көлік, жұмыс, жалдау). Басқа затты байқап көріңіз.</string>
     <string name="error_attributes_load_failed">Сипаттамаларды жүктеу мүмкін болмады.</string>
     <string name="error_user_profile_fetch_failed">Профиліңді жүктеу мүмкін болмады.</string>
     <string name="error_olx_auth_prepare_failed">OLX-ке кіруді бастау мүмкін болмады.</string>

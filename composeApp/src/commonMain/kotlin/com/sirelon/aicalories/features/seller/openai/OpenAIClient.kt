@@ -24,7 +24,13 @@ import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
-private val DEFAULT_MODEL = ModelId("gpt-4.1")
+const val AD_GENERATION_MODEL_ID = "gpt-4.1"
+
+// Bump whenever adGenerationInstructions changes, so ad-generation-log records stay attributable
+// to the exact prompt that produced them.
+const val AD_GENERATION_PROMPT_VERSION = "v1"
+
+private val DEFAULT_MODEL = ModelId(AD_GENERATION_MODEL_ID)
 private const val DEFAULT_IMAGE_DETAIL = "high"
 private val NUMBER_PATTERN = Regex("""-?\d+(?:\.\d+)?""")
 

@@ -12,6 +12,8 @@ import com.sirelon.sellsnap.features.seller.ad.AdFlowTimerStore
 import com.sirelon.sellsnap.features.seller.ad.AdvertisementWithAttributes
 import com.sirelon.sellsnap.features.seller.ad.ScreenshotPlaceholderAccount
 import com.sirelon.sellsnap.features.seller.ad.data.PostAdvertRequestMapper
+import com.sirelon.sellsnap.features.seller.ad.generation_log.AdGenerationAttempt
+import com.sirelon.sellsnap.features.seller.ad.generation_log.AdGenerationLogRepository
 import com.sirelon.sellsnap.features.seller.ad.screenshotMode
 import com.sirelon.sellsnap.features.seller.ad.preview_ad.PreviewAdContract.PreviewAdEffect
 import com.sirelon.sellsnap.features.seller.ad.preview_ad.PreviewAdContract.PreviewAdEffect.ShowMessage
@@ -34,17 +36,21 @@ import com.sirelon.sellsnap.features.seller.auth.domain.OlxApiError
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxApiException
 import com.sirelon.sellsnap.features.seller.auth.domain.SellerSessionMode
 import com.sirelon.sellsnap.features.seller.categories.data.CategoriesRepository
+import com.sirelon.sellsnap.features.seller.categories.data.UnsupportedOlxCategoryException
 import com.sirelon.sellsnap.features.seller.categories.domain.AttributeInputType
 import com.sirelon.sellsnap.features.seller.categories.domain.AttributeValidationResult
 import com.sirelon.sellsnap.features.seller.categories.domain.AttributeValidator
 import com.sirelon.sellsnap.features.seller.categories.domain.OlxCategory
 import com.sirelon.sellsnap.features.seller.currency.data.CurrencyRepository
 import com.sirelon.sellsnap.features.seller.location.data.LocationRepository
+import com.sirelon.sellsnap.features.seller.openai.AD_GENERATION_MODEL_ID
+import com.sirelon.sellsnap.features.seller.openai.AD_GENERATION_PROMPT_VERSION
 import com.sirelon.sellsnap.features.seller.profile.data.SellerAccountRepository
 import com.sirelon.sellsnap.features.seller.openai.OpenAIClient
 import com.sirelon.sellsnap.generated.resources.Res
 import com.sirelon.sellsnap.generated.resources.action_reconnect_target_account
 import com.sirelon.sellsnap.generated.resources.error_attributes_load_failed
+import com.sirelon.sellsnap.generated.resources.error_category_not_supported
 import com.sirelon.sellsnap.generated.resources.error_category_suggestion_failed
 import com.sirelon.sellsnap.generated.resources.error_location_fetch_failed
 import com.sirelon.sellsnap.generated.resources.error_publish_account_mismatch
@@ -69,6 +75,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import kotlin.uuid.Uuid
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -96,10 +103,12 @@ class PreviewAdViewModel(
     private val json: Json,
     private val analytics: Analytics,
     private val openAiClient: OpenAIClient,
+    private val adGenerationLogRepository: AdGenerationLogRepository,
 ) : BaseViewModel<PreviewAdState, PreviewAdEvent, PreviewAdEffect>() {
 
     private val advertisement = filledAdvertisement.advertisement
     private val restoredSavedState = readSavedState()
+    private val generationSessionId = filledAdvertisement.generationSessionId ?: Uuid.random().toString()
 
     val titleState = TextFieldState(restoredSavedState.title ?: advertisement.title)
     val descriptionState = TextFieldState(restoredSavedState.description ?: advertisement.description)
@@ -186,14 +195,13 @@ class PreviewAdViewModel(
             .onEach {
                 updateSelectedCategory(category = it)
             }
-            .flatMapLatest {
-                categoriesRepository.getAttributes(it.id)
-            }
-            .onEach { attributes ->
-                setState { it.copy(attributes = attributes) }
-            }
-            .catch {
-                postEffect(ShowMessage(getString(Res.string.error_category_suggestion_failed)))
+            .catch { error ->
+                val message = if (error is UnsupportedOlxCategoryException) {
+                    getString(Res.string.error_category_not_supported)
+                } else {
+                    getString(Res.string.error_category_suggestion_failed)
+                }
+                postEffect(ShowMessage(message))
             }
             .launchIn(viewModelScope)
 
@@ -235,6 +243,7 @@ class PreviewAdViewModel(
         maxPrice = advertisement.maxPrice.coerceAtLeast(restoredSavedState.price ?: advertisement.suggestedPrice),
         images = advertisement.images,
         location = restoredSavedState.location,
+        currentAttemptId = filledAdvertisement.lastAttemptId,
     )
 
     override fun onEvent(event: PreviewAdEvent) {
@@ -282,6 +291,9 @@ class PreviewAdViewModel(
                 // an event, otherwise every undo double-counts the vote it was undoing.
                 val vote = if (currentState().selectedVote == event.vote) null else event.vote
                 setState { it.copy(selectedVote = vote) }
+                currentState().currentAttemptId?.let { attemptId ->
+                    viewModelScope.launch { adGenerationLogRepository.updateVote(attemptId, vote?.name) }
+                }
                 if (vote != null) {
                     analytics.logEvent(
                         AnalyticsEvents.AD_GENERATED_CONTENT_VOTED,
@@ -426,6 +438,9 @@ class PreviewAdViewModel(
             )
             publishSuccessData.value = successData
             analytics.logEvent(AnalyticsEvents.AD_PUBLISH_SUCCEEDED, mapOf("account_index" to accountIndex))
+            s.currentAttemptId?.let { attemptId ->
+                adGenerationLogRepository.markPublished(attemptId, data.id.toString())
+            }
             postEffect(PreviewAdEffect.PublishSuccess(successData))
         } catch (error: Throwable) {
             analytics.recordException(error, AnalyticsEvents.AD_PUBLISH_FAILED)
@@ -517,11 +532,29 @@ class PreviewAdViewModel(
                 country = olxCountryStore.current,
             )
             descriptionState.setTextAndPlaceCursorAtEnd(generated.description)
+            val attemptNumber = currentState().regenerationCount + 1
+            val attemptId = adGenerationLogRepository.logAttempt(
+                AdGenerationAttempt(
+                    sessionId = generationSessionId,
+                    attemptNumber = attemptNumber,
+                    previousAttemptId = currentState().currentAttemptId,
+                    countryCode = olxCountryStore.current.code,
+                    modelId = AD_GENERATION_MODEL_ID,
+                    promptVersion = AD_GENERATION_PROMPT_VERSION,
+                    imagePaths = advertisement.images,
+                    title = generated.title,
+                    description = generated.description,
+                    suggestedPrice = generated.suggestedPrice,
+                    minPrice = generated.minPrice,
+                    maxPrice = generated.maxPrice,
+                )
+            )
             // The vote belonged to the text we just replaced, so it starts over with the new one.
             setState {
                 it.copy(
-                    regenerationCount = it.regenerationCount + 1,
+                    regenerationCount = attemptNumber,
                     selectedVote = null,
+                    currentAttemptId = attemptId ?: it.currentAttemptId,
                 )
             }
             analytics.logEvent(AnalyticsEvents.AD_DESCRIPTION_REGENERATE_SUCCEEDED)

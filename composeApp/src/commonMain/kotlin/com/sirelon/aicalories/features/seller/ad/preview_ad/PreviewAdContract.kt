@@ -57,7 +57,6 @@ interface PreviewAdContract {
         val maxPrice: Float,
         val currency: OlxCurrency = OlxCurrency.Default,
         val images: List<String>,
-        val attributes: List<OlxAttribute> = emptyList(),
         val location: OlxLocation? = null,
         val locationLoading: Boolean = false,
         val attributeItems: List<OlxAttributeState> = emptyList(),
@@ -71,6 +70,7 @@ interface PreviewAdContract {
         val isRegeneratingDescription: Boolean = false,
         val regenerationCount: Int = 0,
         val selectedVote: GeneratedContentVote? = null,
+        val currentAttemptId: String? = null,
     )
 
     sealed interface PreviewAdEvent {

@@ -28,7 +28,7 @@ val olxAuthorizedHttpClientQualifier = named("olxAuthorizedHttpClient")
 val olxUnauthenticatedApiClientQualifier = named("olxUnauthenticatedApiClient")
 
 val sellerAuthModule = module {
-    single { OlxCountryStore() }
+    single { OlxCountryStore(get()) }
     single<HttpClient>(qualifier = olxHttpClientQualifier) { createOlxHttpClient() }
     single { OlxRemoteErrorParser(get()) }
     single<HttpClient>(qualifier = olxAuthorizedHttpClientQualifier) {

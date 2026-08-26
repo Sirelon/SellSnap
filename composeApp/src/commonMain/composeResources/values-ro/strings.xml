@@ -110,6 +110,16 @@
     <string name="profile_value_yes">Da</string>
     <string name="profile_value_no">Nu</string>
 
+    <!-- What's New -->
+    <string name="settings_version_history">Istoricul versiunilor</string>
+    <string name="whats_new_screen_title">Noutăți</string>
+    <string name="whats_new_dialog_title">Ce e nou în versiunea %1$s</string>
+    <string name="whats_new_got_it">Am înțeles</string>
+    <string name="whats_new_view_all">Vezi toate actualizările</string>
+    <string name="whats_new_installed_badge">Instalată</string>
+    <string name="whats_new_empty_title">Nimic aici încă</string>
+    <string name="whats_new_empty_description">Reveniți mai târziu pentru notele de lansare.</string>
+
     <!-- My OLX Ads -->
     <string name="nav_my_ads">Anunțurile mele</string>
     <string name="my_ads_screen_title">Anunțurile mele OLX</string>
@@ -238,6 +248,7 @@
     <string name="error_publish_missing_category_or_location">Aproape gata — adaugă o categorie și o locație înainte de publicare.</string>
     <string name="error_publish_missing_contact_name">Profilul tău OLX nu are un nume. Intră acolo, adaugă unul și vom reîncerca.</string>
     <string name="error_category_suggestion_failed">Nu am putut sugera o categorie.</string>
+    <string name="error_category_not_supported">Nu susținem încă această categorie (de ex. animale, imobiliare, vehicule, locuri de muncă, chirii). Încearcă cu alt articol.</string>
     <string name="error_attributes_load_failed">Nu s-au putut încărca detaliile.</string>
     <string name="error_user_profile_fetch_failed">Nu s-a putut încărca profilul tău.</string>
     <string name="error_olx_auth_prepare_failed">Nu s-a putut iniția autentificarea OLX.</string>

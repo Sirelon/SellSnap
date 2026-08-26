@@ -11,6 +11,7 @@ import com.mohamedrejeb.calf.io.KmpFile
 import com.sirelon.sellsnap.features.seller.ad.Advertisement
 import com.sirelon.sellsnap.features.seller.ad.AdFlowTimerStore
 import com.sirelon.sellsnap.features.seller.ad.AdvertisementWithAttributes
+import com.sirelon.sellsnap.features.seller.ad.generation_log.NoOpAdGenerationLogRepository
 import com.sirelon.sellsnap.features.seller.ad.preview_ad.PreviewAdContract.PreviewAdEffect
 import com.sirelon.sellsnap.features.seller.ad.preview_ad.PreviewAdContract.PreviewAdEvent
 import com.sirelon.sellsnap.features.seller.auth.data.GuestModeStore
@@ -348,11 +349,13 @@ class PreviewAdViewModelTest {
                 json = testJson,
                 compactJson = testJson,
             ),
+            adGenerationLogRepository = NoOpAdGenerationLogRepository,
         )
     }
 
     private suspend fun harness(engine: MockEngine, accountStore: OlxAccountStore): TestHarness {
-        val countryStore = OlxCountryStore(InMemoryOlxKeyValueStore()).apply { save(OlxCountry.UA) }
+        val analytics = FakeAnalytics()
+        val countryStore = OlxCountryStore(InMemoryOlxKeyValueStore(), analytics).apply { save(OlxCountry.UA) }
         val errorParser = OlxRemoteErrorParser(testJson)
         val unauthenticatedHttpClient = createOlxHttpClient(engine)
         val authorizedHttpClient = createOlxAuthorizedHttpClient(
@@ -375,7 +378,6 @@ class PreviewAdViewModelTest {
             guestModeStore = GuestModeStore(InMemoryOlxKeyValueStore()),
             errorParser = errorParser,
         )
-        val analytics = FakeAnalytics()
         val analyticsConsentRepository = AnalyticsConsentRepository(
             store = AnalyticsConsentStore(InMemoryOlxKeyValueStore()),
             analytics = analytics,
