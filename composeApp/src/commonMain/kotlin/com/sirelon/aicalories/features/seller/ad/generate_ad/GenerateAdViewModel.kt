@@ -23,10 +23,12 @@ import com.sirelon.sellsnap.features.seller.auth.domain.SellerSessionMode
 import com.sirelon.sellsnap.features.seller.ad.loadScreenshotPhotos
 import com.sirelon.sellsnap.features.seller.ad.screenshotMode
 import com.sirelon.sellsnap.features.seller.categories.data.CategoriesRepository
+import com.sirelon.sellsnap.features.seller.categories.data.UnsupportedOlxCategoryException
 import com.sirelon.sellsnap.features.seller.openai.AD_GENERATION_MODEL_ID
 import com.sirelon.sellsnap.features.seller.openai.AD_GENERATION_PROMPT_VERSION
 import com.sirelon.sellsnap.features.seller.openai.OpenAIClient
 import com.sirelon.sellsnap.generated.resources.Res
+import com.sirelon.sellsnap.generated.resources.error_category_not_supported
 import com.sirelon.sellsnap.generated.resources.error_generate_ad_failed
 import com.sirelon.sellsnap.generated.resources.error_selected_files_process_failed
 import com.sirelon.sellsnap.generated.resources.error_upload_file_failed
@@ -138,7 +140,6 @@ class GenerateAdViewModel(
 
         flowOf(1)
             .onStart {
-                println("[AdGen] submit: started, isGuest=$isGuest, sessionId=$generationSessionId")
                 adFlowTimerStore.markFlowStartedIfNeeded()
                 analytics.logEvent(
                     AnalyticsEvents.AD_GENERATION_STARTED,
@@ -155,14 +156,10 @@ class GenerateAdViewModel(
             }
 
             .map { uploadFilesAndGetPublicUrls() }
-            .onEach {
-                println("[AdGen] step 1 done: photos uploaded (${it.size} urls)")
-                setState { it.copy(completedSteps = 1) }
-            }
+            .onEach { setState { it.copy(completedSteps = 1) } }
 
             .map { openAi.analyzeThing(images = it, sellerPrompt = state.value.prompt, country = countryStore.current) }
             .onEach { (_, generatedAd) ->
-                println("[AdGen] step 2 done: analyzeThing returned title=\"${generatedAd.title}\"")
                 setState { it.copy(completedSteps = 2) }
                 generationAttemptId = adGenerationLogRepository.logAttempt(
                     AdGenerationAttempt(
@@ -196,19 +193,12 @@ class GenerateAdViewModel(
                         setState { it.copy(completedSteps = GuestProcessingStepCount) }
                     }
                 } else {
-                    println("[AdGen] starting categorySuggestion for title=\"${data.second.title}\"")
                     categoriesRepository
                         .categorySuggestion(data.second.title)
-                        .onEach {
-                            println("[AdGen] step 3 done: categorySuggestion resolved category id=${it.id}")
-                            setState { it.copy(completedSteps = 3) }
-                        }
+                        .onEach { setState { it.copy(completedSteps = 3) } }
 
                         .flatMapLatest { categoriesRepository.getAttributes(it.id) }
-                        .onEach {
-                            println("[AdGen] step 4 done: getAttributes resolved ${it.size} attributes")
-                            setState { it.copy(completedSteps = 4) }
-                        }
+                        .onEach { setState { it.copy(completedSteps = 4) } }
                         .map {
                             openAi.fillAdditionalInfo(
                                 previousResponseId = data.first,
@@ -216,10 +206,7 @@ class GenerateAdViewModel(
                                 sellerPrompt = state.value.prompt
                             )
                         }
-                        .onEach {
-                            println("[AdGen] step 5 done: fillAdditionalInfo returned ${it.size} values")
-                            setState { it.copy(completedSteps = AuthenticatedProcessingStepCount) }
-                        }
+                        .onEach { setState { it.copy(completedSteps = AuthenticatedProcessingStepCount) } }
                         .map {
                             AdvertisementWithAttributes(
                                 advertisement = data.second,
@@ -233,24 +220,25 @@ class GenerateAdViewModel(
             }
 
             .onEach { ad ->
-                println("[AdGen] submit: SUCCEEDED")
                 adFlowTimerStore.markGenerationCompleted()
                 analytics.logEvent(AnalyticsEvents.AD_GENERATION_SUCCEEDED)
                 clearDraft()
                 postEffect(GenerateAdContract.GenerateAdEffect.OpenAdPreview(ad = ad))
             }
             .catch { error ->
-                println("[AdGen] submit: FAILED: $error")
-                val message = error.toGenerateAdErrorMessage(
-                    defaultMessage = getString(Res.string.error_generate_ad_failed),
-                )
+                val message = if (error is UnsupportedOlxCategoryException) {
+                    getString(Res.string.error_category_not_supported)
+                } else {
+                    error.toGenerateAdErrorMessage(
+                        defaultMessage = getString(Res.string.error_generate_ad_failed),
+                    )
+                }
                 analytics.recordException(error, AnalyticsEvents.AD_GENERATION_FAILED)
-                analytics.logEvent(AnalyticsEvents.AD_GENERATION_FAILED)
+                analytics.logEvent(AnalyticsEvents.AD_GENERATION_FAILED, mapOf("reason" to error.toFailureReason()))
                 setState { it.copy(isLoading = false) }
                 showError(message)
             }
-            .onCompletion { cause ->
-                println("[AdGen] submit: flow completed, cause=$cause")
+            .onCompletion {
                 setState { it.copy(isLoading = false) }
             }
             .launchIn(viewModelScope)
@@ -403,6 +391,12 @@ class GenerateAdViewModel(
             ?.trim()
             ?.takeIf { it.isNotEmpty() }
             ?: defaultMessage
+
+    private fun Throwable.toFailureReason(): String = when {
+        this is UnsupportedOlxCategoryException -> "unsupported_category"
+        message?.startsWith(OpenAIRequestFailedPrefix) == true -> "openai_error"
+        else -> "other"
+    }
 
     private fun updateUpload(
         file: KmpFile,

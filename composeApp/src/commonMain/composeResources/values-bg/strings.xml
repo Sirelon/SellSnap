@@ -222,6 +222,7 @@
     <string name="error_publish_missing_category_or_location">Почти готово — добави категория и местоположение преди публикуване.</string>
     <string name="error_publish_missing_contact_name">В OLX профила ти липсва име. Влез там, добави го и ще опитаме отново.</string>
     <string name="error_category_suggestion_failed">Не можах да предложа категория.</string>
+    <string name="error_category_not_supported">Все още не поддържаме тази категория (напр. животни, имоти, превозни средства, работа, наеми). Опитай с друг артикул.</string>
     <string name="error_attributes_load_failed">Не можах да заредя детайлите.</string>
     <string name="error_user_profile_fetch_failed">Не можах да заредя профила ти.</string>
     <string name="error_olx_auth_prepare_failed">Не можах да стартирам влизането в OLX.</string>

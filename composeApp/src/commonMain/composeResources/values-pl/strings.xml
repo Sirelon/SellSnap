@@ -222,6 +222,7 @@
     <string name="error_publish_missing_category_or_location">Prawie gotowe — dodaj kategorię i lokalizację przed publikacją.</string>
     <string name="error_publish_missing_contact_name">W Twoim profilu OLX brakuje imienia. Wejdź tam, dodaj je i spróbujemy ponownie.</string>
     <string name="error_category_suggestion_failed">Nie udało się zaproponować kategorii.</string>
+    <string name="error_category_not_supported">Nie obsługujemy jeszcze tej kategorii (np. zwierzęta, nieruchomości, pojazdy, praca, wynajem). Spróbuj z innym przedmiotem.</string>
     <string name="error_attributes_load_failed">Nie udało się załadować szczegółów.</string>
     <string name="error_user_profile_fetch_failed">Nie udało się załadować Twojego profilu.</string>
     <string name="error_olx_auth_prepare_failed">Nie udało się uruchomić logowania OLX.</string>

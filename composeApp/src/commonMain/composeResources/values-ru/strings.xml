@@ -225,6 +225,7 @@
     <string name="error_publish_missing_category_or_location">Майже готово — додайте категорію та місцезнаходження перед публікацією.</string>
     <string name="error_publish_missing_contact_name">У вашому профілі OLX немає імені. Зайдіть туди, додайте — і спробуємо ще раз.</string>
     <string name="error_category_suggestion_failed">Не вдалося запропонувати категорію.</string>
+    <string name="error_category_not_supported">Мы пока не поддерживаем эту категорию (например, животные, недвижимость, транспорт, работа, аренда). Попробуйте другой товар.</string>
     <string name="error_attributes_load_failed">Не вдалося завантажити деталі.</string>
     <string name="error_user_profile_fetch_failed">Не вдалося завантажити ваш профіль.</string>
     <string name="error_olx_auth_prepare_failed">Не вдалося розпочати вхід у OLX.</string>

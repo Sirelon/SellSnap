@@ -64,7 +64,6 @@ internal fun createOlxAuthorizedHttpClient(
                 refreshTokens {
                     val activeLocalIndex = activeAccount(accountStore, countryStore)?.localIndex
                         ?: return@refreshTokens null
-                    println("[AdGen] OlxAuth: token refresh started, hasRefreshToken=${oldTokens?.refreshToken != null}")
                     try {
                         val refreshedTokens = refreshOlxTokens(
                             client = authRefreshClient,
@@ -75,15 +74,12 @@ internal fun createOlxAuthorizedHttpClient(
                             errorParser = errorParser,
                         )
                         if (refreshedTokens == null) {
-                            println("[AdGen] OlxAuth: token refresh returned null")
                             null
                         } else {
-                            println("[AdGen] OlxAuth: token refresh succeeded")
                             accountStore.updateTokens(activeLocalIndex, refreshedTokens, nowEpochSeconds())
                             refreshedTokens.toBearerTokens()
                         }
                     } catch (exception: OlxApiException) {
-                        println("[AdGen] OlxAuth: token refresh FAILED: $exception")
                         if (exception.error is OlxApiError.InvalidGrant || exception.error is OlxApiError.InvalidToken) {
                             accountStore.markNeedsReconnect(activeLocalIndex)
                         }
@@ -118,8 +114,7 @@ private fun commonOlxHttpClientConfig(): HttpClientConfig<*>.() -> Unit = {
         )
     }
     install(Logging) {
-        // Temporary: bumped from NONE to diagnose the "stuck on generating title" hang.
-        level = LogLevel.INFO
+        level = LogLevel.NONE
     }
     install(HttpTimeout) {
         requestTimeoutMillis = 90_000

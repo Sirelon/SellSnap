@@ -10,11 +10,19 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.shareIn
+
+/**
+ * Thrown when OLX suggests a category for a listing that this app doesn't support publishing to
+ * (e.g. the suggestion falls under an excluded root like Animals or Real Estate, see
+ * [excludedRootCategoryIds]) - callers surface this as a normal generation/suggestion failure
+ * instead of the flow silently completing with no result.
+ */
+class UnsupportedOlxCategoryException(title: String) :
+    Exception("OLX suggested a category for \"$title\" that this app does not support.")
 
 class CategoriesRepository(
     private val olxApiClient: OlxApiClient,
@@ -50,29 +58,17 @@ class CategoriesRepository(
     }
 
     fun categorySuggestion(title: String): Flow<OlxCategory> = flow {
-        println("[AdGen] CategoriesRepository: categorySuggestion(\"$title\") started")
         val response = olxApiClient.loadCategorySuggestionId(title)
-        if (response == null) {
-            println("[AdGen] CategoriesRepository: OLX returned no suggested category for \"$title\" — flow will complete with no value")
-            emit(null)
-        } else {
-            val category = getCategoryById(response)
-            if (category == null) {
-                println("[AdGen] CategoriesRepository: suggested category id=$response not found locally — flow will complete with no value")
-            }
-            emit(category)
-        }
+            ?: throw UnsupportedOlxCategoryException(title)
+        val category = getCategoryById(response) ?: throw UnsupportedOlxCategoryException(title)
+        emit(category)
     }
-        .filterNotNull()
 
     private suspend fun loadSupportedCategories(): List<OlxCategory> {
-        println("[AdGen] CategoriesRepository: loadSupportedCategories started")
         val result = olxApiClient.loadCategories()
         val data = result.mapNotNull(mapper::mapCategory)
 
-        return normalize(data).also {
-            println("[AdGen] CategoriesRepository: loadSupportedCategories resolved ${it.size} categories")
-        }
+        return normalize(data)
     }
 
     private fun normalize(data: List<OlxCategory>): List<OlxCategory> {

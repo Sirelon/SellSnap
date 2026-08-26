@@ -36,6 +36,7 @@ import com.sirelon.sellsnap.features.seller.auth.domain.OlxApiError
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxApiException
 import com.sirelon.sellsnap.features.seller.auth.domain.SellerSessionMode
 import com.sirelon.sellsnap.features.seller.categories.data.CategoriesRepository
+import com.sirelon.sellsnap.features.seller.categories.data.UnsupportedOlxCategoryException
 import com.sirelon.sellsnap.features.seller.categories.domain.AttributeInputType
 import com.sirelon.sellsnap.features.seller.categories.domain.AttributeValidationResult
 import com.sirelon.sellsnap.features.seller.categories.domain.AttributeValidator
@@ -49,6 +50,7 @@ import com.sirelon.sellsnap.features.seller.openai.OpenAIClient
 import com.sirelon.sellsnap.generated.resources.Res
 import com.sirelon.sellsnap.generated.resources.action_reconnect_target_account
 import com.sirelon.sellsnap.generated.resources.error_attributes_load_failed
+import com.sirelon.sellsnap.generated.resources.error_category_not_supported
 import com.sirelon.sellsnap.generated.resources.error_category_suggestion_failed
 import com.sirelon.sellsnap.generated.resources.error_location_fetch_failed
 import com.sirelon.sellsnap.generated.resources.error_publish_account_mismatch
@@ -193,8 +195,13 @@ class PreviewAdViewModel(
             .onEach {
                 updateSelectedCategory(category = it)
             }
-            .catch {
-                postEffect(ShowMessage(getString(Res.string.error_category_suggestion_failed)))
+            .catch { error ->
+                val message = if (error is UnsupportedOlxCategoryException) {
+                    getString(Res.string.error_category_not_supported)
+                } else {
+                    getString(Res.string.error_category_suggestion_failed)
+                }
+                postEffect(ShowMessage(message))
             }
             .launchIn(viewModelScope)
 

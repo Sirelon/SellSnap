@@ -31,9 +31,10 @@ import com.sirelon.sellsnap.generated.resources.consent_title
 import org.jetbrains.compose.resources.stringResource
 
 /**
- * One-time opt-in prompt for analytics + crash reporting, shown after onboarding while consent is
- * [com.sirelon.sellsnap.startup.AnalyticsConsent.Undecided]. Collection stays off unless the user
- * taps "Allow"; either choice is changeable later from Profile.
+ * Consent prompt for analytics + crash reporting. Fresh installs start opted in and never see
+ * this screen; it only shows after a data erasure resets consent to
+ * [com.sirelon.sellsnap.startup.AnalyticsConsent.Undecided], where collection stays off until the
+ * user taps "Allow". Either choice is changeable later from Settings.
  */
 @Composable
 fun ConsentScreen(
