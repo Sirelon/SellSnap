@@ -99,7 +99,7 @@
     <string name="profile_logout">Ажырату</string>
     <string name="profile_delete_account_data">SellSnap аккаунт деректерін жою</string>
     <string name="profile_delete_account_data_title">SellSnap аккаунт деректерін жою керек пе?</string>
-    <string name="profile_delete_account_data_message">Бұл осы құрылғыдан сақталған OLX байланысын, жергілікті профиль кэшін, қонақ сессиясын және сату орнын жояды. OLX аккаунтың жойылмайды.</string>
+    <string name="profile_delete_account_data_message">Бұл осы құрылғыдан сақталған OLX байланысын, жергілікті профиль кэшін, қонақ сессиясын, сату орнын, таңдалған елді және жобадағы фотоларды жояды. OLX аккаунтың жойылмайды.</string>
     <string name="profile_delete_account_data_confirm">Деректерді жою</string>
     <string name="profile_delete_account_data_cancel">Болдырмау</string>
     <string name="profile_privacy_data_title">Құпиялылық және деректер</string>

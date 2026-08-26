@@ -1,7 +1,7 @@
 <resources>
     <!-- OLX Country Picker -->
     <string name="olx_country_picker_title">Escolha o seu país</string>
-    <string name="olx_country_picker_subtitle">Vamos ligá-lo ao mercado regional certo da OLX</string>
+    <string name="olx_country_picker_subtitle">Vamos ligá-lo ao mercado regional certo do OLX</string>
     <string name="olx_country_picker_select_prompt">Selecione um país</string>
     <string name="olx_country_picker_continue">Continuar</string>
 
@@ -99,7 +99,7 @@
     <string name="profile_logout">Desligar</string>
     <string name="profile_delete_account_data">Eliminar dados da conta SellSnap</string>
     <string name="profile_delete_account_data_title">Eliminar dados da conta SellSnap?</string>
-    <string name="profile_delete_account_data_message">Isto remove a ligação OLX guardada, a cache do perfil local, a sessão de convidado e a localização de venda deste dispositivo. Não elimina a sua conta OLX.</string>
+    <string name="profile_delete_account_data_message">Isto remove a ligação OLX guardada, a cache do perfil local, a sessão de convidado, a localização de venda, o país selecionado e as fotos do rascunho deste dispositivo. Não elimina a sua conta OLX.</string>
     <string name="profile_delete_account_data_confirm">Eliminar dados</string>
     <string name="profile_delete_account_data_cancel">Cancelar</string>
     <string name="profile_privacy_data_title">Privacidade e dados</string>

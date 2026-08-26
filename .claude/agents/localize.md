@@ -58,3 +58,5 @@ done
 ```
 
 Silence means all 8 files have identical key sets. Run it before finishing; if any locale prints, fix it before reporting done.
+
+It compares key names only — a key whose English wording changed still passes with stale translations. Catch those with step 1's `git diff`, and when the English change is already on `origin/main`, with `git log -p -1 -- composeApp/src/commonMain/composeResources/values/strings.xml` to see which keys that commit reworded and whether every locale followed.

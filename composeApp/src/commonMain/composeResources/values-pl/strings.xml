@@ -99,7 +99,7 @@
     <string name="profile_logout">Odłącz</string>
     <string name="profile_delete_account_data">Usuń dane konta SellSnap</string>
     <string name="profile_delete_account_data_title">Usunąć dane konta SellSnap?</string>
-    <string name="profile_delete_account_data_message">Usuwa to zapisane połączenie z OLX, lokalną pamięć podręczną profilu, sesję gościa i lokalizację sprzedaży z tego urządzenia. Nie usuwa Twojego konta OLX.</string>
+    <string name="profile_delete_account_data_message">Usuwa to z tego urządzenia zapisane połączenie z OLX, lokalną pamięć podręczną profilu, sesję gościa, lokalizację sprzedaży, wybrany kraj i zdjęcia ze szkicu. Nie usuwa Twojego konta OLX.</string>
     <string name="profile_delete_account_data_confirm">Usuń dane</string>
     <string name="profile_delete_account_data_cancel">Anuluj</string>
     <string name="profile_privacy_data_title">Prywatność i dane</string>
