@@ -11,6 +11,8 @@ import com.sirelon.sellsnap.features.common.presentation.BaseViewModel
 import com.sirelon.sellsnap.features.seller.ad.AdFlowTimerStore
 import com.sirelon.sellsnap.features.seller.ad.AdvertisementWithAttributes
 import com.sirelon.sellsnap.features.seller.ad.data.PostAdvertRequestMapper
+import com.sirelon.sellsnap.features.seller.ad.generation_log.AdGenerationAttempt
+import com.sirelon.sellsnap.features.seller.ad.generation_log.AdGenerationLogRepository
 import com.sirelon.sellsnap.features.seller.ad.preview_ad.PreviewAdContract.PreviewAdEffect
 import com.sirelon.sellsnap.features.seller.ad.preview_ad.PreviewAdContract.PreviewAdEffect.ShowMessage
 import com.sirelon.sellsnap.features.seller.ad.preview_ad.PreviewAdContract.PreviewAdEvent
@@ -35,6 +37,8 @@ import com.sirelon.sellsnap.features.seller.categories.domain.AttributeValidator
 import com.sirelon.sellsnap.features.seller.categories.domain.OlxCategory
 import com.sirelon.sellsnap.features.seller.currency.data.CurrencyRepository
 import com.sirelon.sellsnap.features.seller.location.data.LocationRepository
+import com.sirelon.sellsnap.features.seller.openai.AD_GENERATION_MODEL_ID
+import com.sirelon.sellsnap.features.seller.openai.AD_GENERATION_PROMPT_VERSION
 import com.sirelon.sellsnap.features.seller.openai.OpenAIClient
 import com.sirelon.sellsnap.generated.resources.Res
 import com.sirelon.sellsnap.generated.resources.error_attributes_load_failed
@@ -59,6 +63,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import kotlin.uuid.Uuid
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -82,10 +87,12 @@ class PreviewAdViewModel(
     private val analytics: Analytics,
     private val openAiClient: OpenAIClient,
     private val countryStore: OlxCountryStore,
+    private val adGenerationLogRepository: AdGenerationLogRepository,
 ) : BaseViewModel<PreviewAdState, PreviewAdEvent, PreviewAdEffect>() {
 
     private val advertisement = filledAdvertisement.advertisement
     private val restoredSavedState = readSavedState()
+    private val generationSessionId = filledAdvertisement.generationSessionId ?: Uuid.random().toString()
 
     val titleState = TextFieldState(restoredSavedState.title ?: advertisement.title)
     val descriptionState = TextFieldState(restoredSavedState.description ?: advertisement.description)
@@ -168,12 +175,6 @@ class PreviewAdViewModel(
             .onEach {
                 updateSelectedCategory(category = it)
             }
-            .flatMapLatest {
-                categoriesRepository.getAttributes(it.id)
-            }
-            .onEach { attributes ->
-                setState { it.copy(attributes = attributes) }
-            }
             .catch {
                 postEffect(ShowMessage(getString(Res.string.error_category_suggestion_failed)))
             }
@@ -217,6 +218,7 @@ class PreviewAdViewModel(
         maxPrice = advertisement.maxPrice.coerceAtLeast(restoredSavedState.price ?: advertisement.suggestedPrice),
         images = advertisement.images,
         location = restoredSavedState.location,
+        currentAttemptId = filledAdvertisement.lastAttemptId,
     )
 
     override fun onEvent(event: PreviewAdEvent) {
@@ -256,6 +258,9 @@ class PreviewAdViewModel(
                 // an event, otherwise every undo double-counts the vote it was undoing.
                 val vote = if (currentState().selectedVote == event.vote) null else event.vote
                 setState { it.copy(selectedVote = vote) }
+                currentState().currentAttemptId?.let { attemptId ->
+                    viewModelScope.launch { adGenerationLogRepository.updateVote(attemptId, vote?.name) }
+                }
                 if (vote != null) {
                     analytics.logEvent(
                         AnalyticsEvents.AD_GENERATED_CONTENT_VOTED,
@@ -372,6 +377,9 @@ class PreviewAdViewModel(
             )
             publishSuccessData.value = successData
             analytics.logEvent(AnalyticsEvents.AD_PUBLISH_SUCCEEDED)
+            s.currentAttemptId?.let { attemptId ->
+                adGenerationLogRepository.markPublished(attemptId, data.id.toString())
+            }
             postEffect(PreviewAdEffect.PublishSuccess(successData))
         } catch (error: Throwable) {
             analytics.recordException(error, AnalyticsEvents.AD_PUBLISH_FAILED)
@@ -397,11 +405,29 @@ class PreviewAdViewModel(
                 country = countryStore.current,
             )
             descriptionState.setTextAndPlaceCursorAtEnd(generated.description)
+            val attemptNumber = currentState().regenerationCount + 1
+            val attemptId = adGenerationLogRepository.logAttempt(
+                AdGenerationAttempt(
+                    sessionId = generationSessionId,
+                    attemptNumber = attemptNumber,
+                    previousAttemptId = currentState().currentAttemptId,
+                    countryCode = countryStore.current.code,
+                    modelId = AD_GENERATION_MODEL_ID,
+                    promptVersion = AD_GENERATION_PROMPT_VERSION,
+                    imagePaths = advertisement.images,
+                    title = generated.title,
+                    description = generated.description,
+                    suggestedPrice = generated.suggestedPrice,
+                    minPrice = generated.minPrice,
+                    maxPrice = generated.maxPrice,
+                )
+            )
             // The vote belonged to the text we just replaced, so it starts over with the new one.
             setState {
                 it.copy(
-                    regenerationCount = it.regenerationCount + 1,
+                    regenerationCount = attemptNumber,
                     selectedVote = null,
+                    currentAttemptId = attemptId ?: it.currentAttemptId,
                 )
             }
             analytics.logEvent(AnalyticsEvents.AD_DESCRIPTION_REGENERATE_SUCCEEDED)

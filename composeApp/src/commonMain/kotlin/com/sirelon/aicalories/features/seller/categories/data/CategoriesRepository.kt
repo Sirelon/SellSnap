@@ -50,20 +50,29 @@ class CategoriesRepository(
     }
 
     fun categorySuggestion(title: String): Flow<OlxCategory> = flow {
+        println("[AdGen] CategoriesRepository: categorySuggestion(\"$title\") started")
         val response = olxApiClient.loadCategorySuggestionId(title)
         if (response == null) {
+            println("[AdGen] CategoriesRepository: OLX returned no suggested category for \"$title\" — flow will complete with no value")
             emit(null)
         } else {
-            emit(getCategoryById(response))
+            val category = getCategoryById(response)
+            if (category == null) {
+                println("[AdGen] CategoriesRepository: suggested category id=$response not found locally — flow will complete with no value")
+            }
+            emit(category)
         }
     }
         .filterNotNull()
 
     private suspend fun loadSupportedCategories(): List<OlxCategory> {
+        println("[AdGen] CategoriesRepository: loadSupportedCategories started")
         val result = olxApiClient.loadCategories()
         val data = result.mapNotNull(mapper::mapCategory)
 
-        return normalize(data)
+        return normalize(data).also {
+            println("[AdGen] CategoriesRepository: loadSupportedCategories resolved ${it.size} categories")
+        }
     }
 
     private fun normalize(data: List<OlxCategory>): List<OlxCategory> {

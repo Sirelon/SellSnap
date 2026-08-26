@@ -15,17 +15,22 @@ import com.sirelon.sellsnap.features.media.upload.UploadedFile
 import com.sirelon.sellsnap.features.media.upload.UploadingItem
 import com.sirelon.sellsnap.features.seller.ad.AdFlowTimerStore
 import com.sirelon.sellsnap.features.seller.ad.AdvertisementWithAttributes
+import com.sirelon.sellsnap.features.seller.ad.generation_log.AdGenerationAttempt
+import com.sirelon.sellsnap.features.seller.ad.generation_log.AdGenerationLogRepository
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAuthRepository
 import com.sirelon.sellsnap.features.seller.auth.data.OlxCountryStore
 import com.sirelon.sellsnap.features.seller.auth.domain.SellerSessionMode
 import com.sirelon.sellsnap.features.seller.ad.loadScreenshotPhotos
 import com.sirelon.sellsnap.features.seller.ad.screenshotMode
 import com.sirelon.sellsnap.features.seller.categories.data.CategoriesRepository
+import com.sirelon.sellsnap.features.seller.openai.AD_GENERATION_MODEL_ID
+import com.sirelon.sellsnap.features.seller.openai.AD_GENERATION_PROMPT_VERSION
 import com.sirelon.sellsnap.features.seller.openai.OpenAIClient
 import com.sirelon.sellsnap.generated.resources.Res
 import com.sirelon.sellsnap.generated.resources.error_generate_ad_failed
 import com.sirelon.sellsnap.generated.resources.error_selected_files_process_failed
 import com.sirelon.sellsnap.generated.resources.error_upload_file_failed
+import kotlin.uuid.Uuid
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
@@ -58,6 +63,7 @@ class GenerateAdViewModel(
     private val savedStateHandle: SavedStateHandle,
     private val json: Json,
     private val analytics: Analytics,
+    private val adGenerationLogRepository: AdGenerationLogRepository,
 ) : BaseViewModel<GenerateAdContract.GenerateAdState, GenerateAdContract.GenerateAdEvent, GenerateAdContract.GenerateAdEffect>() {
 
     private val restoredSavedState = readSavedState()
@@ -127,9 +133,12 @@ class GenerateAdViewModel(
 
     private suspend fun submit() {
         val isGuest = authRepository.currentSession().mode == SellerSessionMode.Guest
+        val generationSessionId = Uuid.random().toString()
+        var generationAttemptId: String? = null
 
         flowOf(1)
             .onStart {
+                println("[AdGen] submit: started, isGuest=$isGuest, sessionId=$generationSessionId")
                 adFlowTimerStore.markFlowStartedIfNeeded()
                 analytics.logEvent(
                     AnalyticsEvents.AD_GENERATION_STARTED,
@@ -146,10 +155,32 @@ class GenerateAdViewModel(
             }
 
             .map { uploadFilesAndGetPublicUrls() }
-            .onEach { setState { it.copy(completedSteps = 1) } }
+            .onEach {
+                println("[AdGen] step 1 done: photos uploaded (${it.size} urls)")
+                setState { it.copy(completedSteps = 1) }
+            }
 
             .map { openAi.analyzeThing(images = it, sellerPrompt = state.value.prompt, country = countryStore.current) }
-            .onEach { setState { it.copy(completedSteps = 2) } }
+            .onEach { (_, generatedAd) ->
+                println("[AdGen] step 2 done: analyzeThing returned title=\"${generatedAd.title}\"")
+                setState { it.copy(completedSteps = 2) }
+                generationAttemptId = adGenerationLogRepository.logAttempt(
+                    AdGenerationAttempt(
+                        sessionId = generationSessionId,
+                        attemptNumber = 0,
+                        previousAttemptId = null,
+                        countryCode = countryStore.current.code,
+                        modelId = AD_GENERATION_MODEL_ID,
+                        promptVersion = AD_GENERATION_PROMPT_VERSION,
+                        imagePaths = generatedAd.images,
+                        title = generatedAd.title,
+                        description = generatedAd.description,
+                        suggestedPrice = generatedAd.suggestedPrice,
+                        minPrice = generatedAd.minPrice,
+                        maxPrice = generatedAd.maxPrice,
+                    )
+                )
+            }
 
             .flatMapLatest { data ->
                 if (isGuest) {
@@ -158,17 +189,26 @@ class GenerateAdViewModel(
                             advertisement = data.second,
                             filledAttributes = emptyMap(),
                             sellerPrompt = state.value.prompt,
+                            generationSessionId = generationSessionId,
+                            lastAttemptId = generationAttemptId,
                         )
                     ).onEach {
                         setState { it.copy(completedSteps = GuestProcessingStepCount) }
                     }
                 } else {
+                    println("[AdGen] starting categorySuggestion for title=\"${data.second.title}\"")
                     categoriesRepository
                         .categorySuggestion(data.second.title)
-                        .onEach { setState { it.copy(completedSteps = 3) } }
+                        .onEach {
+                            println("[AdGen] step 3 done: categorySuggestion resolved category id=${it.id}")
+                            setState { it.copy(completedSteps = 3) }
+                        }
 
                         .flatMapLatest { categoriesRepository.getAttributes(it.id) }
-                        .onEach { setState { it.copy(completedSteps = 4) } }
+                        .onEach {
+                            println("[AdGen] step 4 done: getAttributes resolved ${it.size} attributes")
+                            setState { it.copy(completedSteps = 4) }
+                        }
                         .map {
                             openAi.fillAdditionalInfo(
                                 previousResponseId = data.first,
@@ -176,24 +216,31 @@ class GenerateAdViewModel(
                                 sellerPrompt = state.value.prompt
                             )
                         }
-                        .onEach { setState { it.copy(completedSteps = AuthenticatedProcessingStepCount) } }
+                        .onEach {
+                            println("[AdGen] step 5 done: fillAdditionalInfo returned ${it.size} values")
+                            setState { it.copy(completedSteps = AuthenticatedProcessingStepCount) }
+                        }
                         .map {
                             AdvertisementWithAttributes(
                                 advertisement = data.second,
                                 filledAttributes = it,
                                 sellerPrompt = state.value.prompt,
+                                generationSessionId = generationSessionId,
+                                lastAttemptId = generationAttemptId,
                             )
                         }
                 }
             }
 
             .onEach { ad ->
+                println("[AdGen] submit: SUCCEEDED")
                 adFlowTimerStore.markGenerationCompleted()
                 analytics.logEvent(AnalyticsEvents.AD_GENERATION_SUCCEEDED)
                 clearDraft()
                 postEffect(GenerateAdContract.GenerateAdEffect.OpenAdPreview(ad = ad))
             }
             .catch { error ->
+                println("[AdGen] submit: FAILED: $error")
                 val message = error.toGenerateAdErrorMessage(
                     defaultMessage = getString(Res.string.error_generate_ad_failed),
                 )
@@ -202,7 +249,8 @@ class GenerateAdViewModel(
                 setState { it.copy(isLoading = false) }
                 showError(message)
             }
-            .onCompletion {
+            .onCompletion { cause ->
+                println("[AdGen] submit: flow completed, cause=$cause")
                 setState { it.copy(isLoading = false) }
             }
             .launchIn(viewModelScope)

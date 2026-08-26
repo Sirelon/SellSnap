@@ -49,7 +49,8 @@ kotlin {
         androidResources.enable = true
         compilerOptions {
             freeCompilerArgs.set(listOf("-Xannotation-default-target=param-property"))
-            jvmTarget.set(JvmTarget.JVM_11)
+            // GitLive's Firestore module ships inline functions built with a JVM 17 target.
+            jvmTarget.set(JvmTarget.JVM_17)
         }
 
         packaging {
@@ -108,13 +109,15 @@ kotlin {
                 implementation(libs.ktor.client.js)
             }
         }
-        // Shared by androidMain + iosMain only: GitLive's Firebase Storage/Installations modules
-        // publish no jvm or wasmJs target, so this stays out of dataStoreMain (which jvm depends on).
+        // Shared by androidMain + iosMain only: Desktop has no Firebase configuration wired up
+        // (and these modules publish no wasmJs target either), so this stays out of dataStoreMain
+        // (which jvm depends on).
         val mobileMain = create("mobileMain") {
             dependsOn(commonMain.get())
             dependencies {
                 implementation(libs.gitlive.firebase.storage)
                 implementation(libs.gitlive.firebase.installations)
+                implementation(libs.gitlive.firebase.firestore)
             }
         }
         val iosMain = create("iosMain") {

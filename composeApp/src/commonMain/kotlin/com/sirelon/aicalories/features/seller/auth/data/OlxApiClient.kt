@@ -70,9 +70,16 @@ class OlxApiClient(
     }
 
     suspend fun loadCategorySuggestionId(query: String): Int? {
-        val response = httpClient.get("categories/suggestion") {
-            parameter("q", query)
+        println("[AdGen] OlxApi: category suggestion request started, query=\"$query\"")
+        val response = try {
+            httpClient.get("categories/suggestion") {
+                parameter("q", query)
+            }
+        } catch (exception: Throwable) {
+            println("[AdGen] OlxApi: category suggestion request threw before a response: $exception")
+            throw exception
         }
+        println("[AdGen] OlxApi: category suggestion response received, status=${response.status}")
         response.ensureSuccess()
 
         return response.decodeBody<OlxCategorySuggestionResponse>("category suggestion")
@@ -81,13 +88,22 @@ class OlxApiClient(
             .firstOrNull()
             ?.id
             ?.toIntOrNull()
+            .also { println("[AdGen] OlxApi: category suggestion resolved id=$it") }
     }
 
     internal suspend fun loadAttributes(categoryId: Int): List<OlxAttributeResponse> {
-        val response = httpClient.get("categories/$categoryId/attributes")
+        println("[AdGen] OlxApi: attributes request started, categoryId=$categoryId")
+        val response = try {
+            httpClient.get("categories/$categoryId/attributes")
+        } catch (exception: Throwable) {
+            println("[AdGen] OlxApi: attributes request threw before a response: $exception")
+            throw exception
+        }
+        println("[AdGen] OlxApi: attributes response received, status=${response.status}")
         response.ensureSuccess()
 
         return response.decodeBody<OlxAttributesResponse>("category attributes").data.orEmpty()
+            .also { println("[AdGen] OlxApi: attributes resolved ${it.size} entries") }
     }
 
     suspend fun loadCurrencies(): List<OlxCurrency> {
