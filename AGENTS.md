@@ -229,8 +229,8 @@ Most features use some combination of:
 - Use the 40 custom icons (`ic_*.xml`) when suitable instead of Material Design icons.
 
 ## Localization
-- New user-facing strings go in `composeApp/src/commonMain/composeResources/values{,-bg,-kk,-pl,-pt,-ro,-ru,-uk}/strings.xml`, one key added to all 8 locale files. Interpolate with `stringResource(id, arg)`; never `String.format`.
-- **`values-ru/strings.xml` is written in Ukrainian, not Russian, and that's intentional** — the app has no separate Russian-speaking audience distinct from Ukrainian, so the `-ru` locale directory carries Ukrainian copy on purpose. Don't "fix" it to real Russian and don't flag it as a translation bug.
+- New user-facing strings go in `composeApp/src/commonMain/composeResources/values/strings.xml` (English base). Interpolate with `stringResource(id, arg)`; never `String.format`.
+- Translation of new or changed keys into every locale is done by the `localize` agent — `.claude/agents/localize.md` holds the locale map and all translation rules.
 
 ## Edge-to-Edge / Insets Rules
 - New Android-facing Compose screens must respect edge-to-edge.

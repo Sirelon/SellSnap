@@ -1,4 +1,10 @@
 <resources>
+    <!-- OLX Country Picker -->
+    <string name="olx_country_picker_title">Еліңді таңда</string>
+    <string name="olx_country_picker_subtitle">Сені тиісті OLX аймақтық маркетплейсіне қосамыз</string>
+    <string name="olx_country_picker_select_prompt">Елді таңда</string>
+    <string name="olx_country_picker_continue">Жалғастыру</string>
+
     <!-- OnBoarding & Authentication -->
     <string name="welcome_to_sellsnap">Сәлем, SellSnap-қа қош келдің 👋</string>
     <string name="welcome_subtitle">Фото салдың — хабарландыру дайын. Жазуды AI өзі жасайды.</string>
@@ -18,6 +24,12 @@
     <string name="privacy_policy">Құпиялылық саясатымен</string>
     <string name="keyboard_done_action">Дайын</string>
     <string name="or_divider">немесе</string>
+
+    <!-- Analytics Consent -->
+    <string name="consent_title">SellSnap-ты жақсартуға көмектесу керек пе?</string>
+    <string name="consent_message">Қателерді түзетіп, SellSnap-ты жақсарта алуымыз үшін анонимді пайдалану аналитикасымен және құлау есептерімен бөліс. Ол үнсіз келісім бойынша өшірулі және ешқашан сенің фотоларыңды немесе хабарландыру мазмұнын қамтымайды — оны кез келген уақытта Профильде өзгерте аласың.</string>
+    <string name="consent_allow">Рұқсат ету</string>
+    <string name="consent_decline">Қазір емес</string>
 
     <!-- Onboarding Screen Steps -->
     <string name="onboarding_step1_title">Түсіріп ал 📸</string>
@@ -87,9 +99,13 @@
     <string name="profile_logout">Ажырату</string>
     <string name="profile_delete_account_data">SellSnap аккаунт деректерін жою</string>
     <string name="profile_delete_account_data_title">SellSnap аккаунт деректерін жою керек пе?</string>
-    <string name="profile_delete_account_data_message">Бұл осы құрылғыдан сақталған OLX байланысын, жергілікті профиль кэшін, қонақ сессиясын және сату орнын жояды. OLX аккаунтың жойылмайды.</string>
+    <string name="profile_delete_account_data_message">Бұл осы құрылғыдан сақталған OLX байланысын, жергілікті профиль кэшін, қонақ сессиясын, сату орнын, таңдалған елді және жобадағы фотоларды жояды. OLX аккаунтың жойылмайды.</string>
     <string name="profile_delete_account_data_confirm">Деректерді жою</string>
     <string name="profile_delete_account_data_cancel">Болдырмау</string>
+    <string name="profile_privacy_data_title">Құпиялылық және деректер</string>
+    <string name="profile_analytics_consent_title">Пайдалану аналитикасымен бөлісу</string>
+    <string name="profile_analytics_consent_subtitle">SellSnap-ты жақсартуға көмектесетін анонимді пайдалану деректері. Үнсіз келісім бойынша өшірулі — кез келген уақытта өзгертуге болады.</string>
+    <string name="profile_contact_data_request">Деректерің туралы бізге хабарласу</string>
     <string name="profile_not_provided">Орнатылмаған</string>
     <string name="profile_value_yes">Иә</string>
     <string name="profile_value_no">Жоқ</string>

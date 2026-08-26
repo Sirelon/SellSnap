@@ -1,4 +1,10 @@
 <resources>
+    <!-- OLX Country Picker -->
+    <string name="olx_country_picker_title">Избери държавата си</string>
+    <string name="olx_country_picker_subtitle">Ще те свържем с правилния регионален маркетплейс на OLX</string>
+    <string name="olx_country_picker_select_prompt">Избери държава</string>
+    <string name="olx_country_picker_continue">Продължи</string>
+
     <!-- OnBoarding & Authentication -->
     <string name="welcome_to_sellsnap">Хей, добре дошъл в SellSnap 👋</string>
     <string name="welcome_subtitle">Снимка вътре, обява навън — AI пише вместо теб.</string>
@@ -18,6 +24,12 @@
     <string name="privacy_policy">Политика за поверителност</string>
     <string name="keyboard_done_action">Готово</string>
     <string name="or_divider">или</string>
+
+    <!-- Analytics Consent -->
+    <string name="consent_title">Да помогнеш за подобряването на SellSnap?</string>
+    <string name="consent_message">Сподели анонимна аналитика за използване и доклади за срив, за да можем да отстраняваме грешки и да правим SellSnap по-добър. По подразбиране е изключено и никога не включва твоите снимки или съдържанието на обявите — можеш да го промениш по всяко време в Профила.</string>
+    <string name="consent_allow">Разреши</string>
+    <string name="consent_decline">Не сега</string>
 
     <!-- Onboarding Screen Steps -->
     <string name="onboarding_step1_title">Снимай 📸</string>
@@ -87,9 +99,13 @@
     <string name="profile_logout">Изключи</string>
     <string name="profile_delete_account_data">Изтрий данните на SellSnap акаунта</string>
     <string name="profile_delete_account_data_title">Изтриване на данните на SellSnap акаунта?</string>
-    <string name="profile_delete_account_data_message">Това премахва запазената OLX връзка, локалния кеш на профила, гостовата сесия и местоположението за продажба от това устройство. Не изтрива твоя OLX акаунт.</string>
+    <string name="profile_delete_account_data_message">Това премахва запазената OLX връзка, локалния кеш на профила, гостовата сесия, местоположението за продажба, избраната държава и черновите снимки от това устройство. Не изтрива твоя OLX акаунт.</string>
     <string name="profile_delete_account_data_confirm">Изтрий данните</string>
     <string name="profile_delete_account_data_cancel">Отказ</string>
+    <string name="profile_privacy_data_title">Поверителност и данни</string>
+    <string name="profile_analytics_consent_title">Сподели аналитика за използване</string>
+    <string name="profile_analytics_consent_subtitle">Анонимни данни за използване, които ни помагат да подобряваме SellSnap. Изключено по подразбиране — промени по всяко време.</string>
+    <string name="profile_contact_data_request">Свържи се с нас относно твоите данни</string>
     <string name="profile_not_provided">Не е зададено</string>
     <string name="profile_value_yes">Да</string>
     <string name="profile_value_no">Не</string>
