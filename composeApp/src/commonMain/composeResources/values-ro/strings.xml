@@ -232,6 +232,7 @@
     <string name="error_publish_missing_category_or_location">Aproape gata — adaugă o categorie și o locație înainte de publicare.</string>
     <string name="error_publish_missing_contact_name">Profilul tău OLX nu are un nume. Intră acolo, adaugă unul și vom reîncerca.</string>
     <string name="error_category_suggestion_failed">Nu am putut sugera o categorie.</string>
+    <string name="error_category_not_supported">Nu susținem încă această categorie (de ex. animale, imobiliare, vehicule, locuri de muncă, chirii). Încearcă cu alt articol.</string>
     <string name="error_attributes_load_failed">Nu s-au putut încărca detaliile.</string>
     <string name="error_user_profile_fetch_failed">Nu s-a putut încărca profilul tău.</string>
     <string name="error_olx_auth_prepare_failed">Nu s-a putut iniția autentificarea OLX.</string>

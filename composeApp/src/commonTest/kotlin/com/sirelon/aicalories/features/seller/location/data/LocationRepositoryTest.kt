@@ -1,5 +1,6 @@
 package com.sirelon.sellsnap.features.seller.location.data
 
+import com.sirelon.sellsnap.analytics.Analytics
 import com.sirelon.sellsnap.features.auth.data.InMemoryOlxKeyValueStore
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountRecord
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountStore
@@ -119,7 +120,7 @@ class LocationRepositoryTest {
                 nextLocalIndex = 2,
             ),
         )
-        val countryStore = OlxCountryStore(InMemoryOlxKeyValueStore()).apply { save(OlxCountry.UA) }
+        val countryStore = OlxCountryStore(InMemoryOlxKeyValueStore(), FakeAnalytics()).apply { save(OlxCountry.UA) }
         val errorParser = OlxRemoteErrorParser(testJson)
         return OlxApiClient(
             httpClient = createOlxAuthorizedHttpClient(
@@ -145,5 +146,15 @@ class LocationRepositoryTest {
         override suspend fun getClientId(): String = "test-client-id"
 
         override suspend fun getClientSecret(): String = "test-client-secret"
+    }
+
+    private class FakeAnalytics : Analytics {
+        override fun logEvent(name: String, params: Map<String, Any>) {}
+        override fun setUserId(userId: String?) {}
+        override fun setUserProperty(name: String, value: String?) {}
+        override fun recordException(throwable: Throwable, message: String?) {}
+        override fun log(message: String) {}
+        override fun setAnalyticsCollectionEnabled(enabled: Boolean) {}
+        override fun setCrashlyticsCollectionEnabled(enabled: Boolean) {}
     }
 }

@@ -169,7 +169,8 @@ class MyAdvertsViewModelTest {
     )
 
     private suspend fun harness(engine: MockEngine, accountStore: OlxAccountStore): TestHarness {
-        val countryStore = OlxCountryStore(InMemoryOlxKeyValueStore()).apply { save(OlxCountry.UA) }
+        val analytics = FakeAnalytics()
+        val countryStore = OlxCountryStore(InMemoryOlxKeyValueStore(), analytics).apply { save(OlxCountry.UA) }
         val errorParser = OlxRemoteErrorParser(testJson)
         val unauthenticatedHttpClient = createOlxHttpClient(engine)
         val authorizedHttpClient = createOlxAuthorizedHttpClient(
@@ -192,7 +193,6 @@ class MyAdvertsViewModelTest {
             guestModeStore = GuestModeStore(InMemoryOlxKeyValueStore()),
             errorParser = errorParser,
         )
-        val analytics = FakeAnalytics()
         val analyticsConsentRepository = AnalyticsConsentRepository(
             store = AnalyticsConsentStore(InMemoryOlxKeyValueStore()),
             analytics = analytics,

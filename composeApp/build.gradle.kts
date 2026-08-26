@@ -49,6 +49,7 @@ kotlin {
         androidResources.enable = true
         compilerOptions {
             freeCompilerArgs.set(listOf("-Xannotation-default-target=param-property"))
+            // GitLive's Firestore module ships inline functions built with a JVM 17 target.
             jvmTarget.set(JvmTarget.JVM_17)
         }
 

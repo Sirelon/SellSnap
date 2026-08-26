@@ -4,6 +4,7 @@ import com.sirelon.sellsnap.Greeting
 import com.sirelon.sellsnap.analytics.analyticsModule
 import com.sirelon.sellsnap.features.media.di.mediaModule
 import com.sirelon.sellsnap.features.seller.ad.generate_ad.di.generateAdModule
+import com.sirelon.sellsnap.features.seller.ad.generation_log.adGenerationLogModule
 import com.sirelon.sellsnap.features.seller.ad.preview_ad.di.previewAdModule
 import com.sirelon.sellsnap.features.seller.auth.di.sellerAuthModule
 import com.sirelon.sellsnap.features.seller.categories.categoriesModule
@@ -35,6 +36,7 @@ val appModule = module {
         sellerAuthModule,
         generateAdModule,
         previewAdModule,
+        adGenerationLogModule,
         profileModule,
         settingsModule,
         myAdvertsModule,

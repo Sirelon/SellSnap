@@ -250,6 +250,7 @@
     <string name="error_publish_missing_category_or_location">Almost there — add a category and location before going live.</string>
     <string name="error_publish_missing_contact_name">Your OLX profile is missing a name. Pop in there, add one, and we'll try again.</string>
     <string name="error_category_suggestion_failed">Couldn't suggest a category.</string>
+    <string name="error_category_not_supported">We don't support this category yet (e.g. pets, real estate, vehicles, jobs, rentals). Try a different item.</string>
     <string name="error_attributes_load_failed">Couldn't load the details.</string>
     <string name="error_user_profile_fetch_failed">Couldn't load your profile.</string>
     <string name="error_olx_auth_prepare_failed">Couldn't start OLX sign-in.</string>

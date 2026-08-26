@@ -232,6 +232,7 @@
     <string name="error_publish_missing_category_or_location">Жарияладан бұрын санат пен орынды қос.</string>
     <string name="error_publish_missing_contact_name">OLX профиліңде аты жоқ. Кіріп, атыңды қос — қайталап көреміз.</string>
     <string name="error_category_suggestion_failed">Санатты ұсына алмадық.</string>
+    <string name="error_category_not_supported">Біз бұл санатты әлі қолдамаймыз (мысалы, жануарлар, жылжымайтын мүлік, көлік, жұмыс, жалдау). Басқа затты байқап көріңіз.</string>
     <string name="error_attributes_load_failed">Сипаттамаларды жүктеу мүмкін болмады.</string>
     <string name="error_user_profile_fetch_failed">Профиліңді жүктеу мүмкін болмады.</string>
     <string name="error_olx_auth_prepare_failed">OLX-ке кіруді бастау мүмкін болмады.</string>
