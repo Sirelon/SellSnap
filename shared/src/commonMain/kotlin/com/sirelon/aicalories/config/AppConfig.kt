@@ -3,6 +3,9 @@ package com.sirelon.sellsnap.config
 import com.sirelon.sellsnap.supabase.SupabaseConfig
 
 object AppConfig {
+    val appVersionName: String
+        get() = SupabaseConfig.APP_VERSION_NAME
+
     val olxScope: String
         get() = SupabaseConfig.OLX_SCOPE
 

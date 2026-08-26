@@ -49,7 +49,7 @@ kotlin {
         androidResources.enable = true
         compilerOptions {
             freeCompilerArgs.set(listOf("-Xannotation-default-target=param-property"))
-            jvmTarget.set(JvmTarget.JVM_11)
+            jvmTarget.set(JvmTarget.JVM_17)
         }
 
         packaging {
@@ -110,11 +110,14 @@ kotlin {
         }
         // Shared by androidMain + iosMain only: GitLive's Firebase Storage/Installations modules
         // publish no jvm or wasmJs target, so this stays out of dataStoreMain (which jvm depends on).
+        // Firestore does publish jvm/js targets, but stays mobile-only too: Desktop/Web never
+        // initialize a Firebase app in this repo (see PhotoUploaderModule.jvm.kt/.jsWasm.kt).
         val mobileMain = create("mobileMain") {
             dependsOn(commonMain.get())
             dependencies {
                 implementation(libs.gitlive.firebase.storage)
                 implementation(libs.gitlive.firebase.installations)
+                implementation(libs.gitlive.firebase.firestore)
             }
         }
         val iosMain = create("iosMain") {

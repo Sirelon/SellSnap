@@ -25,6 +25,12 @@ sealed interface AdDestination : NavKey {
     data object Settings : AdDestination
 
     @Serializable
+    data object WhatsNewPrompt : AdDestination
+
+    @Serializable
+    data object AllReleases : AdDestination
+
+    @Serializable
     data class SellerPublishSuccess(
         val data: PublishSuccessData,
     ) : AdDestination

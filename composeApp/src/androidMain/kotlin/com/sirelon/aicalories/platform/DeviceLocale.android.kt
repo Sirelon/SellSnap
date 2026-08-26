@@ -4,3 +4,6 @@ import java.util.Locale
 
 actual fun getDeviceCountryCode(): String? =
     Locale.getDefault().country.lowercase().ifBlank { null }
+
+actual fun getDeviceLanguageCode(): String? =
+    Locale.getDefault().language.lowercase().ifBlank { null }

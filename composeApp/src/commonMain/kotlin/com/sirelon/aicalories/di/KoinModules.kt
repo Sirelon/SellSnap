@@ -11,6 +11,7 @@ import com.sirelon.sellsnap.features.seller.my_ads.di.myAdvertsModule
 import com.sirelon.sellsnap.features.seller.openai.OpenAIClient
 import com.sirelon.sellsnap.features.seller.profile.di.profileModule
 import com.sirelon.sellsnap.features.seller.settings.di.settingsModule
+import com.sirelon.sellsnap.features.whatsnew.di.whatsNewModule
 import com.sirelon.sellsnap.network.ApiTokenProvider
 import com.sirelon.sellsnap.network.createHttpClient
 import com.sirelon.sellsnap.network.createOpenAI
@@ -39,6 +40,7 @@ val appModule = module {
         myAdvertsModule,
         appStartupModule,
         categoriesModule,
+        whatsNewModule,
     )
     single { Greeting() }
     single<CoroutineScope>(applicationScopeQualifier) {
