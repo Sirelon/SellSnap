@@ -10,7 +10,7 @@
 		CBB82538187C54E239CCA645 /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = 44411D86816D71C6EA27A02D /* FirebaseStorage */; };
 		D4E5F6A7B8C9D0E1F2A3B4C5 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = B2C3D4E5F6A7B8C9D0E1F2A3 /* FirebaseAnalytics */; };
 		E5F6A7B8C9D0E1F2A3B4C5D6 /* FirebaseCrashlytics in Frameworks */ = {isa = PBXBuildFile; productRef = C3D4E5F6A7B8C9D0E1F2A3B4 /* FirebaseCrashlytics */; };
-		F6A7B8C9D0E1F2A3B4C5D6E7 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = D3E4F5A6B7C8D9E0F1A2B3C4 /* FirebaseFirestore */; };
+		F6A7B8C9D0E1F2A3B4C5D6E7 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = A7B8C9D0E1F2A3B4C5D6E7F8 /* FirebaseFirestore */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -102,7 +102,7 @@
 				B2C3D4E5F6A7B8C9D0E1F2A3 /* FirebaseAnalytics */,
 				C3D4E5F6A7B8C9D0E1F2A3B4 /* FirebaseCrashlytics */,
 				44411D86816D71C6EA27A02D /* FirebaseStorage */,
-				D3E4F5A6B7C8D9E0F1A2B3C4 /* FirebaseFirestore */,
+				A7B8C9D0E1F2A3B4C5D6E7F8 /* FirebaseFirestore */,
 			);
 			productName = iosApp;
 			productReference = B84C507A1C2DE7D835D0359B /* SellSnap.app */;
@@ -441,7 +441,7 @@
 			package = A1B2C3D4E5F6A7B8C9D0E1F2 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseCrashlytics;
 		};
-		D3E4F5A6B7C8D9E0F1A2B3C4 /* FirebaseFirestore */ = {
+		A7B8C9D0E1F2A3B4C5D6E7F8 /* FirebaseFirestore */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = A1B2C3D4E5F6A7B8C9D0E1F2 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseFirestore;

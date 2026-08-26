@@ -38,6 +38,16 @@ sealed interface AdDestination : NavKey, AnalyticsScreen {
     }
 
     @Serializable
+    data object WhatsNewPrompt : AdDestination {
+        override val screenName = "WhatsNewPrompt"
+    }
+
+    @Serializable
+    data object AllReleases : AdDestination {
+        override val screenName = "AllReleases"
+    }
+
+    @Serializable
     data class SellerPublishSuccess(
         val data: PublishSuccessData,
     ) : AdDestination {

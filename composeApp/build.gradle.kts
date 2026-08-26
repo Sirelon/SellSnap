@@ -109,9 +109,10 @@ kotlin {
                 implementation(libs.ktor.client.js)
             }
         }
-        // Shared by androidMain + iosMain only: Desktop has no Firebase configuration wired up
-        // (and these modules publish no wasmJs target either), so this stays out of dataStoreMain
-        // (which jvm depends on).
+        // Shared by androidMain + iosMain only: GitLive's Firebase Storage/Installations modules
+        // publish no jvm or wasmJs target, so this stays out of dataStoreMain (which jvm depends on).
+        // Firestore does publish jvm/js targets, but stays mobile-only too: Desktop/Web never
+        // initialize a Firebase app in this repo (see PhotoUploaderModule.jvm.kt/.jsWasm.kt).
         val mobileMain = create("mobileMain") {
             dependsOn(commonMain.get())
             dependencies {

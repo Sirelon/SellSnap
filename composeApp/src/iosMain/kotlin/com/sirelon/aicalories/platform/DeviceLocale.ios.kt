@@ -10,3 +10,10 @@ actual fun getDeviceCountryCode(): String? {
     val first = langs?.firstOrNull() as? String ?: return null
     return first.substringAfter('-', "").lowercase().ifBlank { null }
 }
+
+@Suppress("UNCHECKED_CAST")
+actual fun getDeviceLanguageCode(): String? {
+    val langs = NSUserDefaults.standardUserDefaults.objectForKey("AppleLanguages") as? List<Any?>
+    val first = langs?.firstOrNull() as? String ?: return null
+    return first.substringBefore('-').lowercase().ifBlank { null }
+}
