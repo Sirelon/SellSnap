@@ -43,4 +43,7 @@ data class PublishSuccessData(
     val primaryImageUrl: String?,
     val totalElapsedMs: Long,
     val status: AdvertStatus = AdvertStatus.Unknown,
+    // SIR-83 U7: which OLX account this listing was published to. Empty when unknown (should not
+    // happen in practice - populated from the freshly-fetched users/me name at publish time).
+    val accountName: String = "",
 )

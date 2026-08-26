@@ -5,6 +5,7 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -28,6 +29,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
@@ -43,8 +45,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.material3.Slider
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -58,6 +62,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
@@ -68,7 +73,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.util.fastRoundToInt
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavKey
@@ -84,6 +91,8 @@ import com.mohamedrejeb.calf.permissions.CoarseLocation
 import com.mohamedrejeb.calf.permissions.Permission
 import com.sirelon.sellsnap.analytics.AnalyticsScreen
 import com.sirelon.sellsnap.analytics.TrackScreenViews
+import com.sirelon.sellsnap.designsystem.AppAsyncImage
+import com.sirelon.sellsnap.designsystem.AppAvatar
 import com.sirelon.sellsnap.designsystem.AppCard
 import com.sirelon.sellsnap.designsystem.AppDimens
 import com.sirelon.sellsnap.designsystem.AppScaffold
@@ -113,6 +122,7 @@ import com.sirelon.sellsnap.features.seller.ad.screenshotMode
 import com.sirelon.sellsnap.features.seller.ad.preview_ad.PreviewAdContract.PreviewAdEvent
 import com.sirelon.sellsnap.features.seller.ad.preview_ad.PreviewAdContract.PreviewAdEvent.CategorySelected
 import com.sirelon.sellsnap.features.seller.ad.preview_ad.ui.PreviewBackInfoSheet
+import com.sirelon.sellsnap.features.seller.ad.preview_ad.ui.PublishAccountPickerSheet
 import com.sirelon.sellsnap.features.seller.ad.preview_ad.ui.PublishConfirmSheet
 import com.sirelon.sellsnap.features.seller.ad.preview_ad.ui.PublishingScreen
 import com.sirelon.sellsnap.features.seller.ad.publish_success.PublishSuccessData
@@ -166,6 +176,10 @@ import com.sirelon.sellsnap.generated.resources.not_now
 import com.sirelon.sellsnap.generated.resources.open_settings
 import com.sirelon.sellsnap.generated.resources.publish_errors
 import com.sirelon.sellsnap.generated.resources.publish_on_olx
+import com.sirelon.sellsnap.generated.resources.account_business_badge
+import com.sirelon.sellsnap.generated.resources.ic_user
+import com.sirelon.sellsnap.generated.resources.publish_target_account_fallback_name
+import com.sirelon.sellsnap.generated.resources.publish_target_account_label
 import com.sirelon.sellsnap.generated.resources.retry
 import com.sirelon.sellsnap.generated.resources.validation_all_valid
 import com.sirelon.sellsnap.generated.resources.validation_error_desc_too_short
@@ -235,6 +249,11 @@ fun PreviewAdScreen(
             navBackStack.removeAt(navBackStack.lastIndex)
         }
     }
+    val dismissAccountPicker: () -> Unit = {
+        if (navBackStack.lastOrNull() is PreviewAdDestination.AccountPicker) {
+            navBackStack.removeAt(navBackStack.lastIndex)
+        }
+    }
 
     ObserveAsEvents(viewModel.effects) { effect ->
         when (effect) {
@@ -263,6 +282,25 @@ fun PreviewAdScreen(
             is PreviewAdContract.PreviewAdEffect.NavigateToProfile -> {
                 dismissPublishing()
                 onNavigateToProfile(effect.reason)
+            }
+
+            is PreviewAdContract.PreviewAdEffect.PublishAccountMismatch -> {
+                dismissPublishing()
+                snackbarHostState.showSnackbar(effect.message)
+            }
+
+            is PreviewAdContract.PreviewAdEffect.PublishNeedsReconnect -> {
+                dismissPublishing()
+                // Never auto-launches OAuth: the action only takes the seller to Profile, where
+                // reconnecting is a deliberate, separate tap.
+                val result = snackbarHostState.showSnackbar(
+                    message = effect.message,
+                    actionLabel = effect.actionLabel,
+                    duration = SnackbarDuration.Long,
+                )
+                if (result == SnackbarResult.ActionPerformed) {
+                    onNavigateToProfile(effect.message)
+                }
             }
         }
     }
@@ -310,6 +348,11 @@ fun PreviewAdScreen(
                             navBackStack.add(PreviewAdDestination.PublishConfirm)
                         }
                     },
+                    onTargetAccountRowClick = {
+                        if (navBackStack.lastOrNull() !is PreviewAdDestination.AccountPicker) {
+                            navBackStack.add(PreviewAdDestination.AccountPicker)
+                        }
+                    },
                     showImagesPreview = showImagesPreview,
                 )
             }
@@ -326,6 +369,21 @@ fun PreviewAdScreen(
                     priceFormatted = state.currency.format(state.price),
                     onConfirm = { viewModel.onEvent(PreviewAdEvent.Publish) },
                     onDismiss = dismissPublishConfirm,
+                )
+            }
+
+            entry<PreviewAdDestination.AccountPicker>(
+                metadata = BottomSheetSceneStrategy.bottomSheet(),
+            ) {
+                val state by viewModel.state.collectAsStateWithLifecycle()
+
+                PublishAccountPickerSheet(
+                    items = state.accountPickerItems,
+                    onAccountSelected = { localIndex ->
+                        viewModel.onEvent(PreviewAdEvent.SwitchAccountRequested(localIndex))
+                        dismissAccountPicker()
+                    },
+                    onDismiss = dismissAccountPicker,
                 )
             }
 
@@ -359,6 +417,7 @@ private fun PreviewAdContentRoute(
     onCategoryConsumed: () -> Unit,
     onConnectOlxClick: () -> Unit,
     onPublishConfirmationRequested: () -> Unit,
+    onTargetAccountRowClick: () -> Unit,
     showImagesPreview: (List<String>, Int) -> Unit,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -503,6 +562,23 @@ private fun PreviewAdContentRoute(
                 elapsedMs = state.generationElapsedMs,
                 modifier = Modifier.padding(horizontal = AppDimens.Spacing.xl3),
             )
+
+            // SIR-83 U6: this is a normal scrollable card, not pinned to the bottom bar - a
+            // dynamically-shown row inside AppScaffold's bottomBar changes the bar's height
+            // after first layout, which Material3's Scaffold does not always re-settle against
+            // the scrollable content's bottom padding, so the row could visually overlap the
+            // card above it. Matches the design mock's placement (accounts.jsx/screens3.jsx),
+            // which renders it as page content right below the "ready in" banner, not fixed.
+            if (state.isSessionResolved && !state.isGuest) {
+                val targetAccount = state.targetAccount
+                if (state.showTargetAccountRow && targetAccount != null) {
+                    PublishTargetAccountRow(
+                        account = targetAccount,
+                        onClick = onTargetAccountRowClick,
+                        modifier = Modifier.padding(horizontal = AppDimens.Spacing.xl3),
+                    )
+                }
+            }
 
             AnimatedVisibility(
                 visible = showErrors && !isValid,
@@ -1195,6 +1271,63 @@ private fun AdLocationCard(
             }
         },
     )
+}
+
+@Composable
+private fun PublishTargetAccountRow(
+    account: PublishTargetAccount,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    PreviewSectionCard(
+        label = stringResource(Res.string.publish_target_account_label),
+        onClick = onClick,
+        modifier = modifier.testTag("preview_ad_target_account_row"),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = AppDimens.Spacing.xl3)
+                .padding(top = AppDimens.Spacing.xl3),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing.m),
+                modifier = Modifier.weight(1f),
+            ) {
+                AppAvatar(
+                    avatarUrl = account.avatarUrl,
+                    fallbackInitial = account.name.trim().firstOrNull()?.uppercase() ?: "?",
+                    size = AppDimens.Size.xl8,
+                    useGradientBackground = false,
+                    initialStyle = AppTheme.typography.body,
+                )
+                Column(verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.xs)) {
+                    Text(
+                        text = account.name.ifBlank { stringResource(Res.string.publish_target_account_fallback_name) },
+                        style = AppTheme.typography.body,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    if (account.isBusiness) {
+                        Pill(
+                            text = stringResource(Res.string.account_business_badge),
+                            iconResource = Res.drawable.ic_user,
+                            color = AppTheme.colors.onSecondaryContainer,
+                        )
+                    }
+                }
+            }
+            Icon(
+                painter = painterResource(Res.drawable.ic_chevron_right),
+                contentDescription = null,
+                tint = AppTheme.colors.onSurfaceMuted,
+            )
+        }
+    }
 }
 
 @Composable

@@ -20,6 +20,18 @@ val appNavigationSavedStateConfiguration: SavedStateConfiguration =
                     AppDestination.DeleteAccountDataConfirm::class,
                     AppDestination.DeleteAccountDataConfirm.serializer(),
                 )
+                subclass(
+                    AppDestination.AddOlxAccountConfirm::class,
+                    AppDestination.AddOlxAccountConfirm.serializer(),
+                )
+                subclass(
+                    AppDestination.OlxAccountAuthFailed::class,
+                    AppDestination.OlxAccountAuthFailed.serializer(),
+                )
+                subclass(
+                    AppDestination.DisconnectOlxAccountConfirm::class,
+                    AppDestination.DisconnectOlxAccountConfirm.serializer(),
+                )
             }
         }
     }

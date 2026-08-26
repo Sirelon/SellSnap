@@ -1,18 +1,20 @@
 package com.sirelon.sellsnap.features.auth.data
 
+import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountStore
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAuthRepository
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAuthSessionStore
+import com.sirelon.sellsnap.features.seller.auth.data.OlxCountryStore
 import com.sirelon.sellsnap.features.seller.auth.data.OlxCredentialsProvider
 import com.sirelon.sellsnap.features.seller.auth.data.GuestModeStore
 import com.sirelon.sellsnap.features.seller.auth.data.OlxRedirectHandler
 import com.sirelon.sellsnap.features.seller.auth.data.OlxRemoteErrorParser
-import com.sirelon.sellsnap.features.seller.auth.data.OlxTokenStore
 import com.sirelon.sellsnap.features.seller.auth.data.createOlxHttpClient
 import kotlinx.serialization.json.Json
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxApiError
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxApiException
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxAuthCallback
-import com.sirelon.sellsnap.features.seller.auth.domain.OlxTokens
+import com.sirelon.sellsnap.features.seller.auth.domain.OlxCountry
+import com.sirelon.sellsnap.features.seller.auth.domain.SellerSessionMode
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
 import io.ktor.http.ContentType
@@ -24,7 +26,6 @@ import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
-import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlinx.coroutines.runBlocking
 
@@ -57,7 +58,9 @@ class OlxAuthRepositoryTest {
         val repository = createRepository(engine = MockEngine { error("No HTTP call expected.") })
         val request = repository.createAuthorizationRequest()
 
-        val result = repository.completeAuthorization("${request.redirectUri}?code=one-time-code&state=wrong")
+        val result = runCatching {
+            repository.exchangeAuthorizationCallback("${request.redirectUri}?code=one-time-code&state=wrong")
+        }
 
         assertTrue(result.isFailure)
         assertIs<OlxApiException>(result.exceptionOrNull())
@@ -88,9 +91,9 @@ class OlxAuthRepositoryTest {
         )
         val request = repository.createAuthorizationRequest()
 
-        val result = repository.completeAuthorization("${request.redirectUri}?code=one-time-code&state=${request.state}")
+        val tokens = repository.exchangeAuthorizationCallback("${request.redirectUri}?code=one-time-code&state=${request.state}")
 
-        assertTrue(result.isSuccess)
+        assertEquals("new-access-token", tokens.accessToken)
         assertContains(requestBody, "\"grant_type\":\"authorization_code\"")
         assertContains(requestBody, "\"client_id\":\"test-client-id\"")
         assertContains(requestBody, "\"client_secret\":\"test-client-secret\"")
@@ -99,28 +102,18 @@ class OlxAuthRepositoryTest {
     }
 
     @Test
-    fun `refreshIfNeeded sends refresh token request and replaces stored tokens`() = runBlocking {
-        var requestBody = ""
-        val tokenStore = OlxTokenStore(InMemoryOlxKeyValueStore(), testJson).apply {
-            write(
-                OlxTokens(
-                    accessToken = "expired-access-token",
-                    refreshToken = "old-refresh-token",
-                    expiresInSeconds = 10,
-                    tokenType = "bearer",
-                    scope = "v2 read write",
-                    issuedAtEpochSeconds = 0,
-                ),
-            )
-        }
+    fun `completeAuthorization does not persist tokens or touch session mode`() = runBlocking {
+        // exchangeAuthorizationCallback is intentionally a pure exchange step now - persistence
+        // and session-mode emission moved to SellerAccountRepository.addAccount, since only that
+        // layer knows (after a users-me call) whether the token belongs to a duplicate account.
+        val accountStore = OlxAccountStore(InMemoryOlxKeyValueStore(), testJson)
         val repository = createRepository(
-            engine = MockEngine { request ->
-                requestBody = (request.body as TextContent).text
+            engine = MockEngine {
                 respond(
                     content = """
                         {
-                          "access_token": "fresh-access-token",
-                          "refresh_token": "fresh-refresh-token",
+                          "access_token": "new-access-token",
+                          "refresh_token": "new-refresh-token",
                           "expires_in": 86400,
                           "token_type": "bearer",
                           "scope": "v2 read write"
@@ -130,66 +123,75 @@ class OlxAuthRepositoryTest {
                     headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
                 )
             },
-            tokenStore = tokenStore,
+            accountStore = accountStore,
         )
+        val request = repository.createAuthorizationRequest()
 
-        val result = repository.refreshIfNeeded(force = true)
-        val storedTokens = tokenStore.read()
+        repository.exchangeAuthorizationCallback("${request.redirectUri}?code=one-time-code&state=${request.state}")
 
-        assertTrue(result.isSuccess)
-        assertContains(requestBody, "\"grant_type\":\"refresh_token\"")
-        assertContains(requestBody, "\"refresh_token\":\"old-refresh-token\"")
-        assertEquals("fresh-access-token", storedTokens?.accessToken)
-        assertEquals("fresh-refresh-token", storedTokens?.refreshToken)
+        assertEquals(SellerSessionMode.Unauthenticated, repository.currentSession().mode)
+        assertTrue(accountStore.recordFlow.value.accounts.isEmpty())
     }
 
     @Test
-    fun `refreshIfNeeded clears stored tokens on invalid grant`() = runBlocking {
-        val tokenStore = OlxTokenStore(InMemoryOlxKeyValueStore(), testJson).apply {
-            write(
-                OlxTokens(
-                    accessToken = "expired-access-token",
-                    refreshToken = "stale-refresh-token",
-                    expiresInSeconds = 10,
-                    tokenType = "bearer",
-                    scope = "v2 read write",
-                    issuedAtEpochSeconds = 0,
-                ),
+    fun `currentSession reports Authenticated whenever any account is on file for the active country regardless of token health`() =
+        runBlocking {
+            val countryStore = OlxCountryStore(InMemoryOlxKeyValueStore()).apply { save(OlxCountry.UA) }
+            val accountStore = OlxAccountStore(InMemoryOlxKeyValueStore(), testJson)
+            accountStore.addOrUpdateAccount(
+                countryCode = "ua",
+                olxUserId = 1L,
+                tokens = sampleTokens(accessToken = "dead-token"),
+                profile = null,
+                makeActive = true,
             )
+            accountStore.markNeedsReconnect(1)
+            val repository = createRepository(
+                engine = MockEngine { error("No HTTP call expected.") },
+                accountStore = accountStore,
+                countryStore = countryStore,
+            )
+
+            val session = repository.currentSession()
+
+            assertEquals(SellerSessionMode.Authenticated, session.mode)
         }
+
+    @Test
+    fun `currentSession reports Unauthenticated when no account is on file for the active country`() = runBlocking {
+        val countryStore = OlxCountryStore(InMemoryOlxKeyValueStore()).apply { save(OlxCountry.UA) }
+        val accountStore = OlxAccountStore(InMemoryOlxKeyValueStore(), testJson)
         val repository = createRepository(
-            engine = MockEngine {
-                respond(
-                    content = """
-                        {
-                          "error": "invalid_grant",
-                          "error_description": "Refresh token is invalid"
-                        }
-                    """.trimIndent(),
-                    status = HttpStatusCode.BadRequest,
-                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
-                )
-            },
-            tokenStore = tokenStore,
+            engine = MockEngine { error("No HTTP call expected.") },
+            accountStore = accountStore,
+            countryStore = countryStore,
         )
 
-        val result = repository.refreshIfNeeded(force = true)
+        val session = repository.currentSession()
 
-        assertTrue(result.isFailure)
-        assertIs<OlxApiException>(result.exceptionOrNull())
-        assertIs<OlxApiError.InvalidGrant>((result.exceptionOrNull() as OlxApiException).error)
-        assertNull(tokenStore.read())
+        assertEquals(SellerSessionMode.Unauthenticated, session.mode)
     }
+
+    private fun sampleTokens(accessToken: String = "access-token") = com.sirelon.sellsnap.features.seller.auth.domain.OlxTokens(
+        accessToken = accessToken,
+        refreshToken = "refresh-token",
+        expiresInSeconds = 86400,
+        tokenType = "bearer",
+        scope = "v2 read write",
+        issuedAtEpochSeconds = 0,
+    )
 
     private fun createRepository(
         engine: MockEngine,
-        tokenStore: OlxTokenStore = OlxTokenStore(InMemoryOlxKeyValueStore(), testJson),
+        accountStore: OlxAccountStore = OlxAccountStore(InMemoryOlxKeyValueStore(), testJson),
+        countryStore: OlxCountryStore = OlxCountryStore(InMemoryOlxKeyValueStore()),
         sessionStore: OlxAuthSessionStore = OlxAuthSessionStore(InMemoryOlxKeyValueStore(), testJson),
     ): OlxAuthRepository {
         return OlxAuthRepository(
             httpClient = createOlxHttpClient(engine),
             credentialsProvider = TestCredentialsProvider(),
-            tokenStore = tokenStore,
+            accountStore = accountStore,
+            countryStore = countryStore,
             authSessionStore = sessionStore,
             redirectHandler = TestRedirectHandler(),
             guestModeStore = GuestModeStore(InMemoryOlxKeyValueStore()),

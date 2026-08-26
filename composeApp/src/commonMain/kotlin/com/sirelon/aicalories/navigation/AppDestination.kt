@@ -44,4 +44,22 @@ sealed interface AppDestination : NavKey, AnalyticsScreen {
     data object OlxCountryPicker : AppDestination {
         override val screenName = "OlxCountryPicker"
     }
+
+    // SIR-83: multi-account bottom sheets, wired next to DeleteAccountDataConfirm above. These
+    // stay at the app level (rather than as AdDestination entries in features/seller/ad/**)
+    // because a sibling task owns that package for the Publish/Preview and My Ads work.
+    @Serializable
+    data object AddOlxAccountConfirm : AppDestination {
+        override val screenName = "AddOlxAccountConfirm"
+    }
+
+    @Serializable
+    data object OlxAccountAuthFailed : AppDestination {
+        override val screenName = "OlxAccountAuthFailed"
+    }
+
+    @Serializable
+    data class DisconnectOlxAccountConfirm(val localIndex: Int) : AppDestination {
+        override val screenName = "DisconnectOlxAccountConfirm"
+    }
 }

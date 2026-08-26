@@ -24,4 +24,9 @@ internal sealed interface PreviewAdDestination : NavKey, AnalyticsScreen {
     data object Publishing : PreviewAdDestination {
         override val screenName = "PreviewAdPublishing"
     }
+
+    @Serializable
+    data object AccountPicker : PreviewAdDestination {
+        override val screenName = "PreviewAdAccountPicker"
+    }
 }

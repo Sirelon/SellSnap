@@ -1,13 +1,16 @@
 package com.sirelon.sellsnap.features.seller.location.data
 
 import com.sirelon.sellsnap.features.auth.data.InMemoryOlxKeyValueStore
+import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountRecord
+import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountStore
+import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountsRecord
 import com.sirelon.sellsnap.features.seller.auth.data.OlxApiClient
-import com.sirelon.sellsnap.features.seller.auth.data.OlxAuthSessionStore
+import com.sirelon.sellsnap.features.seller.auth.data.OlxCountryStore
 import com.sirelon.sellsnap.features.seller.auth.data.OlxCredentialsProvider
 import com.sirelon.sellsnap.features.seller.auth.data.OlxRemoteErrorParser
-import com.sirelon.sellsnap.features.seller.auth.data.OlxTokenStore
 import com.sirelon.sellsnap.features.seller.auth.data.createOlxAuthorizedHttpClient
 import com.sirelon.sellsnap.features.seller.auth.data.createOlxHttpClient
+import com.sirelon.sellsnap.features.seller.auth.domain.OlxCountry
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxTokens
 import com.sirelon.sellsnap.features.seller.location.DeviceLocation
 import com.sirelon.sellsnap.features.seller.location.LocationProvider
@@ -93,25 +96,37 @@ class LocationRepositoryTest {
     }
 
     private suspend fun createApiClient(engine: MockEngine): OlxApiClient {
-        val tokenStore = OlxTokenStore(InMemoryOlxKeyValueStore(), testJson).apply {
-            write(
-                OlxTokens(
-                    accessToken = "active-token",
-                    refreshToken = "refresh-token",
-                    expiresInSeconds = 86_400,
-                    tokenType = "bearer",
-                    scope = "v2 read write",
-                    issuedAtEpochSeconds = 4_102_444_800,
+        val accountStore = OlxAccountStore(InMemoryOlxKeyValueStore(), testJson)
+        accountStore.write(
+            OlxAccountsRecord(
+                accounts = listOf(
+                    OlxAccountRecord(
+                        localIndex = 1,
+                        countryCode = "ua",
+                        tokens = OlxTokens(
+                            accessToken = "active-token",
+                            refreshToken = "refresh-token",
+                            expiresInSeconds = 86_400,
+                            tokenType = "bearer",
+                            scope = "v2 read write",
+                            issuedAtEpochSeconds = 4_102_444_800,
+                        ),
+                        lastUsedAtEpochSeconds = 0,
+                        lastRefreshedAtEpochSeconds = 0,
+                    ),
                 ),
-            )
-        }
+                activeByCountry = mapOf("ua" to 1),
+                nextLocalIndex = 2,
+            ),
+        )
+        val countryStore = OlxCountryStore(InMemoryOlxKeyValueStore()).apply { save(OlxCountry.UA) }
         val errorParser = OlxRemoteErrorParser(testJson)
         return OlxApiClient(
             httpClient = createOlxAuthorizedHttpClient(
                 authRefreshClient = createOlxHttpClient(engine),
                 credentialsProvider = TestCredentialsProvider(),
-                tokenStore = tokenStore,
-                authSessionStore = OlxAuthSessionStore(InMemoryOlxKeyValueStore(), testJson),
+                accountStore = accountStore,
+                countryStore = countryStore,
                 errorParser = errorParser,
                 engine = engine,
             ),

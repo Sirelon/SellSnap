@@ -26,10 +26,20 @@ import kotlinx.serialization.Serializable
 import kotlin.time.Clock
 import kotlin.uuid.Uuid
 
-class OlxAuthRepository(
+/**
+ * OAuth/session-mode concern only (SIR-83 foundation): validates and exchanges an OLX
+ * authorization callback for tokens, and reports session mode (Authenticated/Guest/
+ * Unauthenticated) from the multi-account [accountStore] rather than a single token blob. Does
+ * NOT decide which stored account a freshly exchanged token belongs to, or persist it - that
+ * dedupe-then-persist sequencing lives one layer up in
+ * `SellerAccountRepository.addAccount`, which needs a `users/me` call this class intentionally
+ * has no dependency on (`OlxApiClient` is a REST-resource concern, not an OAuth one).
+ */
+class OlxAuthRepository internal constructor(
     private val httpClient: HttpClient,
     private val credentialsProvider: OlxCredentialsProvider,
-    private val tokenStore: OlxTokenStore,
+    private val accountStore: OlxAccountStore,
+    private val countryStore: OlxCountryStore,
     private val authSessionStore: OlxAuthSessionStore,
     private val redirectHandler: OlxRedirectHandler,
     private val guestModeStore: GuestModeStore,
@@ -37,7 +47,8 @@ class OlxAuthRepository(
 ) {
     private val _sessionModeUpdates = MutableSharedFlow<SellerSessionMode>(replay = 0)
     val sessionModeFlow: Flow<SellerSessionMode> = _sessionModeUpdates.asSharedFlow()
-    suspend fun createAuthorizationRequest(): OlxAuthorizationRequest {
+
+    suspend fun createAuthorizationRequest(forceReauth: Boolean = false): OlxAuthorizationRequest {
         val state = Uuid.random().toString()
         val redirectUri = redirectHandler.buildRedirectUri()
         val clientId = credentialsProvider.getClientId()
@@ -48,6 +59,16 @@ class OlxAuthRepository(
                 append("state", state)
                 append("scope", OlxConfig.scope)
                 append("redirect_uri", redirectUri)
+                if (forceReauth) {
+                    // TRD §1 route 1 (cheapest, try first): a standard-OIDC force-reauthentication
+                    // parameter. OLX's partner API is plain OAuth 2.0 rather than OIDC, so this is
+                    // not confirmed to be honoured - if ignored, the platform-level launcher
+                    // mechanisms (iOS ephemeral session; Android logout-URL preload) are the
+                    // fallback, and the add-account dedupe now handles an unforced re-auth
+                    // gracefully either way (SellerAccountRepository.addAccount).
+                    append("prompt", "login")
+                    append("max_age", "0")
+                }
             }
         }.buildString()
 
@@ -68,50 +89,36 @@ class OlxAuthRepository(
         return request
     }
 
-    suspend fun completeAuthorization(callbackUrl: String): Result<OlxTokens> {
-        val result = runCatching {
+    /**
+     * Validates the pending session/state and exchanges the authorization code for tokens.
+     * Deliberately does NOT persist anything, or touch guest mode/session-mode: the caller
+     * (`SellerAccountRepository.addAccount`) must confirm which OLX user the token belongs to
+     * (dedupe by olxUserId) before deciding where it lands and whether to call [markAuthenticated].
+     */
+    internal suspend fun exchangeAuthorizationCallback(callbackUrl: String): OlxTokens {
+        try {
             val callback = redirectHandler.parseCallback(callbackUrl)
             val pendingSession = authSessionStore.read()
                 ?: throw OlxApiException(OlxApiError.InvalidState("No active OLX authorization session was found."))
 
             validateCallback(callback, pendingSession)
 
-            val tokenResponse = exchangeAuthorizationCode(
-                callback = callback,
-                redirectUri = pendingSession.redirectUri,
-            )
-            tokenStore.write(tokenResponse)
+            val tokens = exchangeAuthorizationCode(callback, pendingSession.redirectUri)
             authSessionStore.clear()
-            guestModeStore.setGuest(false)
-            tokenResponse
-        }.onFailure {
+            return tokens
+        } catch (throwable: Throwable) {
             authSessionStore.clear()
+            throw throwable
         }
-        if (result.isSuccess) _sessionModeUpdates.emit(SellerSessionMode.Authenticated)
-        return result
     }
 
-    suspend fun refreshIfNeeded(force: Boolean = false): Result<OlxTokens> = runCatching {
-        val existingTokens = tokenStore.read()
-            ?: throw OlxApiException(OlxApiError.InvalidToken("OLX user is not connected yet."))
-
-        if (!force && !existingTokens.isExpired(currentEpochSeconds(), OlxConfig.defaultRefreshSafetyWindowSeconds)) {
-            return@runCatching existingTokens
-        }
-
-        val refreshedTokens = refreshAccessToken(existingTokens)
-        tokenStore.write(refreshedTokens)
-        refreshedTokens
-    }.onFailure { error ->
-        handleTerminalRefreshFailure(error, tokenStore, authSessionStore)
-    }
-
-    suspend fun requireAccessToken(forceRefresh: Boolean = false): Result<String> {
-        return refreshIfNeeded(force = forceRefresh).map { it.accessToken }
+    /** Called by `SellerAccountRepository` once a freshly connected/reconnected account is persisted. */
+    internal suspend fun markAuthenticated() {
+        guestModeStore.setGuest(false)
+        _sessionModeUpdates.emit(SellerSessionMode.Authenticated)
     }
 
     suspend fun logout() {
-        tokenStore.clear()
         authSessionStore.clear()
         guestModeStore.setGuest(false)
         _sessionModeUpdates.emit(SellerSessionMode.Unauthenticated)
@@ -127,18 +134,29 @@ class OlxAuthRepository(
         _sessionModeUpdates.emit(SellerSessionMode.Unauthenticated)
     }
 
+    /**
+     * Source of truth for session mode (F4/D7 fix): Authenticated means "at least one account is
+     * on file for the active country", regardless of whether its token is currently healthy - a
+     * dead token means NeedsReconnect, not logged out. Never calls the network.
+     */
     suspend fun currentSession(): OlxSessionState {
         val isGuestModeEnabled = guestModeStore.isGuest()
-        val tokens = tokenStore.read()
+        val activeAccount = activeAccountForCurrentCountry()
         val mode = when {
             isGuestModeEnabled -> SellerSessionMode.Guest
-            tokens != null -> SellerSessionMode.Authenticated
+            activeAccount != null -> SellerSessionMode.Authenticated
             else -> SellerSessionMode.Unauthenticated
         }
         return OlxSessionState(
             mode = mode,
-            accessTokenExpiresAtEpochSeconds = tokens?.expiresAtEpochSeconds,
+            accessTokenExpiresAtEpochSeconds = activeAccount?.tokens?.expiresAtEpochSeconds,
         )
+    }
+
+    private fun activeAccountForCurrentCountry(): OlxAccountRecord? {
+        val record = accountStore.recordFlow.value
+        val activeIndex = record.activeByCountry[countryStore.current.code] ?: return null
+        return record.accounts.find { it.localIndex == activeIndex }
     }
 
     private fun validateCallback(callback: OlxAuthCallback, pendingSession: OlxPendingAuthSession) {
@@ -184,29 +202,6 @@ class OlxAuthRepository(
         return response.body<TokenResponse>().toDomain(currentEpochSeconds())
     }
 
-    private suspend fun refreshAccessToken(tokens: OlxTokens): OlxTokens {
-        val refreshToken = tokens.refreshToken
-            ?: throw OlxApiException(OlxApiError.InvalidGrant("No OLX refresh token is available."))
-
-        val response = httpClient.post("/api/${OlxConfig.authTokenPath}") {
-            contentType(ContentType.Application.Json)
-            setBody(
-                TokenRequest(
-                    grantType = "refresh_token",
-                    clientId = credentialsProvider.getClientId(),
-                    clientSecret = credentialsProvider.getClientSecret(),
-                    refreshToken = refreshToken,
-                ),
-            )
-        }
-
-        if (!response.status.isSuccess()) {
-            throw errorParser.parse(response.status, response.bodyAsText())
-        }
-
-        return response.body<TokenResponse>().toDomain(currentEpochSeconds())
-    }
-
     private fun currentEpochSeconds(): Long = Clock.System.now().toEpochMilliseconds() / 1000
 
     @Serializable
@@ -217,7 +212,6 @@ class OlxAuthRepository(
         @SerialName("scope") val scope: String? = null,
         @SerialName("code") val code: String? = null,
         @SerialName("redirect_uri") val redirectUri: String? = null,
-        @SerialName("refresh_token") val refreshToken: String? = null,
     )
 
     @Serializable
@@ -236,17 +230,5 @@ class OlxAuthRepository(
             scope = scope,
             issuedAtEpochSeconds = issuedAtEpochSeconds,
         )
-    }
-}
-
-internal suspend fun handleTerminalRefreshFailure(
-    error: Throwable,
-    tokenStore: OlxTokenStore,
-    authSessionStore: OlxAuthSessionStore,
-) {
-    val olxError = (error as? OlxApiException)?.error
-    if (olxError is OlxApiError.InvalidGrant || olxError is OlxApiError.InvalidToken) {
-        tokenStore.clear()
-        authSessionStore.clear()
     }
 }

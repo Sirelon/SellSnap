@@ -38,11 +38,19 @@ fun createOlxHttpClient(engine: HttpClientEngine? = null): HttpClient {
     }
 }
 
-fun createOlxAuthorizedHttpClient(
+/**
+ * Multi-account aware (SIR-83): [loadTokens]/[refreshTokens] resolve whichever account is active
+ * for [countryStore]'s current country inside [accountStore], instead of a single global token
+ * blob. A terminal refresh failure (invalid_grant/invalid_token) marks ONLY that one account
+ * NeedsReconnect via [OlxAccountStore.markNeedsReconnect] - other accounts in the store, and other
+ * countries, are untouched. [OlxAccountStore]'s own mutex (not a second one here) is what keeps
+ * this safe against a concurrent keep-alive refresh touching the same account.
+ */
+internal fun createOlxAuthorizedHttpClient(
     authRefreshClient: HttpClient,
     credentialsProvider: OlxCredentialsProvider,
-    tokenStore: OlxTokenStore,
-    authSessionStore: OlxAuthSessionStore,
+    accountStore: OlxAccountStore,
+    countryStore: OlxCountryStore,
     errorParser: OlxRemoteErrorParser,
     engine: HttpClientEngine? = null,
 ): HttpClient {
@@ -51,30 +59,34 @@ fun createOlxAuthorizedHttpClient(
         install(Auth) {
             bearer {
                 loadTokens {
-                    tokenStore.read()?.toBearerTokens()
+                    activeAccount(accountStore, countryStore)?.tokens?.toBearerTokens()
                 }
                 refreshTokens {
+                    val activeLocalIndex = activeAccount(accountStore, countryStore)?.localIndex
+                        ?: return@refreshTokens null
                     println("[AdGen] OlxAuth: token refresh started, hasRefreshToken=${oldTokens?.refreshToken != null}")
                     try {
-                        val refreshedTokens = refreshOlxBearerTokens(
+                        val refreshedTokens = refreshOlxTokens(
                             client = authRefreshClient,
-                            credentialsProvider = credentialsProvider,
+                            tokenEndpointUrl = "/api/${OlxConfig.authTokenPath}",
+                            clientId = credentialsProvider.getClientId(),
+                            clientSecret = credentialsProvider.getClientSecret(),
                             refreshToken = oldTokens?.refreshToken,
                             errorParser = errorParser,
                         )
                         if (refreshedTokens == null) {
-                            println("[AdGen] OlxAuth: token refresh returned null, clearing session")
-                            tokenStore.clear()
-                            authSessionStore.clear()
+                            println("[AdGen] OlxAuth: token refresh returned null")
                             null
                         } else {
                             println("[AdGen] OlxAuth: token refresh succeeded")
-                            tokenStore.write(refreshedTokens)
+                            accountStore.updateTokens(activeLocalIndex, refreshedTokens, nowEpochSeconds())
                             refreshedTokens.toBearerTokens()
                         }
                     } catch (exception: OlxApiException) {
                         println("[AdGen] OlxAuth: token refresh FAILED: $exception")
-                        handleTerminalRefreshFailure(exception, tokenStore, authSessionStore)
+                        if (exception.error is OlxApiError.InvalidGrant || exception.error is OlxApiError.InvalidToken) {
+                            accountStore.markNeedsReconnect(activeLocalIndex)
+                        }
                         throw exception
                     }
                 }
@@ -87,6 +99,12 @@ fun createOlxAuthorizedHttpClient(
     } else {
         HttpClient(configure)
     }
+}
+
+private fun activeAccount(accountStore: OlxAccountStore, countryStore: OlxCountryStore): OlxAccountRecord? {
+    val record = accountStore.recordFlow.value
+    val activeIndex = record.activeByCountry[countryStore.current.code] ?: return null
+    return record.accounts.find { it.localIndex == activeIndex }
 }
 
 private fun commonOlxHttpClientConfig(): HttpClientConfig<*>.() -> Unit = {
@@ -118,21 +136,30 @@ private fun commonOlxHttpClientConfig(): HttpClientConfig<*>.() -> Unit = {
     }
 }
 
-private suspend fun refreshOlxBearerTokens(
+/**
+ * Single implementation of "POST a refresh_token grant to OLX and parse the response". Used both
+ * by the bearer plugin's reactive 401 refresh above (relative [tokenEndpointUrl], resolved against
+ * the client's baked-in current-country base url) and by SellerAccountRepository's keep-alive
+ * sweep (absolute, per-account-country [tokenEndpointUrl]/credentials, since that sweep can touch
+ * accounts for a country other than whichever one is "current" globally).
+ */
+internal suspend fun refreshOlxTokens(
     client: HttpClient,
-    credentialsProvider: OlxCredentialsProvider,
+    tokenEndpointUrl: String,
+    clientId: String,
+    clientSecret: String,
     refreshToken: String?,
     errorParser: OlxRemoteErrorParser,
 ): OlxTokens? {
     if (refreshToken.isNullOrBlank()) return null
 
-    val response = client.post("/api/${OlxConfig.authTokenPath}") {
+    val response = client.post(tokenEndpointUrl) {
         contentType(ContentType.Application.Json)
         setBody(
             RefreshTokenRequest(
                 grantType = "refresh_token",
-                clientId = credentialsProvider.getClientId(),
-                clientSecret = credentialsProvider.getClientSecret(),
+                clientId = clientId,
+                clientSecret = clientSecret,
                 refreshToken = refreshToken,
             ),
         )
@@ -144,6 +171,8 @@ private suspend fun refreshOlxBearerTokens(
 
     return response.body<RefreshTokenResponse>().toDomain()
 }
+
+private fun nowEpochSeconds(): Long = Clock.System.now().toEpochMilliseconds() / 1000
 
 private fun OlxTokens.toBearerTokens(): BearerTokens = BearerTokens(
     accessToken = accessToken,
