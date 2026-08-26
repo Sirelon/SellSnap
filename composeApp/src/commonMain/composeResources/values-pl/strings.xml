@@ -1,4 +1,10 @@
 <resources>
+    <!-- OLX Country Picker -->
+    <string name="olx_country_picker_title">Wybierz swój kraj</string>
+    <string name="olx_country_picker_subtitle">Połączymy Cię z właściwym regionalnym rynkiem OLX</string>
+    <string name="olx_country_picker_select_prompt">Wybierz kraj</string>
+    <string name="olx_country_picker_continue">Kontynuuj</string>
+
     <!-- OnBoarding & Authentication -->
     <string name="welcome_to_sellsnap">Hej, witaj w SellSnap 👋</string>
     <string name="welcome_subtitle">Wrzuć zdjęcie, dostań ogłoszenie — AI robi resztę.</string>
@@ -18,6 +24,12 @@
     <string name="privacy_policy">Politykę prywatności</string>
     <string name="keyboard_done_action">Gotowe</string>
     <string name="or_divider">lub</string>
+
+    <!-- Analytics Consent -->
+    <string name="consent_title">Pomóc ulepszyć SellSnap?</string>
+    <string name="consent_message">Udostępnij anonimowe dane analityczne i raporty o awariach, żebyśmy mogli naprawiać błędy i ulepszać SellSnap. Domyślnie jest to wyłączone i nigdy nie obejmuje Twoich zdjęć ani treści ogłoszeń — możesz to zmienić w dowolnym momencie w Profilu.</string>
+    <string name="consent_allow">Zezwól</string>
+    <string name="consent_decline">Nie teraz</string>
 
     <!-- Onboarding Screen Steps -->
     <string name="onboarding_step1_title">Zrób zdjęcie 📸</string>
@@ -90,6 +102,10 @@
     <string name="profile_delete_account_data_message">Usuwa to zapisane połączenie z OLX, lokalną pamięć podręczną profilu, sesję gościa i lokalizację sprzedaży z tego urządzenia. Nie usuwa Twojego konta OLX.</string>
     <string name="profile_delete_account_data_confirm">Usuń dane</string>
     <string name="profile_delete_account_data_cancel">Anuluj</string>
+    <string name="profile_privacy_data_title">Prywatność i dane</string>
+    <string name="profile_analytics_consent_title">Udostępniaj dane analityczne</string>
+    <string name="profile_analytics_consent_subtitle">Anonimowe dane użytkowania, które pomagają nam ulepszać SellSnap. Domyślnie wyłączone — zmień w dowolnym momencie.</string>
+    <string name="profile_contact_data_request">Skontaktuj się z nami w sprawie swoich danych</string>
     <string name="profile_not_provided">Nie ustawiono</string>
     <string name="profile_value_yes">Tak</string>
     <string name="profile_value_no">Nie</string>

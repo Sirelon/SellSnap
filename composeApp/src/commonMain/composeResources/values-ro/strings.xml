@@ -1,4 +1,10 @@
 <resources>
+    <!-- OLX Country Picker -->
+    <string name="olx_country_picker_title">Alege-ți țara</string>
+    <string name="olx_country_picker_subtitle">Te vom conecta la piața regională OLX potrivită</string>
+    <string name="olx_country_picker_select_prompt">Alege o țară</string>
+    <string name="olx_country_picker_continue">Continuă</string>
+
     <!-- OnBoarding & Authentication -->
     <string name="welcome_to_sellsnap">Bună, bine ai venit în SellSnap 👋</string>
     <string name="welcome_subtitle">Fotografie intrată, anunț ieșit — AI face tastarea.</string>
@@ -18,6 +24,12 @@
     <string name="privacy_policy">Politica de confidențialitate</string>
     <string name="keyboard_done_action">Gata</string>
     <string name="or_divider">sau</string>
+
+    <!-- Analytics Consent -->
+    <string name="consent_title">Ne ajuți să îmbunătățim SellSnap?</string>
+    <string name="consent_message">Distribuie date analitice anonime de utilizare și rapoarte de erori ca să putem remedia probleme și să facem SellSnap mai bun. Este dezactivat implicit și nu include niciodată fotografiile tale sau conținutul anunțurilor — poți schimba oricând din Profil.</string>
+    <string name="consent_allow">Permite</string>
+    <string name="consent_decline">Nu acum</string>
 
     <!-- Onboarding Screen Steps -->
     <string name="onboarding_step1_title">Fotografiază 📸</string>
@@ -90,6 +102,10 @@
     <string name="profile_delete_account_data_message">Aceasta elimină conexiunea OLX salvată, memoria cache locală a profilului, sesiunea de oaspete și locația de vânzare de pe acest dispozitiv. Nu șterge contul tău OLX.</string>
     <string name="profile_delete_account_data_confirm">Șterge datele</string>
     <string name="profile_delete_account_data_cancel">Anulează</string>
+    <string name="profile_privacy_data_title">Confidențialitate și date</string>
+    <string name="profile_analytics_consent_title">Distribuie date analitice de utilizare</string>
+    <string name="profile_analytics_consent_subtitle">Date anonime de utilizare care ne ajută să îmbunătățim SellSnap. Dezactivat implicit — schimbă oricând.</string>
+    <string name="profile_contact_data_request">Contactează-ne despre datele tale</string>
     <string name="profile_not_provided">Nesetat</string>
     <string name="profile_value_yes">Da</string>
     <string name="profile_value_no">Nu</string>
