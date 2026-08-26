@@ -14,6 +14,7 @@ internal val previewNavigationSavedStateConfiguration: SavedStateConfiguration =
                 subclass(PreviewAdDestination.BackInfo::class, PreviewAdDestination.BackInfo.serializer())
                 subclass(PreviewAdDestination.PublishConfirm::class, PreviewAdDestination.PublishConfirm.serializer())
                 subclass(PreviewAdDestination.Publishing::class, PreviewAdDestination.Publishing.serializer())
+                subclass(PreviewAdDestination.AccountPicker::class, PreviewAdDestination.AccountPicker.serializer())
             }
         }
     }

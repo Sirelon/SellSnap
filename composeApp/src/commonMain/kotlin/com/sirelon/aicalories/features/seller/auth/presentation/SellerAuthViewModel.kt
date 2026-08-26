@@ -6,6 +6,7 @@ import com.sirelon.sellsnap.analytics.AnalyticsEvents
 import com.sirelon.sellsnap.features.common.presentation.BaseViewModel
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAuthRepository
 import com.sirelon.sellsnap.features.seller.auth.data.OlxCountryStore
+import com.sirelon.sellsnap.features.seller.profile.data.SellerAccountRepository
 import com.sirelon.sellsnap.generated.resources.Res
 import com.sirelon.sellsnap.generated.resources.error_olx_auth_complete_failed
 import com.sirelon.sellsnap.generated.resources.error_olx_auth_prepare_failed
@@ -14,6 +15,10 @@ import org.jetbrains.compose.resources.getString
 
 class SellerAuthViewModel(
     private val authRepository: OlxAuthRepository,
+    // SIR-83: first-connect must land in the multi-account store, so this now goes through
+    // SellerAccountRepository.completeAuthorization (which persists) rather than calling
+    // OlxAuthRepository.completeAuthorization directly - that method no longer persists anything.
+    private val accountRepository: SellerAccountRepository,
     private val analytics: Analytics,
     private val olxCountryStore: OlxCountryStore,
 ) : BaseViewModel<SellerAuthContract.SellerAuthState, SellerAuthContract.SellerAuthEvent, SellerAuthContract.SellerAuthEffect>() {
@@ -68,7 +73,7 @@ class SellerAuthViewModel(
                 )
             }
 
-            authRepository.completeAuthorization(callbackUrl)
+            accountRepository.completeAuthorization(callbackUrl)
                 .onSuccess {
                     analytics.logEvent(AnalyticsEvents.AUTH_COMPLETED)
                     setState {

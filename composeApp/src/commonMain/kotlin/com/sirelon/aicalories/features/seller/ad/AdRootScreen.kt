@@ -65,6 +65,11 @@ fun AdRootScreen(
     onLogout: () -> Unit,
     onDeleteAccountDataRequested: () -> Unit,
     popToAdRoot: () -> Unit,
+    // SIR-83: threaded straight through to ProfileScreenRoute, which owns the add-account/
+    // reconnect/disconnect flows - see that file and App.kt for how these are dispatched.
+    onAddAccountRequested: () -> Unit = {},
+    onAddAccountFailed: () -> Unit = {},
+    onDisconnectRequested: (Int) -> Unit = {},
 ) {
     val navBackStack = rememberNavBackStack(
         adNavigationSavedStateConfiguration,
@@ -73,6 +78,9 @@ fun AdRootScreen(
     val connectOlxReason = stringResource(Res.string.guest_connect_olx_cta)
 
     val authLauncher = rememberOlxAuthLauncher()
+    // SIR-83 (D5): a second launcher that forces a fresh OLX login, used only for add-account
+    // and reconnect so the seller isn't silently bounced back into an account they already have.
+    val authLauncherForceReauth = rememberOlxAuthLauncher(forceReauth = true)
     var pendingCategory by remember { mutableStateOf<OlxCategory?>(null) }
     var isGeneratingAd by remember { mutableStateOf(false) }
     val sceneStrategies = remember {
@@ -223,7 +231,11 @@ fun AdRootScreen(
                             { navBackStack.removeAt(navBackStack.lastIndex) }
                         },
                         onOpenOlxAuth = authLauncher,
+                        onOpenOlxAuthForceReauth = authLauncherForceReauth,
                         onLogout = onLogout,
+                        onAddAccountRequested = onAddAccountRequested,
+                        onAddAccountFailed = onAddAccountFailed,
+                        onDisconnectRequested = onDisconnectRequested,
                         reason = destination.reason,
                     )
                 }

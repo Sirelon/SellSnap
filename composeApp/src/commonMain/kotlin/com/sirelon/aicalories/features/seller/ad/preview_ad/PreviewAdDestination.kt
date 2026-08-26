@@ -15,4 +15,7 @@ internal sealed interface PreviewAdDestination : NavKey {
 
     @Serializable
     data object Publishing : PreviewAdDestination
+
+    @Serializable
+    data object AccountPicker : PreviewAdDestination
 }

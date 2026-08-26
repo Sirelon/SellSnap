@@ -75,6 +75,7 @@ import com.sirelon.sellsnap.generated.resources.publish_success_status_unknown_c
 import com.sirelon.sellsnap.generated.resources.publish_success_subtitle
 import com.sirelon.sellsnap.generated.resources.publish_success_subtitle_limited
 import com.sirelon.sellsnap.generated.resources.publish_success_subtitle_new
+import com.sirelon.sellsnap.generated.resources.publish_success_target_account
 import com.sirelon.sellsnap.generated.resources.publish_success_title
 import com.sirelon.sellsnap.generated.resources.publish_success_total_time_caption
 import com.sirelon.sellsnap.generated.resources.publish_success_total_time_label
@@ -157,6 +158,7 @@ fun PublishSuccessScreen(
                     priceFormatted = data.priceFormatted,
                     primaryImageUrl = data.primaryImageUrl,
                     url = data.url,
+                    accountName = data.accountName,
                 )
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -370,6 +372,7 @@ private fun ListingSummaryCard(
     priceFormatted: String,
     primaryImageUrl: String?,
     url: String,
+    accountName: String,
     modifier: Modifier = Modifier,
 ) {
     val displayUrl = remember(url) { url.toDisplayUrl() }
@@ -407,6 +410,15 @@ private fun ListingSummaryCard(
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
+            }
+            if (accountName.isNotBlank()) {
+                Text(
+                    text = stringResource(Res.string.publish_success_target_account, accountName),
+                    style = AppTheme.typography.caption,
+                    color = AppTheme.colors.onSurfaceMuted,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
             }
             Column(verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.xs)) {
                 Text(
@@ -529,6 +541,7 @@ private fun PublishSuccessScreenPreview() {
                 priceFormatted = "₴ 1 850",
                 primaryImageUrl = null,
                 totalElapsedMs = 92_000L,
+                accountName = "Олена Коваль",
             ),
             onViewOnOlx = {},
             onCreateAnother = {},

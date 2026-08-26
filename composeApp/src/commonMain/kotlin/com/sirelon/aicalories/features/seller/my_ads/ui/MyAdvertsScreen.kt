@@ -54,16 +54,17 @@ import com.sirelon.sellsnap.generated.resources.ic_refresh_cw
 import com.sirelon.sellsnap.generated.resources.ic_tag
 import com.sirelon.sellsnap.generated.resources.ic_wifi_off
 import com.sirelon.sellsnap.generated.resources.label_value_format
+import com.sirelon.sellsnap.generated.resources.my_ads_account_fallback_name
 import com.sirelon.sellsnap.generated.resources.my_ads_connect_action
 import com.sirelon.sellsnap.generated.resources.my_ads_connect_description
 import com.sirelon.sellsnap.generated.resources.my_ads_connect_title
 import com.sirelon.sellsnap.generated.resources.my_ads_create_listing
 import com.sirelon.sellsnap.generated.resources.my_ads_created_at
-import com.sirelon.sellsnap.generated.resources.my_ads_empty_description
+import com.sirelon.sellsnap.generated.resources.my_ads_empty_description_account
 import com.sirelon.sellsnap.generated.resources.my_ads_empty_title
+import com.sirelon.sellsnap.generated.resources.my_ads_header_subtitle_account
 import com.sirelon.sellsnap.generated.resources.my_ads_load_more
 import com.sirelon.sellsnap.generated.resources.my_ads_price_not_set
-import com.sirelon.sellsnap.generated.resources.my_ads_screen_subtitle
 import com.sirelon.sellsnap.generated.resources.my_ads_screen_title
 import com.sirelon.sellsnap.generated.resources.my_ads_status_active
 import com.sirelon.sellsnap.generated.resources.my_ads_status_blocked
@@ -148,7 +149,7 @@ private fun MyAdvertsScreen(
             verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.xl4),
         ) {
             item {
-                MyAdsHeader()
+                MyAdsHeader(accountName = state.accountName)
             }
 
             when {
@@ -157,7 +158,10 @@ private fun MyAdvertsScreen(
                 }
 
                 state.adverts.isEmpty() && !state.isLoading && state.errorMessage == null -> item {
-                    EmptyAdsCard(onCreateListing = { onEvent(Event.CreateListingClicked) })
+                    EmptyAdsCard(
+                        accountName = state.accountName,
+                        onCreateListing = { onEvent(Event.CreateListingClicked) },
+                    )
                 }
 
                 else -> {
@@ -202,7 +206,7 @@ private fun MyAdvertsScreen(
 }
 
 @Composable
-private fun MyAdsHeader(modifier: Modifier = Modifier) {
+private fun MyAdsHeader(accountName: String?, modifier: Modifier = Modifier) {
     AppCard(
         modifier = modifier.fillMaxWidth(),
         containerColor = AppTheme.colors.primary.copy(alpha = 0.12f),
@@ -233,7 +237,10 @@ private fun MyAdsHeader(modifier: Modifier = Modifier) {
                     color = AppTheme.colors.onSurface,
                 )
                 Text(
-                    text = stringResource(Res.string.my_ads_screen_subtitle),
+                    text = stringResource(
+                        Res.string.my_ads_header_subtitle_account,
+                        accountName.orAccountFallback(),
+                    ),
                     style = AppTheme.typography.body,
                     color = AppTheme.colors.onSurfaceMuted,
                 )
@@ -254,15 +261,24 @@ private fun ConnectionRequiredCard(onConnect: () -> Unit) {
 }
 
 @Composable
-private fun EmptyAdsCard(onCreateListing: () -> Unit) {
+private fun EmptyAdsCard(accountName: String?, onCreateListing: () -> Unit) {
     StateCard(
         icon = Res.drawable.ic_camera,
         title = stringResource(Res.string.my_ads_empty_title),
-        description = stringResource(Res.string.my_ads_empty_description),
+        description = stringResource(
+            Res.string.my_ads_empty_description_account,
+            accountName.orAccountFallback(),
+        ),
         actionText = stringResource(Res.string.my_ads_create_listing),
         onAction = onCreateListing,
     )
 }
+
+/** Falls back to a generic label (SIR-83 D8) when the active account has no name yet - either
+ * [MyAdvertsContract.State.accountName] hasn't loaded, or the account itself has a blank name. */
+@Composable
+private fun String?.orAccountFallback(): String =
+    this?.takeIf { it.isNotBlank() } ?: stringResource(Res.string.my_ads_account_fallback_name)
 
 @Composable
 private fun StateCard(
