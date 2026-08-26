@@ -2,12 +2,14 @@ package com.sirelon.sellsnap.startup
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sirelon.sellsnap.config.AppConfig
 import com.sirelon.sellsnap.features.seller.ad.AdFlowTimerStore
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountMigration
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAuthRepository
 import com.sirelon.sellsnap.features.seller.auth.data.OlxCountryStore
 import com.sirelon.sellsnap.features.seller.auth.domain.SellerSessionMode
 import com.sirelon.sellsnap.features.seller.profile.data.SellerAccountRepository
+import com.sirelon.sellsnap.features.whatsnew.data.WhatsNewStore
 import com.sirelon.sellsnap.navigation.AppDestination
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -22,6 +24,7 @@ class AppNavigationViewModel(
     private val analyticsConsentRepository: AnalyticsConsentRepository,
     private val olxAccountMigration: OlxAccountMigration,
     private val sellerAccountRepository: SellerAccountRepository,
+    private val whatsNewStore: WhatsNewStore,
 ) : ViewModel() {
 
     private val _backStack = MutableStateFlow<List<AppDestination>>(listOf(AppDestination.Splash))
@@ -101,6 +104,9 @@ class AppNavigationViewModel(
         val initial: AppDestination = when {
             !startupStore.hasSeenOnboarding() -> {
                 startupStore.markOnboardingSeen()
+                // A fresh install has nothing to catch up on — seed the marker so the
+                // What's New prompt never fires for this, the user's very first session.
+                whatsNewStore.markVersionSeen(AppConfig.appVersionName)
                 AppDestination.SellerOnboarding
             }
 

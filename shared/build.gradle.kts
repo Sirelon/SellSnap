@@ -2,6 +2,7 @@
 import com.codingfeline.buildkonfig.compiler.FieldSpec.Type.STRING
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.io.FileInputStream
 import java.util.Properties
 
 val sharedOptInAnnotations = listOf(
@@ -62,6 +63,13 @@ val olxAuthBaseUrl =
 val olxRedirectUri =
     resolveSecret("OLX_REDIRECT_URI", "olx.redirect.uri")
         ?: "selolxai://olx-auth/callback"
+
+// Single source of truth for app version, shared with iOS via fastlane (see Fastfile) and with
+// Android via androidApp/build.gradle.kts.
+val versionProperties = Properties().apply {
+    FileInputStream(rootProject.file("version.properties")).use(::load)
+}
+val appVersionName = versionProperties.getProperty("VERSION_NAME")
 
 kotlin {
     android {
@@ -141,5 +149,6 @@ buildkonfig {
         buildConfigField(STRING, "OLX_SCOPE", olxScope)
         buildConfigField(STRING, "OLX_AUTH_BASE_URL", olxAuthBaseUrl)
         buildConfigField(STRING, "OLX_REDIRECT_URI", olxRedirectUri)
+        buildConfigField(STRING, "APP_VERSION_NAME", appVersionName)
     }
 }
