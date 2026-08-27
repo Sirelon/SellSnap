@@ -1,0 +1,520 @@
+[
+  {
+    "version": "2.2",
+    "date": "2026-08-19",
+    "active": true,
+    "changes": [
+      {
+        "id": "clearer-privacy-setting",
+        "icon": "improvement",
+        "title": {
+          "en": "Clearer privacy setting",
+          "uk": "Зрозуміліше налаштування приватності",
+          "ru": "Зрозуміліше налаштування приватності",
+          "bg": "По-ясна настройка за поверителност",
+          "kk": "Түсініктірек құпиялылық баптауы",
+          "pl": "Jaśniejsze ustawienie prywatności",
+          "pt": "Definição de privacidade mais clara",
+          "ro": "Setare de confidențialitate mai clară"
+        },
+        "summary": {
+          "en": "Renamed and clarified the usage-analytics setting in Privacy & data — off by default.",
+          "uk": "Перейменували й уточнили налаштування аналітики використання в розділі «Приватність і дані» — вимкнено за замовчуванням.",
+          "ru": "Перейменували й уточнили налаштування аналітики використання в розділі «Приватність і дані» — вимкнено за замовчуванням.",
+          "bg": "Преименувахме и изяснихме настройката за споделяне на аналитика в „Поверителност и данни“ — изключена по подразбиране.",
+          "kk": "«Құпиялылық және деректер» бөліміндегі пайдалану аналитикасы баптауының атын өзгертіп, түсінікті еттік — әдепкі бойынша өшірулі.",
+          "pl": "Zmieniliśmy nazwę i doprecyzowaliśmy ustawienie udostępniania danych analitycznych w sekcji Prywatność i dane — domyślnie wyłączone.",
+          "pt": "Renomeámos e clarificámos a definição de partilha de dados analíticos em Privacidade e dados — desativada por predefinição.",
+          "ro": "Am redenumit și clarificat setarea de partajare a datelor analitice din Confidențialitate și date — dezactivată implicit."
+        }
+      }
+    ]
+  },
+  {
+    "version": "2.0",
+    "date": "2026-08-04",
+    "active": true,
+    "changes": [
+      {
+        "id": "correct-categories-per-country",
+        "icon": "fix",
+        "title": {
+          "en": "Correct categories for your country",
+          "uk": "Правильні категорії для вашої країни",
+          "ru": "Правильні категорії для вашої країни",
+          "bg": "Правилни категории за твоята държава",
+          "kk": "Еліңе сай дұрыс санаттар",
+          "pl": "Właściwe kategorie dla Twojego kraju",
+          "pt": "Categorias corretas para o seu país",
+          "ro": "Categorii corecte pentru țara ta"
+        },
+        "summary": {
+          "en": "Fixed category icons and options that were showing Ukraine-only choices for sellers in other countries.",
+          "uk": "Виправили іконки та варіанти категорій, які показували лише українські значення продавцям з інших країн.",
+          "ru": "Виправили іконки та варіанти категорій, які показували лише українські значення продавцям з інших країн.",
+          "bg": "Поправихме икони и опции за категории, които показваха само украински варианти на продавачи от други държави.",
+          "kk": "Басқа елдердегі сатушыларға тек украиналық нұсқаларды көрсетіп тұрған санат белгішелері мен опцияларын түзеттік.",
+          "pl": "Naprawiliśmy ikony i opcje kategorii, które pokazywały wyłącznie ukraińskie warianty sprzedawcom z innych krajów.",
+          "pt": "Corrigimos ícones e opções de categorias que mostravam apenas escolhas da Ucrânia a vendedores de outros países.",
+          "ro": "Am corectat iconițele și opțiunile de categorii care afișau doar variante din Ucraina vânzătorilor din alte țări."
+        }
+      },
+      {
+        "id": "back-button-on-preview",
+        "icon": "improvement",
+        "title": {
+          "en": "Easier to go back",
+          "uk": "Зручніше повертатися назад",
+          "ru": "Зручніше повертатися назад",
+          "bg": "По-лесно връщане назад",
+          "kk": "Артқа қайту оңайырақ",
+          "pl": "Łatwiejszy powrót",
+          "pt": "Mais fácil voltar atrás",
+          "ro": "Mai ușor să te întorci"
+        },
+        "summary": {
+          "en": "Added a back button on the listing review screen.",
+          "uk": "Додали кнопку «Назад» на екрані перегляду оголошення.",
+          "ru": "Додали кнопку «Назад» на екрані перегляду оголошення.",
+          "bg": "Добавихме бутон „Назад“ на екрана за преглед на обявата.",
+          "kk": "Хабарландыруды қарау экранына артқа қайту түймесін қостық.",
+          "pl": "Dodaliśmy przycisk wstecz na ekranie podglądu ogłoszenia.",
+          "pt": "Adicionámos um botão de voltar no ecrã de revisão do anúncio.",
+          "ro": "Am adăugat un buton de înapoi pe ecranul de previzualizare a anunțului."
+        }
+      }
+    ]
+  },
+  {
+    "version": "1.4",
+    "date": "2026-07-17",
+    "active": true,
+    "changes": [
+      {
+        "id": "multi-country-olx",
+        "icon": "feature",
+        "title": {
+          "en": "Sell across borders",
+          "uk": "Продавайте за кордоном",
+          "ru": "Продавайте за кордоном",
+          "bg": "Продавай отвъд границите",
+          "kk": "Шекара сыртында сату",
+          "pl": "Sprzedawaj bez granic",
+          "pt": "Venda além-fronteiras",
+          "ro": "Vinde peste granițe"
+        },
+        "summary": {
+          "en": "SellSnap now supports OLX accounts in Portugal, Romania, Poland, Ukraine, and Bulgaria.",
+          "uk": "SellSnap тепер підтримує OLX-акаунти в Португалії, Румунії, Польщі, Україні та Болгарії.",
+          "ru": "SellSnap тепер підтримує OLX-акаунти в Португалії, Румунії, Польщі, Україні та Болгарії.",
+          "bg": "SellSnap вече поддържа OLX акаунти в Португалия, Румъния, Полша, Украйна и България.",
+          "kk": "SellSnap енді Португалия, Румыния, Польша, Украина және Болгариядағы OLX аккаунттарын қолдайды.",
+          "pl": "SellSnap obsługuje teraz konta OLX w Portugalii, Rumunii, Polsce, na Ukrainie i w Bułgarii.",
+          "pt": "O SellSnap agora suporta contas OLX em Portugal, Roménia, Polónia, Ucrânia e Bulgária.",
+          "ro": "SellSnap acceptă acum conturi OLX din Portugalia, România, Polonia, Ucraina și Bulgaria."
+        },
+        "detail": {
+          "en": "Pick your country when connecting OLX, and everything — sign-in, categories, publishing — matches your market.",
+          "uk": "Оберіть країну під час підключення OLX — і все: вхід, категорії, публікація — відповідатиме вашому ринку.",
+          "ru": "Оберіть країну під час підключення OLX — і все: вхід, категорії, публікація — відповідатиме вашому ринку.",
+          "bg": "Избери държавата си при свързване с OLX и всичко — вход, категории, публикуване — ще отговаря на твоя пазар.",
+          "kk": "OLX-ті қосқанда еліңді таңда — кіру, санаттар, жариялау бәрі сенің нарығыңа сай болады.",
+          "pl": "Wybierz swój kraj przy łączeniu OLX, a wszystko — logowanie, kategorie, publikowanie — będzie dopasowane do Twojego rynku.",
+          "pt": "Escolha o seu país ao ligar o OLX, e tudo — início de sessão, categorias, publicação — corresponde ao seu mercado.",
+          "ro": "Alege-ți țara la conectarea OLX, iar totul — autentificare, categorii, publicare — se potrivește cu piața ta."
+        }
+      },
+      {
+        "id": "ai-writes-in-your-language",
+        "icon": "magic",
+        "title": {
+          "en": "AI writes in your language",
+          "uk": "ШІ пише вашою мовою",
+          "ru": "ШІ пише вашою мовою",
+          "bg": "AI пише на твоя език",
+          "kk": "AI сенің тіліңде жазады",
+          "pl": "AI pisze w Twoim języku",
+          "pt": "A IA escreve no seu idioma",
+          "ro": "AI scrie în limba ta"
+        },
+        "summary": {
+          "en": "AI-generated listings are now written in your market's language and priced in its local currency.",
+          "uk": "Оголошення, згенеровані ШІ, тепер пишуться мовою вашого ринку та з ціною в місцевій валюті.",
+          "ru": "Оголошення, згенеровані ШІ, тепер пишуться мовою вашого ринку та з ціною в місцевій валюті.",
+          "bg": "Обявите, генерирани от AI, вече се пишат на езика на твоя пазар и с цена в местната валута.",
+          "kk": "AI жасаған хабарландырулар енді сенің нарығыңның тілінде және жергілікті валютамен жазылады.",
+          "pl": "Ogłoszenia generowane przez AI są teraz pisane w języku Twojego rynku i wycenione w lokalnej walucie.",
+          "pt": "Os anúncios gerados por IA são agora escritos no idioma do seu mercado e com preço na moeda local.",
+          "ro": "Anunțurile generate de AI sunt acum scrise în limba pieței tale și cu prețul în moneda locală."
+        }
+      },
+      {
+        "id": "privacy-and-data-controls",
+        "icon": "feature",
+        "title": {
+          "en": "Privacy & data, in one place",
+          "uk": "Приватність і дані — в одному місці",
+          "ru": "Приватність і дані — в одному місці",
+          "bg": "Поверителност и данни — на едно място",
+          "kk": "Құпиялылық және деректер — бір жерде",
+          "pl": "Prywatność i dane w jednym miejscu",
+          "pt": "Privacidade e dados, num só lugar",
+          "ro": "Confidențialitate și date, într-un singur loc"
+        },
+        "summary": {
+          "en": "Manage analytics sharing and request your data from a new section in your profile.",
+          "uk": "Керуйте аналітикою та запитуйте свої дані в новому розділі свого профілю.",
+          "ru": "Керуйте аналітикою та запитуйте свої дані в новому розділі свого профілю.",
+          "bg": "Управлявай споделянето на аналитика и заяви данните си от нов раздел в профила.",
+          "kk": "Профиліңдегі жаңа бөлімнен аналитиканы бөлісуді басқар және деректеріңді сұра.",
+          "pl": "Zarządzaj udostępnianiem danych analitycznych i poproś o swoje dane w nowej sekcji swojego profilu.",
+          "pt": "Faça a gestão da partilha de dados analíticos e peça os seus dados numa nova secção do seu perfil.",
+          "ro": "Gestionează partajarea datelor analitice și solicită-ți datele dintr-o secțiune nouă a profilului tău."
+        }
+      },
+      {
+        "id": "clean-slate-on-deletion",
+        "icon": "fix",
+        "title": {
+          "en": "Clean slate on data deletion",
+          "uk": "Чисто після видалення даних",
+          "ru": "Чисто після видалення даних",
+          "bg": "Чисто начало при изтриване на данните",
+          "kk": "Деректерді жойғанда — толық тазарту",
+          "pl": "Czysty start po usunięciu danych",
+          "pt": "Tudo limpo ao eliminar os dados",
+          "ro": "Curățenie completă la ștergerea datelor"
+        },
+        "summary": {
+          "en": "Deleting your account data now also clears saved draft photos and cached images.",
+          "uk": "Видалення даних акаунта тепер також очищує збережені чернеткові фото та кешовані зображення.",
+          "ru": "Видалення даних акаунта тепер також очищує збережені чернеткові фото та кешовані зображення.",
+          "bg": "Изтриването на данните на акаунта вече изчиства и запазените чернови снимки, и кешираните изображения.",
+          "kk": "Аккаунт деректерін жою енді сақталған жоба фотоларын және кэштелген суреттерді де тазартады.",
+          "pl": "Usunięcie danych konta czyści teraz również zapisane zdjęcia ze szkicu i zdjęcia w pamięci podręcznej.",
+          "pt": "Eliminar os dados da sua conta agora também apaga as fotos de rascunho guardadas e as imagens em cache.",
+          "ro": "Ștergerea datelor contului tău șterge acum și fotografiile din ciornă salvate, și imaginile din cache."
+        }
+      }
+    ]
+  },
+  {
+    "version": "1.3",
+    "date": "2026-06-09",
+    "active": true,
+    "changes": [
+      {
+        "id": "delete-account-data",
+        "icon": "feature",
+        "title": {
+          "en": "Delete your account data",
+          "uk": "Видаляйте дані свого акаунта",
+          "ru": "Видаляйте дані свого акаунта",
+          "bg": "Изтрий данните на своя акаунт",
+          "kk": "Аккаунт деректеріңді жой",
+          "pl": "Usuń dane swojego konta",
+          "pt": "Elimine os dados da sua conta",
+          "ro": "Șterge datele contului tău"
+        },
+        "summary": {
+          "en": "Clear your saved OLX connection and local data from your profile at any time.",
+          "uk": "Очищайте збережене підключення OLX і локальні дані зі свого профілю в будь-який момент.",
+          "ru": "Очищайте збережене підключення OLX і локальні дані зі свого профілю в будь-який момент.",
+          "bg": "Изчиствай запазената връзка с OLX и локалните данни от профила си по всяко време.",
+          "kk": "Профиліңнен сақталған OLX байланысы мен жергілікті деректерді кез келген уақытта тазарт.",
+          "pl": "W dowolnym momencie wyczyść zapisane połączenie z OLX i dane lokalne z Twojego profilu.",
+          "pt": "Limpe a sua ligação OLX guardada e os dados locais a partir do seu perfil, a qualquer momento.",
+          "ro": "Șterge oricând conexiunea OLX salvată și datele locale din profilul tău."
+        }
+      },
+      {
+        "id": "olx-sign-in-reliability",
+        "icon": "fix",
+        "title": {
+          "en": "More reliable OLX sign-in",
+          "uk": "Надійніший вхід через OLX",
+          "ru": "Надійніший вхід через OLX",
+          "bg": "По-надежден вход в OLX",
+          "kk": "OLX-ке кіру сенімдірек болды",
+          "pl": "Bardziej niezawodne logowanie do OLX",
+          "pt": "Início de sessão no OLX mais fiável",
+          "ro": "Autentificare mai sigură pe OLX"
+        },
+        "summary": {
+          "en": "Fixed OLX sign-in failing for some users — connecting your account now opens your browser instead of an in-app window.",
+          "uk": "Виправили збій входу через OLX для деяких користувачів — підключення акаунта тепер відкриває браузер замість вікна в додатку.",
+          "ru": "Виправили збій входу через OLX для деяких користувачів — підключення акаунта тепер відкриває браузер замість вікна в додатку.",
+          "bg": "Поправихме проблем с входа в OLX за някои потребители — свързването на акаунта вече отваря браузъра ти вместо прозорец в приложението.",
+          "kk": "Кейбір пайдаланушылар үшін OLX-ке кіру қатесін түзеттік — аккаунтты қосу енді қолданба ішіндегі терезенің орнына браузерді ашады.",
+          "pl": "Naprawiliśmy błąd logowania do OLX u niektórych użytkowników — łączenie konta otwiera teraz przeglądarkę zamiast okna w aplikacji.",
+          "pt": "Corrigimos falhas no início de sessão no OLX para alguns utilizadores — ligar a sua conta agora abre o seu navegador em vez de uma janela dentro da aplicação.",
+          "ro": "Am corectat autentificarea eșuată pe OLX pentru unii utilizatori — conectarea contului deschide acum browserul tău, nu o fereastră din aplicație."
+        }
+      },
+      {
+        "id": "fresh-listing-each-time",
+        "icon": "fix",
+        "title": {
+          "en": "Fresh listing every time",
+          "uk": "Свіже оголошення щоразу",
+          "ru": "Свіже оголошення щоразу",
+          "bg": "Всеки път чиста обява",
+          "kk": "Әр жолы жаңа хабарландыру",
+          "pl": "Za każdym razem nowe ogłoszenie",
+          "pt": "Anúncio sempre do zero",
+          "ro": "Anunț nou de fiecare dată"
+        },
+        "summary": {
+          "en": "Fixed a bug where starting a new listing sometimes showed the previous one's photos.",
+          "uk": "Виправили помилку, через яку нове оголошення іноді показувало фото з попереднього.",
+          "ru": "Виправили помилку, через яку нове оголошення іноді показувало фото з попереднього.",
+          "bg": "Поправихме грешка, при която нова обява понякога показваше снимките от предишната.",
+          "kk": "Жаңа хабарландыру кейде алдыңғысының фотоларын көрсетіп тұратын қатені түзеттік.",
+          "pl": "Naprawiliśmy błąd, przez który nowe ogłoszenie czasem pokazywało zdjęcia z poprzedniego.",
+          "pt": "Corrigimos um erro em que iniciar um novo anúncio por vezes mostrava as fotos do anterior.",
+          "ro": "Am corectat o eroare din cauza căreia un anunț nou afișa uneori fotografiile celui anterior."
+        }
+      },
+      {
+        "id": "correct-pricing-currency",
+        "icon": "fix",
+        "title": {
+          "en": "Correct pricing for your market",
+          "uk": "Правильні ціни для вашого ринку",
+          "ru": "Правильні ціни для вашого ринку",
+          "bg": "Правилни цени за твоя пазар",
+          "kk": "Нарығыңа сай дұрыс бағалар",
+          "pl": "Właściwe ceny dla Twojego rynku",
+          "pt": "Preços corretos para o seu mercado",
+          "ro": "Prețuri corecte pentru piața ta"
+        },
+        "summary": {
+          "en": "Prices are now shown and submitted in your OLX account's own currency.",
+          "uk": "Ціни тепер показуються та надсилаються у валюті вашого OLX-акаунта.",
+          "ru": "Ціни тепер показуються та надсилаються у валюті вашого OLX-акаунта.",
+          "bg": "Цените вече се показват и изпращат във валутата на твоя OLX акаунт.",
+          "kk": "Бағалар енді OLX аккаунтыңның өз валютасында көрсетіліп, жіберіледі.",
+          "pl": "Ceny są teraz pokazywane i wysyłane w walucie Twojego konta OLX.",
+          "pt": "Os preços agora são mostrados e submetidos na moeda da sua própria conta OLX.",
+          "ro": "Prețurile sunt acum afișate și trimise în moneda propriului tău cont OLX."
+        }
+      },
+      {
+        "id": "tablet-desktop-layout",
+        "icon": "improvement",
+        "title": {
+          "en": "Better tablet & desktop layout",
+          "uk": "Кращий вигляд на планшетах і десктопі",
+          "ru": "Кращий вигляд на планшетах і десктопі",
+          "bg": "По-добро оформление за таблет и компютър",
+          "kk": "Планшет пен компьютерге арналған жақсы көрініс",
+          "pl": "Lepszy układ na tablecie i komputerze",
+          "pt": "Melhor esquema para tablet e computador",
+          "ro": "Aspect mai bun pe tabletă și desktop"
+        },
+        "summary": {
+          "en": "Navigation now adapts to bigger screens with a rail or drawer instead of a fixed bottom bar.",
+          "uk": "Навігація тепер підлаштовується під великі екрани: бічна панель або висувне меню замість фіксованої нижньої панелі.",
+          "ru": "Навігація тепер підлаштовується під великі екрани: бічна панель або висувне меню замість фіксованої нижньої панелі.",
+          "bg": "Навигацията вече се адаптира към по-големи екрани — със странична лента или чекмедже вместо фиксирана лента отдолу.",
+          "kk": "Навигация енді үлкен экрандарға бейімделеді — төменгі бекітілген тақтаның орнына бүйір панель немесе тартпа.",
+          "pl": "Nawigacja dopasowuje się teraz do większych ekranów — panel boczny lub szuflada zamiast stałego dolnego paska.",
+          "pt": "A navegação agora adapta-se a ecrãs maiores, com um painel lateral ou gaveta em vez de uma barra inferior fixa.",
+          "ro": "Navigarea se adaptează acum la ecrane mai mari, cu un panel lateral sau un sertar în loc de o bară fixă jos."
+        }
+      }
+    ]
+  },
+  {
+    "version": "1.2",
+    "date": "2026-06-01",
+    "active": true,
+    "changes": [
+      {
+        "id": "reliable-photo-uploads",
+        "icon": "fix",
+        "title": {
+          "en": "More reliable photo uploads",
+          "uk": "Надійніше завантаження фото",
+          "ru": "Надійніше завантаження фото",
+          "bg": "По-надеждно качване на снимки",
+          "kk": "Фотоларды сенімдірек жүктеу",
+          "pl": "Bardziej niezawodne przesyłanie zdjęć",
+          "pt": "Envio de fotos mais fiável",
+          "ro": "Încărcare mai sigură a fotografiilor"
+        },
+        "summary": {
+          "en": "Fixed an issue where some photos failed to upload without any error message.",
+          "uk": "Виправили проблему, через яку деякі фото не завантажувалися без жодного повідомлення про помилку.",
+          "ru": "Виправили проблему, через яку деякі фото не завантажувалися без жодного повідомлення про помилку.",
+          "bg": "Поправихме проблем, при който някои снимки не се качваха без никакво съобщение за грешка.",
+          "kk": "Кейбір фотолар ешбір қате хабарламасынсыз жүктелмей қалатын мәселені түзеттік.",
+          "pl": "Naprawiliśmy problem, przez który niektóre zdjęcia nie przesyłały się bez żadnego komunikatu o błędzie.",
+          "pt": "Corrigimos um problema em que algumas fotos falhavam o envio sem qualquer mensagem de erro.",
+          "ro": "Am corectat o problemă din cauza căreia unele fotografii nu se încărcau, fără niciun mesaj de eroare."
+        }
+      },
+      {
+        "id": "camera-cta",
+        "icon": "improvement",
+        "title": {
+          "en": "Faster to start",
+          "uk": "Швидший старт",
+          "ru": "Швидший старт",
+          "bg": "По-бърз старт",
+          "kk": "Тезірек бастау",
+          "pl": "Szybszy start",
+          "pt": "Início mais rápido",
+          "ro": "Pornire mai rapidă"
+        },
+        "summary": {
+          "en": "Tapping \"Add photos\" now opens your camera directly.",
+          "uk": "Натискання \"Додати фото\" тепер одразу відкриває камеру.",
+          "ru": "Натискання \"Додати фото\" тепер одразу відкриває камеру.",
+          "bg": "Докосването на \"Добави снимки\" вече отваря камерата директно.",
+          "kk": "\"Фото қосу\" түймесін түрту енді камераны бірден ашады.",
+          "pl": "Dotknięcie \"Dodaj zdjęcia\" otwiera teraz od razu aparat.",
+          "pt": "Tocar em \"Adicionar fotos\" agora abre a câmara diretamente.",
+          "ro": "Atingerea \"Adaugă fotografii\" deschide acum direct camera."
+        }
+      }
+    ]
+  },
+  {
+    "version": "1.1",
+    "date": "2026-05-20",
+    "active": true,
+    "changes": [
+      {
+        "id": "ai-writes-your-listing",
+        "icon": "magic",
+        "title": {
+          "en": "AI writes your listing from photos",
+          "uk": "ШІ пише оголошення з ваших фото",
+          "ru": "ШІ пише оголошення з ваших фото",
+          "bg": "AI пише обявата ти от снимки",
+          "kk": "AI хабарландыруыңды фотодан жазады",
+          "pl": "AI pisze Twoje ogłoszenie ze zdjęć",
+          "pt": "A IA escreve o seu anúncio a partir de fotos",
+          "ro": "AI îți scrie anunțul din fotografii"
+        },
+        "summary": {
+          "en": "Snap a few photos and SellSnap's AI writes the title, description, and price for you.",
+          "uk": "Зробіть кілька фото — і ШІ SellSnap напише назву, опис і ціну за вас.",
+          "ru": "Зробіть кілька фото — і ШІ SellSnap напише назву, опис і ціну за вас.",
+          "bg": "Снимай няколко кадъра и AI на SellSnap написва заглавието, описанието и цената вместо теб.",
+          "kk": "Бірнеше фото түсір — SellSnap-тың AI-ы сен үшін тақырыпты, сипаттаманы және бағаны жазады.",
+          "pl": "Zrób kilka zdjęć, a AI SellSnap napisze za Ciebie tytuł, opis i cenę.",
+          "pt": "Tire algumas fotos e a IA do SellSnap escreve o título, a descrição e o preço por si.",
+          "ro": "Fă câteva fotografii, iar AI-ul SellSnap scrie titlul, descrierea și prețul pentru tine."
+        },
+        "detail": {
+          "en": "Review and edit anything before it goes live — nothing publishes without your OK.",
+          "uk": "Перевірте й відредагуйте все перед публікацією — нічого не публікується без вашого підтвердження.",
+          "ru": "Перевірте й відредагуйте все перед публікацією — нічого не публікується без вашого підтвердження.",
+          "bg": "Прегледай и редактирай всичко, преди да публикуваш — нищо не се публикува без твоето одобрение.",
+          "kk": "Жарияланбас бұрын бәрін тексер және өңде — сенің құптауыңсыз ештеңе жарияланбайды.",
+          "pl": "Przejrzyj i edytuj wszystko, zanim ogłoszenie zostanie opublikowane — nic nie trafia na OLX bez Twojej zgody.",
+          "pt": "Reveja e edite tudo antes de ser publicado — nada é publicado sem a sua aprovação.",
+          "ro": "Verifică și editează orice înainte de publicare — nimic nu se publică fără aprobarea ta."
+        }
+      },
+      {
+        "id": "publish-to-olx",
+        "icon": "feature",
+        "title": {
+          "en": "Publish straight to OLX",
+          "uk": "Публікуйте прямо на OLX",
+          "ru": "Публікуйте прямо на OLX",
+          "bg": "Публикувай директно в OLX",
+          "kk": "OLX-ке тікелей жариялау",
+          "pl": "Publikuj prosto na OLX",
+          "pt": "Publique diretamente no OLX",
+          "ro": "Publică direct pe OLX"
+        },
+        "summary": {
+          "en": "Log in with your OLX account and publish your generated listing with one tap.",
+          "uk": "Увійдіть у свій акаунт OLX і публікуйте згенероване оголошення в один тап.",
+          "ru": "Увійдіть у свій акаунт OLX і публікуйте згенероване оголошення в один тап.",
+          "bg": "Влез с акаунта си в OLX и публикувай генерираната обява с един допир.",
+          "kk": "OLX аккаунтыңмен кір де, жасалған хабарландыруды бір түртумен жария.",
+          "pl": "Zaloguj się na konto OLX i opublikuj wygenerowane ogłoszenie jednym dotknięciem.",
+          "pt": "Inicie sessão com a sua conta OLX e publique o anúncio gerado com um toque.",
+          "ro": "Autentifică-te cu contul tău OLX și publică anunțul generat dintr-o atingere."
+        }
+      },
+      {
+        "id": "my-ads",
+        "icon": "feature",
+        "title": {
+          "en": "Browse all your OLX ads in one place",
+          "uk": "Усі ваші OLX-оголошення в одному місці",
+          "ru": "Усі ваші OLX-оголошення в одному місці",
+          "bg": "Всичките ти OLX обяви на едно място",
+          "kk": "OLX хабарландыруларыңның бәрі бір жерде",
+          "pl": "Wszystkie Twoje ogłoszenia OLX w jednym miejscu",
+          "pt": "Todos os seus anúncios OLX num só lugar",
+          "ro": "Toate anunțurile tale OLX, într-un singur loc"
+        },
+        "summary": {
+          "en": "A new My Ads tab shows every listing synced from your OLX account.",
+          "uk": "Нова вкладка «Мої оголошення» показує кожне оголошення, синхронізоване з вашого акаунта OLX.",
+          "ru": "Нова вкладка «Мої оголошення» показує кожне оголошення, синхронізоване з вашого акаунта OLX.",
+          "bg": "Нов раздел „Моите обяви“ показва всяка обява, синхронизирана от акаунта ти в OLX.",
+          "kk": "Жаңа «Менің хабарландыруларым» қойындысы OLX аккаунтыңнан синхрондалған әр хабарландыруды көрсетеді.",
+          "pl": "Nowa zakładka Moje ogłoszenia pokazuje każde ogłoszenie zsynchronizowane z Twojego konta OLX.",
+          "pt": "Um novo separador Os meus anúncios mostra todos os anúncios sincronizados da sua conta OLX.",
+          "ro": "O filă nouă Anunțurile mele arată fiecare anunț sincronizat din contul tău OLX."
+        }
+      },
+      {
+        "id": "guest-mode",
+        "icon": "feature",
+        "title": {
+          "en": "No OLX account? Try it as a guest",
+          "uk": "Немає акаунта OLX? Спробуйте як гість",
+          "ru": "Немає акаунта OLX? Спробуйте як гість",
+          "bg": "Нямаш акаунт в OLX? Пробвай като гост",
+          "kk": "OLX аккаунтың жоқ па? Қонақ ретінде қолданып көр",
+          "pl": "Nie masz konta OLX? Wypróbuj jako gość",
+          "pt": "Sem conta OLX? Experimente como convidado",
+          "ro": "Nu ai cont OLX? Încearcă ca oaspete"
+        },
+        "summary": {
+          "en": "Generate a listing without logging in, then copy it over to OLX yourself.",
+          "uk": "Згенеруйте оголошення без входу, а тоді скопіюйте його на OLX самостійно.",
+          "ru": "Згенеруйте оголошення без входу, а тоді скопіюйте його на OLX самостійно.",
+          "bg": "Генерирай обява без вход, а после я копирай в OLX сам.",
+          "kk": "Кірмей-ақ хабарландыру жаса, содан кейін оны OLX-ке өзің көшір.",
+          "pl": "Wygeneruj ogłoszenie bez logowania, a potem samodzielnie skopiuj je na OLX.",
+          "pt": "Gere um anúncio sem iniciar sessão e depois copie-o para o OLX você mesmo.",
+          "ro": "Generează un anunț fără să te autentifici, apoi copiază-l singur pe OLX."
+        }
+      },
+      {
+        "id": "theme-selector",
+        "icon": "improvement",
+        "title": {
+          "en": "Light, dark, or system theme",
+          "uk": "Світла, темна або системна тема",
+          "ru": "Світла, темна або системна тема",
+          "bg": "Светла, тъмна или системна тема",
+          "kk": "Ашық, күңгірт немесе жүйелік тақырып",
+          "pl": "Jasny, ciemny lub systemowy motyw",
+          "pt": "Tema claro, escuro ou do sistema",
+          "ro": "Temă luminoasă, întunecată sau de sistem"
+        },
+        "summary": {
+          "en": "Pick your favorite look from your profile.",
+          "uk": "Оберіть улюблений вигляд у своєму профілі.",
+          "ru": "Оберіть улюблений вигляд у своєму профілі.",
+          "bg": "Избери любимия си вид от профила си.",
+          "kk": "Профиліңнен ұнатқан көрінісіңді таңда.",
+          "pl": "Wybierz swój ulubiony wygląd w swoim profilu.",
+          "pt": "Escolha o seu visual preferido a partir do seu perfil.",
+          "ro": "Alege aspectul preferat din profilul tău."
+        }
+      }
+    ]
+  }
+]
