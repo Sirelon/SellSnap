@@ -49,7 +49,8 @@ kotlin {
         androidResources.enable = true
         compilerOptions {
             freeCompilerArgs.set(listOf("-Xannotation-default-target=param-property"))
-            jvmTarget.set(JvmTarget.JVM_11)
+            // GitLive's Firestore module ships inline functions built with a JVM 17 target.
+            jvmTarget.set(JvmTarget.JVM_17)
         }
 
         packaging {
@@ -110,11 +111,14 @@ kotlin {
         }
         // Shared by androidMain + iosMain only: GitLive's Firebase Storage/Installations modules
         // publish no jvm or wasmJs target, so this stays out of dataStoreMain (which jvm depends on).
+        // Firestore does publish jvm/js targets, but stays mobile-only too: Desktop/Web never
+        // initialize a Firebase app in this repo (see PhotoUploaderModule.jvm.kt/.jsWasm.kt).
         val mobileMain = create("mobileMain") {
             dependsOn(commonMain.get())
             dependencies {
                 implementation(libs.gitlive.firebase.storage)
                 implementation(libs.gitlive.firebase.installations)
+                implementation(libs.gitlive.firebase.firestore)
             }
         }
         val iosMain = create("iosMain") {
@@ -135,7 +139,9 @@ kotlin {
             implementation(project.dependencies.platform(libs.firebase.bom))
             implementation(libs.gitlive.firebase.analytics)
             implementation(libs.gitlive.firebase.crashlytics)
-            implementation("androidx.browser:browser:1.8.0")
+            // 1.10.0+ for CustomTabsIntent ephemeral browsing (SIR-83 Android force-relogin, D5) -
+            // https://developer.chrome.com/docs/android/custom-tabs/guide-ephemeral-tab
+            implementation("androidx.browser:browser:1.10.0")
         }
         commonMain.dependencies {
             implementation(libs.supabase.compose.auth)
@@ -186,6 +192,7 @@ kotlin {
         commonTest.dependencies {
             implementation(libs.kotlin.test)
             implementation(libs.ktor.client.mock)
+            implementation(libs.kotlinx.coroutines.test)
         }
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)

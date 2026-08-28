@@ -92,7 +92,7 @@
     <string name="profile_theme_system">Системна</string>
     <string name="profile_theme_light">Світла</string>
     <string name="profile_theme_dark">Темна</string>
-    <string name="profile_logout">Вийти</string>
+    <string name="profile_logout">Відключити</string>
     <string name="profile_delete_account_data">Видалити дані акаунта SellSnap</string>
     <string name="profile_delete_account_data_title">Видалити дані акаунта SellSnap?</string>
     <string name="profile_delete_account_data_message">Це видалить збережене підключення OLX, локальний кеш профілю, гостьову сесію, місце продажу, обрану країну та чернеткові фото з цього пристрою. Ваш акаунт OLX не буде видалено.</string>
@@ -105,6 +105,16 @@
     <string name="profile_not_provided">Не задано</string>
     <string name="profile_value_yes">Так</string>
     <string name="profile_value_no">Ні</string>
+
+    <!-- What's New -->
+    <string name="settings_version_history">Історія версій</string>
+    <string name="whats_new_screen_title">Що нового</string>
+    <string name="whats_new_dialog_title">Що нового у версії %1$s</string>
+    <string name="whats_new_got_it">Зрозуміло</string>
+    <string name="whats_new_view_all">Переглянути всі оновлення</string>
+    <string name="whats_new_installed_badge">Встановлено</string>
+    <string name="whats_new_empty_title">Тут поки що нічого немає</string>
+    <string name="whats_new_empty_description">Загляньте пізніше, щоб дізнатися про оновлення.</string>
 
     <!-- My OLX Ads -->
     <string name="nav_my_ads">Мої оголошення</string>
@@ -241,6 +251,7 @@
     <string name="error_publish_missing_category_or_location">Майже готово — додайте категорію та місцезнаходження перед публікацією.</string>
     <string name="error_publish_missing_contact_name">У вашому профілі OLX немає імені. Зайдіть туди, додайте — і спробуємо ще раз.</string>
     <string name="error_category_suggestion_failed">Не вдалося запропонувати категорію.</string>
+    <string name="error_category_not_supported">Ми ще не підтримуємо цю категорію (наприклад, тварини, нерухомість, транспорт, робота, оренда). Спробуйте інший товар.</string>
     <string name="error_attributes_load_failed">Не вдалося завантажити деталі.</string>
     <string name="error_user_profile_fetch_failed">Не вдалося завантажити ваш профіль.</string>
     <string name="error_olx_auth_prepare_failed">Не вдалося розпочати вхід у OLX.</string>
@@ -289,4 +300,43 @@
     <string name="category_picker_select_with_name">Обрати · %1$s</string>
     <string name="category_picker_selected_label">ОБРАНО</string>
     <string name="category_picker_select_label">ОБРАТИ</string>
+    <string name="profile_accounts_section_title">Акаунти</string>
+    <string name="profile_account_active_badge">АКТИВНИЙ</string>
+    <string name="account_needs_reconnect_badge">Потрібне повторне підключення</string>
+    <string name="account_business_badge">Бізнес</string>
+    <string name="profile_account_set_active">Зробити активним</string>
+    <string name="profile_account_add_button">Додати акаунт OLX</string>
+    <string name="profile_account_cap_reached_message">Ви підключили максимум 3 акаунти на цьому сайті OLX. Відключіть один, щоб додати інший.</string>
+    <string name="profile_active_account_details_title">Дані активного акаунта</string>
+    <string name="profile_add_account_confirm_title">Додати акаунт OLX</string>
+    <string name="profile_add_account_confirm_subtitle">Ви додасте акаунт на %1$s. Інші ваші акаунти залишаться підключеними — виходити з них не потрібно.</string>
+    <string name="profile_add_account_confirm_note">Вхід відбувається на сторінці OLX — SellSnap ніколи не бачить ваш пароль.</string>
+    <string name="profile_add_account_confirm_continue">Продовжити на OLX</string>
+    <string name="profile_add_account_confirm_cancel">Скасувати</string>
+    <string name="profile_add_account_duplicate_message">Ви вже підключені як %1$s. Щоб додати інший акаунт, спершу вийдіть із нього на OLX і спробуйте ще раз.</string>
+    <string name="profile_auth_failed_title">Не вдалося підключити цей акаунт</string>
+    <string name="profile_auth_failed_message">OLX тимчасово блокує вхід після кількох невдалих спроб — перевірте свої дані на OLX, перш ніж спробувати знову.</string>
+    <string name="profile_auth_failed_retry_countdown">Спробувати ще раз через %1$d с</string>
+    <string name="profile_auth_failed_retry">Спробувати ще раз</string>
+    <string name="profile_auth_failed_dismiss">Не зараз</string>
+    <string name="profile_auth_failed_recovery_title">Перевірте доступ на OLX</string>
+    <string name="profile_auth_failed_recovery_message">Це вже друга невдала спроба поспіль. Ще одна спроба входу ризикує тимчасовим блокуванням від OLX — відновіть доступ безпосередньо на сайті OLX.</string>
+    <string name="profile_auth_failed_recovery_action">Відновити доступ на OLX</string>
+    <string name="profile_disconnect_confirm_title">Відключити %1$s?</string>
+    <string name="profile_disconnect_confirm_message">SellSnap забуде доступ цього акаунта на цьому пристрої. Оголошення, які вже опубліковані на OLX, залишаться активними — це не закриває і не видаляє ваш акаунт OLX.</string>
+    <string name="profile_disconnect_confirm_olx_link">Керувати підключеними застосунками на OLX</string>
+    <string name="profile_disconnect_confirm_action">Відключити</string>
+    <string name="profile_disconnect_confirm_cancel">Скасувати</string>
+    <string name="profile_reconnect_account_action">Підключити %1$s знову</string>
+    <string name="publish_target_account_label">Опублікувати в</string>
+    <string name="publish_target_account_fallback_name">Ваш акаунт OLX</string>
+    <string name="publish_target_account_picker_title">Виберіть акаунт</string>
+    <string name="publish_target_account_picker_subtitle">Нові оголошення публікуватимуться в акаунті, який ви оберете тут.</string>
+    <string name="publish_success_target_account">Опубліковано в %1$s</string>
+    <string name="error_publish_account_mismatch">Під час публікації змінився акаунт, тож нічого не опубліковано. Спробуйте ще раз.</string>
+    <string name="error_publish_needs_reconnect">%1$s потрібно повторно підключити, перш ніж публікувати.</string>
+    <string name="action_reconnect_target_account">Підключити %1$s</string>
+    <string name="my_ads_header_subtitle_account">Оголошення для %1$s.</string>
+    <string name="my_ads_empty_description_account">Оголошень для %1$s ще немає.</string>
+    <string name="my_ads_account_fallback_name">вашого акаунта</string>
 </resources>

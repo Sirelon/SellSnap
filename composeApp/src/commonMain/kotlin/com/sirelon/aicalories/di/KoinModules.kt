@@ -4,6 +4,7 @@ import com.sirelon.sellsnap.Greeting
 import com.sirelon.sellsnap.analytics.analyticsModule
 import com.sirelon.sellsnap.features.media.di.mediaModule
 import com.sirelon.sellsnap.features.seller.ad.generate_ad.di.generateAdModule
+import com.sirelon.sellsnap.features.seller.ad.generation_log.adGenerationLogModule
 import com.sirelon.sellsnap.features.seller.ad.preview_ad.di.previewAdModule
 import com.sirelon.sellsnap.features.seller.auth.di.sellerAuthModule
 import com.sirelon.sellsnap.features.seller.categories.categoriesModule
@@ -11,6 +12,7 @@ import com.sirelon.sellsnap.features.seller.my_ads.di.myAdvertsModule
 import com.sirelon.sellsnap.features.seller.openai.OpenAIClient
 import com.sirelon.sellsnap.features.seller.profile.di.profileModule
 import com.sirelon.sellsnap.features.seller.settings.di.settingsModule
+import com.sirelon.sellsnap.features.whatsnew.di.whatsNewModule
 import com.sirelon.sellsnap.network.ApiTokenProvider
 import com.sirelon.sellsnap.network.createHttpClient
 import com.sirelon.sellsnap.network.createOpenAI
@@ -34,11 +36,13 @@ val appModule = module {
         sellerAuthModule,
         generateAdModule,
         previewAdModule,
+        adGenerationLogModule,
         profileModule,
         settingsModule,
         myAdvertsModule,
         appStartupModule,
         categoriesModule,
+        whatsNewModule,
     )
     single { Greeting() }
     single<CoroutineScope>(applicationScopeQualifier) {

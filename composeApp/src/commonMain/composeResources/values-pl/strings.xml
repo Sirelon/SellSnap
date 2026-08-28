@@ -1,4 +1,10 @@
 <resources>
+    <!-- OLX Country Picker -->
+    <string name="olx_country_picker_title">Wybierz swój kraj</string>
+    <string name="olx_country_picker_subtitle">Połączymy Cię z właściwym regionalnym rynkiem OLX</string>
+    <string name="olx_country_picker_select_prompt">Wybierz kraj</string>
+    <string name="olx_country_picker_continue">Kontynuuj</string>
+
     <!-- OnBoarding & Authentication -->
     <string name="welcome_to_sellsnap">Hej, witaj w SellSnap 👋</string>
     <string name="welcome_subtitle">Wrzuć zdjęcie, dostań ogłoszenie — AI robi resztę.</string>
@@ -18,6 +24,12 @@
     <string name="privacy_policy">Politykę prywatności</string>
     <string name="keyboard_done_action">Gotowe</string>
     <string name="or_divider">lub</string>
+
+    <!-- Analytics Consent -->
+    <string name="consent_title">Pomóc ulepszyć SellSnap?</string>
+    <string name="consent_message">Udostępnij anonimowe dane analityczne i raporty o awariach, żebyśmy mogli naprawiać błędy i ulepszać SellSnap. Domyślnie jest to wyłączone i nigdy nie obejmuje Twoich zdjęć ani treści ogłoszeń — możesz to zmienić w dowolnym momencie w Profilu.</string>
+    <string name="consent_allow">Zezwól</string>
+    <string name="consent_decline">Nie teraz</string>
 
     <!-- Onboarding Screen Steps -->
     <string name="onboarding_step1_title">Zrób zdjęcie 📸</string>
@@ -84,15 +96,29 @@
     <string name="profile_theme_system">Systemowy</string>
     <string name="profile_theme_light">Jasny</string>
     <string name="profile_theme_dark">Ciemny</string>
-    <string name="profile_logout">Wyloguj się</string>
+    <string name="profile_logout">Odłącz</string>
     <string name="profile_delete_account_data">Usuń dane konta SellSnap</string>
     <string name="profile_delete_account_data_title">Usunąć dane konta SellSnap?</string>
-    <string name="profile_delete_account_data_message">Usuwa to zapisane połączenie z OLX, lokalną pamięć podręczną profilu, sesję gościa i lokalizację sprzedaży z tego urządzenia. Nie usuwa Twojego konta OLX.</string>
+    <string name="profile_delete_account_data_message">Usuwa to z tego urządzenia zapisane połączenie z OLX, lokalną pamięć podręczną profilu, sesję gościa, lokalizację sprzedaży, wybrany kraj i zdjęcia ze szkicu. Nie usuwa Twojego konta OLX.</string>
     <string name="profile_delete_account_data_confirm">Usuń dane</string>
     <string name="profile_delete_account_data_cancel">Anuluj</string>
+    <string name="profile_privacy_data_title">Prywatność i dane</string>
+    <string name="profile_analytics_consent_title">Udostępniaj dane analityczne</string>
+    <string name="profile_analytics_consent_subtitle">Anonimowe dane użytkowania, które pomagają nam ulepszać SellSnap. Domyślnie wyłączone — zmień w dowolnym momencie.</string>
+    <string name="profile_contact_data_request">Skontaktuj się z nami w sprawie swoich danych</string>
     <string name="profile_not_provided">Nie ustawiono</string>
     <string name="profile_value_yes">Tak</string>
     <string name="profile_value_no">Nie</string>
+
+    <!-- What's New -->
+    <string name="settings_version_history">Historia wersji</string>
+    <string name="whats_new_screen_title">Co nowego</string>
+    <string name="whats_new_dialog_title">Co nowego w wersji %1$s</string>
+    <string name="whats_new_got_it">Rozumiem</string>
+    <string name="whats_new_view_all">Zobacz wszystkie aktualizacje</string>
+    <string name="whats_new_installed_badge">Zainstalowana</string>
+    <string name="whats_new_empty_title">Nic tu jeszcze nie ma</string>
+    <string name="whats_new_empty_description">Zajrzyj później po informacje o wydaniu.</string>
 
     <!-- My OLX Ads -->
     <string name="nav_my_ads">Moje ogłoszenia</string>
@@ -222,6 +248,7 @@
     <string name="error_publish_missing_category_or_location">Prawie gotowe — dodaj kategorię i lokalizację przed publikacją.</string>
     <string name="error_publish_missing_contact_name">W Twoim profilu OLX brakuje imienia. Wejdź tam, dodaj je i spróbujemy ponownie.</string>
     <string name="error_category_suggestion_failed">Nie udało się zaproponować kategorii.</string>
+    <string name="error_category_not_supported">Nie obsługujemy jeszcze tej kategorii (np. zwierzęta, nieruchomości, pojazdy, praca, wynajem). Spróbuj z innym przedmiotem.</string>
     <string name="error_attributes_load_failed">Nie udało się załadować szczegółów.</string>
     <string name="error_user_profile_fetch_failed">Nie udało się załadować Twojego profilu.</string>
     <string name="error_olx_auth_prepare_failed">Nie udało się uruchomić logowania OLX.</string>
@@ -270,4 +297,43 @@
     <string name="category_picker_select_with_name">Wybierz · %1$s</string>
     <string name="category_picker_selected_label">WYBRANO</string>
     <string name="category_picker_select_label">WYBIERZ</string>
+    <string name="profile_accounts_section_title">Konta</string>
+    <string name="profile_account_active_badge">AKTYWNE</string>
+    <string name="account_needs_reconnect_badge">Wymaga ponownego połączenia</string>
+    <string name="account_business_badge">Firmowe</string>
+    <string name="profile_account_set_active">Ustaw jako aktywne</string>
+    <string name="profile_account_add_button">Dodaj konto OLX</string>
+    <string name="profile_account_cap_reached_message">Połączono maksymalną liczbę 3 kont na tej stronie OLX. Odłącz jedno, aby dodać kolejne.</string>
+    <string name="profile_active_account_details_title">Dane aktywnego konta</string>
+    <string name="profile_add_account_confirm_title">Dodaj konto OLX</string>
+    <string name="profile_add_account_confirm_subtitle">Dodasz konto na %1$s. Twoje inne konta pozostają połączone — nie musisz się z nich wylogowywać.</string>
+    <string name="profile_add_account_confirm_note">Logowanie odbywa się na stronie OLX — SellSnap nigdy nie widzi Twojego hasła.</string>
+    <string name="profile_add_account_confirm_continue">Przejdź do OLX</string>
+    <string name="profile_add_account_confirm_cancel">Anuluj</string>
+    <string name="profile_add_account_duplicate_message">Jesteś już połączony jako %1$s. Aby dodać inne konto, najpierw wyloguj się z niego w OLX i spróbuj ponownie.</string>
+    <string name="profile_auth_failed_title">Nie udało się połączyć tego konta</string>
+    <string name="profile_auth_failed_message">OLX tymczasowo blokuje logowanie po kilku nieudanych próbach — sprawdź swoje dane w OLX, zanim spróbujesz ponownie.</string>
+    <string name="profile_auth_failed_retry_countdown">Spróbuj ponownie za %1$ds</string>
+    <string name="profile_auth_failed_retry">Spróbuj ponownie</string>
+    <string name="profile_auth_failed_dismiss">Nie teraz</string>
+    <string name="profile_auth_failed_recovery_title">Sprawdź dostęp do konta w OLX</string>
+    <string name="profile_auth_failed_recovery_message">To druga nieudana próba z rzędu. Kolejna próba logowania grozi tymczasową blokadą przez OLX — odzyskaj dostęp bezpośrednio na stronie OLX.</string>
+    <string name="profile_auth_failed_recovery_action">Odzyskaj dostęp w OLX</string>
+    <string name="profile_disconnect_confirm_title">Odłączyć %1$s?</string>
+    <string name="profile_disconnect_confirm_message">SellSnap zapomina dostęp do tego konta na tym urządzeniu. Ogłoszenia już opublikowane w OLX pozostają aktywne — to nie zamyka ani nie usuwa Twojego konta OLX.</string>
+    <string name="profile_disconnect_confirm_olx_link">Zarządzaj połączonymi aplikacjami w OLX</string>
+    <string name="profile_disconnect_confirm_action">Odłącz</string>
+    <string name="profile_disconnect_confirm_cancel">Anuluj</string>
+    <string name="profile_reconnect_account_action">Połącz ponownie %1$s</string>
+    <string name="publish_target_account_label">Publikuj na</string>
+    <string name="publish_target_account_fallback_name">Twoje konto OLX</string>
+    <string name="publish_target_account_picker_title">Wybierz konto</string>
+    <string name="publish_target_account_picker_subtitle">Nowe ogłoszenia będą publikowane na koncie, które wybierzesz tutaj.</string>
+    <string name="publish_success_target_account">Opublikowano na %1$s</string>
+    <string name="error_publish_account_mismatch">Podczas publikowania zmieniło się konto, więc nic nie zostało opublikowane. Spróbuj jeszcze raz.</string>
+    <string name="error_publish_needs_reconnect">%1$s wymaga ponownego połączenia, aby to opublikować.</string>
+    <string name="action_reconnect_target_account">Połącz ponownie %1$s</string>
+    <string name="my_ads_header_subtitle_account">Ogłoszenia dla %1$s.</string>
+    <string name="my_ads_empty_description_account">Na razie brak ogłoszeń dla %1$s.</string>
+    <string name="my_ads_account_fallback_name">Twojego konta</string>
 </resources>

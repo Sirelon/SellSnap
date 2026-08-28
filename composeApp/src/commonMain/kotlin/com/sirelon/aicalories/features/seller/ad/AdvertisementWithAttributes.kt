@@ -10,4 +10,6 @@ data class AdvertisementWithAttributes(
     val advertisement: Advertisement,
     val filledAttributes: Map<String, List<OlxAttributeValue>>,
     val sellerPrompt: String = "",
+    val generationSessionId: String? = null,
+    val lastAttemptId: String? = null,
 )

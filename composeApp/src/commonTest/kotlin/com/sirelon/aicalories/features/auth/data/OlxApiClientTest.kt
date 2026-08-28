@@ -1,17 +1,18 @@
 package com.sirelon.sellsnap.features.auth.data
 
+import com.sirelon.sellsnap.analytics.Analytics
+import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountRecord
+import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountState
+import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountStore
+import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountsRecord
 import com.sirelon.sellsnap.features.seller.auth.data.OlxApiClient
-import com.sirelon.sellsnap.features.seller.auth.data.OlxAuthRepository
-import com.sirelon.sellsnap.features.seller.auth.data.OlxAuthSessionStore
+import com.sirelon.sellsnap.features.seller.auth.data.OlxCountryStore
 import com.sirelon.sellsnap.features.seller.auth.data.OlxCredentialsProvider
-import com.sirelon.sellsnap.features.seller.auth.data.GuestModeStore
 import com.sirelon.sellsnap.features.seller.auth.data.OlxRemoteErrorParser
-import com.sirelon.sellsnap.features.seller.auth.data.OlxRedirectHandler
-import com.sirelon.sellsnap.features.seller.auth.data.OlxTokenStore
 import com.sirelon.sellsnap.features.seller.auth.data.createOlxAuthorizedHttpClient
 import com.sirelon.sellsnap.features.seller.auth.data.createOlxHttpClient
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxApiError
-import com.sirelon.sellsnap.features.seller.auth.domain.OlxAuthCallback
+import com.sirelon.sellsnap.features.seller.auth.domain.OlxCountry
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxApiException
 import com.sirelon.sellsnap.features.seller.ad.publish_success.AdvertStatus
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxTokens
@@ -40,47 +41,33 @@ class OlxApiClientTest {
     fun `getAuthenticatedUser attaches bearer token and version header`() = runBlocking {
         var authorizationHeader: String? = null
         var versionHeader: String? = null
-        val tokenStore = OlxTokenStore(InMemoryOlxKeyValueStore(), testJson).apply {
-            write(
-                OlxTokens(
-                    accessToken = "active-token",
-                    refreshToken = "refresh-token",
-                    expiresInSeconds = 86_400,
-                    tokenType = "bearer",
-                    scope = "v2 read write",
-                    issuedAtEpochSeconds = 4_102_444_800,
-                ),
+        val accountStore = accountStoreWithActiveTokens(sampleTokens("active-token"))
+        val engine = MockEngine { request ->
+            authorizationHeader = request.headers[HttpHeaders.Authorization]
+            versionHeader = request.headers["Version"]
+            respond(
+                content = """
+                    {
+                      "data": {
+                        "id": 77,
+                        "email": "seller@example.com",
+                        "name": "Seller"
+                      }
+                    }
+                """.trimIndent(),
+                status = HttpStatusCode.OK,
+                headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
             )
         }
-        val holder = createRepository(
-            tokenStore = tokenStore,
-            engine = MockEngine { request ->
-                authorizationHeader = request.headers[HttpHeaders.Authorization]
-                versionHeader = request.headers["Version"]
-                respond(
-                    content = """
-                        {
-                          "data": {
-                            "id": 77,
-                            "email": "seller@example.com",
-                            "name": "Seller"
-                          }
-                        }
-                    """.trimIndent(),
-                    status = HttpStatusCode.OK,
-                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
-                )
-            },
-        )
         val errorParser = OlxRemoteErrorParser(testJson)
         val apiClient = OlxApiClient(
             httpClient = createOlxAuthorizedHttpClient(
-                authRefreshClient = createOlxHttpClient(holder.engine),
+                authRefreshClient = createOlxHttpClient(engine),
                 credentialsProvider = TestCredentialsProvider(),
-                tokenStore = tokenStore,
-                authSessionStore = OlxAuthSessionStore(InMemoryOlxKeyValueStore(), testJson),
+                accountStore = accountStore,
+                countryStore = countryStore(),
                 errorParser = errorParser,
-                engine = holder.engine,
+                engine = engine,
             ),
             json = testJson,
             errorParser = errorParser,
@@ -93,18 +80,7 @@ class OlxApiClientTest {
 
     @Test
     fun `getAuthenticatedUser maps olx user response fields`() = runBlocking {
-        val tokenStore = OlxTokenStore(InMemoryOlxKeyValueStore(), testJson).apply {
-            write(
-                OlxTokens(
-                    accessToken = "active-token",
-                    refreshToken = "refresh-token",
-                    expiresInSeconds = 86_400,
-                    tokenType = "bearer",
-                    scope = "v2 read write",
-                    issuedAtEpochSeconds = 4_102_444_800,
-                ),
-            )
-        }
+        val accountStore = accountStoreWithActiveTokens(sampleTokens("active-token"))
         val engine = MockEngine {
             respond(
                 content = """
@@ -131,8 +107,8 @@ class OlxApiClientTest {
             httpClient = createOlxAuthorizedHttpClient(
                 authRefreshClient = createOlxHttpClient(engine),
                 credentialsProvider = TestCredentialsProvider(),
-                tokenStore = tokenStore,
-                authSessionStore = OlxAuthSessionStore(InMemoryOlxKeyValueStore(), testJson),
+                accountStore = accountStore,
+                countryStore = countryStore(),
                 errorParser = errorParser2,
                 engine = engine,
             ),
@@ -151,6 +127,34 @@ class OlxApiClientTest {
         assertEquals("2026-04-28T11:00:00+02:00", user.lastLoginAt)
         assertEquals("https://example.com/avatar.png", user.avatar)
         assertEquals(true, user.isBusiness)
+    }
+
+    @Test
+    fun `getAuthenticatedUser via explicit access token attaches that token on an unauthenticated client`() = runBlocking {
+        // Mirrors real usage (SellerAccountRepository.addAccount): the explicit-token overload is
+        // only ever called on the plain/unauthenticated client, never one with the Auth plugin
+        // installed - the freshly exchanged token isn't in the account store yet, so there is no
+        // account for a bearer provider to resolve it from.
+        var authorizationHeader: String? = null
+        val engine = MockEngine { request ->
+            authorizationHeader = request.headers[HttpHeaders.Authorization]
+            respond(
+                content = """{ "data": { "id": 99, "email": "fresh@example.com", "name": "Fresh" } }""",
+                status = HttpStatusCode.OK,
+                headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
+            )
+        }
+        val errorParser = OlxRemoteErrorParser(testJson)
+        val apiClient = OlxApiClient(
+            httpClient = createOlxHttpClient(engine),
+            json = testJson,
+            errorParser = errorParser,
+        )
+
+        val user = apiClient.getAuthenticatedUser(accessToken = "explicit-token")
+
+        assertEquals("Bearer explicit-token", authorizationHeader)
+        assertEquals(99L, user.id)
     }
 
     @Test
@@ -209,26 +213,14 @@ class OlxApiClientTest {
                 else -> error("Unexpected request: ${request.url}")
             }
         }
-        val tokenStore = OlxTokenStore(InMemoryOlxKeyValueStore(), testJson).apply {
-            write(
-                OlxTokens(
-                    accessToken = "stale-token",
-                    refreshToken = "refresh-token",
-                    expiresInSeconds = 86_400,
-                    tokenType = "bearer",
-                    scope = "v2 read write",
-                    issuedAtEpochSeconds = 4_102_444_800,
-                ),
-            )
-        }
-        val holder = createRepository(tokenStore = tokenStore, engine = engine)
+        val accountStore = accountStoreWithActiveTokens(sampleTokens("stale-token"))
         val errorParser3 = OlxRemoteErrorParser(testJson)
         val apiClient = OlxApiClient(
             httpClient = createOlxAuthorizedHttpClient(
                 authRefreshClient = createOlxHttpClient(engine),
                 credentialsProvider = TestCredentialsProvider(),
-                tokenStore = tokenStore,
-                authSessionStore = OlxAuthSessionStore(InMemoryOlxKeyValueStore(), testJson),
+                accountStore = accountStore,
+                countryStore = countryStore(),
                 errorParser = errorParser3,
                 engine = engine,
             ),
@@ -239,11 +231,11 @@ class OlxApiClientTest {
         apiClient.getAuthenticatedUser()
 
         assertEquals(listOf<String?>("Bearer stale-token", "Bearer refreshed-token"), seenAuthorizationHeaders)
-        assertEquals("refreshed-token", tokenStore.read()?.accessToken)
+        assertEquals("refreshed-token", accountStore.readRaw()!!.accounts.single().tokens.accessToken)
     }
 
     @Test
-    fun `getAuthenticatedUser clears persisted tokens when refresh returns invalid_grant`() = runBlocking {
+    fun `getAuthenticatedUser marks the account NeedsReconnect when refresh returns invalid_grant`() = runBlocking {
         var refreshRequestCount = 0
         val engine = MockEngine { request ->
             when {
@@ -277,25 +269,14 @@ class OlxApiClientTest {
                 else -> error("Unexpected request: ${request.url}")
             }
         }
-        val tokenStore = OlxTokenStore(InMemoryOlxKeyValueStore(), testJson).apply {
-            write(
-                OlxTokens(
-                    accessToken = "stale-token",
-                    refreshToken = "bad-refresh-token",
-                    expiresInSeconds = 86_400,
-                    tokenType = "bearer",
-                    scope = "v2 read write",
-                    issuedAtEpochSeconds = 4_102_444_800,
-                ),
-            )
-        }
+        val accountStore = accountStoreWithActiveTokens(sampleTokens("stale-token", refreshToken = "bad-refresh-token"))
         val errorParser4 = OlxRemoteErrorParser(testJson)
         val apiClient = OlxApiClient(
             httpClient = createOlxAuthorizedHttpClient(
                 authRefreshClient = createOlxHttpClient(engine),
                 credentialsProvider = TestCredentialsProvider(),
-                tokenStore = tokenStore,
-                authSessionStore = OlxAuthSessionStore(InMemoryOlxKeyValueStore(), testJson),
+                accountStore = accountStore,
+                countryStore = countryStore(),
                 errorParser = errorParser4,
                 engine = engine,
             ),
@@ -307,7 +288,7 @@ class OlxApiClientTest {
             apiClient.getAuthenticatedUser()
         }
         assertEquals(1, refreshRequestCount)
-        assertNull(tokenStore.read())
+        assertEquals(OlxAccountState.NeedsReconnect, accountStore.readRaw()!!.accounts.single().state)
     }
 
     @Test
@@ -369,25 +350,14 @@ class OlxApiClientTest {
                 headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
             )
         }
-        val tokenStore = OlxTokenStore(InMemoryOlxKeyValueStore(), testJson).apply {
-            write(
-                OlxTokens(
-                    accessToken = "active-token",
-                    refreshToken = "refresh-token",
-                    expiresInSeconds = 86_400,
-                    tokenType = "bearer",
-                    scope = "v2 read write",
-                    issuedAtEpochSeconds = 4_102_444_800,
-                ),
-            )
-        }
+        val accountStore = accountStoreWithActiveTokens(sampleTokens("active-token"))
         val errorParser = OlxRemoteErrorParser(testJson)
         val apiClient = OlxApiClient(
             httpClient = createOlxAuthorizedHttpClient(
                 authRefreshClient = createOlxHttpClient(engine),
                 credentialsProvider = TestCredentialsProvider(),
-                tokenStore = tokenStore,
-                authSessionStore = OlxAuthSessionStore(InMemoryOlxKeyValueStore(), testJson),
+                accountStore = accountStore,
+                countryStore = countryStore(),
                 errorParser = errorParser,
                 engine = engine,
             ),
@@ -432,25 +402,14 @@ class OlxApiClientTest {
                 headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
             )
         }
-        val tokenStore = OlxTokenStore(InMemoryOlxKeyValueStore(), testJson).apply {
-            write(
-                OlxTokens(
-                    accessToken = "active-token",
-                    refreshToken = "refresh-token",
-                    expiresInSeconds = 86_400,
-                    tokenType = "bearer",
-                    scope = "v2 read write",
-                    issuedAtEpochSeconds = 4_102_444_800,
-                ),
-            )
-        }
+        val accountStore = accountStoreWithActiveTokens(sampleTokens("active-token"))
         val errorParser = OlxRemoteErrorParser(testJson)
         val apiClient = OlxApiClient(
             httpClient = createOlxAuthorizedHttpClient(
                 authRefreshClient = createOlxHttpClient(engine),
                 credentialsProvider = TestCredentialsProvider(),
-                tokenStore = tokenStore,
-                authSessionStore = OlxAuthSessionStore(InMemoryOlxKeyValueStore(), testJson),
+                accountStore = accountStore,
+                countryStore = countryStore(),
                 errorParser = errorParser,
                 engine = engine,
             ),
@@ -485,25 +444,14 @@ class OlxApiClientTest {
                 headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
             )
         }
-        val tokenStore = OlxTokenStore(InMemoryOlxKeyValueStore(), testJson).apply {
-            write(
-                OlxTokens(
-                    accessToken = "active-token",
-                    refreshToken = "refresh-token",
-                    expiresInSeconds = 86_400,
-                    tokenType = "bearer",
-                    scope = "v2 read write",
-                    issuedAtEpochSeconds = 4_102_444_800,
-                ),
-            )
-        }
+        val accountStore = accountStoreWithActiveTokens(sampleTokens("active-token"))
         val errorParser = OlxRemoteErrorParser(testJson)
         val apiClient = OlxApiClient(
             httpClient = createOlxAuthorizedHttpClient(
                 authRefreshClient = createOlxHttpClient(engine),
                 credentialsProvider = TestCredentialsProvider(),
-                tokenStore = tokenStore,
-                authSessionStore = OlxAuthSessionStore(InMemoryOlxKeyValueStore(), testJson),
+                accountStore = accountStore,
+                countryStore = countryStore(),
                 errorParser = errorParser,
                 engine = engine,
             ),
@@ -533,25 +481,14 @@ class OlxApiClientTest {
                 headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
             )
         }
-        val tokenStore = OlxTokenStore(InMemoryOlxKeyValueStore(), testJson).apply {
-            write(
-                OlxTokens(
-                    accessToken = "active-token",
-                    refreshToken = "refresh-token",
-                    expiresInSeconds = 86_400,
-                    tokenType = "bearer",
-                    scope = "v2 read write",
-                    issuedAtEpochSeconds = 4_102_444_800,
-                ),
-            )
-        }
+        val accountStore = accountStoreWithActiveTokens(sampleTokens("active-token"))
         val errorParser = OlxRemoteErrorParser(testJson)
         val apiClient = OlxApiClient(
             httpClient = createOlxAuthorizedHttpClient(
                 authRefreshClient = createOlxHttpClient(engine),
                 credentialsProvider = TestCredentialsProvider(),
-                tokenStore = tokenStore,
-                authSessionStore = OlxAuthSessionStore(InMemoryOlxKeyValueStore(), testJson),
+                accountStore = accountStore,
+                countryStore = countryStore(),
                 errorParser = errorParser,
                 engine = engine,
             ),
@@ -573,28 +510,37 @@ class OlxApiClientTest {
         assertTrue(error.userMessage.contains("empty"))
     }
 
-    private fun createRepository(
-        tokenStore: OlxTokenStore,
-        engine: MockEngine,
-    ): TestRepositoryHolder {
-        return TestRepositoryHolder(
-            engine = engine,
-            repository = OlxAuthRepository(
-                httpClient = createOlxHttpClient(engine),
-                credentialsProvider = TestCredentialsProvider(),
-                tokenStore = tokenStore,
-                authSessionStore = OlxAuthSessionStore(InMemoryOlxKeyValueStore(), testJson),
-                redirectHandler = TestRedirectHandler(),
-                guestModeStore = GuestModeStore(InMemoryOlxKeyValueStore()),
-                errorParser = OlxRemoteErrorParser(testJson),
+    private fun sampleTokens(accessToken: String, refreshToken: String = "refresh-token") = OlxTokens(
+        accessToken = accessToken,
+        refreshToken = refreshToken,
+        expiresInSeconds = 86_400,
+        tokenType = "bearer",
+        scope = "v2 read write",
+        issuedAtEpochSeconds = 4_102_444_800,
+    )
+
+    private suspend fun accountStoreWithActiveTokens(tokens: OlxTokens, countryCode: String = "ua"): OlxAccountStore {
+        val store = OlxAccountStore(InMemoryOlxKeyValueStore(), testJson)
+        store.write(
+            OlxAccountsRecord(
+                accounts = listOf(
+                    OlxAccountRecord(
+                        localIndex = 1,
+                        countryCode = countryCode,
+                        tokens = tokens,
+                        lastUsedAtEpochSeconds = 0,
+                        lastRefreshedAtEpochSeconds = 0,
+                    ),
+                ),
+                activeByCountry = mapOf(countryCode to 1),
+                nextLocalIndex = 2,
             ),
         )
+        return store
     }
 
-    private data class TestRepositoryHolder(
-        val engine: MockEngine,
-        val repository: OlxAuthRepository,
-    )
+    private suspend fun countryStore(countryCode: String = "ua"): OlxCountryStore =
+        OlxCountryStore(InMemoryOlxKeyValueStore(), FakeAnalytics()).apply { save(OlxCountry.fromCode(countryCode)!!) }
 
     private class TestCredentialsProvider : OlxCredentialsProvider {
         override suspend fun getClientId(): String = "test-client-id"
@@ -602,19 +548,13 @@ class OlxApiClientTest {
         override suspend fun getClientSecret(): String = "test-client-secret"
     }
 
-    private class TestRedirectHandler : OlxRedirectHandler {
-        override fun buildRedirectUri(platform: com.sirelon.sellsnap.platform.PlatformTargets): String {
-            return "selolxai://olx-auth/callback"
-        }
-
-        override fun parseCallback(url: String): OlxAuthCallback {
-            val parsed = io.ktor.http.Url(url)
-            return OlxAuthCallback(
-                code = parsed.parameters["code"],
-                state = parsed.parameters["state"],
-                error = parsed.parameters["error"],
-                errorDescription = parsed.parameters["error_description"],
-            )
-        }
+    private class FakeAnalytics : Analytics {
+        override fun logEvent(name: String, params: Map<String, Any>) {}
+        override fun setUserId(userId: String?) {}
+        override fun setUserProperty(name: String, value: String?) {}
+        override fun recordException(throwable: Throwable, message: String?) {}
+        override fun log(message: String) {}
+        override fun setAnalyticsCollectionEnabled(enabled: Boolean) {}
+        override fun setCrashlyticsCollectionEnabled(enabled: Boolean) {}
     }
 }

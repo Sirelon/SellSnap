@@ -14,9 +14,9 @@ import platform.UIKit.UIWindow
 import platform.darwin.NSObject
 
 @Composable
-actual fun rememberOlxAuthLauncher(): (String) -> Unit {
+actual fun rememberOlxAuthLauncher(forceReauth: Boolean): (String) -> Unit {
     val holder = remember { SessionHolder() }
-    return remember {
+    return remember(forceReauth) {
         { url: String ->
             val nsUrl = NSURL.URLWithString(url) ?: return@remember
             val scheme = OlxConfig.redirectUri.substringBefore("://")
@@ -29,6 +29,10 @@ actual fun rememberOlxAuthLauncher(): (String) -> Unit {
                     holder.session = null
                 },
             )
+            // Add-account/reconnect (forceReauth = true) must not silently reuse OLX's shared
+            // web session cookie - otherwise the login screen never appears and the seller is
+            // bounced straight back into whichever account is already logged in on olx.*.
+            session.prefersEphemeralWebBrowserSession = forceReauth
             @Suppress("UNCHECKED_CAST")
             val keyWindow = (UIApplication.sharedApplication.windows as List<UIWindow>)
                 .firstOrNull { it.isKeyWindow() }

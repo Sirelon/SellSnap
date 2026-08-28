@@ -15,6 +15,7 @@ import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffo
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffoldDefaults
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -31,6 +32,8 @@ import androidx.navigation3.scene.DialogSceneStrategy
 import androidx.navigation3.scene.Scene
 import androidx.navigation3.scene.SinglePaneSceneStrategy
 import androidx.navigation3.ui.NavDisplay
+import com.sirelon.sellsnap.analytics.AnalyticsScreen
+import com.sirelon.sellsnap.analytics.TrackScreenViews
 import com.sirelon.sellsnap.designsystem.screens.ImagesPreview
 import com.sirelon.sellsnap.features.seller.ad.generate_ad.GenerateAdScreen
 import com.sirelon.sellsnap.features.seller.ad.preview_ad.PreviewAdScreen
@@ -42,6 +45,9 @@ import com.sirelon.sellsnap.features.seller.my_ads.ui.MyAdvertsScreenRoute
 import com.sirelon.sellsnap.navigation.BottomSheetSceneStrategy
 import com.sirelon.sellsnap.features.seller.profile.ui.ProfileScreenRoute
 import com.sirelon.sellsnap.features.seller.settings.ui.SettingsScreenRoute
+import com.sirelon.sellsnap.features.whatsnew.presentation.WhatsNewViewModel
+import com.sirelon.sellsnap.features.whatsnew.ui.AllReleasesScreenRoute
+import com.sirelon.sellsnap.features.whatsnew.ui.WhatsNewPromptSheet
 import com.sirelon.sellsnap.generated.resources.Res
 import com.sirelon.sellsnap.generated.resources.ic_camera
 import com.sirelon.sellsnap.generated.resources.ic_tag
@@ -57,6 +63,7 @@ import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.viewmodel.koinViewModel
 
 
 @Composable
@@ -65,14 +72,32 @@ fun AdRootScreen(
     onLogout: () -> Unit,
     onDeleteAccountDataRequested: () -> Unit,
     popToAdRoot: () -> Unit,
+    // SIR-83: threaded straight through to ProfileScreenRoute, which owns the add-account/
+    // reconnect/disconnect flows - see that file and App.kt for how these are dispatched.
+    onAddAccountRequested: () -> Unit = {},
+    onAddAccountFailed: () -> Unit = {},
+    onDisconnectRequested: (Int) -> Unit = {},
 ) {
     val navBackStack = rememberNavBackStack(
         adNavigationSavedStateConfiguration,
         AdDestination.GenerateAd,
     )
+    TrackScreenViews(navBackStack.lastOrNull() as? AnalyticsScreen)
     val connectOlxReason = stringResource(Res.string.guest_connect_olx_cta)
 
+    // Scoped to AdRootScreen itself (not to a nested nav entry), so the prompt and the
+    // version-history screen share one instance/state regardless of internal tab navigation.
+    val whatsNewViewModel: WhatsNewViewModel = koinViewModel()
+    LaunchedEffect(Unit) {
+        if (whatsNewViewModel.shouldShowDialog()) {
+            navBackStack.add(AdDestination.WhatsNewPrompt)
+        }
+    }
+
     val authLauncher = rememberOlxAuthLauncher()
+    // SIR-83 (D5): a second launcher that forces a fresh OLX login, used only for add-account
+    // and reconnect so the seller isn't silently bounced back into an account they already have.
+    val authLauncherForceReauth = rememberOlxAuthLauncher(forceReauth = true)
     var pendingCategory by remember { mutableStateOf<OlxCategory?>(null) }
     var isGeneratingAd by remember { mutableStateOf(false) }
     val sceneStrategies = remember {
@@ -83,7 +108,9 @@ fun AdRootScreen(
         )
     }
 
-    val selectedRootTab = navBackStack.lastOrNull().toSellerRootTab()
+    // WhatsNewPrompt renders as a bottom-sheet overlay on top of whatever tab is underneath —
+    // skip it so the tab bar stays visible and selected instead of disappearing while it's up.
+    val selectedRootTab = navBackStack.lastOrNull { it !is AdDestination.WhatsNewPrompt }.toSellerRootTab()
     fun switchRootTab(tab: SellerRootTab) {
         if (selectedRootTab == tab) return
         navBackStack.clear()
@@ -223,7 +250,11 @@ fun AdRootScreen(
                             { navBackStack.removeAt(navBackStack.lastIndex) }
                         },
                         onOpenOlxAuth = authLauncher,
+                        onOpenOlxAuthForceReauth = authLauncherForceReauth,
                         onLogout = onLogout,
+                        onAddAccountRequested = onAddAccountRequested,
+                        onAddAccountFailed = onAddAccountFailed,
+                        onDisconnectRequested = onDisconnectRequested,
                         reason = destination.reason,
                     )
                 }
@@ -233,6 +264,27 @@ fun AdRootScreen(
                 ) {
                     SettingsScreenRoute(
                         onDeleteAccountDataRequested = onDeleteAccountDataRequested,
+                        onOpenWhatsNew = { navBackStack.add(AdDestination.AllReleases) },
+                    )
+                }
+
+                entry<AdDestination.WhatsNewPrompt>(
+                    metadata = BottomSheetSceneStrategy.bottomSheet(),
+                ) {
+                    WhatsNewPromptSheet(
+                        viewModel = whatsNewViewModel,
+                        onDismiss = { navBackStack.removeAt(navBackStack.lastIndex) },
+                        onViewAll = {
+                            navBackStack.removeAt(navBackStack.lastIndex)
+                            navBackStack.add(AdDestination.AllReleases)
+                        },
+                    )
+                }
+
+                entry<AdDestination.AllReleases> {
+                    AllReleasesScreenRoute(
+                        viewModel = whatsNewViewModel,
+                        onBack = { navBackStack.removeAt(navBackStack.lastIndex) },
                     )
                 }
 

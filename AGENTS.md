@@ -228,6 +228,10 @@ Most features use some combination of:
 - Avoid reaching for raw Material APIs first when an app component/token already exists.
 - Use the 40 custom icons (`ic_*.xml`) when suitable instead of Material Design icons.
 
+## Localization
+- New user-facing strings go in `composeApp/src/commonMain/composeResources/values/strings.xml` (English base). Interpolate with `stringResource(id, arg)`; never `String.format`.
+- Translation of new or changed keys into every locale is done by the `localize` agent — `.claude/agents/localize.md` holds the locale map and all translation rules.
+
 ## Edge-to-Edge / Insets Rules
 - New Android-facing Compose screens must respect edge-to-edge.
 - Prefer `AppScaffold`, which defaults to `WindowInsets.safeDrawing`, for screen-level layout.

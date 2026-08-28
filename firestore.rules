@@ -1,0 +1,17 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /release-notes/{document=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Ad-generation diagnostic logging (AdGenerationLogRepository). The app has no Firebase Auth
+    // (OLX OAuth only), so writes are unauthenticated; document IDs are random UUIDs the client
+    // mints itself. Clients never read this collection back, so read stays denied.
+    match /ad_generations/{document=**} {
+      allow read, delete: if false;
+      allow create, update: if true;
+    }
+  }
+}

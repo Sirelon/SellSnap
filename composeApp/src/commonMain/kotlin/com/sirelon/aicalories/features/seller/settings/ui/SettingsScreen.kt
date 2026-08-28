@@ -44,6 +44,7 @@ import com.sirelon.sellsnap.generated.resources.profile_theme_system
 import com.sirelon.sellsnap.generated.resources.profile_theme_title
 import com.sirelon.sellsnap.generated.resources.privacy_policy
 import com.sirelon.sellsnap.generated.resources.settings_screen_title
+import com.sirelon.sellsnap.generated.resources.settings_version_history
 import com.sirelon.sellsnap.generated.resources.terms_of_service
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
@@ -51,6 +52,7 @@ import org.koin.compose.viewmodel.koinViewModel
 @Composable
 fun SettingsScreenRoute(
     onDeleteAccountDataRequested: () -> Unit,
+    onOpenWhatsNew: () -> Unit,
 ) {
     val viewModel: SettingsViewModel = koinViewModel()
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -65,6 +67,7 @@ fun SettingsScreenRoute(
         onOpenTerms = { uriHandler.openUri(LegalLinks.TERMS_URL) },
         onContactDataRequest = { uriHandler.openUri(LegalLinks.DATA_REQUEST_MAILTO) },
         onDeleteAccountData = onDeleteAccountDataRequested,
+        onOpenWhatsNew = onOpenWhatsNew,
     )
 }
 
@@ -77,6 +80,7 @@ private fun SettingsScreen(
     onOpenTerms: () -> Unit,
     onContactDataRequest: () -> Unit,
     onDeleteAccountData: () -> Unit,
+    onOpenWhatsNew: () -> Unit,
 ) {
     AppScaffold(
         modifier = Modifier.fillMaxSize(),
@@ -102,6 +106,21 @@ private fun SettingsScreen(
                     onEvent(SettingsEvent.ThemeModeSelected(themeMode))
                 },
             )
+
+            AppCard(modifier = Modifier.fillMaxWidth()) {
+                Cell(
+                    headline = {
+                        Text(
+                            text = stringResource(Res.string.settings_version_history),
+                            style = AppTheme.typography.body,
+                            color = AppTheme.colors.onSurface,
+                        )
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    transparent = true,
+                    onClick = onOpenWhatsNew,
+                )
+            }
 
             PrivacyAndDataCard(
                 analyticsConsentGranted = state.analyticsConsentGranted,

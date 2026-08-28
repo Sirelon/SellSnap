@@ -10,7 +10,11 @@ import com.sirelon.sellsnap.analytics.AnalyticsEvents
 import com.sirelon.sellsnap.features.common.presentation.BaseViewModel
 import com.sirelon.sellsnap.features.seller.ad.AdFlowTimerStore
 import com.sirelon.sellsnap.features.seller.ad.AdvertisementWithAttributes
+import com.sirelon.sellsnap.features.seller.ad.ScreenshotPlaceholderAccount
 import com.sirelon.sellsnap.features.seller.ad.data.PostAdvertRequestMapper
+import com.sirelon.sellsnap.features.seller.ad.generation_log.AdGenerationAttempt
+import com.sirelon.sellsnap.features.seller.ad.generation_log.AdGenerationLogRepository
+import com.sirelon.sellsnap.features.seller.ad.screenshotMode
 import com.sirelon.sellsnap.features.seller.ad.preview_ad.PreviewAdContract.PreviewAdEffect
 import com.sirelon.sellsnap.features.seller.ad.preview_ad.PreviewAdContract.PreviewAdEffect.ShowMessage
 import com.sirelon.sellsnap.features.seller.ad.preview_ad.PreviewAdContract.PreviewAdEvent
@@ -22,6 +26,9 @@ import com.sirelon.sellsnap.features.seller.ad.preview_ad.PreviewAdContract.Prev
 import com.sirelon.sellsnap.features.seller.ad.preview_ad.PreviewAdContract.PreviewAdEvent.VoteGeneratedContent
 import com.sirelon.sellsnap.features.seller.ad.preview_ad.PreviewAdContract.PreviewAdState
 import com.sirelon.sellsnap.features.seller.ad.publish_success.PublishSuccessData
+import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountRecord
+import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountState
+import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountsRecord
 import com.sirelon.sellsnap.features.seller.auth.data.OlxApiClient
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAuthRepository
 import com.sirelon.sellsnap.features.seller.auth.data.OlxCountryStore
@@ -29,20 +36,29 @@ import com.sirelon.sellsnap.features.seller.auth.domain.OlxApiError
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxApiException
 import com.sirelon.sellsnap.features.seller.auth.domain.SellerSessionMode
 import com.sirelon.sellsnap.features.seller.categories.data.CategoriesRepository
+import com.sirelon.sellsnap.features.seller.categories.data.UnsupportedOlxCategoryException
 import com.sirelon.sellsnap.features.seller.categories.domain.AttributeInputType
 import com.sirelon.sellsnap.features.seller.categories.domain.AttributeValidationResult
 import com.sirelon.sellsnap.features.seller.categories.domain.AttributeValidator
 import com.sirelon.sellsnap.features.seller.categories.domain.OlxCategory
 import com.sirelon.sellsnap.features.seller.currency.data.CurrencyRepository
 import com.sirelon.sellsnap.features.seller.location.data.LocationRepository
+import com.sirelon.sellsnap.features.seller.openai.AD_GENERATION_MODEL_ID
+import com.sirelon.sellsnap.features.seller.openai.AD_GENERATION_PROMPT_VERSION
+import com.sirelon.sellsnap.features.seller.profile.data.SellerAccountRepository
 import com.sirelon.sellsnap.features.seller.openai.OpenAIClient
 import com.sirelon.sellsnap.generated.resources.Res
+import com.sirelon.sellsnap.generated.resources.action_reconnect_target_account
 import com.sirelon.sellsnap.generated.resources.error_attributes_load_failed
+import com.sirelon.sellsnap.generated.resources.error_category_not_supported
 import com.sirelon.sellsnap.generated.resources.error_category_suggestion_failed
 import com.sirelon.sellsnap.generated.resources.error_location_fetch_failed
+import com.sirelon.sellsnap.generated.resources.error_publish_account_mismatch
 import com.sirelon.sellsnap.generated.resources.error_publish_failed
 import com.sirelon.sellsnap.generated.resources.error_publish_missing_category_or_location
 import com.sirelon.sellsnap.generated.resources.error_publish_missing_contact_name
+import com.sirelon.sellsnap.generated.resources.error_publish_needs_reconnect
+import com.sirelon.sellsnap.generated.resources.publish_target_account_fallback_name
 import com.sirelon.sellsnap.generated.resources.error_regenerate_description_failed
 import com.sirelon.sellsnap.generated.resources.validation_error_desc_too_short
 import com.sirelon.sellsnap.generated.resources.validation_error_title_too_short
@@ -59,6 +75,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import kotlin.uuid.Uuid
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -76,16 +93,22 @@ class PreviewAdViewModel(
     private val currencyRepository: CurrencyRepository,
     private val attributeValidator: AttributeValidator,
     private val authRepository: OlxAuthRepository,
+    // SIR-83: source of the active account for the "Publish to" row/picker and the pre-publish
+    // identity assertion (D6). `olxCountryStore` is read synchronously (see OlxCountryStore.current)
+    // rather than reactively - country is app-global and does not change while this screen is open.
+    private val accountRepository: SellerAccountRepository,
+    private val olxCountryStore: OlxCountryStore,
     private val adFlowTimerStore: AdFlowTimerStore,
     private val savedStateHandle: SavedStateHandle,
     private val json: Json,
     private val analytics: Analytics,
     private val openAiClient: OpenAIClient,
-    private val countryStore: OlxCountryStore,
+    private val adGenerationLogRepository: AdGenerationLogRepository,
 ) : BaseViewModel<PreviewAdState, PreviewAdEvent, PreviewAdEffect>() {
 
     private val advertisement = filledAdvertisement.advertisement
     private val restoredSavedState = readSavedState()
+    private val generationSessionId = filledAdvertisement.generationSessionId ?: Uuid.random().toString()
 
     val titleState = TextFieldState(restoredSavedState.title ?: advertisement.title)
     val descriptionState = TextFieldState(restoredSavedState.description ?: advertisement.description)
@@ -151,6 +174,10 @@ class PreviewAdViewModel(
         if (nonGuestSetupStarted) return
         nonGuestSetupStarted = true
 
+        accountRepository.accountsRecordFlow
+            .onEach { updateAccountUiState(it) }
+            .launchIn(viewModelScope)
+
         snapshotFlow { titleState.text }
             .distinctUntilChanged()
             .debounce(300L)
@@ -168,14 +195,13 @@ class PreviewAdViewModel(
             .onEach {
                 updateSelectedCategory(category = it)
             }
-            .flatMapLatest {
-                categoriesRepository.getAttributes(it.id)
-            }
-            .onEach { attributes ->
-                setState { it.copy(attributes = attributes) }
-            }
-            .catch {
-                postEffect(ShowMessage(getString(Res.string.error_category_suggestion_failed)))
+            .catch { error ->
+                val message = if (error is UnsupportedOlxCategoryException) {
+                    getString(Res.string.error_category_not_supported)
+                } else {
+                    getString(Res.string.error_category_suggestion_failed)
+                }
+                postEffect(ShowMessage(message))
             }
             .launchIn(viewModelScope)
 
@@ -217,6 +243,7 @@ class PreviewAdViewModel(
         maxPrice = advertisement.maxPrice.coerceAtLeast(restoredSavedState.price ?: advertisement.suggestedPrice),
         images = advertisement.images,
         location = restoredSavedState.location,
+        currentAttemptId = filledAdvertisement.lastAttemptId,
     )
 
     override fun onEvent(event: PreviewAdEvent) {
@@ -249,6 +276,14 @@ class PreviewAdViewModel(
                 viewModelScope.launch { publishAdvert() }
             }
 
+            is PreviewAdEvent.SwitchAccountRequested -> viewModelScope.launch {
+                accountRepository.setActiveAccount(
+                    countryCode = olxCountryStore.current.code,
+                    localIndex = event.localIndex,
+                    fromPublishScreen = true,
+                )
+            }
+
             RegenerateDescription -> viewModelScope.launch { regenerateDescription() }
 
             is VoteGeneratedContent -> {
@@ -256,6 +291,9 @@ class PreviewAdViewModel(
                 // an event, otherwise every undo double-counts the vote it was undoing.
                 val vote = if (currentState().selectedVote == event.vote) null else event.vote
                 setState { it.copy(selectedVote = vote) }
+                currentState().currentAttemptId?.let { attemptId ->
+                    viewModelScope.launch { adGenerationLogRepository.updateVote(attemptId, vote?.name) }
+                }
                 if (vote != null) {
                     analytics.logEvent(
                         AnalyticsEvents.AD_GENERATED_CONTENT_VOTED,
@@ -341,11 +379,38 @@ class PreviewAdViewModel(
             return
         }
 
-        analytics.logEvent(AnalyticsEvents.AD_PUBLISH_STARTED)
+        // SIR-83 D6/A5: snapshot which account this screen told the seller it would publish to,
+        // and the switch epoch, BEFORE the network calls below - not after. Comparing at delivery
+        // time (rather than trusting the account is still the one active when postAdvert() is
+        // called) is what catches a switch that happens while this publish is already in flight
+        // (TRD "in-flight switch discard"), not just a token cache that was never cleared.
+        val countryCode = olxCountryStore.current.code
+        val targetAccount = accountRepository.activeAccountSnapshot(countryCode)
+        val switchEpochBeforePublish = accountRepository.switchEpoch.value
+        val accountIndex = targetAccount?.localIndex ?: -1
+
+        analytics.logEvent(AnalyticsEvents.AD_PUBLISH_STARTED, mapOf("account_index" to accountIndex))
         postEffect(PreviewAdEffect.NavigateToPublishing)
 
         try {
-            val contactName = olxApiClient.getAuthenticatedUser().name
+            val user = olxApiClient.getAuthenticatedUser()
+
+            val switchedMidFlight = accountRepository.switchEpoch.value != switchEpochBeforePublish
+            val identityMismatch = targetAccount != null &&
+                targetAccount.olxUserId != null &&
+                user.id != targetAccount.olxUserId
+            if (switchedMidFlight || identityMismatch) {
+                val accountCount = accountRepository.accountsRecordFlow.value.accounts
+                    .count { it.countryCode == countryCode }
+                analytics.logEvent(
+                    AnalyticsEvents.PUBLISH_ACCOUNT_MISMATCH_ABORTED,
+                    mapOf("account_count" to accountCount),
+                )
+                postEffect(PreviewAdEffect.PublishAccountMismatch(getString(Res.string.error_publish_account_mismatch)))
+                return
+            }
+
+            val contactName = user.name
             if (contactName.isBlank()) {
                 postEffect(PreviewAdEffect.NavigateToProfile(getString(Res.string.error_publish_missing_contact_name)))
                 return
@@ -369,21 +434,91 @@ class PreviewAdViewModel(
                 primaryImageUrl = s.images.firstOrNull(),
                 totalElapsedMs = adFlowTimerStore.totalElapsedMs(),
                 status = data.status,
+                accountName = contactName,
             )
             publishSuccessData.value = successData
-            analytics.logEvent(AnalyticsEvents.AD_PUBLISH_SUCCEEDED)
+            analytics.logEvent(AnalyticsEvents.AD_PUBLISH_SUCCEEDED, mapOf("account_index" to accountIndex))
+            s.currentAttemptId?.let { attemptId ->
+                adGenerationLogRepository.markPublished(attemptId, data.id.toString())
+            }
             postEffect(PreviewAdEffect.PublishSuccess(successData))
         } catch (error: Throwable) {
             analytics.recordException(error, AnalyticsEvents.AD_PUBLISH_FAILED)
-            analytics.logEvent(AnalyticsEvents.AD_PUBLISH_FAILED)
+            analytics.logEvent(AnalyticsEvents.AD_PUBLISH_FAILED, mapOf("account_index" to accountIndex))
             val olxError = (error as? OlxApiException)?.error
-            if (olxError is OlxApiError.ValidationError && olxError.field.startsWith("contact.")) {
-                postEffect(PreviewAdEffect.NavigateToProfile(getString(Res.string.error_publish_missing_contact_name)))
-            } else {
-                postEffect(PreviewAdEffect.PublishFailure(getString(Res.string.error_publish_failed)))
+            when {
+                olxError is OlxApiError.ValidationError && olxError.field.startsWith("contact.") ->
+                    postEffect(PreviewAdEffect.NavigateToProfile(getString(Res.string.error_publish_missing_contact_name)))
+
+                // Dead active-account token (terminal refresh failure surfacing here rather than
+                // as a silent background reconnect-mark): never auto-launch OAuth mid-publish,
+                // just point at Profile via a distinct, named action (see PublishNeedsReconnect KDoc).
+                olxError is OlxApiError.InvalidGrant || olxError is OlxApiError.InvalidToken -> {
+                    val accountName = displayAccountName(targetAccount)
+                    postEffect(
+                        PreviewAdEffect.PublishNeedsReconnect(
+                            message = getString(Res.string.error_publish_needs_reconnect, accountName),
+                            actionLabel = getString(Res.string.action_reconnect_target_account, accountName),
+                        )
+                    )
+                }
+
+                else -> postEffect(PreviewAdEffect.PublishFailure(getString(Res.string.error_publish_failed)))
             }
         }
     }
+
+    private suspend fun displayAccountName(account: OlxAccountRecord?): String {
+        val name = account?.profile?.name
+        return if (!name.isNullOrBlank()) name else getString(Res.string.publish_target_account_fallback_name)
+    }
+
+    private fun updateAccountUiState(record: OlxAccountsRecord) {
+        if (screenshotMode) {
+            setState {
+                it.copy(
+                    targetAccount = ScreenshotPlaceholderAccount,
+                    showTargetAccountRow = true,
+                    accountPickerItems = emptyList(),
+                )
+            }
+            return
+        }
+
+        val countryCode = olxCountryStore.current.code
+        val accountsForCountry = record.accounts.filter { it.countryCode == countryCode }
+        val activeIndex = record.activeByCountry[countryCode]
+        val active = accountsForCountry.find { it.localIndex == activeIndex }
+        // Active-first, matching the ordering U1 already establishes for the Profile accounts
+        // list - sortedByDescending is stable, so ties keep their original relative order.
+        val sorted = accountsForCountry.sortedByDescending { it.localIndex == activeIndex }
+
+        setState {
+            it.copy(
+                targetAccount = active?.toPublishTargetAccount(),
+                // Invisible below 2 connected accounts (PRD §3/Q20): a single-account seller must
+                // see no new decision on this screen at all.
+                showTargetAccountRow = accountsForCountry.size > 1,
+                accountPickerItems = sorted.map { account ->
+                    PublishAccountPickerItem(
+                        localIndex = account.localIndex,
+                        name = account.profile?.name.orEmpty(),
+                        email = account.profile?.email.orEmpty(),
+                        avatarUrl = account.profile?.avatarUrl,
+                        isBusiness = account.profile?.isBusiness == true,
+                        isActive = account.localIndex == activeIndex,
+                        needsReconnect = account.state == OlxAccountState.NeedsReconnect,
+                    )
+                },
+            )
+        }
+    }
+
+    private fun OlxAccountRecord.toPublishTargetAccount() = PublishTargetAccount(
+        name = profile?.name.orEmpty(),
+        avatarUrl = profile?.avatarUrl,
+        isBusiness = profile?.isBusiness == true,
+    )
 
     private suspend fun regenerateDescription() {
         if (currentState().isRegeneratingDescription) return
@@ -394,14 +529,32 @@ class PreviewAdViewModel(
             val (_, generated) = openAiClient.analyzeThing(
                 images = advertisement.images,
                 sellerPrompt = filledAdvertisement.sellerPrompt,
-                country = countryStore.current,
+                country = olxCountryStore.current,
             )
             descriptionState.setTextAndPlaceCursorAtEnd(generated.description)
+            val attemptNumber = currentState().regenerationCount + 1
+            val attemptId = adGenerationLogRepository.logAttempt(
+                AdGenerationAttempt(
+                    sessionId = generationSessionId,
+                    attemptNumber = attemptNumber,
+                    previousAttemptId = currentState().currentAttemptId,
+                    countryCode = olxCountryStore.current.code,
+                    modelId = AD_GENERATION_MODEL_ID,
+                    promptVersion = AD_GENERATION_PROMPT_VERSION,
+                    imagePaths = advertisement.images,
+                    title = generated.title,
+                    description = generated.description,
+                    suggestedPrice = generated.suggestedPrice,
+                    minPrice = generated.minPrice,
+                    maxPrice = generated.maxPrice,
+                )
+            )
             // The vote belonged to the text we just replaced, so it starts over with the new one.
             setState {
                 it.copy(
-                    regenerationCount = it.regenerationCount + 1,
+                    regenerationCount = attemptNumber,
                     selectedVote = null,
+                    currentAttemptId = attemptId ?: it.currentAttemptId,
                 )
             }
             analytics.logEvent(AnalyticsEvents.AD_DESCRIPTION_REGENERATE_SUCCEEDED)

@@ -10,11 +10,19 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.shareIn
+
+/**
+ * Thrown when OLX suggests a category for a listing that this app doesn't support publishing to
+ * (e.g. the suggestion falls under an excluded root like Animals or Real Estate, see
+ * [excludedRootCategoryIds]) - callers surface this as a normal generation/suggestion failure
+ * instead of the flow silently completing with no result.
+ */
+class UnsupportedOlxCategoryException(title: String) :
+    Exception("OLX suggested a category for \"$title\" that this app does not support.")
 
 class CategoriesRepository(
     private val olxApiClient: OlxApiClient,
@@ -51,13 +59,10 @@ class CategoriesRepository(
 
     fun categorySuggestion(title: String): Flow<OlxCategory> = flow {
         val response = olxApiClient.loadCategorySuggestionId(title)
-        if (response == null) {
-            emit(null)
-        } else {
-            emit(getCategoryById(response))
-        }
+            ?: throw UnsupportedOlxCategoryException(title)
+        val category = getCategoryById(response) ?: throw UnsupportedOlxCategoryException(title)
+        emit(category)
     }
-        .filterNotNull()
 
     private suspend fun loadSupportedCategories(): List<OlxCategory> {
         val result = olxApiClient.loadCategories()
