@@ -35,30 +35,39 @@ silently no-ops on one that does):
 
 | Language | Google Play locale | Play listing exists? | App Store / TestFlight locale | Apple support |
 | --- | --- | --- | --- | --- |
-| English | `en-US` | **No** — no title configured, confirmed by download | `en-US` | assumed yes, not independently verified |
+| English | `en-US` | **No** — no title configured, confirmed by download | `en-US` | yes — confirmed live in App Store Connect |
 | Ukrainian | `uk` | Yes | `uk` | yes |
 | Polish | `pl-PL` | Yes | `pl` | yes |
 | Romanian | `ro` | Yes | `ro` | yes |
 | Bulgarian | `bg` | Yes | — | not supported by Apple |
 | Portuguese (Portugal) | `pt-PT` | Yes | `pt-PT` | yes |
-| Russian | `ru-RU` | **No** — no title configured, confirmed by download | `ru` | assumed yes, not independently verified |
 | Kazakh | `kk` | Yes | — | not supported by Apple |
 
-**Android: 6 real locales** — `uk, pl-PL, ro, bg, pt-PT, kk`. Do not add `en-US` or
-`ru-RU` back to the Android changelog automation without first actually creating those
-Play Store listings (title, descriptions, everything — see `store/copy/store-listing.md`
-for drafted copy) — pushing just a changelog for a locale with no base listing fails the
-whole edit (Google validates atomically at commit time, not per-locale, so the failure
-can surface on whichever locale it happens to check first, not necessarily the one
-that's actually missing something).
+**No Russian *store listing*, on either store, by product decision** — not an
+Apple/Google support gap. This is scoped to store metadata only (descriptions,
+keywords, promotional text, this skill's release notes): never add a `ru`/`ru-RU`
+folder anywhere under `.claude/tmp/release-metadata/`, never add a Russian section to
+`store/copy/store-listing.md`, and if a stray `ios/ru/` or `android/ru-RU/` directory
+ever reappears, delete it rather than filling it in. **This does not apply to the
+in-app UI** — `composeApp/.../composeResources/values-ru/` still exists and must stay a
+byte-identical copy of `values-uk` (see `.claude/agents/localize.md`); it's a fallback
+so Russian-locale devices see Ukrainian, not a real translation. Don't conflate the two.
 
-**iOS: 6 assumed locales** — `en-US, uk, pl, ro, pt-PT, ru`, matching
-`store/copy/app-store.md`'s notes. This has **not** been verified against the live App
-Store Connect listing the way Play was (no equivalent read-only download was run) — if
-`ios beta` ever fails with a similar "locale doesn't exist" error, verify it the same
-way before assuming the fix is symmetrical to Android's.
+**Android: 6 real locales** — `uk, pl-PL, ro, bg, pt-PT, kk`. Do not add `en-US` back to
+the Android changelog automation without first actually creating that Play Store listing
+(title, descriptions, everything — see `store/copy/store-listing.md` for drafted copy) —
+pushing just a changelog for a locale with no base listing fails the whole edit (Google
+validates atomically at commit time, not per-locale, so the failure can surface on
+whichever locale it happens to check first, not necessarily the one that's actually
+missing something).
 
-If the discovered reality ever changes (e.g. English/Russian Play listings get added
+**iOS: 5 real locales** — `en-US, uk, pl, ro, pt-PT`. Confirmed live in App Store Connect
+(2026-08-27, via an actual `fastlane ios release` run): `en-US` exists as a localization
+but was still missing Description/Keywords/Support URL (first-ever production submission
+for this app — those fields were never backfilled); `uk`/`pl`/`ro`/`pt-PT` already had
+complete listings with no missing-field errors.
+
+If the discovered reality ever changes (e.g. an English Play listing gets added
 properly), update this table and `ANDROID_LOCALES` in `scripts/ship.sh` together — they
 must stay in sync or the guard in step 7 will check locales that no longer match what
 `metadata_path` actually contains.
@@ -74,12 +83,12 @@ use, so these never end up tracked or pushed to the repo).
 | File | Read by | Notes |
 | --- | --- | --- |
 | `.claude/tmp/release-metadata/android/<play-locale>/changelogs/<version_code>.txt` | `upload_to_play_store` (supply), automatically via `metadata_path: ANDROID_METADATA_DIR` | Filename **must** be the new numeric version code, e.g. `9.txt`. One file per real Play locale (6 — see step 0, not all 8 in-app languages). supply scans every locale folder that exists under this path, so don't leave stray folders for locales Play doesn't actually have a listing for. |
-| `.claude/tmp/release-metadata/ios/<appstore-locale>/release_notes.txt` | `upload_to_app_store` (deliver, `ios release` lane, via `metadata_path: IOS_METADATA_DIR`) **and** the `ios beta` lane's `localized_build_info` (hand-read in the Fastfile, since pilot has no folder convention) | Same file, same text serves both TestFlight's "What to Test" and the eventual App Store release notes. One file per App Store locale (6 files), overwritten each release — no version number in the filename. |
+| `.claude/tmp/release-metadata/ios/<appstore-locale>/release_notes.txt` | `upload_to_app_store` (deliver, `ios release` lane, via `metadata_path: IOS_METADATA_DIR`) **and** the `ios beta` lane's `localized_build_info` (hand-read in the Fastfile, since pilot has no folder convention) | Same file, same text serves both TestFlight's "What to Test" and the eventual App Store release notes. One file per App Store locale (5 files), overwritten each release — no version number in the filename. |
 | `.claude/tmp/release-metadata/ios/RELEASE_NOTES_VERSION` | `scripts/ship.sh` (guard only, not read by fastlane) | Plain text, just the version code, e.g. `9`. Proves the iOS notes were actually refreshed for this build before shipping. |
 | `.claude/tmp/release-metadata/ios/<appstore-locale>/promotional_text.txt` | `upload_to_app_store` (deliver, `ios release` lane only — **not** read by the beta/TestFlight lane, Apple has no such concept for TestFlight) | See step 4 — leave alone by default. |
 | `store/copy/store-listing.md` | Nobody automatically — tracked, human reference doc | Update so it keeps describing current state, matching every other doc in this repo. This is the only piece of this whole flow that belongs in git. |
 
-`ship.sh` hard-fails if any of the 8 Android changelog files or the iOS
+`ship.sh` hard-fails if any of the 6 Android changelog files or the iOS
 `RELEASE_NOTES_VERSION` marker don't match the new version code — so do not skip a
 locale, and do not run `ship.sh` before finishing this skill's writes.
 
@@ -116,8 +125,8 @@ of the copy).
 
 ## 4. Translate to the other languages
 
-Adapt (don't machine-translate flatly) into `uk`, `pl`, `ro`, `bg`, `pt-PT`, `ru`, `kk` —
-match each language's established terminology from that language's existing section in
+Adapt (don't machine-translate flatly) into `uk`, `pl`, `ro`, `bg`, `pt-PT`, `kk` — no
+`ru`, see step 0 — match each language's established terminology from that language's existing section in
 `store/copy/store-listing.md` (e.g. reuse how "privacy"/"analytics"/"bug fixes" were
 already phrased there, so the voice stays consistent release over release). Kazakh is
 already flagged in that doc as machine-quality — keep that caveat in mind but don't
@@ -125,13 +134,13 @@ skip it, Google Play still needs the file.
 
 ## 5. Write the files
 
-For the 6 real Play locales (`uk, pl-PL, ro, bg, pt-PT, kk` — not `en-US`/`ru-RU`, see
+For the 6 real Play locales (`uk, pl-PL, ro, bg, pt-PT, kk` — not `en-US`, see
 step 0): `.claude/tmp/release-metadata/android/<play-locale>/changelogs/<NEW_CODE>.txt`.
-English and Russian drafts still get written to `store/copy/store-listing.md` (every
-language's section stays current there) — they just don't get a Play changelog file,
+The English draft still gets written to `store/copy/store-listing.md` (every
+language's section stays current there) — it just doesn't get a Play changelog file,
 since pushing one for a locale with no base listing breaks the whole Play upload.
 
-For all 6 App Store locales: overwrite `.claude/tmp/release-metadata/ios/<appstore-locale>/release_notes.txt`,
+For all 5 App Store locales: overwrite `.claude/tmp/release-metadata/ios/<appstore-locale>/release_notes.txt`,
 then overwrite `.claude/tmp/release-metadata/ios/RELEASE_NOTES_VERSION` with `<NEW_CODE>` (bare
 number, no newline needed either way).
 
@@ -144,14 +153,20 @@ blocks, git history already has them.
 
 `promotional_text.txt` is **not** touched by this skill by default. Context: the user
 once saw their App Store promotional text disappear after a release. That happens
-because Apple doesn't carry promotional text forward to a new App Store version draft
-automatically — the fix is that the `ios release` lane now auto-uploads whatever is
-currently in `.claude/tmp/release-metadata/ios/<locale>/promotional_text.txt` every time
-it runs (via deliver's folder convention, `skip_metadata: false`). That resupply is what
-prevents the wipe — it does not require the wording to change. Only rewrite these files
-if the user explicitly asks to update the pitch this run; otherwise the existing stable
-text keeps getting resupplied whenever `ios release` is eventually run (separately,
-manually — this skill never runs that lane, so it never touches Apple's live listing).
+because Apple doesn't carry promotional text or What's New forward to a new App Store
+version draft automatically — creating that version by hand in App Store Connect leaves
+both blank. The fix is that the `ios release` lane attaches the build already sitting in
+TestFlight (`skip_binary_upload: true`, `build_number`/`app_version` read from
+`version.properties` — no rebuild) and auto-uploads whatever is currently in
+`.claude/tmp/release-metadata/ios/<locale>/{release_notes,promotional_text}.txt` at the
+same time (via deliver's folder convention, `skip_metadata: false`). That resupply is
+what prevents the wipe — it does not require the wording to change. Only rewrite
+`promotional_text.txt` if the user explicitly asks to update the pitch this run;
+otherwise the existing stable text keeps getting resupplied whenever `ios release` is
+eventually run (separately, manually — this skill never runs that lane, so it never
+touches Apple's live listing). These files are gitignored and don't propagate across git
+worktrees — if a fresh worktree is missing them, copy them from another checkout rather
+than regenerating with placeholder text.
 
 ## 7. Ship it
 
