@@ -1,5 +1,214 @@
 [
   {
+    "version": "3.0",
+    "date": "2026-08-28",
+    "active": true,
+    "changes": [
+      {
+        "id": "manage-multiple-olx-accounts",
+        "icon": "feature",
+        "title": {
+          "en": "Manage multiple OLX accounts",
+          "uk": "Керуйте кількома акаунтами OLX",
+          "ru": "Керуйте кількома акаунтами OLX",
+          "bg": "Управлявай няколко OLX акаунта",
+          "kk": "Бірнеше OLX аккаунтын басқар",
+          "pl": "Zarządzaj wieloma kontami OLX",
+          "pt": "Faça a gestão de várias contas OLX",
+          "ro": "Gestionează mai multe conturi OLX"
+        },
+        "summary": {
+          "en": "Connect up to 3 OLX accounts per country from your profile and switch between them anytime.",
+          "uk": "Підключайте до 3 акаунтів OLX для кожної країни зі свого профілю та перемикайтеся між ними будь-коли.",
+          "ru": "Підключайте до 3 акаунтів OLX для кожної країни зі свого профілю та перемикайтеся між ними будь-коли.",
+          "bg": "Свързвай до 3 OLX акаунта за всяка държава от профила си и превключвай между тях по всяко време.",
+          "kk": "Профиліңнен әр ел үшін 3-ке дейін OLX аккаунтын қос және олардың арасында кез келген уақытта ауыс.",
+          "pl": "Połącz do 3 kont OLX dla każdego kraju ze swojego profilu i przełączaj się między nimi w dowolnym momencie.",
+          "pt": "Ligue até 3 contas OLX por país a partir do seu perfil e mude entre elas quando quiser.",
+          "ro": "Conectează până la 3 conturi OLX per țară din profilul tău și comută între ele oricând."
+        },
+        "detail": {
+          "en": "Add, switch, or disconnect accounts from Profile — each one keeps its own login, so switching never signs the others out.",
+          "uk": "Додавайте, перемикайте та відключайте акаунти в Профілі — кожен акаунт має власний вхід, тож перемикаючись, ви ніколи не виходите з інших.",
+          "ru": "Додавайте, перемикайте та відключайте акаунти в Профілі — кожен акаунт має власний вхід, тож перемикаючись, ви ніколи не виходите з інших.",
+          "bg": "Добавяй, превключвай или изключвай акаунти от Профила — всеки има собствен вход, затова като превключваш, никога не излизаш от другите.",
+          "kk": "Профильде аккаунттарды қос, ауыстыр немесе ажырат — әрқайсысының жеке сессиясы бар, сондықтан ауыстыру басқаларын шығармайды.",
+          "pl": "Dodawaj, przełączaj i odłączaj konta w Profilu — każde ma własne logowanie, więc przełączanie nigdy nie wylogowuje pozostałych.",
+          "pt": "Adicione, mude ou desligue contas a partir do Perfil — cada uma mantém a sua própria sessão, por isso mudar nunca termina a sessão das outras.",
+          "ro": "Adaugă, comută sau deconectează conturi din Profil — fiecare își păstrează propria autentificare, așa că schimbarea nu deloghează celelalte conturi."
+        }
+      },
+      {
+        "id": "choose-publish-account",
+        "icon": "feature",
+        "title": {
+          "en": "Choose who a listing publishes as",
+          "uk": "Обирайте акаунт для публікації оголошення",
+          "ru": "Обирайте акаунт для публікації оголошення",
+          "bg": "Избери от кой акаунт да се публикува обявата",
+          "kk": "Хабарландыру қай аккаунттан жариялану керегін таңда",
+          "pl": "Wybierz, z jakiego konta publikujesz ogłoszenie",
+          "pt": "Escolha em que conta publicar o anúncio",
+          "ro": "Alege contul pe care se publică anunțul"
+        },
+        "summary": {
+          "en": "Pick which connected account a new listing goes out under, right on the preview screen.",
+          "uk": "Виберіть, з якого підключеного акаунта вийде нове оголошення, прямо на екрані перегляду.",
+          "ru": "Виберіть, з якого підключеного акаунта вийде нове оголошення, прямо на екрані перегляду.",
+          "bg": "Избери от кой свързан акаунт ще излезе новата обява — направо на екрана за преглед.",
+          "kk": "Жаңа хабарландыру қай қосылған аккаунттан шығатынын қарау экранында таңда.",
+          "pl": "Wybierz, z którego połączonego konta wyjdzie nowe ogłoszenie — od razu na ekranie podglądu.",
+          "pt": "Escolha em que conta ligada o novo anúncio é publicado, diretamente no ecrã de revisão.",
+          "ro": "Alege pe care cont conectat iese anunțul nou, chiar din ecranul de previzualizare."
+        }
+      },
+      {
+        "id": "ai-description-regenerate-and-rate",
+        "icon": "magic",
+        "title": {
+          "en": "Regenerate and rate your AI description",
+          "uk": "Перегенеруйте й оцініть свій опис від ШІ",
+          "ru": "Перегенеруйте й оцініть свій опис від ШІ",
+          "bg": "Регенерирай и оцени описанието си от AI",
+          "kk": "AI сипаттамаңды қайта жаса және бағала",
+          "pl": "Wygeneruj ponownie i oceń swój opis AI",
+          "pt": "Gere novamente e avalie a sua descrição de IA",
+          "ro": "Regenerează și evaluează descrierea ta scrisă de AI"
+        },
+        "summary": {
+          "en": "Not happy with the AI-written description? Regenerate it with one tap, and rate the result to help it improve.",
+          "uk": "Не сподобався опис від ШІ? Перегенеруйте його в один тап і оцініть результат, щоб він ставав кращим.",
+          "ru": "Не сподобався опис від ШІ? Перегенеруйте його в один тап і оцініть результат, щоб він ставав кращим.",
+          "bg": "Описанието от AI не ти хареса? Регенерирай го с един допир и оцени резултата, за да му помогнеш да се подобри.",
+          "kk": "AI жазған сипаттама ұнамай ма? Оны бір түртумен қайта жаса және нәтижені бағала — бұл оны жақсартуға көмектеседі.",
+          "pl": "Nie podoba Ci się opis napisany przez AI? Wygeneruj go ponownie jednym dotknięciem i oceń wynik, by pomóc mu się poprawić.",
+          "pt": "Não gostou da descrição escrita pela IA? Gere-a novamente com um toque e avalie o resultado para ajudar a melhorá-la.",
+          "ro": "Nu-ți place descrierea scrisă de AI? Regenerează-o dintr-o atingere și evaluează rezultatul ca să-l ajuți să se îmbunătățească."
+        }
+      },
+      {
+        "id": "whats-new-in-app",
+        "icon": "gift",
+        "title": {
+          "en": "See what's new, right in the app",
+          "uk": "Дізнавайтеся, що нового, прямо в додатку",
+          "ru": "Дізнавайтеся, що нового, прямо в додатку",
+          "bg": "Виж какво е новото направо в приложението",
+          "kk": "Не жаңалық барын қолданбада көр",
+          "pl": "Zobacz nowości prosto w aplikacji",
+          "pt": "Veja as novidades direto na app",
+          "ro": "Vezi noutățile chiar în aplicație"
+        },
+        "summary": {
+          "en": "A quick prompt after every update shows what changed, and Settings now has a full version-history screen.",
+          "uk": "Коротке вікно після кожного оновлення показує, що змінилося, а в Налаштуваннях тепер є повна історія версій.",
+          "ru": "Коротке вікно після кожного оновлення показує, що змінилося, а в Налаштуваннях тепер є повна історія версій.",
+          "bg": "Кратък прозорец след всяко обновяване показва какво е новото, а в Настройки вече има пълна история на версиите.",
+          "kk": "Әр жаңартудан кейін қысқаша терезе не өзгергенін көрсетеді, ал Параметрлерде енді толық нұсқалар тарихы бар.",
+          "pl": "Krótkie okno po każdej aktualizacji pokazuje, co się zmieniło, a Ustawienia mają teraz pełną historię wersji.",
+          "pt": "Um aviso rápido depois de cada atualização mostra o que mudou, e as Definições já têm um ecrã completo de histórico de versões.",
+          "ro": "Un mesaj rapid după fiecare actualizare arată ce s-a schimbat, iar Setările au acum un ecran complet cu istoricul versiunilor."
+        }
+      },
+      {
+        "id": "reconnect-single-account",
+        "icon": "feature",
+        "title": {
+          "en": "Reconnect one account without losing the others",
+          "uk": "Підключайте один акаунт знову, не втрачаючи інші",
+          "ru": "Підключайте один акаунт знову, не втрачаючи інші",
+          "bg": "Свържи отново един акаунт, без да губиш другите",
+          "kk": "Басқаларын жоғалтпай, бір аккаунтты қайта қос",
+          "pl": "Połącz ponownie jedno konto, nie tracąc pozostałych",
+          "pt": "Reconecte uma conta sem perder as outras",
+          "ro": "Reconectează un cont fără să le pierzi pe celelalte"
+        },
+        "summary": {
+          "en": "If one connected account's login expires, reconnect just that one — your other accounts stay untouched.",
+          "uk": "Якщо вхід одного з підключених акаунтів застаріє, підключіть знову лише його — інші ваші акаунти залишаться недоторканими.",
+          "ru": "Якщо вхід одного з підключених акаунтів застаріє, підключіть знову лише його — інші ваші акаунти залишаться недоторканими.",
+          "bg": "Ако входът на един свързан акаунт изтече, свържи отново само него — другите ти акаунти остават непроменени.",
+          "kk": "Егер қосылған аккаунттардың бірінің кіруінің мерзімі өтсе, тек соны ғана қайта қос — басқа аккаунттарың өзгеріссіз қалады.",
+          "pl": "Jeśli logowanie jednego z połączonych kont wygaśnie, połącz ponownie tylko to jedno — pozostałe Twoje konta pozostają nietknięte.",
+          "pt": "Se o início de sessão de uma conta ligada expirar, reconecte só essa — as suas outras contas ficam intactas.",
+          "ro": "Dacă autentificarea unui cont conectat expiră, reconectează doar acel cont — celelalte conturi ale tale rămân neatinse."
+        }
+      },
+      {
+        "id": "fix-session-guest-bounce",
+        "icon": "fix",
+        "title": {
+          "en": "Stopped signing sellers out unexpectedly",
+          "uk": "Більше жодних несподіваних виходів з акаунта",
+          "ru": "Більше жодних несподіваних виходів з акаунта",
+          "bg": "Край на неочакваните излизания от акаунта",
+          "kk": "Күтпеген жерден аккаунттан шығарылу тоқтады",
+          "pl": "Koniec z niespodziewanym wylogowywaniem",
+          "pt": "Fim das saídas de sessão inesperadas",
+          "ro": "S-a terminat cu delogările neașteptate"
+        },
+        "summary": {
+          "en": "Fixed a bug where a brief network hiccup could silently sign you out to the guest screen — your session now stays put.",
+          "uk": "Виправили помилку, через яку короткий збій мережі міг непомітно вивести вас на гостьовий екран — тепер ваша сесія залишається на місці.",
+          "ru": "Виправили помилку, через яку короткий збій мережі міг непомітно вивести вас на гостьовий екран — тепер ваша сесія залишається на місці.",
+          "bg": "Поправихме грешка, при която кратък мрежов проблем можеше тихо да те изведе на гостовия екран — сега сесията ти остава на място.",
+          "kk": "Қысқа желі ақаулығы сені байқаусызда қонақ экранына шығарып жіберетін қатені түзеттік — енді сессияң орнында қалады.",
+          "pl": "Naprawiliśmy błąd, przez który chwilowy problem z siecią mógł po cichu wylogować Cię do ekranu gościa — teraz Twoja sesja zostaje na miejscu.",
+          "pt": "Corrigimos um erro em que uma falha breve de rede podia terminar a sua sessão silenciosamente e levá-lo ao ecrã de convidado — agora a sua sessão mantém-se.",
+          "ro": "Am corectat o eroare din cauza căreia o scurtă problemă de rețea te putea deloga în tăcere pe ecranul de oaspete — acum sesiunea ta rămâne neschimbată."
+        }
+      },
+      {
+        "id": "settings-own-tab",
+        "icon": "improvement",
+        "title": {
+          "en": "Settings has its own tab",
+          "uk": "У Налаштувань — власна вкладка",
+          "ru": "У Налаштувань — власна вкладка",
+          "bg": "Настройки вече имат собствен раздел",
+          "kk": "Параметрлердің енді өз қойындысы бар",
+          "pl": "Ustawienia mają teraz własną zakładkę",
+          "pt": "As Definições já têm o seu próprio separador",
+          "ro": "Setările au acum propria filă"
+        },
+        "summary": {
+          "en": "Theme and Privacy & data moved out of Profile into a dedicated Settings tab, so they're easier to find.",
+          "uk": "Тема та Приватність і дані переїхали з Профілю в окрему вкладку Налаштування — тепер їх легше знайти.",
+          "ru": "Тема та Приватність і дані переїхали з Профілю в окрему вкладку Налаштування — тепер їх легше знайти.",
+          "bg": "Тема и Поверителност и данни се преместиха от Профила в отделен раздел Настройки — вече са по-лесни за откриване.",
+          "kk": "Тақырып пен Құпиялылық және деректер Профильден бөлек Параметрлер қойындысына көшті — енді оларды табу оңайырақ.",
+          "pl": "Motyw oraz Prywatność i dane przeniosły się z Profilu do osobnej zakładki Ustawienia — łatwiej je teraz znaleźć.",
+          "pt": "Tema e Privacidade e dados saíram do Perfil e passaram para um separador Definições dedicado — agora são mais fáceis de encontrar.",
+          "ro": "Temă și Confidențialitate și date s-au mutat din Profil într-o filă Setări dedicată, ca să fie mai ușor de găsit."
+        }
+      },
+      {
+        "id": "fix-unsupported-category-message",
+        "icon": "fix",
+        "title": {
+          "en": "Clear message for unsupported categories",
+          "uk": "Зрозуміле повідомлення про непідтримувані категорії",
+          "ru": "Зрозуміле повідомлення про непідтримувані категорії",
+          "bg": "Ясно съобщение за неподдържани категории",
+          "kk": "Қолдау көрсетілмейтін санаттар туралы түсінікті хабарлама",
+          "pl": "Jasny komunikat o nieobsługiwanych kategoriach",
+          "pt": "Mensagem clara para categorias sem suporte",
+          "ro": "Mesaj clar pentru categoriile nesuportate"
+        },
+        "summary": {
+          "en": "If OLX doesn't support the category for your item yet, SellSnap now tells you instead of failing silently.",
+          "uk": "Якщо OLX ще не підтримує категорію вашого товару, SellSnap тепер повідомляє про це замість мовчазного збою.",
+          "ru": "Якщо OLX ще не підтримує категорію вашого товару, SellSnap тепер повідомляє про це замість мовчазного збою.",
+          "bg": "Ако OLX все още не поддържа категорията на артикула ти, SellSnap вече те уведомява вместо да се провали безшумно.",
+          "kk": "Егер OLX затыңның санатын әлі қолдамаса, SellSnap енді үнсіз сәтсіздікке ұшыраудың орнына саған хабарлайды.",
+          "pl": "Jeśli OLX nie obsługuje jeszcze kategorii Twojego przedmiotu, SellSnap teraz Cię o tym informuje, zamiast po cichu zawodzić.",
+          "pt": "Se o OLX ainda não der suporte à categoria do seu artigo, o SellSnap agora avisa-o em vez de falhar em silêncio.",
+          "ro": "Dacă OLX nu susține încă o categorie pentru articolul tău, SellSnap îți spune acum, în loc să eșueze în tăcere."
+        }
+      }
+    ]
+  },
+  {
     "version": "2.2",
     "date": "2026-08-19",
     "active": true,
