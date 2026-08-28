@@ -737,10 +737,10 @@ bonjour-service@^1.2.1:
     fast-deep-equal "^3.1.3"
     multicast-dns "^7.2.5"
 
-brace-expansion@1.1.17, brace-expansion@^5.0.2:
-  version "1.1.17"
-  resolved "https://registry.yarnpkg.com/brace-expansion/-/brace-expansion-1.1.17.tgz#a375e14e41d672617de69526be02d0d7751a6909"
-  integrity sha512-w+aeW/mkgM4PyRMOJCgi3fOrTm5Q8QY1OSfn2TO2iuDj3ezIHqejmuxbjfPrqUkgqRew1iqkyAn0tr0ZwHD9+w==
+brace-expansion@1.1.18, brace-expansion@^5.0.2:
+  version "1.1.18"
+  resolved "https://registry.yarnpkg.com/brace-expansion/-/brace-expansion-1.1.18.tgz#3ce74d89885136be1535341f8c3d4425c29a5cab"
+  integrity sha512-Edep/X9fGqVNmzKBVsDYIOtD+z1tuezV70LBjdCst9Tqu76lsnvRiZ6oTic1n+/BIwX6QDGAO94PN4N2SADvtw==
   dependencies:
     balanced-match "^1.0.0"
     concat-map "0.0.1"
@@ -2823,10 +2823,10 @@ thunky@^1.0.2:
   resolved "https://registry.yarnpkg.com/thunky/-/thunky-1.1.0.tgz#5abaf714a9405db0504732bbccd2cedd9ef9537d"
   integrity sha512-eHY7nBftgThBqOyHGVN+l8gF0BucP09fMo0oO/Lb0w1OF80dJv+lDVpXG60WMQvkcxAkNybKsrEIE3ZtKGmPrA==
 
-tmp@0.2.6, tmp@^0.2.1:
-  version "0.2.6"
-  resolved "https://registry.yarnpkg.com/tmp/-/tmp-0.2.6.tgz#0dfac10fd09a9319288eb0e8f0ed524604e183b4"
-  integrity sha512-5sJPdPjfI5Kx+qbrDesxkglRBxW//g7hCsqspEjwkewGvBMGIKMOTKzLt1hFVJzyadba3lDUN20O9qhvbQUSTA==
+tmp@0.2.7, tmp@^0.2.1:
+  version "0.2.7"
+  resolved "https://registry.yarnpkg.com/tmp/-/tmp-0.2.7.tgz#26f4db11d1601ce8012dcb8a798ece1c06a99059"
+  integrity sha512-e0votIpp4Uo2AJYSzVHV6xCcawuiez3DzqDAbrTc3YxBkplN6e+dM13ZeIcZnDg/QpSuU2zfZ3rzwY8ukEnaXw==
 
 to-regex-range@^5.0.1:
   version "5.0.1"
