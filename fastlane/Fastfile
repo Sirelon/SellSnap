@@ -53,6 +53,13 @@ def testflight_whats_new
   end
 end
 
+def read_version_properties
+  File.read(VERSION_PROPERTIES).lines.each_with_object({}) do |line, h|
+    key, value = line.strip.split("=", 2)
+    h[key] = value if key && value
+  end
+end
+
 # ---------------------------------------------------------------------------
 # iOS
 # ---------------------------------------------------------------------------
@@ -70,10 +77,7 @@ platform :ios do
 
   desc "Sync MARKETING_VERSION / CURRENT_PROJECT_VERSION from version.properties"
   private_lane :sync_version do
-    props = File.read(VERSION_PROPERTIES).lines.each_with_object({}) do |line, h|
-      key, value = line.strip.split("=", 2)
-      h[key] = value if key && value
-    end
+    props = read_version_properties
 
     increment_version_number(
       xcodeproj: IOS_PROJECT,
@@ -119,25 +123,19 @@ platform :ios do
     )
   end
 
-  desc "Build and upload to App Store (does not submit for review)"
+  desc "Create/update the App Store version for the build already on TestFlight and publish its metadata (does not rebuild, does not submit for review)"
   lane :release do
-    sync_version
-    Bundler.with_unbundled_env do
-      build_app(
-        project: IOS_PROJECT,
-        scheme: IOS_SCHEME,
-        export_method: "app-store",
-        derived_data_path: IOS_DERIVED_DATA_PATH,
-        xcargs: "-allowProvisioningUpdates"
-      )
-    end
-    upload_dsyms_to_crashlytics
+    props = read_version_properties
     upload_to_app_store(
       app_identifier: APP_IDENTIFIER,
+      app_version: props.fetch("VERSION_NAME"),
+      build_number: props.fetch("VERSION_CODE"),
+      skip_binary_upload: true,
+      skip_screenshots: true,
+      skip_metadata: false,
       submit_for_review: false,
       automatic_release: false,
-      skip_metadata: false,
-      skip_screenshots: true,
+      run_precheck_before_submit: false,
       metadata_path: IOS_METADATA_DIR,
       force: true
     )
