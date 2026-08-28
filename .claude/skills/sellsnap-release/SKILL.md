@@ -6,7 +6,9 @@ description: >-
   "release a new version", "ship version X.Y", "cut a release", "publish an update",
   "bump the version and publish", or asks what's new in the current build. Covers Play
   Store internal testing + TestFlight beta only — promoting to production (Play) or
-  submitting to the App Store is a separate manual step, never run by this skill.
+  submitting to the App Store is a separate manual step, never run by this skill. After
+  a real ship, hand off to the `release-notes` skill to publish the in-app What's New
+  content — this skill writes store-listing changelogs only, it doesn't touch Firestore.
 ---
 
 # SellSnap release
@@ -179,7 +181,18 @@ This compiles, bumps `version.properties`, and runs `fastlane android beta` +
 `fastlane ios beta` — Play internal track and TestFlight. Let it run to completion
 (background + wait for the notification if it takes a while; don't poll).
 
-## 8. Report back
+## 8. Hand off for in-app What's New
+
+After a real version bump ships — skip this for a build-only/hotfix bump where
+`VERSION_NAME` didn't change, same rule as step 2 — run the `release-notes` skill
+(`.claude/skills/release-notes/`). It mines this range's git history, drafts the in-app
+"What's New" copy in all 8 app languages (Russian included — the store-listing exclusion
+in step 0 does not apply here), and publishes it to the `release-notes` Firestore
+collection that `features/whatsnew/` reads from. That skill owns the Firestore schema,
+translation voice, and publish pipeline end to end — don't re-derive or duplicate any of
+that here.
+
+## 9. Report back
 
 Show the user, per language, the What's New text that just shipped (it's short — showing
 all of it is fine and lets them catch a bad translation before it's live to internal
@@ -187,4 +200,5 @@ testers). Confirm the Play and TestFlight uploads succeeded. Remind them that
 `version.properties` and `store/copy/store-listing.md` are modified but not committed —
 committing is their call, not automatic (the release-metadata files themselves are
 gitignored, so they never show up in `git status` at all). Remind them production
-promotion/submission is a separate manual step if they want to go further than beta.
+promotion/submission is a separate manual step if they want to go further than beta, and
+that step 8 (in-app What's New) is a separate hand-off, not automatic.
