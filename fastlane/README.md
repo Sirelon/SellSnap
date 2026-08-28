@@ -29,7 +29,7 @@ Build and upload a new beta to TestFlight
 [bundle exec] fastlane ios release
 ```
 
-Build and upload to App Store (does not submit for review)
+Create/update the App Store version for the build already on TestFlight and publish its metadata (does not rebuild, does not submit for review)
 
 ----
 

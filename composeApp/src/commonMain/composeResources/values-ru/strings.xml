@@ -81,7 +81,7 @@
     <string name="profile_field_created_at">Створено</string>
     <string name="profile_field_last_login_at">Останній вхід</string>
     <string name="profile_screen_title">Профіль</string>
-    <string name="settings_screen_title">Настройки</string>
+    <string name="settings_screen_title">Налаштування</string>
     <string name="profile_guest_title">Гостьовий профіль</string>
     <string name="profile_guest_description">Підключіть OLX, щоб публікувати з SellSnap — дані акаунта з'являться тут.</string>
     <string name="profile_olx_account">Акаунт OLX</string>
@@ -107,14 +107,14 @@
     <string name="profile_value_no">Ні</string>
 
     <!-- What's New -->
-    <string name="settings_version_history">История версий</string>
-    <string name="whats_new_screen_title">Что нового</string>
-    <string name="whats_new_dialog_title">Что нового в версии %1$s</string>
-    <string name="whats_new_got_it">Понятно</string>
-    <string name="whats_new_view_all">Смотреть все обновления</string>
-    <string name="whats_new_installed_badge">Установлена</string>
-    <string name="whats_new_empty_title">Пока здесь ничего нет</string>
-    <string name="whats_new_empty_description">Загляните позже, чтобы узнать об обновлениях.</string>
+    <string name="settings_version_history">Історія версій</string>
+    <string name="whats_new_screen_title">Що нового</string>
+    <string name="whats_new_dialog_title">Що нового у версії %1$s</string>
+    <string name="whats_new_got_it">Зрозуміло</string>
+    <string name="whats_new_view_all">Переглянути всі оновлення</string>
+    <string name="whats_new_installed_badge">Встановлено</string>
+    <string name="whats_new_empty_title">Тут поки що нічого немає</string>
+    <string name="whats_new_empty_description">Загляньте пізніше, щоб дізнатися про оновлення.</string>
 
     <!-- My OLX Ads -->
     <string name="nav_my_ads">Мої оголошення</string>
@@ -251,7 +251,7 @@
     <string name="error_publish_missing_category_or_location">Майже готово — додайте категорію та місцезнаходження перед публікацією.</string>
     <string name="error_publish_missing_contact_name">У вашому профілі OLX немає імені. Зайдіть туди, додайте — і спробуємо ще раз.</string>
     <string name="error_category_suggestion_failed">Не вдалося запропонувати категорію.</string>
-    <string name="error_category_not_supported">Мы пока не поддерживаем эту категорию (например, животные, недвижимость, транспорт, работа, аренда). Попробуйте другой товар.</string>
+    <string name="error_category_not_supported">Ми ще не підтримуємо цю категорію (наприклад, тварини, нерухомість, транспорт, робота, оренда). Спробуйте інший товар.</string>
     <string name="error_attributes_load_failed">Не вдалося завантажити деталі.</string>
     <string name="error_user_profile_fetch_failed">Не вдалося завантажити ваш профіль.</string>
     <string name="error_olx_auth_prepare_failed">Не вдалося розпочати вхід у OLX.</string>
@@ -260,10 +260,10 @@
     <string name="error_upload_file_failed">Не вдалося завантажити одне з фото.</string>
     <string name="error_publish_failed">Не вдалося опублікувати. Спробуйте ще раз.</string>
     <string name="error_generate_ad_failed">Не вдалося згенерувати оголошення. Спробуєте ще раз?</string>
-    <string name="error_regenerate_description_failed">Не удалось перегенерировать описание. Попробовать ещё раз?</string>
-    <string name="regenerate_pill_default">Перегенерировать</string>
-    <string name="vote_up_label">Полезно</string>
-    <string name="vote_down_label">Не полезно</string>
+    <string name="error_regenerate_description_failed">Не вдалося перегенерувати опис. Спробуєте ще раз?</string>
+    <string name="regenerate_pill_default">Перегенерувати</string>
+    <string name="vote_up_label">Корисно</string>
+    <string name="vote_down_label">Не корисно</string>
 
     <!-- Publish Success Screen -->
     <string name="publish_success_title">Опубліковано! 🎉</string>

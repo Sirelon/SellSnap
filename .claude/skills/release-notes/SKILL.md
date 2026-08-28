@@ -50,7 +50,8 @@ history screen (`composeApp/.../features/whatsnew/`) have real content.
   `composeApp/src/commonMain/composeResources/values*/`. **`ru` is a verbatim copy of
   `uk`, never a real Russian translation** — same rule as the `localize` agent
   (`.claude/agents/localize.md`), because the app has no audience that's Russian-speaking
-  but not Ukrainian-speaking.
+  but not Ukrainian-speaking. (This is separate from store-listing copy, which excludes
+  Russian entirely by product decision — see the `sellsnap-release` skill.)
 - **Source of truth**: `scripts/release-notes.json` — tracked in git (unlike
   `sellsnap-release`'s gitignored `.claude/tmp/release-metadata/`; this content is worth
   keeping history on). Array of release objects, newest first, same shape as the Firestore

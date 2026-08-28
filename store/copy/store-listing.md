@@ -1,6 +1,8 @@
 # SellSnap — Store listing text (App Store + Google Play)
 
-Copy-paste text for every listing field, in all 8 app languages. Written for SellSnap 2.2 (build 9).
+Copy-paste text for every listing field. The app ships 8 in-app languages, but this doc
+only has 7 sections — Russian shares Ukrainian's in-app UI and has no separate store
+listing (see the "No Russian store listing" note below). Written for SellSnap 3.0 (build 11).
 
 The per-language **What's New** blocks below match what's pushed to the stores automatically from `.claude/tmp/release-metadata/` (gitignored, regenerated fresh each release): Android reads `android/<locale>/changelogs/<version_code>.txt`, iOS reads `ios/<locale>/release_notes.txt` (App Store) and the same file feeds TestFlight's localized build info. The `sellsnap-release` skill regenerates both those files and this section on every release.
 
@@ -24,6 +26,7 @@ Notes before you paste:
 - **App Store Connect has no Bulgarian or Kazakh localization.** Use the bg/kk sections for Google Play only; on the App Store those users see your primary (English) listing.
 - **"OLX" in the name/subtitle is a trademark risk.** The name below avoids it; the subtitle and keywords use it, which is common practice but could be challenged in review. If Apple/Google object, drop it from the subtitle first.
 - **Kazakh is machine-of-mine quality** — I'd have a native speaker skim it before shipping. The KZ market is also currently disabled in-app (no OLX.kz credentials), so kk is for the in-app language audience, not an active market.
+- **No Russian *store listing*.** By product decision, neither store gets Russian marketing copy or release notes — don't add a Russian section back to this doc. This doesn't apply to the in-app UI: `values-ru/strings.xml` still exists as a byte-identical copy of `values-uk`, so Russian-locale devices see Ukrainian rather than falling back to English (see `.claude/agents/localize.md`).
 
 ---
 
@@ -70,13 +73,15 @@ From snap to live on OLX in about a minute. Download SellSnap and turn your clut
 SellSnap is an independent app and is not affiliated with or endorsed by OLX. Publishing requires an OLX account.
 ```
 
-**What's New (v2.2):**
+**What's New (v3.0):**
 
 ```
-SellSnap 2.2 — stability improvements
+SellSnap 3.0 — multiple accounts, smarter listings
 
-• Improved crash reporting, so we catch and fix issues faster
-• Security and dependency updates
+• Add and switch between multiple OLX seller accounts
+• Regenerate the AI description if it's not quite right, and rate the result
+• See what's new after every update on a new version history screen
+• Bug fixes and performance improvements
 ```
 
 ---
@@ -124,13 +129,15 @@ SellSnap підтримує OLX в Україні, Польщі, Румунії,
 SellSnap — незалежний застосунок, не афілійований з OLX. Для публікації потрібен акаунт OLX.
 ```
 
-**What's New (v2.2):**
+**What's New (v3.0):**
 
 ```
-SellSnap 2.2 — покращення стабільності
+SellSnap 3.0 — кілька акаунтів, розумніші оголошення
 
-• Краще звітування про збої — виправляємо проблеми швидше
-• Оновлення безпеки та залежностей
+• Додавайте та перемикайтесь між кількома акаунтами OLX
+• Перегенеруйте опис від AI, якщо він не зовсім такий, і оцініть результат
+• Дізнавайтесь про новинки після кожного оновлення на новому екрані історії версій
+• Виправлення багів і покращення продуктивності
 ```
 
 ---
@@ -178,13 +185,15 @@ Od zdjęcia do ogłoszenia na OLX w około minutę. Pobierz SellSnap i zamień n
 SellSnap to niezależna aplikacja, niepowiązana z OLX. Do publikacji wymagane jest konto OLX.
 ```
 
-**What's New (v2.2):**
+**What's New (v3.0):**
 
 ```
-SellSnap 2.2 — poprawki stabilności
+SellSnap 3.0 — wiele kont, lepsze ogłoszenia
 
-• Lepsze raportowanie awarii, dzięki czemu szybciej naprawiamy problemy
-• Aktualizacje bezpieczeństwa i zależności
+• Dodawaj i przełączaj się między wieloma kontami OLX
+• Wygeneruj opis AI ponownie, jeśli nie jest idealny, i oceń wynik
+• Sprawdzaj nowości po każdej aktualizacji na nowym ekranie historii wersji
+• Poprawki błędów i usprawnienia wydajności
 ```
 
 ---
@@ -232,13 +241,15 @@ De la poză la anunț publicat pe OLX în aproximativ un minut. Descarcă SellSn
 SellSnap este o aplicație independentă, neafiliată cu OLX. Publicarea necesită un cont OLX.
 ```
 
-**What's New (v2.2):**
+**What's New (v3.0):**
 
 ```
-SellSnap 2.2 — îmbunătățiri de stabilitate
+SellSnap 3.0 — mai multe conturi, anunțuri mai inteligente
 
-• Raportare a erorilor îmbunătățită, ca să rezolvăm problemele mai repede
-• Actualizări de securitate și de dependențe
+• Adaugă și comută între mai multe conturi OLX
+• Regenerează descrierea AI dacă nu e potrivită și evaluează rezultatul
+• Vezi noutățile după fiecare actualizare pe noul ecran cu istoricul versiunilor
+• Corecturi de erori și îmbunătățiri de performanță
 ```
 
 ---
@@ -286,13 +297,15 @@ SellSnap поддържа OLX в България, Украйна, Полша, �
 SellSnap е независимо приложение и не е свързано с OLX. За публикуване е необходим акаунт в OLX.
 ```
 
-**What's New (v2.2):**
+**What's New (v3.0):**
 
 ```
-SellSnap 2.2 — подобрения в стабилността
+SellSnap 3.0 — няколко акаунта, по-умни обяви
 
-• По-добро отчитане на сривове — отстраняваме проблемите по-бързо
-• Актуализации на сигурността и зависимостите
+• Добавяйте и превключвайте между няколко акаунта в OLX
+• Генерирайте описанието от AI отново, ако не е съвсем точно, и оценете резултата
+• Вижте новостите след всяка актуализация на новия екран с история на версиите
+• Поправки на грешки и подобрения в производителността
 ```
 
 ---
@@ -340,72 +353,20 @@ Da foto ao anúncio publicado no OLX em cerca de um minuto. Descarregue o SellSn
 O SellSnap é uma aplicação independente, sem qualquer afiliação com o OLX. Para publicar é necessária uma conta OLX.
 ```
 
-**What's New (v2.2):**
+**What's New (v3.0):**
 
 ```
-SellSnap 2.2 — melhorias de estabilidade
+SellSnap 3.0 — várias contas, anúncios mais inteligentes
 
-• Relatórios de falhas melhorados, para resolvermos problemas mais depressa
-• Atualizações de segurança e de dependências
-```
-
----
-
-## 7. Russian (ru / ru-RU)
-
-**App name / Play title** (25): `SellSnap: объявления с AI`
-**Subtitle** (25): `Фото → готовое объявление`
-**Promotional text** (~147): Сделайте фото — SellSnap напишет заголовок, описание и цену, а затем опубликует объявление на OLX. Продавать ещё никогда не было так просто и быстро.
-**Play short description** (~74): Сделайте фото — AI напишет объявление для OLX и опубликует его в один тап.
-**Keywords** (~69): `olx,продать,объявление,ai,фото,цена,продажа,барахолка,вещи,объявления`
-
-**Description:**
-
-```
-Есть что продать? Сфотографируйте — мы создадим объявление.
-
-SellSnap превращает фото в готовое объявление для OLX. Наведите камеру на любую вещь — AI напишет заголовок и описание и предложит справедливую цену. Просмотрите, поправьте что хотите и опубликуйте на OLX одним касанием.
-
-КАК ЭТО РАБОТАЕТ
-1. Сфотографируйте — добавьте от 1 до 8 фото вещи, которую продаёте.
-2. AI пишет текст — заголовок, описание и справедливая цена будут готовы, пока остывает ваш кофе.
-3. Опубликуйте одним касанием — объявление сразу попадает на OLX.
-
-ПОЧЕМУ SELLSNAP
-• Никаких мук с чистым листом — AI пишет всё объявление за вас
-• Умные подсказки цены с реалистичным диапазоном
-• Публикация прямо на OLX — без копирования
-• Автоматический подбор категории и полей с деталями
-• Все ваши объявления OLX в одном месте
-• Добавьте подсказку для AI (бренд, размер, состояние) — результат будет ещё точнее
-• Светлая и тёмная темы
-
-РАБОТАЕТ ТАМ, ГДЕ ВЫ ПРОДАЁТЕ
-SellSnap поддерживает OLX в Украине, Польше, Румынии, Болгарии и Португалии. Выберите страну — объявления будут создаваться на нужном языке и в местной валюте.
-
-ПОПРОБУЙТЕ БЕЗ АККАУНТА
-Нет аккаунта OLX? Используйте гостевой режим: создайте объявление, скопируйте заголовок, описание и цену и вставьте их на OLX самостоятельно. Подключите OLX позже, чтобы публиковать одним касанием.
-
-ВАШИ ДАННЫЕ — ВАШЕ РЕШЕНИЕ
-Аналитика выключена по умолчанию и никогда не включает ваши фото или текст объявлений. Локальные данные можно удалить в любой момент — прямо в профиле.
-
-От фото до опубликованного объявления на OLX — около минуты. Скачайте SellSnap и превратите ненужные вещи в деньги.
-
-SellSnap — независимое приложение, не аффилированное с OLX. Для публикации нужен аккаунт OLX.
-```
-
-**What's New (v2.2):**
-
-```
-SellSnap 2.2 — улучшения стабильности
-
-• Улучшенные отчёты о сбоях — исправляем проблемы быстрее
-• Обновления безопасности и зависимостей
+• Adicione e alterne entre várias contas OLX
+• Regenere a descrição da IA se não estiver perfeita e avalie o resultado
+• Veja as novidades depois de cada atualização no novo ecrã de histórico de versões
+• Correções de erros e melhorias de desempenho
 ```
 
 ---
 
-## 8. Kazakh (kk-KZ — **Google Play only**, App Store has no Kazakh localization)
+## 7. Kazakh (kk-KZ — **Google Play only**, App Store has no Kazakh localization)
 
 **Play title** (25): `SellSnap: AI хабарландыру`
 **Play short description** (~70): Фото түсіріңіз — AI OLX хабарландыруын жазып, бір түртумен жариялайды.
@@ -446,11 +407,13 @@ OLX аккаунтыңыз жоқ па? Қонақ режимін пайдала
 SellSnap — OLX-пен байланысы жоқ тәуелсіз қосымша. Жариялау үшін OLX аккаунты қажет.
 ```
 
-**What's New (v2.2):**
+**What's New (v3.0):**
 
 ```
-SellSnap 2.2 — тұрақтылықты жақсарту
+SellSnap 3.0 — бірнеше аккаунт, ақылды хабарландырулар
 
-• Ақаулар туралы есеп беру жақсарды — мәселелерді жылдамырақ шешеміз
-• Қауіпсіздік пен тәуелділіктерге жаңартулар
+• Бірнеше OLX аккаунтын қосып, олардың арасында ауысыңыз
+• AI сипаттамасын қайта жасаңыз, егер ол дәл болмаса, және нәтижені бағалаңыз
+• Әрбір жаңартудан кейін жаңалықтарды нұсқалар тарихы экранынан қараңыз
+• Қателерді түзету және өнімділікті жақсарту
 ```
