@@ -101,7 +101,6 @@ interface PreviewAdContract {
     sealed interface PreviewAdEffect {
         data class ShowMessage(val message: String) : PreviewAdEffect
         data object GoToGategoryPicker : PreviewAdEffect
-        data object NavigateToPublishing : PreviewAdEffect
         data class PublishSuccess(val data: PublishSuccessData) : PreviewAdEffect
         data class PublishFailure(val message: String) : PreviewAdEffect
         data class NavigateToProfile(val reason: String) : PreviewAdEffect

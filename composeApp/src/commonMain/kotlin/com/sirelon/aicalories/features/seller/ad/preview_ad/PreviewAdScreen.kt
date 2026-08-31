@@ -45,10 +45,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.material3.Slider
-import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -78,19 +76,8 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.util.fastRoundToInt
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation3.runtime.NavKey
-import androidx.navigation3.runtime.entryProvider
-import androidx.navigation3.runtime.rememberNavBackStack
-import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
-import androidx.navigation3.scene.SinglePaneSceneStrategy
-import androidx.navigation3.ui.NavDisplay
-import androidx.navigationevent.NavigationEventInfo
-import androidx.navigationevent.compose.NavigationBackHandler
-import androidx.navigationevent.compose.rememberNavigationEventState
 import com.mohamedrejeb.calf.permissions.CoarseLocation
 import com.mohamedrejeb.calf.permissions.Permission
-import com.sirelon.sellsnap.analytics.AnalyticsScreen
-import com.sirelon.sellsnap.analytics.TrackScreenViews
 import com.sirelon.sellsnap.designsystem.AppAsyncImage
 import com.sirelon.sellsnap.designsystem.AppAvatar
 import com.sirelon.sellsnap.designsystem.AppCard
@@ -102,7 +89,6 @@ import com.sirelon.sellsnap.designsystem.performSuccessFeedback
 import com.sirelon.sellsnap.designsystem.DigitOnlyInputTransformation
 import com.sirelon.sellsnap.designsystem.ErrorPill
 import com.sirelon.sellsnap.designsystem.LoadingPill
-import com.sirelon.sellsnap.designsystem.ObserveAsEvents
 import com.sirelon.sellsnap.designsystem.Pill
 import com.sirelon.sellsnap.designsystem.ThousandSeparatorOutputTransformation
 import com.sirelon.sellsnap.designsystem.ThumbsVoteRow
@@ -116,16 +102,10 @@ import com.sirelon.sellsnap.features.media.PermissionController
 import com.sirelon.sellsnap.features.media.PermissionDialogContent
 import com.sirelon.sellsnap.features.media.PermissionDialogs
 import com.sirelon.sellsnap.features.media.rememberPermissionController
-import com.sirelon.sellsnap.features.seller.ad.AdvertisementWithAttributes
 import com.sirelon.sellsnap.features.seller.ad.formatFriendlyElapsedTime
 import com.sirelon.sellsnap.features.seller.ad.screenshotMode
 import com.sirelon.sellsnap.features.seller.ad.preview_ad.PreviewAdContract.PreviewAdEvent
 import com.sirelon.sellsnap.features.seller.ad.preview_ad.PreviewAdContract.PreviewAdEvent.CategorySelected
-import com.sirelon.sellsnap.features.seller.ad.preview_ad.ui.PreviewBackInfoSheet
-import com.sirelon.sellsnap.features.seller.ad.preview_ad.ui.PublishAccountPickerSheet
-import com.sirelon.sellsnap.features.seller.ad.preview_ad.ui.PublishConfirmSheet
-import com.sirelon.sellsnap.features.seller.ad.preview_ad.ui.PublishingScreen
-import com.sirelon.sellsnap.features.seller.ad.publish_success.PublishSuccessData
 import com.sirelon.sellsnap.features.seller.categories.domain.OlxCategory
 import com.sirelon.sellsnap.features.seller.categories.domain.ValidationError
 import com.sirelon.sellsnap.features.seller.categories.ui.AttributeItem
@@ -188,7 +168,6 @@ import com.sirelon.sellsnap.generated.resources.validation_error_no_location
 import com.sirelon.sellsnap.generated.resources.validation_error_title_too_short
 import com.sirelon.sellsnap.generated.resources.validation_errors_more
 import com.sirelon.sellsnap.generated.resources.validation_fields_remaining
-import com.sirelon.sellsnap.navigation.BottomSheetSceneStrategy
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
@@ -196,8 +175,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
-import org.koin.compose.viewmodel.koinViewModel
-import org.koin.core.parameter.parametersOf
 import kotlin.math.roundToInt
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -205,210 +182,8 @@ private const val TitleMinLength = 10
 private const val DescriptionMinLength = 30
 
 @Composable
-fun PreviewAdScreen(
-    advertisement: AdvertisementWithAttributes,
-    onBackToGenerate: () -> Unit,
-    onChangeCategoryClick: () -> Unit,
-    onPublishSuccess: (PublishSuccessData) -> Unit,
-    pendingCategory: OlxCategory?,
-    onCategoryConsumed: () -> Unit,
-    onConnectOlxClick: () -> Unit,
-    showImagesPreview: (List<String>, Int) -> Unit,
-    onNavigateToProfile: (String) -> Unit = {},
-) {
-    val viewModel: PreviewAdViewModel = koinViewModel { parametersOf(advertisement) }
-    val snackbarHostState = remember { SnackbarHostState() }
-    val navBackStack = rememberNavBackStack(
-        previewNavigationSavedStateConfiguration,
-        PreviewAdDestination.Content,
-    )
-    val sceneStrategies = remember {
-        listOf(
-            BottomSheetSceneStrategy<NavKey>(),
-            SinglePaneSceneStrategy<NavKey>(),
-        )
-    }
-    TrackScreenViews(navBackStack.lastOrNull() as? AnalyticsScreen)
-    LaunchedEffect(Unit) {
-        if (navBackStack.lastOrNull() is PreviewAdDestination.Publishing) {
-            navBackStack.removeAt(navBackStack.lastIndex)
-        }
-    }
-    val dismissPublishConfirm: () -> Unit = {
-        if (navBackStack.lastOrNull() is PreviewAdDestination.PublishConfirm) {
-            navBackStack.removeAt(navBackStack.lastIndex)
-        }
-    }
-    val dismissBackInfoSheet: () -> Unit = {
-        if (navBackStack.lastOrNull() is PreviewAdDestination.BackInfo) {
-            navBackStack.removeAt(navBackStack.lastIndex)
-        }
-    }
-    val dismissPublishing: () -> Unit = {
-        if (navBackStack.lastOrNull() is PreviewAdDestination.Publishing) {
-            navBackStack.removeAt(navBackStack.lastIndex)
-        }
-    }
-    val dismissAccountPicker: () -> Unit = {
-        if (navBackStack.lastOrNull() is PreviewAdDestination.AccountPicker) {
-            navBackStack.removeAt(navBackStack.lastIndex)
-        }
-    }
-
-    ObserveAsEvents(viewModel.effects) { effect ->
-        when (effect) {
-            is PreviewAdContract.PreviewAdEffect.ShowMessage ->
-                snackbarHostState.showSnackbar(effect.message)
-
-            PreviewAdContract.PreviewAdEffect.GoToGategoryPicker -> onChangeCategoryClick()
-
-            PreviewAdContract.PreviewAdEffect.NavigateToPublishing -> {
-                dismissPublishConfirm()
-                if (navBackStack.lastOrNull() !is PreviewAdDestination.Publishing) {
-                    navBackStack.add(PreviewAdDestination.Publishing)
-                }
-            }
-
-            is PreviewAdContract.PreviewAdEffect.PublishSuccess -> {
-                dismissPublishing()
-                onPublishSuccess(effect.data)
-            }
-
-            is PreviewAdContract.PreviewAdEffect.PublishFailure -> {
-                dismissPublishing()
-                snackbarHostState.showSnackbar(effect.message)
-            }
-
-            is PreviewAdContract.PreviewAdEffect.NavigateToProfile -> {
-                dismissPublishing()
-                onNavigateToProfile(effect.reason)
-            }
-
-            is PreviewAdContract.PreviewAdEffect.PublishAccountMismatch -> {
-                dismissPublishing()
-                snackbarHostState.showSnackbar(effect.message)
-            }
-
-            is PreviewAdContract.PreviewAdEffect.PublishNeedsReconnect -> {
-                dismissPublishing()
-                // Never auto-launches OAuth: the action only takes the seller to Profile, where
-                // reconnecting is a deliberate, separate tap.
-                val result = snackbarHostState.showSnackbar(
-                    message = effect.message,
-                    actionLabel = effect.actionLabel,
-                    duration = SnackbarDuration.Long,
-                )
-                if (result == SnackbarResult.ActionPerformed) {
-                    onNavigateToProfile(effect.message)
-                }
-            }
-        }
-    }
-
-    NavDisplay(
-        modifier = Modifier.fillMaxSize(),
-        backStack = navBackStack,
-        onBack = {
-            when (navBackStack.lastOrNull()) {
-                is PreviewAdDestination.Content -> navBackStack.add(PreviewAdDestination.BackInfo)
-                is PreviewAdDestination.Publishing -> Unit
-                else -> {
-                    if (navBackStack.size > 1) {
-                        navBackStack.removeAt(navBackStack.lastIndex)
-                    }
-                }
-            }
-        },
-        sceneStrategies = sceneStrategies,
-        entryDecorators = listOf(rememberSaveableStateHolderNavEntryDecorator<NavKey>()),
-        entryProvider = entryProvider<NavKey> {
-            entry<PreviewAdDestination.Content> {
-                val backHandlerState =
-                    rememberNavigationEventState(currentInfo = NavigationEventInfo.None)
-                NavigationBackHandler(
-                    state = backHandlerState,
-                    isBackEnabled = navBackStack.lastOrNull() is PreviewAdDestination.Content,
-                    onBackCompleted = {
-                        navBackStack.add(PreviewAdDestination.BackInfo)
-                    },
-                )
-                PreviewAdContentRoute(
-                    viewModel = viewModel,
-                    snackbarHostState = snackbarHostState,
-                    onBack = {
-                        if (screenshotMode) onBackToGenerate()
-                        else navBackStack.add(PreviewAdDestination.BackInfo)
-                    },
-                    onChangeCategoryClick = onChangeCategoryClick,
-                    pendingCategory = pendingCategory,
-                    onCategoryConsumed = onCategoryConsumed,
-                    onConnectOlxClick = onConnectOlxClick,
-                    onPublishConfirmationRequested = {
-                        if (navBackStack.lastOrNull() !is PreviewAdDestination.PublishConfirm) {
-                            navBackStack.add(PreviewAdDestination.PublishConfirm)
-                        }
-                    },
-                    onTargetAccountRowClick = {
-                        if (navBackStack.lastOrNull() !is PreviewAdDestination.AccountPicker) {
-                            navBackStack.add(PreviewAdDestination.AccountPicker)
-                        }
-                    },
-                    showImagesPreview = showImagesPreview,
-                )
-            }
-
-            entry<PreviewAdDestination.PublishConfirm>(
-                metadata = BottomSheetSceneStrategy.bottomSheet(),
-            ) {
-                val state by viewModel.state.collectAsStateWithLifecycle()
-
-                PublishConfirmSheet(
-                    imageUrls = state.images,
-                    title = viewModel.titleState.text.toString(),
-                    categoryLabel = state.categoryLabel,
-                    priceFormatted = state.currency.format(state.price),
-                    onConfirm = { viewModel.onEvent(PreviewAdEvent.Publish) },
-                    onDismiss = dismissPublishConfirm,
-                )
-            }
-
-            entry<PreviewAdDestination.AccountPicker>(
-                metadata = BottomSheetSceneStrategy.bottomSheet(),
-            ) {
-                val state by viewModel.state.collectAsStateWithLifecycle()
-
-                PublishAccountPickerSheet(
-                    items = state.accountPickerItems,
-                    onAccountSelected = { localIndex ->
-                        viewModel.onEvent(PreviewAdEvent.SwitchAccountRequested(localIndex))
-                        dismissAccountPicker()
-                    },
-                    onDismiss = dismissAccountPicker,
-                )
-            }
-
-            entry<PreviewAdDestination.BackInfo>(
-                metadata = BottomSheetSceneStrategy.bottomSheet(),
-            ) {
-                PreviewBackInfoSheet(
-                    onStay = dismissBackInfoSheet,
-                    onLeave = {
-                        dismissBackInfoSheet()
-                        onBackToGenerate()
-                    },
-                )
-            }
-
-            entry<PreviewAdDestination.Publishing> {
-                PublishingScreen()
-            }
-        },
-    )
-}
-
-@Composable
 @OptIn(ExperimentalFoundationApi::class)
-private fun PreviewAdContentRoute(
+internal fun PreviewAdContentRoute(
     viewModel: PreviewAdViewModel,
     snackbarHostState: SnackbarHostState,
     onBack: () -> Unit,
