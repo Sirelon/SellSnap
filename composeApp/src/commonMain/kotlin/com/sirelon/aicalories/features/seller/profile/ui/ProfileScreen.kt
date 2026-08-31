@@ -710,7 +710,7 @@ fun DeleteAccountDataConfirmSheet(
 
 /**
  * SIR-83 U2: confirms adding a second/third OLX account before starting a forced-fresh-login
- * OAuth flow (D5). Wired as a top-level [com.sirelon.sellsnap.navigation.AppDestination] bottom
+ * OAuth flow (D5). Wired as a top-level [com.sirelon.sellsnap.navigation.AppKey] bottom
  * sheet in `App.kt`, next to [DeleteAccountDataConfirmSheet] - see that file for how [onContinue]
  * drives `createAuthorizationRequest()` + the force-reauth launcher.
  */
