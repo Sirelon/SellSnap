@@ -390,7 +390,7 @@ class PreviewAdViewModel(
         val accountIndex = targetAccount?.localIndex ?: -1
 
         analytics.logEvent(AnalyticsEvents.AD_PUBLISH_STARTED, mapOf("account_index" to accountIndex))
-        postEffect(PreviewAdEffect.NavigateToPublishing)
+        setState { it.copy(isPublishing = true) }
 
         try {
             val user = olxApiClient.getAuthenticatedUser()
@@ -406,12 +406,14 @@ class PreviewAdViewModel(
                     AnalyticsEvents.PUBLISH_ACCOUNT_MISMATCH_ABORTED,
                     mapOf("account_count" to accountCount),
                 )
+                setState { it.copy(isPublishing = false) }
                 postEffect(PreviewAdEffect.PublishAccountMismatch(getString(Res.string.error_publish_account_mismatch)))
                 return
             }
 
             val contactName = user.name
             if (contactName.isBlank()) {
+                setState { it.copy(isPublishing = false) }
                 postEffect(PreviewAdEffect.NavigateToProfile(getString(Res.string.error_publish_missing_contact_name)))
                 return
             }
@@ -441,10 +443,12 @@ class PreviewAdViewModel(
             s.currentAttemptId?.let { attemptId ->
                 adGenerationLogRepository.markPublished(attemptId, data.id.toString())
             }
+            setState { it.copy(isPublishing = false) }
             postEffect(PreviewAdEffect.PublishSuccess(successData))
         } catch (error: Throwable) {
             analytics.recordException(error, AnalyticsEvents.AD_PUBLISH_FAILED)
             analytics.logEvent(AnalyticsEvents.AD_PUBLISH_FAILED, mapOf("account_index" to accountIndex))
+            setState { it.copy(isPublishing = false) }
             val olxError = (error as? OlxApiException)?.error
             when {
                 olxError is OlxApiError.ValidationError && olxError.field.startsWith("contact.") ->

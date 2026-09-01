@@ -10,28 +10,31 @@ val appNavigationSavedStateConfiguration: SavedStateConfiguration =
     SavedStateConfiguration {
         serializersModule = SerializersModule {
             polymorphic(NavKey::class) {
-                subclass(AppDestination.Splash::class, AppDestination.Splash.serializer())
-                subclass(AppDestination.SellerOnboarding::class, AppDestination.SellerOnboarding.serializer())
-                subclass(AppDestination.ConsentPrompt::class, AppDestination.ConsentPrompt.serializer())
-                subclass(AppDestination.SellerLanding::class, AppDestination.SellerLanding.serializer())
-                subclass(AppDestination.OlxCountryPicker::class, AppDestination.OlxCountryPicker.serializer())
-                subclass(AppDestination.Seller::class, AppDestination.Seller.serializer())
+                subclass(AppKey.Splash::class, AppKey.Splash.serializer())
+                subclass(AppKey.SellerOnboarding::class, AppKey.SellerOnboarding.serializer())
+                subclass(AppKey.ConsentPrompt::class, AppKey.ConsentPrompt.serializer())
+                subclass(AppKey.SellerLanding::class, AppKey.SellerLanding.serializer())
+                subclass(AppKey.OlxCountryPicker::class, AppKey.OlxCountryPicker.serializer())
+                subclass(AppKey.DeleteAccountDataConfirm::class, AppKey.DeleteAccountDataConfirm.serializer())
+                subclass(AppKey.AddOlxAccountConfirm::class, AppKey.AddOlxAccountConfirm.serializer())
+                subclass(AppKey.OlxAccountAuthFailed::class, AppKey.OlxAccountAuthFailed.serializer())
                 subclass(
-                    AppDestination.DeleteAccountDataConfirm::class,
-                    AppDestination.DeleteAccountDataConfirm.serializer(),
+                    AppKey.DisconnectOlxAccountConfirm::class,
+                    AppKey.DisconnectOlxAccountConfirm.serializer(),
                 )
-                subclass(
-                    AppDestination.AddOlxAccountConfirm::class,
-                    AppDestination.AddOlxAccountConfirm.serializer(),
-                )
-                subclass(
-                    AppDestination.OlxAccountAuthFailed::class,
-                    AppDestination.OlxAccountAuthFailed.serializer(),
-                )
-                subclass(
-                    AppDestination.DisconnectOlxAccountConfirm::class,
-                    AppDestination.DisconnectOlxAccountConfirm.serializer(),
-                )
+                subclass(AppKey.GenerateAd::class, AppKey.GenerateAd.serializer())
+                subclass(AppKey.MyAdverts::class, AppKey.MyAdverts.serializer())
+                subclass(AppKey.Profile::class, AppKey.Profile.serializer())
+                subclass(AppKey.Settings::class, AppKey.Settings.serializer())
+                subclass(AppKey.WhatsNewPrompt::class, AppKey.WhatsNewPrompt.serializer())
+                subclass(AppKey.AllReleases::class, AppKey.AllReleases.serializer())
+                subclass(AppKey.SellerPublishSuccess::class, AppKey.SellerPublishSuccess.serializer())
+                subclass(AppKey.ImagesPreview::class, AppKey.ImagesPreview.serializer())
+                subclass(AppKey.PreviewAd::class, AppKey.PreviewAd.serializer())
+                subclass(AppKey.SelectCategory::class, AppKey.SelectCategory.serializer())
+                subclass(AppKey.PreviewBackInfo::class, AppKey.PreviewBackInfo.serializer())
+                subclass(AppKey.PreviewPublishConfirm::class, AppKey.PreviewPublishConfirm.serializer())
+                subclass(AppKey.PreviewAccountPicker::class, AppKey.PreviewAccountPicker.serializer())
             }
         }
     }

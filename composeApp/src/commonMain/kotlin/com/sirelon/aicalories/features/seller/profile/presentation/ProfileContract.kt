@@ -62,7 +62,7 @@ interface ProfileContract {
         data object NavigateToLanding : ProfileEffect
 
         // SIR-83 (U3): the Route reacts to this by opening the top-level "couldn't connect"
-        // bottom sheet (AppDestination.OlxAccountAuthFailed), which reads the live
+        // bottom sheet (AppKey.OlxAccountAuthFailed), which reads the live
         // cooldown/consecutive-failure state straight from SellerAccountRepository rather than
         // carrying a snapshot here - it's shown both after a genuine failure and when a seller
         // taps Add/Reconnect while a cooldown from an earlier failure is still in force.
