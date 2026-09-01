@@ -43,7 +43,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
-import com.sirelon.sellsnap.designsystem.AppBackgroundGradient
 import com.sirelon.sellsnap.designsystem.AppCard
 import com.sirelon.sellsnap.designsystem.AppDimens
 import com.sirelon.sellsnap.designsystem.AppTheme
@@ -129,7 +128,12 @@ fun AiProcessingScreen(
     isGuestMode: Boolean,
     modifier: Modifier = Modifier,
 ) {
-    AppBackgroundGradient(modifier = modifier.fillMaxSize().testTag("ai_processing_screen")) {
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .testTag("ai_processing_screen")
+            .background(AppTheme.colors.background),
+    ) {
         AiProcessingContent(
             completedSteps = completedSteps,
             isGuestMode = isGuestMode,

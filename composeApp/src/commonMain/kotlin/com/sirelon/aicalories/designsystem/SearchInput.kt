@@ -45,7 +45,7 @@ fun SearchInput(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .background(c.surfaceLow, RoundedCornerShape(AppDimens.BorderRadius.xl))
+            .background(c.surfaceLow, RoundedCornerShape(AppDimens.BorderRadius.pill))
             .padding(horizontal = AppDimens.Spacing.xl, vertical = AppDimens.Spacing.l),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing.m),

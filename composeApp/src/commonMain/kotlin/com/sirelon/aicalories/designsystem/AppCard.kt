@@ -19,10 +19,11 @@ fun AppCard(
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
     enabled: Boolean = true,
-    shape: Shape = RoundedCornerShape(AppDimens.BorderRadius.xl3),
+    shape: Shape = RoundedCornerShape(AppDimens.BorderRadius.xl9),
     containerColor: Color = AppTheme.colors.surfaceLowest,
     contentColor: Color = AppTheme.colors.onSurface,
-    shadowElevation: Dp = 2.dp,
+    // Tonal, not shadow — depth comes from a different tone of the same hue.
+    shadowElevation: Dp = 0.dp,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     content: @Composable ColumnScope.() -> Unit,
 ) {

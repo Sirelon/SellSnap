@@ -86,6 +86,9 @@ object AppDimens {
         val xl9: Dp = 28.dp
         val xl10: Dp = 30.dp
         val xl11: Dp = 32.dp
+
+        /** Full pill / stadium shape — every interactive control uses this. */
+        val pill: Dp = 999.dp
     }
 
     object BorderWidth {

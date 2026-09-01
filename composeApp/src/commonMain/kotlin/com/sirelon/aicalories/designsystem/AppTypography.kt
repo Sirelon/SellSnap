@@ -40,30 +40,31 @@ fun appTypography(
     displayFontFamily: FontFamily = FontFamily.SansSerif,
     bodyFontFamily: FontFamily = FontFamily.SansSerif,
 ): AppTypography {
+    // Sizes, weights and tracking match the design system's tokens/typography.css.
     val display = TextStyle(
         fontFamily = displayFontFamily,
-        fontWeight = FontWeight.SemiBold,
+        fontWeight = FontWeight.ExtraBold,
         fontSize = 56.sp,
         lineHeight = 64.sp,
-        letterSpacing = (-0.5).sp,
+        letterSpacing = (-1.12).sp,
     )
     val headline = TextStyle(
         fontFamily = displayFontFamily,
-        fontWeight = FontWeight.SemiBold,
+        fontWeight = FontWeight.Bold,
         fontSize = 28.sp,
         lineHeight = 34.sp,
-        letterSpacing = (-0.2).sp,
+        letterSpacing = (-0.56).sp,
     )
     val title = TextStyle(
         fontFamily = displayFontFamily,
-        fontWeight = FontWeight.Medium,
+        fontWeight = FontWeight.Bold,
         fontSize = 22.sp,
         lineHeight = 28.sp,
         letterSpacing = 0.sp,
     )
     val subTitle = TextStyle(
         fontFamily = displayFontFamily,
-        fontWeight = FontWeight.Medium,
+        fontWeight = FontWeight.Bold,
         fontSize = 20.sp,
         lineHeight = 26.sp,
         letterSpacing = 0.sp,
@@ -84,7 +85,7 @@ fun appTypography(
     )
     val caption = TextStyle(
         fontFamily = bodyFontFamily,
-        fontWeight = FontWeight.Normal,
+        fontWeight = FontWeight.Bold,
         fontSize = 12.sp,
         lineHeight = 16.sp,
         letterSpacing = 0.2.sp,

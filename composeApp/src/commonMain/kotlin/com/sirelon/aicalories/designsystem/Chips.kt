@@ -97,7 +97,7 @@ fun ChipComponent(
 
     Surface(
         modifier = modifier,
-        shape = RoundedCornerShape(AppDimens.BorderRadius.m),
+        shape = RoundedCornerShape(AppDimens.BorderRadius.pill),
         color = container,
         contentColor = tone,
     ) {

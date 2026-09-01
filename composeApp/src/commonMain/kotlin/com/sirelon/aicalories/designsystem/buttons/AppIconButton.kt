@@ -25,7 +25,7 @@ fun AppIconButton(
             onClick()
         },
         modifier = modifier.size(AppDimens.Size.xl8 + AppDimens.Size.xl7),
-        shape = RoundedCornerShape(AppDimens.BorderRadius.xl4),
+        shape = RoundedCornerShape(AppDimens.BorderRadius.pill),
     ) {
         Icon(
             painter = icon,

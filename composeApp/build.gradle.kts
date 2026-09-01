@@ -223,6 +223,7 @@ compose.desktop {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "com.sirelon.sellsnap"
             packageVersion = "1.0.0"
+            modules("java.net.http", "jdk.unsupported")
             macOS {
                 iconFile.set(project.file("src/jvmMain/resources/icons/app-icon.icns"))
             }

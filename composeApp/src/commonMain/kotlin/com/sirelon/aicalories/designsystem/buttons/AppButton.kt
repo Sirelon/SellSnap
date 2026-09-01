@@ -42,10 +42,10 @@ import com.sirelon.sellsnap.designsystem.performStepFeedback
 
 /**
  * Shared shape + height tokens for every [AppButton] variant — matches the
- * SellSnap design prototype (60dp tall, 18dp corner radius).
+ * SellSnap design system (64dp tall, full pill shape).
  */
-private val ButtonShape = RoundedCornerShape(AppDimens.BorderRadius.xl4)
-private val ButtonHeight = AppDimens.Size.xl8 + AppDimens.Size.xl7 // 60.dp
+private val ButtonShape = RoundedCornerShape(AppDimens.BorderRadius.pill)
+private val ButtonHeight = AppDimens.Size.xl14 // 64.dp
 
 /**
  * Press animation timings taken from `Design/ClaudeDesign/project/ui.jsx`:
@@ -173,7 +173,7 @@ fun AppButton(
                 Text(
                     text = text,
                     fontSize = AppDimens.TextSize.xl4,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.ExtraBold,
                 )
                 trailingIcon?.let {
                     Icon(
@@ -236,30 +236,21 @@ data class AppButtonStyle(
 data object AppButtonDefaults {
 
     /**
-     * Primary CTA — warm-orange gradient with a soft colored drop shadow.
-     * Matches `styles.primary` in `ui.jsx`.
+     * Primary CTA — flat teal fill. Depth comes from tonal layering, not
+     * shadow, so there is no gradient or colored glow.
      */
     @Composable
     @ReadOnlyComposable
     fun primary(): AppButtonStyle {
-        val primary = AppTheme.colors.primary
-        val primaryBright = AppTheme.colors.primaryBright
         return AppButtonStyle(
-            backgroundColor = primary,
+            backgroundColor = AppTheme.colors.primary,
             contentColor = AppTheme.colors.onPrimary,
-            elevation = AppDimens.Size.m, // 8dp — roughly `0 8px 24px -8px`
-            gradient = Brush.linearGradient(
-                colors = listOf(primary, primaryBright),
-                start = Offset(0f, 0f),
-                end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY),
-            ),
-            shadowColor = primary.copy(alpha = 0.55f),
+            elevation = 0.dp,
         )
     }
 
     /**
-     * Neutral filled button — surface-toned, with a subtle shadow.
-     * Matches `styles.secondary` in `ui.jsx`.
+     * Neutral filled button — surface-toned, flat (tonal depth, no shadow).
      */
     @Composable
     @ReadOnlyComposable
@@ -267,8 +258,7 @@ data object AppButtonDefaults {
         return AppButtonStyle(
             backgroundColor = AppTheme.colors.surfaceHigh,
             contentColor = AppTheme.colors.onSurface,
-            elevation = AppDimens.Spacing.xs2, // 2dp — very subtle
-            shadowColor = AppTheme.colors.onSurface.copy(alpha = 0.10f),
+            elevation = 0.dp,
         )
     }
 
@@ -301,43 +291,15 @@ data object AppButtonDefaults {
     }
 
     /**
-     * "Magic" AI button — triple-stop warm gradient with an inner top
-     * highlight and a pronounced colored glow. Matches `styles.magic` in
-     * `ui.jsx`. Use it for the primary AI CTA (e.g. "Generate Ad with AI").
-     */
-    @Composable
-    @ReadOnlyComposable
-    fun magic(): AppButtonStyle {
-        val primary = AppTheme.colors.primary
-        val primaryBright = AppTheme.colors.primaryBright
-        val warningVariant = AppTheme.colors.warningVariant
-        return AppButtonStyle(
-            backgroundColor = primary,
-            contentColor = AppTheme.colors.onPrimary,
-            elevation = 20.dp,
-            gradient = Brush.linearGradient(
-                colors = listOf(primary, primaryBright, warningVariant),
-                start = Offset(0f, 0f),
-                end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY),
-            ),
-            shadowColor = primary.copy(alpha = 0.72f),
-            innerHighlight = true,
-        )
-    }
-
-    /**
-     * Success action — solid green with a matching colored glow. Used for
-     * confirm/publish states. Matches `styles.success` in `ui.jsx`.
+     * Success action — solid flat green. Used for confirm/publish states.
      */
     @Composable
     @ReadOnlyComposable
     fun success(): AppButtonStyle {
-        val success = AppTheme.colors.success
         return AppButtonStyle(
-            backgroundColor = success,
+            backgroundColor = AppTheme.colors.success,
             contentColor = Color.White,
-            elevation = AppDimens.Size.m, // 8dp — roughly `0 8px 20px -6px`
-            shadowColor = success.copy(alpha = 0.40f),
+            elevation = 0.dp,
         )
     }
 }

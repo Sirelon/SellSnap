@@ -16,10 +16,10 @@ import com.sirelon.sellsnap.designsystem.AppTheme
 /**
  * Previews for every [AppButton] variant declared in [AppButtonDefaults].
  *
- * The stack demonstrates, top-to-bottom, the same set of variants described
- * in `Design/ClaudeDesign/project/ui.jsx`: primary → secondary → ghost →
- * outline → magic → success. Each variant is rendered twice — enabled and
- * disabled — so the press/disabled treatment is easy to eyeball.
+ * The stack demonstrates, top-to-bottom, every variant declared in
+ * [AppButtonDefaults]: primary → secondary → ghost → outline → success.
+ * Each variant is rendered twice — enabled and disabled — so the
+ * press/disabled treatment is easy to eyeball.
  *
  * `@PreviewLightDark` renders the function twice (UI_MODE_NIGHT off and on)
  * so a single composable covers both themes — no need for separate light/dark
@@ -78,21 +78,6 @@ private fun AppButtonGallery() {
                 text = "Continue as guest",
                 onClick = {},
                 style = AppButtonDefaults.outline(),
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
-        VariantSection(label = "magic") {
-            AppButton(
-                text = "Generate Ad with AI",
-                onClick = {},
-                style = AppButtonDefaults.magic(),
-                modifier = Modifier.fillMaxWidth(),
-            )
-            AppButton(
-                text = "Generate Ad with AI",
-                onClick = {},
-                style = AppButtonDefaults.magic(),
-                enabled = false,
                 modifier = Modifier.fillMaxWidth(),
             )
         }

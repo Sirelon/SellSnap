@@ -31,8 +31,8 @@ import org.jetbrains.compose.resources.painterResource
 private val PhotoCarouselShape = RoundedCornerShape(
     topStart = 0.dp,
     topEnd = 0.dp,
-    bottomStart = AppDimens.BorderRadius.xl11,
-    bottomEnd = AppDimens.BorderRadius.xl11,
+    bottomStart = AppDimens.BorderRadius.xl9,
+    bottomEnd = AppDimens.BorderRadius.xl9,
 )
 
 @Composable
