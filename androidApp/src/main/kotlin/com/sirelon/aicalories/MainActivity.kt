@@ -1,6 +1,7 @@
 package com.sirelon.sellsnap
 
 import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -16,6 +17,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import com.sirelon.sellsnap.datastore.initAndroidKeyValueStore
 import com.sirelon.sellsnap.designsystem.AppTheme
+import com.sirelon.sellsnap.features.media.initAndroidSharedImages
+import com.sirelon.sellsnap.features.media.publishSharedImageUris
 import com.sirelon.sellsnap.features.media.upload.initAndroidDraftMediaFileStore
 import com.sirelon.sellsnap.features.seller.ad.initAndroidScreenshotPhotos
 import com.sirelon.sellsnap.features.seller.ad.preview_ad.ui.PublishConfirmSheet
@@ -35,7 +38,9 @@ class MainActivity : ComponentActivity() {
         initAndroidDraftMediaFileStore(filesDir.absolutePath)
         initAndroidScreenshotPhotos(cacheDir.absolutePath)
         initAndroidUrlOpener(this)
+        initAndroidSharedImages(applicationContext)
         publishOlxCallback(intent)
+        publishSharedImages(intent)
 
         setContent {
             // Expose Compose testTags as Android resource-ids so Maestro can target them.
@@ -52,6 +57,7 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         publishOlxCallback(intent)
+        publishSharedImages(intent)
     }
 
     private fun publishOlxCallback(intent: Intent?) {
@@ -59,6 +65,33 @@ class MainActivity : ComponentActivity() {
             ?.takeIf { it.startsWith("selolxai://olx-auth") }
             ?.let(OlxAuthCallbackBridge::publishCallback)
     }
+
+    private fun publishSharedImages(intent: Intent?) {
+        intent ?: return
+        if (intent.type?.startsWith("image/") != true) return
+        val uris = when (intent.action) {
+            Intent.ACTION_SEND -> listOfNotNull(intent.parcelableExtra(Intent.EXTRA_STREAM))
+            Intent.ACTION_SEND_MULTIPLE -> intent.parcelableArrayListExtra(Intent.EXTRA_STREAM)
+            else -> emptyList()
+        }
+        publishSharedImageUris(uris)
+    }
+
+    @Suppress("DEPRECATION")
+    private fun Intent.parcelableExtra(name: String): Uri? =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            getParcelableExtra(name, Uri::class.java)
+        } else {
+            getParcelableExtra(name)
+        }
+
+    @Suppress("DEPRECATION")
+    private fun Intent.parcelableArrayListExtra(name: String): List<Uri> =
+        (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            getParcelableArrayListExtra(name, Uri::class.java)
+        } else {
+            getParcelableArrayListExtra(name)
+        }).orEmpty()
 }
 
 @Preview

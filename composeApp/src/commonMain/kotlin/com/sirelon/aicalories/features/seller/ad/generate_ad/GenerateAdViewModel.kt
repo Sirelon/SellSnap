@@ -7,6 +7,7 @@ import com.mohamedrejeb.calf.io.getName
 import com.sirelon.sellsnap.analytics.Analytics
 import com.sirelon.sellsnap.analytics.AnalyticsEvents
 import com.sirelon.sellsnap.features.common.presentation.BaseViewModel
+import com.sirelon.sellsnap.features.media.SharedImagesBridge
 import com.sirelon.sellsnap.features.media.upload.DraftMediaFileStore
 import com.sirelon.sellsnap.features.media.upload.DraftPhoto
 import com.sirelon.sellsnap.features.media.upload.MediaUploadHelper
@@ -36,6 +37,7 @@ import kotlin.uuid.Uuid
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.launchIn
@@ -79,6 +81,22 @@ class GenerateAdViewModel(
             .launchIn(viewModelScope)
 
         if (screenshotMode) seedScreenshotPhotos()
+        observeSharedImages()
+    }
+
+    /**
+     * Photos shared in from the OS share sheet (MainActivity.publishSharedImages) arrive on this
+     * same bridge AppNavigationViewModel used to route here - consumed the same way manually
+     * picked photos are.
+     */
+    private fun observeSharedImages() {
+        SharedImagesBridge.pending
+            .filterNotNull()
+            .onEach { files ->
+                SharedImagesBridge.consume()
+                onFileResult(GenerateAdContract.GenerateAdEvent.UploadFilesResult(result = Result.success(files)))
+            }
+            .launchIn(viewModelScope)
     }
 
     /**

@@ -33,7 +33,7 @@
         </provider>
         <activity
             android:exported="true"
-            android:launchMode="singleTop"
+            android:launchMode="singleTask"
             android:name=".MainActivity"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
@@ -51,6 +51,20 @@
                     android:host="olx-auth"
                     android:pathPrefix="/callback"
                     android:scheme="selolxai" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+
+                <data android:mimeType="image/*" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND_MULTIPLE" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+
+                <data android:mimeType="image/*" />
             </intent-filter>
         </activity>
     </application>
