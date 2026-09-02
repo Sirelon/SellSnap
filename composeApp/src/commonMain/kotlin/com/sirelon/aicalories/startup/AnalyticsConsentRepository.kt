@@ -19,6 +19,9 @@ class AnalyticsConsentRepository(
     init {
         // Re-apply the persisted decision to the SDK on every launch. Constructing this repository
         // at startup also forces the platform Analytics impl to be created before any event fires.
+        // This runs after FirebaseApp initialization, so it can only ever correct the platform
+        // default declared in Info.plist / AndroidManifest - which is why that default must match
+        // the Granted fallback in AnalyticsConsentStore.read() rather than contradict it.
         applicationScope.launch {
             val saved = store.read()
             // Only update if no explicit setConsent() call has already landed (race guard).

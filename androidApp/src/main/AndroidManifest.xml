@@ -14,11 +14,15 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@android:style/Theme.Material.Light.NoActionBar">
-        <!-- Analytics is off by default until the user opts in; crash reporting is on by default
-             under legitimate interest and can be turned off (see AnalyticsConsentRepository). -->
+        <!-- Analytics and crash reporting are both on by default; the user can opt out from
+             Settings (see AnalyticsConsentRepository). This must stay true so the SDK can emit the
+             once-per-install first_open and the launch session_start, which are generated during
+             SDK initialization and cannot be backfilled by a later runtime enable. Opting out
+             calls setAnalyticsCollectionEnabled(false), which Firebase persists across launches
+             and which takes precedence over this default. -->
         <meta-data
             android:name="firebase_analytics_collection_enabled"
-            android:value="false" />
+            android:value="true" />
         <meta-data
             android:name="firebase_crashlytics_collection_enabled"
             android:value="true" />

@@ -4,10 +4,14 @@
 <dict>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
-	<!-- Analytics is off by default until the user opts in; crash reporting is on by default
-	     under legitimate interest and can be turned off (see AnalyticsConsentRepository). -->
+	<!-- Analytics and crash reporting are both on by default; the user can opt out from
+	     Settings (see AnalyticsConsentRepository). This must stay true so the SDK can emit the
+	     once-per-install first_open and the launch session_start, which are generated during
+	     FirebaseApp.configure() and cannot be backfilled by a later runtime enable. Opting out
+	     calls setAnalyticsCollectionEnabled(false), which Firebase persists across launches and
+	     which takes precedence over this default. -->
 	<key>FIREBASE_ANALYTICS_COLLECTION_ENABLED</key>
-	<false/>
+	<true/>
 	<key>FirebaseCrashlyticsCollectionEnabled</key>
 	<true/>
 	<key>CFBundleURLTypes</key>
