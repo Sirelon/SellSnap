@@ -336,4 +336,7 @@
     <string name="my_ads_header_subtitle_account">Anunțuri pentru %1$s.</string>
     <string name="my_ads_empty_description_account">Niciun anunț pentru %1$s încă.</string>
     <string name="my_ads_account_fallback_name">contul tău</string>
+    <string name="my_ads_reconnect_title">Reconectează acest cont</string>
+    <string name="my_ads_reconnect_description">Conexiunea acestui cont cu OLX a expirat. Reconectează-te pentru a-i vedea anunțurile.</string>
+    <string name="my_ads_load_failed_account">Nu s-au putut încărca anunțurile pentru %1$s.</string>
 </resources>

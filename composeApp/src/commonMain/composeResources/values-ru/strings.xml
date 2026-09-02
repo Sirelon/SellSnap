@@ -339,4 +339,7 @@
     <string name="my_ads_header_subtitle_account">Оголошення для %1$s.</string>
     <string name="my_ads_empty_description_account">Оголошень для %1$s ще немає.</string>
     <string name="my_ads_account_fallback_name">вашого акаунта</string>
+    <string name="my_ads_reconnect_title">Підключіть цей акаунт знову</string>
+    <string name="my_ads_reconnect_description">Підключення цього акаунта до OLX закінчилося. Підключіть його знову, щоб побачити оголошення.</string>
+    <string name="my_ads_load_failed_account">Не вдалося завантажити оголошення для %1$s.</string>
 </resources>

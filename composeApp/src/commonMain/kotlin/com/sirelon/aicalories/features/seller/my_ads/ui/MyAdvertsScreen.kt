@@ -14,17 +14,24 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -38,18 +45,24 @@ import com.sirelon.sellsnap.designsystem.AppCard
 import com.sirelon.sellsnap.designsystem.AppDimens
 import com.sirelon.sellsnap.designsystem.AppScaffold
 import com.sirelon.sellsnap.designsystem.AppTheme
+import com.sirelon.sellsnap.designsystem.ErrorPill
 import com.sirelon.sellsnap.designsystem.ObserveAsEvents
+import com.sirelon.sellsnap.designsystem.Pill
 import com.sirelon.sellsnap.designsystem.buttons.AppButton
 import com.sirelon.sellsnap.designsystem.buttons.AppButtonDefaults
 import com.sirelon.sellsnap.designsystem.screens.LoadingOverlay
 import com.sirelon.sellsnap.features.seller.ad.publish_success.AdvertStatus
 import com.sirelon.sellsnap.features.seller.my_ads.model.MyAdvertItem
 import com.sirelon.sellsnap.features.seller.my_ads.presentation.MyAdvertsContract
+import com.sirelon.sellsnap.features.seller.my_ads.presentation.MyAdvertsContract.AccountPage
 import com.sirelon.sellsnap.features.seller.my_ads.presentation.MyAdvertsContract.Event
 import com.sirelon.sellsnap.features.seller.my_ads.presentation.MyAdvertsViewModel
 import com.sirelon.sellsnap.generated.resources.Res
+import com.sirelon.sellsnap.generated.resources.account_needs_reconnect_badge
 import com.sirelon.sellsnap.generated.resources.ic_arrow_right
 import com.sirelon.sellsnap.generated.resources.ic_camera
+import com.sirelon.sellsnap.generated.resources.ic_check
+import com.sirelon.sellsnap.generated.resources.ic_circle_alert
 import com.sirelon.sellsnap.generated.resources.ic_refresh_cw
 import com.sirelon.sellsnap.generated.resources.ic_tag
 import com.sirelon.sellsnap.generated.resources.ic_wifi_off
@@ -65,6 +78,8 @@ import com.sirelon.sellsnap.generated.resources.my_ads_empty_title
 import com.sirelon.sellsnap.generated.resources.my_ads_header_subtitle_account
 import com.sirelon.sellsnap.generated.resources.my_ads_load_more
 import com.sirelon.sellsnap.generated.resources.my_ads_price_not_set
+import com.sirelon.sellsnap.generated.resources.my_ads_reconnect_description
+import com.sirelon.sellsnap.generated.resources.my_ads_reconnect_title
 import com.sirelon.sellsnap.generated.resources.my_ads_screen_title
 import com.sirelon.sellsnap.generated.resources.my_ads_status_active
 import com.sirelon.sellsnap.generated.resources.my_ads_status_blocked
@@ -80,6 +95,8 @@ import com.sirelon.sellsnap.generated.resources.my_ads_status_unknown
 import com.sirelon.sellsnap.generated.resources.my_ads_status_unpaid
 import com.sirelon.sellsnap.generated.resources.my_ads_untitled
 import com.sirelon.sellsnap.generated.resources.my_ads_valid_to
+import com.sirelon.sellsnap.generated.resources.profile_account_active_badge
+import com.sirelon.sellsnap.generated.resources.profile_reconnect_account_action
 import com.sirelon.sellsnap.generated.resources.retry
 import com.sirelon.sellsnap.platform.openUrl
 import org.jetbrains.compose.resources.StringResource
@@ -91,6 +108,7 @@ import org.koin.compose.viewmodel.koinViewModel
 fun MyAdvertsScreenRoute(
     onConnectOlxClick: () -> Unit,
     onCreateListingClick: () -> Unit,
+    onReconnectClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val viewModel: MyAdvertsViewModel = koinViewModel()
@@ -103,17 +121,16 @@ fun MyAdvertsScreenRoute(
             MyAdvertsContract.Effect.CreateListing -> onCreateListingClick()
             is MyAdvertsContract.Effect.OpenUrl -> openUrl(effect.url)
             is MyAdvertsContract.Effect.ShowMessage -> snackbarHostState.showSnackbar(effect.message)
+            is MyAdvertsContract.Effect.Reconnect -> onReconnectClick()
         }
     }
 
-    LoadingOverlay(isLoading = state.isLoading) {
-        MyAdvertsScreen(
-            state = state,
-            snackbarHostState = snackbarHostState,
-            onEvent = viewModel::onEvent,
-            modifier = modifier,
-        )
-    }
+    MyAdvertsScreen(
+        state = state,
+        snackbarHostState = snackbarHostState,
+        onEvent = viewModel::onEvent,
+        modifier = modifier,
+    )
 }
 
 @Composable
@@ -130,43 +147,172 @@ private fun MyAdvertsScreen(
             TopAppBar(
                 title = { Text(stringResource(Res.string.my_ads_screen_title)) },
                 actions = {
-                    IconButton(onClick = { onEvent(Event.RefreshClicked) }) {
-                        Icon(
-                            painter = painterResource(Res.drawable.ic_refresh_cw),
-                            contentDescription = null,
-                        )
+                    val selected = state.selectedLocalIndex
+                    if (selected != null) {
+                        IconButton(onClick = { onEvent(Event.RefreshClicked(selected)) }) {
+                            Icon(
+                                painter = painterResource(Res.drawable.ic_refresh_cw),
+                                contentDescription = null,
+                            )
+                        }
                     }
                 },
             )
         },
     ) { padding ->
+        when {
+            state.requiresOlxConnection -> {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding)
+                        .consumeWindowInsets(padding)
+                        .padding(horizontal = AppDimens.Spacing.xl3),
+                    verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.xl4),
+                ) {
+                    item { MyAdsHeader(accountName = null) }
+                    item { ConnectionRequiredCard(onConnect = { onEvent(Event.ConnectOlxClicked) }) }
+                }
+            }
+
+            state.pages.size <= 1 -> {
+                val page = state.pages.firstOrNull()
+                Box(modifier = Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding)) {
+                    if (page != null) {
+                        AccountPageContent(page = page, onEvent = onEvent)
+                    }
+                }
+            }
+
+            else -> {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding)
+                        .consumeWindowInsets(padding),
+                ) {
+                    AccountTabRow(
+                        pages = state.pages,
+                        selectedLocalIndex = state.selectedLocalIndex,
+                        onPageSelected = { onEvent(Event.PageSelected(it)) },
+                    )
+
+                    val initialPage = state.pages
+                        .indexOfFirst { it.localIndex == state.selectedLocalIndex }
+                        .coerceAtLeast(0)
+                    val pagerState = rememberPagerState(initialPage = initialPage) { state.pages.size }
+
+                    // Keyed on pagerState alone so the collector isn't torn down and relaunched
+                    // on every page-list change - rememberUpdatedState keeps its read of
+                    // state.pages fresh without that, since `state` is a plain parameter that
+                    // wouldn't otherwise re-read inside a long-lived effect body.
+                    val currentPages by rememberUpdatedState(state.pages)
+                    LaunchedEffect(pagerState) {
+                        snapshotFlow { pagerState.settledPage }.collect { settledPage ->
+                            currentPages.getOrNull(settledPage)?.let { onEvent(Event.PageSelected(it.localIndex)) }
+                        }
+                    }
+
+                    LaunchedEffect(state.selectedLocalIndex) {
+                        val targetPage = state.pages.indexOfFirst { it.localIndex == state.selectedLocalIndex }
+                        if (targetPage >= 0 && targetPage != pagerState.currentPage) {
+                            pagerState.animateScrollToPage(targetPage)
+                        }
+                    }
+
+                    HorizontalPager(
+                        state = pagerState,
+                        modifier = Modifier.fillMaxSize(),
+                        key = { pageIndex -> state.pages.getOrNull(pageIndex)?.localIndex ?: pageIndex },
+                    ) { pageIndex ->
+                        state.pages.getOrNull(pageIndex)?.let { page ->
+                            AccountPageContent(page = page, onEvent = onEvent)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AccountTabRow(
+    pages: List<AccountPage>,
+    selectedLocalIndex: Int?,
+    onPageSelected: (Int) -> Unit,
+) {
+    val selectedTabIndex = pages.indexOfFirst { it.localIndex == selectedLocalIndex }.coerceAtLeast(0)
+    PrimaryTabRow(selectedTabIndex = selectedTabIndex) {
+        pages.forEachIndexed { index, page ->
+            Tab(
+                selected = index == selectedTabIndex,
+                onClick = { onPageSelected(page.localIndex) },
+                text = { AccountTabLabel(page = page) },
+            )
+        }
+    }
+}
+
+@Composable
+private fun AccountTabLabel(page: AccountPage) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing.xs),
+    ) {
+        Text(
+            text = page.accountName.orAccountFallback(),
+            style = AppTheme.typography.body,
+            color = if (page.needsReconnect) AppTheme.colors.error else AppTheme.colors.onSurface,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        if (page.isActiveAccount) {
+            Pill(
+                text = stringResource(Res.string.profile_account_active_badge),
+                iconResource = Res.drawable.ic_check,
+                color = AppTheme.colors.primary,
+            )
+        }
+        if (page.needsReconnect) {
+            ErrorPill(label = stringResource(Res.string.account_needs_reconnect_badge))
+        }
+    }
+}
+
+@Composable
+private fun AccountPageContent(
+    page: AccountPage,
+    onEvent: (Event) -> Unit,
+) {
+    LoadingOverlay(isLoading = page.isLoading) {
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
-                .consumeWindowInsets(padding)
                 .padding(horizontal = AppDimens.Spacing.xl3),
             verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.xl4),
         ) {
             item {
-                MyAdsHeader(accountName = state.accountName)
+                MyAdsHeader(accountName = page.accountName)
             }
 
             when {
-                state.requiresOlxConnection -> item {
-                    ConnectionRequiredCard(onConnect = { onEvent(Event.ConnectOlxClicked) })
+                page.needsReconnect -> item {
+                    ReconnectRequiredCard(
+                        accountName = page.accountName,
+                        onReconnect = { onEvent(Event.ReconnectClicked(page.localIndex)) },
+                    )
                 }
 
-                state.adverts.isEmpty() && !state.isLoading && state.errorMessage == null -> item {
+                page.adverts.isEmpty() && !page.isLoading && page.errorMessage == null -> item {
                     EmptyAdsCard(
-                        accountName = state.accountName,
+                        accountName = page.accountName,
                         onCreateListing = { onEvent(Event.CreateListingClicked) },
                     )
                 }
 
                 else -> {
                     items(
-                        items = state.adverts,
+                        items = page.adverts,
                         key = { it.id },
                     ) { advert ->
                         AdvertCard(
@@ -175,13 +321,13 @@ private fun MyAdvertsScreen(
                         )
                     }
 
-                    if (state.canLoadMore) {
+                    if (page.canLoadMore) {
                         item {
                             AppButton(
                                 modifier = Modifier.fillMaxWidth(),
                                 text = stringResource(Res.string.my_ads_load_more),
-                                onClick = { onEvent(Event.LoadMoreClicked) },
-                                enabled = !state.isLoadingMore,
+                                onClick = { onEvent(Event.LoadMoreClicked(page.localIndex)) },
+                                enabled = !page.isLoadingMore,
                                 style = AppButtonDefaults.outline(),
                             )
                         }
@@ -189,11 +335,11 @@ private fun MyAdvertsScreen(
                 }
             }
 
-            state.errorMessage?.let { message ->
+            page.errorMessage?.let { message ->
                 item {
                     ErrorCard(
                         message = message,
-                        onRetry = { onEvent(Event.RefreshClicked) },
+                        onRetry = { onEvent(Event.RefreshClicked(page.localIndex)) },
                     )
                 }
             }
@@ -274,8 +420,19 @@ private fun EmptyAdsCard(accountName: String?, onCreateListing: () -> Unit) {
     )
 }
 
-/** Falls back to a generic label (SIR-83 D8) when the active account has no name yet - either
- * [MyAdvertsContract.State.accountName] hasn't loaded, or the account itself has a blank name. */
+@Composable
+private fun ReconnectRequiredCard(accountName: String?, onReconnect: () -> Unit) {
+    StateCard(
+        icon = Res.drawable.ic_circle_alert,
+        title = stringResource(Res.string.my_ads_reconnect_title),
+        description = stringResource(Res.string.my_ads_reconnect_description),
+        actionText = stringResource(Res.string.profile_reconnect_account_action, accountName.orAccountFallback()),
+        onAction = onReconnect,
+    )
+}
+
+/** Falls back to a generic label (SIR-83 D8) when the account has no name yet - either the
+ * account's cached profile hasn't loaded, or the account itself has a blank name. */
 @Composable
 private fun String?.orAccountFallback(): String =
     this?.takeIf { it.isNotBlank() } ?: stringResource(Res.string.my_ads_account_fallback_name)

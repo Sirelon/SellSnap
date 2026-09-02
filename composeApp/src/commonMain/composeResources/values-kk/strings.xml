@@ -336,4 +336,7 @@
     <string name="my_ads_header_subtitle_account">%1$s үшін хабарландырулар.</string>
     <string name="my_ads_empty_description_account">%1$s үшін әзірге хабарландыру жоқ.</string>
     <string name="my_ads_account_fallback_name">аккаунтың</string>
+    <string name="my_ads_reconnect_title">Бұл аккаунтты қайта қос</string>
+    <string name="my_ads_reconnect_description">Бұл аккаунттың OLX байланысы аяқталды. Хабарландыруларын көру үшін қайта қос.</string>
+    <string name="my_ads_load_failed_account">%1$s үшін хабарландыруларды жүктеу мүмкін болмады.</string>
 </resources>
