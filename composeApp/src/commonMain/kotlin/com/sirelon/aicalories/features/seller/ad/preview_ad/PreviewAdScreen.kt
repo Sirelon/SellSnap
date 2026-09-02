@@ -81,6 +81,8 @@ import com.mohamedrejeb.calf.permissions.Permission
 import com.sirelon.sellsnap.designsystem.AppAsyncImage
 import com.sirelon.sellsnap.designsystem.AppAvatar
 import com.sirelon.sellsnap.designsystem.AppCard
+import com.sirelon.sellsnap.analytics.Analytics
+import com.sirelon.sellsnap.analytics.AnalyticsEvents
 import com.sirelon.sellsnap.designsystem.AppDimens
 import com.sirelon.sellsnap.designsystem.AppScaffold
 import com.sirelon.sellsnap.designsystem.AppTheme
@@ -175,6 +177,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.koinInject
 import kotlin.math.roundToInt
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -801,7 +804,7 @@ private fun AdTitleCard(
             if (isInvalid) {
                 ErrorPill()
             }
-            CopyPill(value = titleState.text.toString())
+            CopyPill(value = titleState.text.toString(), field = "title")
             AiGeneratedBadge()
         },
     )
@@ -821,7 +824,7 @@ private fun AdDescriptionCard(
             if (isInvalid) {
                 ErrorPill()
             }
-            CopyPill(value = descriptionState.text.toString())
+            CopyPill(value = descriptionState.text.toString(), field = "description")
             AiGeneratedBadge()
         },
     )
@@ -864,6 +867,7 @@ private fun AdPriceCard(
                 CopyPill(
                     modifier = Modifier.padding(horizontal = AppDimens.Spacing.xl3),
                     value = price.toString(),
+                    field = "price",
                 )
             }
 
@@ -1121,9 +1125,11 @@ private fun AiGeneratedBadge(
 @Composable
 fun CopyPill(
     value: String,
+    field: String,
     modifier: Modifier = Modifier,
 ) {
     val clipboard = LocalClipboardManager.current
+    val analytics: Analytics = koinInject()
     val scope = rememberCoroutineScope()
     var copied by remember { mutableStateOf(false) }
 
@@ -1141,6 +1147,10 @@ fun CopyPill(
             scope.launch {
                 clipboard.setText(AnnotatedString(value))
                 copied = true
+                analytics.logEvent(
+                    AnalyticsEvents.AD_CONTENT_COPIED,
+                    mapOf("field" to field),
+                )
             }
         },
         text = stringResource(if (copied) Res.string.copy_pill_copied else Res.string.copy_pill_default),

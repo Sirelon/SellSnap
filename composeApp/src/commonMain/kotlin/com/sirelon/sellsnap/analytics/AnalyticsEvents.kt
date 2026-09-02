@@ -36,4 +36,14 @@ object AnalyticsEvents {
     const val AD_DESCRIPTION_REGENERATE_FAILED = "ad_description_regenerate_failed"
 
     const val AD_GENERATED_CONTENT_VOTED = "ad_generated_content_voted"
+
+    // Carries `field` (title | description | price | published_url), never the copied text itself.
+    // For a guest - who cannot publish and is told by guest_copy_hint to copy the fields into OLX
+    // by hand - this is the only success signal the funnel has.
+    const val AD_CONTENT_COPIED = "ad_content_copied"
+
+    // Which button the seller pressed on the "leave and lose your draft?" sheet, as `choice`
+    // (stay | leave). The sheet's own screen_view only says it was shown; without this, a seller
+    // who backs out and keeps editing is indistinguishable from one who abandons the draft.
+    const val AD_DRAFT_EXIT_CHOICE = "ad_draft_exit_choice"
 }

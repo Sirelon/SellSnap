@@ -498,11 +498,19 @@ fun App() {
                         ) {
                             PreviewBackInfoSheet(
                                 onStay = {
+                                    analytics.logEvent(
+                                        AnalyticsEvents.AD_DRAFT_EXIT_CHOICE,
+                                        mapOf("choice" to "stay"),
+                                    )
                                     if (navVm.backStack.lastOrNull() is AppKey.PreviewBackInfo) {
                                         navVm.popDestination()
                                     }
                                 },
                                 onLeave = {
+                                    analytics.logEvent(
+                                        AnalyticsEvents.AD_DRAFT_EXIT_CHOICE,
+                                        mapOf("choice" to "leave"),
+                                    )
                                     // Pop the whole preview-ad flow, back to GenerateAd.
                                     navVm.backStack.removeAll {
                                         it is AppKey.PreviewBackInfo || it is AppKey.PreviewAd

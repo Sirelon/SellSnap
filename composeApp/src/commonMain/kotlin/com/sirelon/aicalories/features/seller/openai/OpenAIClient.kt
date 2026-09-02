@@ -28,7 +28,7 @@ const val AD_GENERATION_MODEL_ID = "gpt-4.1"
 
 // Bump whenever adGenerationInstructions changes, so ad-generation-log records stay attributable
 // to the exact prompt that produced them.
-const val AD_GENERATION_PROMPT_VERSION = "v1"
+const val AD_GENERATION_PROMPT_VERSION = "v2"
 
 private val DEFAULT_MODEL = ModelId(AD_GENERATION_MODEL_ID)
 private const val DEFAULT_IMAGE_DETAIL = "high"
@@ -56,10 +56,13 @@ Output fields:
 - suggestedPrice, minPrice, maxPrice: plain integers in ${country.currencyCode} for the ${country.nameEn} second-hand market. Not retail, not collectible premium. Ensure minPrice <= suggestedPrice <= maxPrice.
 
 Guardrails:
-- Do not invent brand, size, material, defects, or condition that are not supported by the seller note or clearly visible.
+- Every statement in the title and description must be supported by the seller note or clearly visible in the photos. If it is not, leave it out. This is absolute — an accurate short listing beats a fuller one containing anything you filled in yourself.
+- This applies to the whole listing, not only the item. Unless the seller note states it, never mention: a city, district, region, or any pickup location; delivery, shipping, courier, or postage; payment methods; warranty, receipts, or original packaging; the reason for selling.
+- ${country.nameEn} is the marketplace, not a fact about this seller. Never turn it into a place the item is located or can be collected from.
+- Do not invent brand, size, material, defects, or condition.
+- Do not infer the season of clothing unless the seller says so or the photos make it unmistakable.
 - If uncertain, simply omit it rather than guessing.
 - Do not add filler phrases that are generic placeholders — write only real content.
-- Do not infer the season of clothing unless the seller says so or the photos make it unmistakable.
 
 Return ONLY valid JSON with this exact shape:
   {"title":"string","description":"string","suggestedPrice":number,"minPrice":number,"maxPrice":number}

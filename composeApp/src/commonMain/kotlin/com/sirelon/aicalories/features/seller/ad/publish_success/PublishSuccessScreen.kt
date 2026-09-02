@@ -443,7 +443,7 @@ private fun ListingSummaryCard(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
-                    CopyPill(value = url.ifBlank { displayUrl })
+                    CopyPill(value = url.ifBlank { displayUrl }, field = "published_url")
                 }
             }
         }
