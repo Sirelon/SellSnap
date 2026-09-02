@@ -49,12 +49,7 @@ fun Pill(
     bgColor: Color = color.copy(alpha = 0.18f),
     onClick: (() -> Unit)? = null,
 ) {
-    Surface(
-        modifier = modifier,
-        shape = CircleShape,
-        color = bgColor,
-        onClick = onClick ?: {},
-    ) {
+    val content: @Composable () -> Unit = {
         Row(
             modifier = Modifier.padding(
                 horizontal = AppDimens.Spacing.m,
@@ -80,6 +75,27 @@ fun Pill(
                 color = color,
             )
         }
+    }
+
+    // Material3's clickable Surface(onClick = ...) overload is always interactive (ripple +
+    // clickable semantics) no matter what the lambda does - a no-op onClick still steals the
+    // touch from whatever this Pill is nested inside (e.g. a Tab), so a purely decorative badge
+    // must go through the plain, non-clickable overload instead of `onClick ?: {}`.
+    if (onClick != null) {
+        Surface(
+            modifier = modifier,
+            shape = CircleShape,
+            color = bgColor,
+            onClick = onClick,
+            content = content,
+        )
+    } else {
+        Surface(
+            modifier = modifier,
+            shape = CircleShape,
+            color = bgColor,
+            content = content,
+        )
     }
 }
 

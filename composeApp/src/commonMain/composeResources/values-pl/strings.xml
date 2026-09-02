@@ -336,4 +336,7 @@
     <string name="my_ads_header_subtitle_account">Ogłoszenia dla %1$s.</string>
     <string name="my_ads_empty_description_account">Na razie brak ogłoszeń dla %1$s.</string>
     <string name="my_ads_account_fallback_name">Twojego konta</string>
+    <string name="my_ads_reconnect_title">Połącz ponownie to konto</string>
+    <string name="my_ads_reconnect_description">Połączenie tego konta z OLX wygasło. Połącz ponownie, aby zobaczyć jego ogłoszenia.</string>
+    <string name="my_ads_load_failed_account">Nie udało się załadować ogłoszeń dla %1$s.</string>
 </resources>

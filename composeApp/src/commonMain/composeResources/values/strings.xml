@@ -338,4 +338,7 @@
     <string name="my_ads_header_subtitle_account">Listings for %1$s.</string>
     <string name="my_ads_empty_description_account">No listings for %1$s yet.</string>
     <string name="my_ads_account_fallback_name">your account</string>
+    <string name="my_ads_reconnect_title">Reconnect this account</string>
+    <string name="my_ads_reconnect_description">This account\'s OLX connection expired. Reconnect to see its listings.</string>
+    <string name="my_ads_load_failed_account">Couldn\'t load ads for %1$s.</string>
 </resources>

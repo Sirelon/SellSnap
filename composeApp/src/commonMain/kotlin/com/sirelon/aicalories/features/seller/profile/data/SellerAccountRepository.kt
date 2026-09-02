@@ -19,6 +19,7 @@ import com.sirelon.sellsnap.features.seller.auth.domain.OlxApiException
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxAuthorizationRequest
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxCountry
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxSessionState
+import com.sirelon.sellsnap.features.seller.auth.domain.OlxTokens
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxUser
 import com.sirelon.sellsnap.features.seller.auth.domain.SellerSessionMode
 import com.sirelon.sellsnap.features.seller.location.OlxLocation
@@ -328,12 +329,29 @@ class SellerAccountRepository internal constructor(
         locationRepository.fetchUserLocation()
 
     /**
+     * Usable access token for one stored account (My Ads pager, SIR-87): refreshes + persists
+     * first when [forceRefresh] or when the cached token is within [TOKEN_REFRESH_SKEW_SECONDS]
+     * of expiry, otherwise returns the cached token with no network call. Returns null if the
+     * account is gone or already [OlxAccountState.NeedsReconnect] - the caller (My Ads) maps that
+     * to its per-page reconnect state rather than a generic load error. A terminal refresh
+     * failure marks only this account, via [refreshAccountTokens].
+     */
+    internal suspend fun accessTokenFor(localIndex: Int, forceRefresh: Boolean = false): String? {
+        val account = accountStore.recordFlow.value.accounts.find { it.localIndex == localIndex } ?: return null
+        if (account.state == OlxAccountState.NeedsReconnect) return null
+
+        if (!forceRefresh && !account.tokens.isExpired(nowEpochSeconds(), TOKEN_REFRESH_SKEW_SECONDS)) {
+            return account.tokens.accessToken
+        }
+
+        return refreshAccountTokens(account)?.accessToken
+    }
+
+    /**
      * Keep-alive sweep (SIR-83 addition A1): refreshes every [OlxAccountState.Usable] account,
      * across all countries, whose token has not been refreshed in [KEEP_ALIVE_STALE_SECONDS] -
-     * intended to be called on app foreground/cold start. Runs the refresh directly against each
-     * account's own country (not through the shared authorized client, which is bound to whatever
-     * country is globally "current" and may not be this account's). `NeedsReconnect` accounts are
-     * skipped - there is nothing to keep alive. A single account's failure never aborts the sweep.
+     * intended to be called on app foreground/cold start. `NeedsReconnect` accounts are skipped -
+     * there is nothing to keep alive. A single account's failure never aborts the sweep.
      */
     suspend fun runKeepAliveRefresh() {
         val now = nowEpochSeconds()
@@ -342,34 +360,47 @@ class SellerAccountRepository internal constructor(
         }
 
         for (account in staleAccounts) {
-            val country = OlxCountry.fromCode(account.countryCode) ?: continue
-            runCatching {
-                refreshOlxTokens(
-                    client = unauthenticatedHttpClient,
-                    tokenEndpointUrl = "https://www.${country.domain}/api/${OlxConfig.authTokenPath}",
-                    clientId = country.clientId,
-                    clientSecret = country.clientSecret,
-                    refreshToken = account.tokens.refreshToken,
-                    errorParser = errorParser,
-                )
-            }.onSuccess { refreshedTokens ->
-                if (refreshedTokens != null) {
-                    // Background sweep, not seller activity - never touch lastUsedAtEpochSeconds.
-                    accountStore.updateTokens(account.localIndex, refreshedTokens, now, updateLastUsed = false)
-                }
-            }.onFailure { error ->
-                val olxError = (error as? OlxApiException)?.error
-                if (olxError is OlxApiError.InvalidGrant || olxError is OlxApiError.InvalidToken) {
-                    accountStore.markNeedsReconnect(account.localIndex)
-                    analytics.logEvent(
-                        AnalyticsEvents.ACCOUNT_TOKEN_EXPIRED_UNUSED,
-                        mapOf("days_since_last_use" to (now - account.lastUsedAtEpochSeconds) / SECONDS_PER_DAY),
-                    )
-                }
-                // Any other error (network blip, 5xx, ...) is transient - leave the account
-                // Usable and let the next sweep retry it.
-            }
+            refreshAccountTokens(account)
         }
+    }
+
+    /**
+     * Single refresh recipe shared by [runKeepAliveRefresh] and [accessTokenFor] so they can't
+     * drift apart. Runs directly against the account's own country (not through the shared
+     * authorized client, which is bound to whatever country is globally "current" and may not be
+     * this account's), persists success via [OlxAccountStore.updateTokens] (never touching
+     * `lastUsedAtEpochSeconds` - a refresh alone is not seller activity), and on a terminal
+     * `invalid_grant`/`invalid_token` failure marks the account [OlxAccountState.NeedsReconnect].
+     * Returns null on any failure, transient or terminal.
+     */
+    private suspend fun refreshAccountTokens(account: OlxAccountRecord): OlxTokens? {
+        val country = OlxCountry.fromCode(account.countryCode) ?: return null
+        val now = nowEpochSeconds()
+        return runCatching {
+            refreshOlxTokens(
+                client = unauthenticatedHttpClient,
+                tokenEndpointUrl = "https://www.${country.domain}/api/${OlxConfig.authTokenPath}",
+                clientId = country.clientId,
+                clientSecret = country.clientSecret,
+                refreshToken = account.tokens.refreshToken,
+                errorParser = errorParser,
+            )
+        }.onSuccess { refreshedTokens ->
+            if (refreshedTokens != null) {
+                accountStore.updateTokens(account.localIndex, refreshedTokens, now, updateLastUsed = false)
+            }
+        }.onFailure { error ->
+            val olxError = (error as? OlxApiException)?.error
+            if (olxError is OlxApiError.InvalidGrant || olxError is OlxApiError.InvalidToken) {
+                accountStore.markNeedsReconnect(account.localIndex)
+                analytics.logEvent(
+                    AnalyticsEvents.ACCOUNT_TOKEN_EXPIRED_UNUSED,
+                    mapOf("days_since_last_use" to (now - account.lastUsedAtEpochSeconds) / SECONDS_PER_DAY),
+                )
+            }
+            // Any other error (network blip, 5xx, ...) is transient - leave the account Usable
+            // and let the next caller (keep-alive sweep or another accessTokenFor) retry it.
+        }.getOrNull()
     }
 
     private fun accountCountFor(countryCode: String): Int =
@@ -392,6 +423,7 @@ class SellerAccountRepository internal constructor(
         const val MAX_ACCOUNTS_PER_COUNTRY = 3
         const val SECONDS_PER_DAY = 86_400L
         const val KEEP_ALIVE_STALE_SECONDS = 20 * SECONDS_PER_DAY
+        const val TOKEN_REFRESH_SKEW_SECONDS = 60L
         const val USER_PROPERTY_CONNECTED_ACCOUNT_COUNT = "connected_account_count"
     }
 }

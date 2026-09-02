@@ -79,6 +79,27 @@ class OlxApiClient(
             .mapNotNull { it.toDomain() }
     }
 
+    /**
+     * Same call, with an explicit bearer token instead of relying on this client's own Auth
+     * plugin. Used by the My Ads account pager (SIR-87): each page fetches with its own account's
+     * token via [com.sirelon.sellsnap.features.seller.profile.data.SellerAccountRepository]'s
+     * per-account token access, since the shared authorized client only ever serves whichever
+     * account is globally active.
+     */
+    suspend fun getCurrentUserAdverts(accessToken: String, offset: Int, limit: Int): List<OlxAdvert> {
+        val response = httpClient.get("adverts") {
+            bearerAuth(accessToken)
+            parameter("offset", offset)
+            parameter("limit", limit)
+        }
+        response.ensureSuccess()
+
+        return response.decodeBody<OlxAdvertsRootResponse>("user adverts")
+            .data
+            .orEmpty()
+            .mapNotNull { it.toDomain() }
+    }
+
     internal suspend fun loadCategories(): List<OlxCategoryResponse> {
         val response = httpClient.get("categories")
         response.ensureSuccess()

@@ -340,6 +340,12 @@ fun App() {
                                     navVm.exitGuestModeToLanding()
                                 },
                                 onCreateListingClick = { switchRootTab(SellerRootTab.GenerateAd) },
+                                onReconnectClick = {
+                                    // Reuses Profile's existing reconnect route rather than a
+                                    // second OAuth entry point - same pattern as
+                                    // PublishNeedsReconnect below.
+                                    navVm.backStack.add(AppKey.Profile(reason = connectOlxReason))
+                                },
                             )
                         }
 

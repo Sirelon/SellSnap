@@ -336,4 +336,7 @@
     <string name="my_ads_header_subtitle_account">Обяви за %1$s.</string>
     <string name="my_ads_empty_description_account">Все още няма обяви за %1$s.</string>
     <string name="my_ads_account_fallback_name">твоя акаунт</string>
+    <string name="my_ads_reconnect_title">Свържи отново този акаунт</string>
+    <string name="my_ads_reconnect_description">OLX връзката на този акаунт изтече. Свържи се отново, за да видиш обявите му.</string>
+    <string name="my_ads_load_failed_account">Не можах да заредя обявите за %1$s.</string>
 </resources>
