@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation3.runtime.NavBackStack
 import com.sirelon.sellsnap.config.AppConfig
 import com.sirelon.sellsnap.features.seller.ad.AdFlowTimerStore
+import com.sirelon.sellsnap.features.media.SharedImagesBridge
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountMigration
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAuthRepository
 import com.sirelon.sellsnap.features.seller.auth.data.OlxCountryStore
@@ -16,6 +17,9 @@ import com.sirelon.sellsnap.features.whatsnew.data.WhatsNewStore
 import com.sirelon.sellsnap.navigation.AppKey
 import com.sirelon.sellsnap.navigation.appNavigationSavedStateConfiguration
 import com.sirelon.sellsnap.navigation.isSellerFlowEntry
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
 class AppNavigationViewModel(
@@ -50,6 +54,14 @@ class AppNavigationViewModel(
             // active, from dying past OLX's ~30-day unused refresh-token window (SIR-83 keep-alive).
             runCatching { sellerAccountRepository.runKeepAliveRefresh() }
         }
+
+        // Photos shared in from the OS share sheet (MainActivity.publishSharedImages) always
+        // force the user onto GenerateAd, regardless of where the back stack currently sits -
+        // GenerateAdViewModel picks the files themselves up independently from the same bridge.
+        SharedImagesBridge.pending
+            .filterNotNull()
+            .onEach { if (backStack.lastOrNull() != AppKey.GenerateAd) popToAdRoot() }
+            .launchIn(viewModelScope)
     }
 
     fun navigateTo(destination: AppKey) {
