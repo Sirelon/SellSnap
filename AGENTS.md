@@ -479,6 +479,22 @@ These rules apply to every class that directly maps a JSON API response (OLX, Su
 - `AdvertAction.availableActions(status, supportsExtendCommand)` is the single source of truth for
   which actions are offered. An action OLX would reject must never be rendered; `AdvertActionTest`
   iterates every `AdvertStatus` so a newly added status cannot silently gain one.
+- **OLX publishes no status definitions and no transition table.** The spec's `Advert.status` enum
+  lists four values (`new`, `active`, `limited`, `removed_by_user`) while its prose names eight
+  more, and there is no status filter to enumerate them. The full matrix, with each cell marked
+  documented / inferred / unknown, is the KDoc on `availableActions` — read it before changing any
+  status behaviour, and update it in the same edit. Everything rests on two documented rules:
+  `deactivate` requires the advert to be `active`, and `DELETE` requires it not to be.
+- `limited` means OLX wants a paid packet before the listing goes up. The docs say to purchase one
+  and then send `activate`, but `POST adverts/{id}/packets` spends the seller's OLX balance, so no
+  button in this app triggers it — the state is explained and the seller is pointed at OLX.
+- `disabled` is not understood. It is absent from the documented enum, the prose groups it with the
+  moderation states, and a real account reported it for a listing that was live and editable on
+  OLX's own site. It offers no actions, and the sheet asks
+  `GET adverts/{id}/moderation-reason` for OLX's own explanation rather than asserting a cause.
+- When an advert has no available actions, prefer OLX's own words: the sheet fetches the moderation
+  reason and falls back to this app's per-status copy only when OLX has none. A 404 there is the
+  ordinary answer for an advert that was never moderated, not an error.
 - Commands answer 204 with no body, and OLX may resolve a status differently from what was
   requested, so a row is always re-read via `GET adverts/{id}` after an action rather than patched
   from the action that was attempted.

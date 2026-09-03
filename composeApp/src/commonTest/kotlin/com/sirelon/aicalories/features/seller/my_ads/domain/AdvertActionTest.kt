@@ -99,4 +99,43 @@ class AdvertActionTest {
             }
         }
     }
+
+    @Test
+    fun `the whole status matrix is pinned, so no status changes behaviour unnoticed`() {
+        // The table in availableActions' KDoc, as executable form. OLX documents no per-status
+        // definitions and no transition table, so this is the only place the mapping is checked
+        // as a whole rather than status by status - and any edit to it has to be deliberate.
+        val expected = mapOf(
+            AdvertStatus.Active to listOf(AdvertAction.Edit, AdvertAction.Extend, AdvertAction.Deactivate),
+            AdvertStatus.Limited to listOf(AdvertAction.Delete),
+            AdvertStatus.New to listOf(AdvertAction.Delete),
+            AdvertStatus.Moderated to listOf(AdvertAction.Delete),
+            AdvertStatus.Outdated to listOf(AdvertAction.Reactivate, AdvertAction.Delete),
+            AdvertStatus.RemovedByUser to listOf(AdvertAction.Reactivate, AdvertAction.Delete),
+            AdvertStatus.Unconfirmed to listOf(AdvertAction.Delete),
+            AdvertStatus.Unpaid to listOf(AdvertAction.Delete),
+            AdvertStatus.Blocked to emptyList(),
+            AdvertStatus.RemovedByModerator to emptyList(),
+            AdvertStatus.Disabled to emptyList(),
+            AdvertStatus.Unknown to emptyList(),
+        )
+
+        // Every status OLX can send has a row, so a value added to the enum fails here.
+        assertEquals(AdvertStatus.entries.toSet(), expected.keys)
+
+        for ((status, actions) in expected) {
+            assertEquals(actions, availableActions(status, supportsExtendCommand = true), "status $status")
+        }
+
+        // Extend is the only cell that varies by market, and only for an active listing.
+        for (status in AdvertStatus.entries) {
+            val withoutExtend = availableActions(status, supportsExtendCommand = false)
+            val difference = expected.getValue(status) - withoutExtend.toSet()
+            assertEquals(
+                if (status == AdvertStatus.Active) listOf(AdvertAction.Extend) else emptyList(),
+                difference,
+                "only an active listing may differ by market, and only by Extend - status $status",
+            )
+        }
+    }
 }
