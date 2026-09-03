@@ -355,6 +355,7 @@
     <string name="advert_state_blocked">OLX blocked this listing. Only they can undo it — check your email from them.</string>
     <string name="advert_state_removed_by_moderator">OLX removed this listing. Only they can restore it.</string>
     <string name="advert_state_disabled">OLX has disabled this listing. Only OLX can turn it back on.</string>
+    <string name="advert_state_limited">OLX needs a paid package before this one goes up. You can sort that out on OLX.</string>
     <string name="advert_state_unconfirmed">OLX is waiting for you to confirm this listing — check your email from them.</string>
     <string name="advert_state_unpaid">OLX is waiting for payment on this listing.</string>
     <string name="advert_state_unknown">OLX hasn't settled this listing's state yet. Pull down to refresh.</string>

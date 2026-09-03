@@ -353,6 +353,7 @@
     <string name="advert_state_blocked">OLX a blocat acest anunț. Doar ei pot anula blocarea — verifică emailul de la ei.</string>
     <string name="advert_state_removed_by_moderator">OLX a eliminat acest anunț. Doar ei îl pot restaura.</string>
     <string name="advert_state_disabled">OLX a dezactivat acest anunț. Doar OLX îl poate reactiva.</string>
+    <string name="advert_state_limited">OLX are nevoie de un pachet plătit înainte ca acest anunț să fie publicat. Poți rezolva asta pe OLX.</string>
     <string name="advert_state_unconfirmed">OLX așteaptă să confirmi acest anunț — verifică emailul de la ei.</string>
     <string name="advert_state_unpaid">OLX așteaptă plata pentru acest anunț.</string>
     <string name="advert_state_unknown">OLX nu a stabilit încă o stare pentru acest anunț. Trage în jos pentru a reîmprospăta.</string>

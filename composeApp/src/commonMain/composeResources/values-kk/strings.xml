@@ -353,6 +353,7 @@
     <string name="advert_state_blocked">OLX бұл хабарландыруды бұғаттады. Оны тек солар ғана шешеді — өздерінен келген хатты қара.</string>
     <string name="advert_state_removed_by_moderator">OLX бұл хабарландыруды жойды. Оны тек солар ғана қалпына келтіре алады.</string>
     <string name="advert_state_disabled">OLX бұл хабарландыруды өшірді. Оны тек OLX қана қайта қоса алады.</string>
+    <string name="advert_state_limited">OLX бұл хабарландыруды жариялау үшін ақылы пакетті талап етеді. Мұны OLX-те шеше аласың.</string>
     <string name="advert_state_unconfirmed">OLX бұл хабарландыруды растауыңды күтіп тұр — өздерінен келген хатты қара.</string>
     <string name="advert_state_unpaid">OLX бұл хабарландыру үшін төлемді күтіп тұр.</string>
     <string name="advert_state_unknown">OLX бұл хабарландыру үшін әлі күй белгілеген жоқ. Жаңарту үшін төмен қарай тарт.</string>

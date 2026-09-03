@@ -356,6 +356,7 @@
     <string name="advert_state_blocked">OLX заблокував це оголошення. Скасувати це може лише OLX — перевірте лист від них.</string>
     <string name="advert_state_removed_by_moderator">OLX видалив це оголошення. Відновити його може лише OLX.</string>
     <string name="advert_state_disabled">OLX вимкнув це оголошення. Увімкнути його знову може лише OLX.</string>
+    <string name="advert_state_limited">OLX потребує платного пакета, перш ніж це оголошення опублікується. Владнати це можна на OLX.</string>
     <string name="advert_state_unconfirmed">OLX чекає, поки ви підтвердите це оголошення — перевірте лист від них.</string>
     <string name="advert_state_unpaid">OLX чекає оплату за це оголошення.</string>
     <string name="advert_state_unknown">OLX ще не визначився зі статусом цього оголошення. Потягніть вниз, щоб оновити.</string>

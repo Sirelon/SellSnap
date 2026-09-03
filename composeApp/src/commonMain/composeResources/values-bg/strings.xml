@@ -353,6 +353,7 @@
     <string name="advert_state_blocked">OLX блокира тази обява. Само те могат да свалят блокировката — виж имейла от тях.</string>
     <string name="advert_state_removed_by_moderator">OLX премахна тази обява. Само те могат да я възстановят.</string>
     <string name="advert_state_disabled">OLX е изключил тази обява. Само OLX може да я включи отново.</string>
+    <string name="advert_state_limited">OLX изисква платен пакет, преди тази обява да се публикува. Можеш да уредиш това в OLX.</string>
     <string name="advert_state_unconfirmed">OLX чака да потвърдиш тази обява — виж имейла от тях.</string>
     <string name="advert_state_unpaid">OLX чака плащане за тази обява.</string>
     <string name="advert_state_unknown">OLX все още не е определил статус за тази обява. Дръпни надолу, за да обновиш.</string>

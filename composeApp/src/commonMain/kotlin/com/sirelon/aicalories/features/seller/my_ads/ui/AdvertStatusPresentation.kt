@@ -23,6 +23,7 @@ import com.sirelon.sellsnap.generated.resources.advert_expiry_expired
 import com.sirelon.sellsnap.generated.resources.advert_expiry_today
 import com.sirelon.sellsnap.generated.resources.advert_state_blocked
 import com.sirelon.sellsnap.generated.resources.advert_state_disabled
+import com.sirelon.sellsnap.generated.resources.advert_state_limited
 import com.sirelon.sellsnap.generated.resources.advert_state_moderated
 import com.sirelon.sellsnap.generated.resources.advert_state_new
 import com.sirelon.sellsnap.generated.resources.advert_state_removed_by_moderator
@@ -91,6 +92,7 @@ internal fun statusColor(status: AdvertStatus): Color = when (status) {
  */
 internal fun statusExplanation(status: AdvertStatus): StringResource? = when (status) {
     AdvertStatus.New -> Res.string.advert_state_new
+    AdvertStatus.Limited -> Res.string.advert_state_limited
     AdvertStatus.Moderated -> Res.string.advert_state_moderated
     AdvertStatus.Blocked -> Res.string.advert_state_blocked
     AdvertStatus.RemovedByModerator -> Res.string.advert_state_removed_by_moderator
@@ -99,7 +101,6 @@ internal fun statusExplanation(status: AdvertStatus): StringResource? = when (st
     AdvertStatus.Unpaid -> Res.string.advert_state_unpaid
     AdvertStatus.Unknown -> Res.string.advert_state_unknown
     AdvertStatus.Active,
-    AdvertStatus.Limited,
     AdvertStatus.RemovedByUser,
     AdvertStatus.Outdated -> null
 }
