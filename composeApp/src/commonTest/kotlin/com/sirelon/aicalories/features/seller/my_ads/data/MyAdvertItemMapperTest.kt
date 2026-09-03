@@ -30,6 +30,11 @@ class MyAdvertItemMapperTest {
         assertEquals("https://example.com/image.jpg", item.primaryImageUrl)
         assertEquals("2026-05-01T10:00:00+03:00", item.createdAt)
         assertEquals("2026-06-01T10:00:00+03:00", item.validTo)
+        // The raw figure is carried alongside the formatted one because the sold-price prompt and
+        // the price edit both pre-fill from it - reparsing "₴ 12 500" back to a number would be
+        // locale-dependent and lossy.
+        assertEquals(12500L, item.priceValue)
+        assertEquals("UAH", item.currencyCode)
     }
 
     @Test
@@ -49,6 +54,9 @@ class MyAdvertItemMapperTest {
 
         assertEquals("", item.priceFormatted)
         assertEquals(false, item.canOpen)
+        // No price to pre-fill with, rather than a misleading zero.
+        assertEquals(null, item.priceValue)
+        assertEquals("", item.currencyCode)
     }
 
     @Test
