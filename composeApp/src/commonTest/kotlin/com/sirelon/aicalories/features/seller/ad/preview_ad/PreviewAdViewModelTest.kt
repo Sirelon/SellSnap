@@ -12,6 +12,7 @@ import com.sirelon.sellsnap.features.seller.ad.Advertisement
 import com.sirelon.sellsnap.features.seller.ad.AdFlowTimerStore
 import com.sirelon.sellsnap.features.seller.ad.AdvertisementWithAttributes
 import com.sirelon.sellsnap.features.seller.ad.generation_log.NoOpAdGenerationLogRepository
+import com.sirelon.sellsnap.features.seller.ad.preview_ad.PreviewAdContract.AttributesLoadState
 import com.sirelon.sellsnap.features.seller.ad.preview_ad.PreviewAdContract.PreviewAdEffect
 import com.sirelon.sellsnap.features.seller.ad.preview_ad.PreviewAdContract.PreviewAdEvent
 import com.sirelon.sellsnap.features.seller.auth.data.GuestModeStore
@@ -124,7 +125,7 @@ class PreviewAdViewModelTest {
         }
         val harness = harness(engine, accountStore)
         val viewModel = buildViewModel(harness)
-        viewModel.setState { it.copy(selectedCategory = testCategory, location = testLocation) }
+        viewModel.setState { it.copy(selectedCategory = testCategory, location = testLocation, attributesLoadState = AttributesLoadState.Loaded) }
         val effects = mutableListOf<PreviewAdEffect>()
         backgroundScope.launch { viewModel.effects.collect { effects += it } }
 
@@ -165,7 +166,7 @@ class PreviewAdViewModelTest {
         }
         val harness = harness(engine, accountStore)
         val viewModel = buildViewModel(harness)
-        viewModel.setState { it.copy(selectedCategory = testCategory, location = testLocation) }
+        viewModel.setState { it.copy(selectedCategory = testCategory, location = testLocation, attributesLoadState = AttributesLoadState.Loaded) }
         val effects = mutableListOf<PreviewAdEffect>()
         backgroundScope.launch { viewModel.effects.collect { effects += it } }
 
@@ -178,6 +179,103 @@ class PreviewAdViewModelTest {
         assertEquals("Legacy Seller", success.data.accountName)
         val startedEvent = harness.analytics.events.single { it.first == AnalyticsEvents.AD_PUBLISH_STARTED }
         assertEquals(1, startedEvent.second["account_index"])
+    }
+
+    @Test
+    fun `publish refuses to POST while the category's attributes have not loaded`() = runTest(testDispatcher) {
+        val accountStore = OlxAccountStore(InMemoryOlxKeyValueStore(), testJson)
+        accountStore.write(
+            OlxAccountsRecord(
+                accounts = listOf(account(localIndex = 1, olxUserId = 100L, accessToken = "token-a")),
+                activeByCountry = mapOf("ua" to 1),
+                nextLocalIndex = 2,
+            ),
+        )
+        var postAdvertRequests = 0
+        val engine = buildEngine {
+            addHandler { request ->
+                when {
+                    request.url.encodedPath.contains("users/me") ->
+                        respond(userJson(id = 100L, name = "Seller One"), status = HttpStatusCode.OK, headers = jsonHeaders())
+
+                    request.url.encodedPath.contains("adverts") && request.method == HttpMethod.Post -> {
+                        postAdvertRequests += 1
+                        respond(postAdvertJson(id = 4L), status = HttpStatusCode.OK, headers = jsonHeaders())
+                    }
+
+                    else -> respond("{}", status = HttpStatusCode.OK, headers = jsonHeaders())
+                }
+            }
+        }
+        val harness = harness(engine, accountStore)
+        val viewModel = buildViewModel(harness)
+        // A category is chosen but its attributes never arrived, so `attributeItems` is empty and
+        // every per-attribute check passes vacuously. OLX would reject the advert for a required
+        // attribute (`state`, `size`) the seller was never shown, which is what happened in the
+        // wild on 2026-09-02 - so nothing may be posted from this state.
+        viewModel.setState {
+            it.copy(
+                selectedCategory = testCategory,
+                location = testLocation,
+                attributesLoadState = AttributesLoadState.Failed,
+            )
+        }
+        viewModel.onEvent(PreviewAdEvent.Publish)
+        advanceUntilIdle()
+
+        assertEquals(0, postAdvertRequests, "attributes that never loaded must not reach POST adverts")
+        assertFalse(
+            harness.analytics.events.any { it.first == AnalyticsEvents.AD_PUBLISH_STARTED },
+            "a publish that never leaves the client must not be counted as started",
+        )
+    }
+
+    @Test
+    fun `a rejected publish reports which OLX field was rejected, not just that it failed`() = runTest(testDispatcher) {
+        val accountStore = OlxAccountStore(InMemoryOlxKeyValueStore(), testJson)
+        accountStore.write(
+            OlxAccountsRecord(
+                accounts = listOf(account(localIndex = 1, olxUserId = 100L, accessToken = "token-a")),
+                activeByCountry = mapOf("ua" to 1),
+                nextLocalIndex = 2,
+            ),
+        )
+        val engine = buildEngine {
+            addHandler { request ->
+                when {
+                    request.url.encodedPath.contains("users/me") ->
+                        respond(userJson(id = 100L, name = "Seller One"), status = HttpStatusCode.OK, headers = jsonHeaders())
+
+                    // The rejection that failed 7 consecutive publishes for one seller on
+                    // 2026-09-02: OLX enforces `state` at post time while its own categories API
+                    // reports that attribute as optional, so AttributeValidator passes it and
+                    // PostAdvertRequestMapper drops it as empty. Nothing client-side blocks the
+                    // request, which is exactly why the failure has to name the field - without
+                    // it, this is indistinguishable from a dropped connection.
+                    request.url.encodedPath.contains("adverts") && request.method == HttpMethod.Post ->
+                        respond(
+                            """{"error":{"status":400,"validation":[{"field":"params.state","detail":"W tej kategorii pojawilo sie nowe pole obowiazkowe."}]}}""",
+                            status = HttpStatusCode.BadRequest,
+                            headers = jsonHeaders(),
+                        )
+
+                    else -> respond("{}", status = HttpStatusCode.OK, headers = jsonHeaders())
+                }
+            }
+        }
+        val harness = harness(engine, accountStore)
+        val viewModel = buildViewModel(harness)
+        viewModel.setState { it.copy(selectedCategory = testCategory, location = testLocation, attributesLoadState = AttributesLoadState.Loaded) }
+        val effects = mutableListOf<PreviewAdEffect>()
+        backgroundScope.launch { viewModel.effects.collect { effects += it } }
+
+        viewModel.onEvent(PreviewAdEvent.Publish)
+        advanceUntilIdle()
+
+        val failed = harness.analytics.events.single { it.first == AnalyticsEvents.AD_PUBLISH_FAILED }
+        assertEquals("validation:params.state", failed.second["reason"])
+        assertEquals(1, failed.second["account_index"])
+        assertTrue(effects.any { it is PreviewAdEffect.PublishFailure })
     }
 
     @Test
@@ -219,7 +317,7 @@ class PreviewAdViewModelTest {
             }
             harness = harness(engine, accountStore)
             val viewModel = buildViewModel(harness)
-            viewModel.setState { it.copy(selectedCategory = testCategory, location = testLocation) }
+            viewModel.setState { it.copy(selectedCategory = testCategory, location = testLocation, attributesLoadState = AttributesLoadState.Loaded) }
             val effects = mutableListOf<PreviewAdEffect>()
             backgroundScope.launch { viewModel.effects.collect { effects += it } }
 
@@ -263,7 +361,7 @@ class PreviewAdViewModelTest {
         }
         val harness = harness(engine, accountStore)
         val viewModel = buildViewModel(harness)
-        viewModel.setState { it.copy(selectedCategory = testCategory, location = testLocation) }
+        viewModel.setState { it.copy(selectedCategory = testCategory, location = testLocation, attributesLoadState = AttributesLoadState.Loaded) }
         val effects = mutableListOf<PreviewAdEffect>()
         backgroundScope.launch { viewModel.effects.collect { effects += it } }
 

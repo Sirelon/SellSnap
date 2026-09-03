@@ -106,6 +106,7 @@ import com.sirelon.sellsnap.features.media.PermissionDialogs
 import com.sirelon.sellsnap.features.media.rememberPermissionController
 import com.sirelon.sellsnap.features.seller.ad.formatFriendlyElapsedTime
 import com.sirelon.sellsnap.features.seller.ad.screenshotMode
+import com.sirelon.sellsnap.features.seller.ad.preview_ad.PreviewAdContract.AttributesLoadState
 import com.sirelon.sellsnap.features.seller.ad.preview_ad.PreviewAdContract.PreviewAdEvent
 import com.sirelon.sellsnap.features.seller.ad.preview_ad.PreviewAdContract.PreviewAdEvent.CategorySelected
 import com.sirelon.sellsnap.features.seller.categories.domain.OlxCategory
@@ -115,6 +116,7 @@ import com.sirelon.sellsnap.features.seller.currency.domain.OlxCurrency
 import com.sirelon.sellsnap.features.seller.location.OlxLocation
 import com.sirelon.sellsnap.generated.resources.Res
 import com.sirelon.sellsnap.generated.resources.ad_attributes_label
+import com.sirelon.sellsnap.generated.resources.error_attributes_load_failed
 import com.sirelon.sellsnap.generated.resources.ad_category_label
 import com.sirelon.sellsnap.generated.resources.ad_description_label
 import com.sirelon.sellsnap.generated.resources.ad_location_label
@@ -217,6 +219,7 @@ internal fun PreviewAdContentRoute(
     val descTooShortLabel = stringResource(Res.string.validation_error_desc_too_short)
     val noCategoryLabel = stringResource(Res.string.validation_error_no_category)
     val noLocationLabel = stringResource(Res.string.validation_error_no_location)
+    val attributesLoadFailedLabel = stringResource(Res.string.error_attributes_load_failed)
 
     // @Composable reads of TextFieldState.text trigger recomposition on change.
     val titleText = viewModel.titleState.text
@@ -227,6 +230,12 @@ internal fun PreviewAdContentRoute(
         if (state.isSessionResolved && !state.isGuest) {
             if (state.selectedCategory == null) add(noCategoryLabel)
             if (state.location == null) add(noLocationLabel)
+            // An unloaded attribute list makes the per-item checks below pass vacuously, so it has
+            // to count as an error in its own right - otherwise the CTA reads "Publish" and OLX
+            // rejects the advert for a required attribute the seller was never shown.
+            if (state.selectedCategory != null && state.attributesLoadState != AttributesLoadState.Loaded) {
+                add(attributesLoadFailedLabel)
+            }
             for (item in state.attributeItems) {
                 when {
                     item.error != null ->
@@ -708,6 +717,8 @@ private fun PreviewAdContent(
                     autoOpenAttributeRequest = autoOpenAttributeRequest,
                     autoOpenAttributeModifier = autoOpenAttributeModifier,
                 )
+            } else if (state.attributesLoadState == AttributesLoadState.Failed) {
+                AdAttributesErrorCard()
             }
 
             AdLocationCard(
@@ -966,6 +977,26 @@ private fun AdCategoryCard(categoryLabel: String, onChangeClick: () -> Unit) {
             )
         }
     )
+}
+
+/**
+ * Stands in for [AdAttributesCard] when the fetch failed, so the seller sees that the category's
+ * details are missing on the screen itself rather than only in the load-time snackbar they may
+ * well have missed - the publish CTA reports the same error, and OLX would reject the advert.
+ */
+@Composable
+private fun AdAttributesErrorCard(modifier: Modifier = Modifier) {
+    PreviewSectionCard(
+        label = stringResource(Res.string.ad_attributes_label),
+        modifier = modifier,
+    ) {
+        Text(
+            modifier = Modifier.padding(horizontal = AppDimens.Spacing.xl3),
+            text = stringResource(Res.string.error_attributes_load_failed),
+            style = AppTheme.typography.caption,
+            color = AppTheme.colors.error,
+        )
+    }
 }
 
 @Composable
