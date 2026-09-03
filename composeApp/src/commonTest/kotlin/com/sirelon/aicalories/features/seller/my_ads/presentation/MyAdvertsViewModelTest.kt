@@ -463,22 +463,21 @@ class MyAdvertsViewModelTest {
     @Test
     fun `answering not sold closes the listing without asking anything else`() = runTest(testDispatcher) {
         val commandBodies = mutableListOf<String>()
-        // OLX reports the new status through the LIST endpoint, which is what the app refetches
-        // after an action - a single-advert re-read straight after a command can still be stale.
-        var listStatus = "active"
+        // OLX keeps reporting the OLD status for a moment after accepting the command. This mock
+        // never stops saying `active`, which is the case that used to leave the badge unchanged
+        // and offer Deactivate a second time.
         val engine = mockEngine(testDispatcher) {
             addHandler { request ->
                 when {
                     request.url.encodedPath.endsWith("/commands") -> {
                         commandBodies += (request.body as io.ktor.http.content.TextContent).text
-                        listStatus = "removed_by_user"
                         respond("", status = HttpStatusCode.NoContent)
                     }
 
                     request.url.encodedPath.endsWith("/statistics") ->
                         respond(statisticsJson(0, 0, 0), status = HttpStatusCode.OK, headers = jsonHeaders())
 
-                    else -> respond(advertsJson(111L, status = listStatus), status = HttpStatusCode.OK, headers = jsonHeaders())
+                    else -> respond(advertsJson(111L, status = "active"), status = HttpStatusCode.OK, headers = jsonHeaders())
                 }
             }
         }
@@ -507,9 +506,18 @@ class MyAdvertsViewModelTest {
         assertEquals(false, assertNotNull(outcomeStore.outcomeFor(111L)).isSold)
         assertNotNull(analytics.paramsFor(AnalyticsEvents.ADVERT_CLOSED_UNSOLD))
 
-        // The list is refetched, so the row carries whatever status OLX resolved to - and
-        // reopening the sheet offers the actions for that new status, not the old ones.
-        assertEquals(AdvertStatus.RemovedByUser, viewModel.state.value.pages.single().adverts.single().status)
+        // The row takes the status the command implies, even though OLX is still reporting
+        // `active` - otherwise the badge does not change and the seller is offered Deactivate on
+        // a listing they have already taken down.
+        val row = viewModel.state.value.pages.single().adverts.single()
+        assertEquals(AdvertStatus.RemovedByUser, row.status)
+        // And so reopening the sheet offers what you do to a listing that is down.
+        viewModel.onEvent(Event.AdvertClicked(localIndex = 1, advert = row))
+        runCurrent()
+        assertEquals(
+            listOf(AdvertAction.Reactivate, AdvertAction.Delete),
+            assertNotNull(viewModel.state.value.advertSheet).actions,
+        )
     }
 
     @Test
@@ -899,7 +907,7 @@ class MyAdvertsViewModelTest {
     // ----- Regressions found in review -----
 
     @Test
-    fun `a command that landed is reported as the success it was even when reading the row back fails`() = runTest(testDispatcher) {
+    fun `a command that landed shows on the row even when the list cannot be read`() = runTest(testDispatcher) {
         var commandsSent = 0
         val engine = mockEngine(testDispatcher) {
             addHandler { request ->
@@ -946,9 +954,9 @@ class MyAdvertsViewModelTest {
 
         assertEquals(1, commandsSent)
         assertEquals("success", analytics.paramsFor(AnalyticsEvents.ADVERT_ACTION)?.get("result"))
-        // The row keeps its old status rather than being patched from what was requested - OLX
-        // may resolve it differently, and guessing would be worse than being briefly stale.
-        assertEquals(AdvertStatus.Active, viewModel.state.value.pages.single().adverts.single().status)
+        // The command landed, so the row shows it - and does so without depending on a read that
+        // is failing. Reconciliation with OLX happens on the next pull-to-refresh.
+        assertEquals(AdvertStatus.RemovedByUser, viewModel.state.value.pages.single().adverts.single().status)
         // Still counts as a success, so the sheet closes and the snackbar behind it is visible.
         assertNull(viewModel.state.value.advertSheet)
     }

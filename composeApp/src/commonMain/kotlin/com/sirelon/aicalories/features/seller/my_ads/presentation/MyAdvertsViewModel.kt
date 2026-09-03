@@ -479,13 +479,50 @@ class MyAdvertsViewModel internal constructor(
         // pressed, which reads as nothing having happened - and the confirmation snackbar is
         // rendered by the screen underneath, so while the sheet is up it is not even visible.
         setState { it.copy(advertSheet = it.advertSheet?.takeIf { sheet -> sheet.advert.id != advert.id }) }
+
+        // OLX accepted the command - it answered 204 - but its list endpoint keeps reporting the
+        // old status for a moment afterwards, so refetching here returned `active` for a listing
+        // that had just been taken down. The badge did not change, and reopening the sheet
+        // offered Deactivate on a listing that was already down.
+        //
+        // So the row takes the status the command implies, and is then left alone. Pull to
+        // refresh, a page switch or the next screen entry reconciles it with OLX. This is the
+        // optimistic update SIR-101 asked for; the per-row pending state alone was not enough.
+        //
+        // Applied before the message, so the state a seller sees never lags what they are told.
+        val expected = expectedStatusAfter(action)
+        expected?.let { setStatusLocally(localIndex, advert.id, it) }
+
         postEffect(Effect.ShowMessage(getString(successMessageFor(action))))
 
-        // Refetch the list rather than patching the one row. OLX takes a moment to settle a
-        // status after a command, so a single-advert re-read straight afterwards reported the
-        // state the listing had just left - and reopening the sheet offered the same actions
-        // again, as if nothing had happened.
-        fetchPage(localIndex)
+        // Extend changes only `valid_to`, so there is no status to anticipate and a refetch is
+        // the only way to show the new date.
+        if (expected == null) fetchPage(localIndex)
+    }
+
+    /**
+     * The status OLX's documented lifecycle puts an advert in after [action] succeeds, or null
+     * when the action does not change status. `deactivate` is the seller taking their own listing
+     * down, which OLX reports as `removed_by_user`; `activate` puts it back to `active`.
+     */
+    private fun expectedStatusAfter(action: AdvertAction): AdvertStatus? = when (action) {
+        AdvertAction.Deactivate -> AdvertStatus.RemovedByUser
+        AdvertAction.Reactivate -> AdvertStatus.Active
+        AdvertAction.Extend,
+        AdvertAction.Delete,
+        AdvertAction.Edit -> null
+    }
+
+    private fun setStatusLocally(localIndex: Int, advertId: Long, status: AdvertStatus) {
+        setState { state ->
+            state.updatePage(localIndex) { page ->
+                page.copy(
+                    adverts = page.adverts.map { row ->
+                        if (row.id == advertId) row.copy(status = status) else row
+                    },
+                )
+            }
+        }
     }
 
     private suspend fun onActionFailed(
