@@ -45,6 +45,7 @@ import com.sirelon.sellsnap.features.seller.openai.OpenAIClient
 import com.aallam.openai.client.OpenAI
 import com.aallam.openai.client.OpenAIConfig
 import com.sirelon.sellsnap.features.seller.location.data.LocationStore
+import com.sirelon.sellsnap.features.seller.my_ads.data.AdvertOutcomeStore
 import com.sirelon.sellsnap.features.seller.profile.data.SellerAccountRepository
 import com.sirelon.sellsnap.startup.AnalyticsConsentRepository
 import com.sirelon.sellsnap.startup.AnalyticsConsentStore
@@ -65,11 +66,13 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import kotlinx.serialization.json.Json
+import kotlinx.coroutines.flow.first
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
 /**
@@ -264,14 +267,20 @@ class PreviewAdViewModelTest {
         val harness = harness(engine, accountStore)
         val viewModel = buildViewModel(harness)
         viewModel.setState { it.copy(selectedCategory = testCategory, location = testLocation) }
-        val effects = mutableListOf<PreviewAdEffect>()
-        backgroundScope.launch { viewModel.effects.collect { effects += it } }
-
         viewModel.onEvent(PreviewAdEvent.Publish)
-        advanceUntilIdle()
 
-        assertFalse(effects.any { it is PreviewAdEffect.PublishFailure }, "a dead token must not surface the generic failure message")
-        val reconnect = effects.filterIsInstance<PreviewAdEffect.PublishNeedsReconnect>().single()
+        // Awaited rather than collected-then-`advanceUntilIdle()`: the failure path resolves its
+        // message through compose-resources `getString`, which hops off the test dispatcher, so
+        // draining the virtual scheduler does not guarantee the effect has been posted yet. The
+        // effects channel is buffered, so awaiting it cannot miss an already-sent one.
+        // No `withTimeout`: inside `runTest` that runs on virtual time and would fire the moment
+        // the scheduler idles, i.e. before the real resource load finishes. `runTest`'s own
+        // real-time watchdog is what fails this test if the effect never arrives.
+        val effect = viewModel.effects.first()
+
+        // Asserting on the FIRST effect covers both halves at once: a dead token must produce the
+        // named reconnect action, and must not fall through to the generic publish failure.
+        val reconnect = assertIs<PreviewAdEffect.PublishNeedsReconnect>(effect)
         assertTrue(reconnect.message.contains("Seller One"))
         assertTrue(reconnect.actionLabel.contains("Seller One"))
     }
@@ -350,6 +359,7 @@ class PreviewAdViewModelTest {
                 compactJson = testJson,
             ),
             adGenerationLogRepository = NoOpAdGenerationLogRepository,
+            advertOutcomeStore = AdvertOutcomeStore(InMemoryOlxKeyValueStore(), testJson),
         )
     }
 
@@ -400,6 +410,7 @@ class PreviewAdViewModelTest {
             locationRepository = locationRepository,
             olxCountryStore = countryStore,
             draftMediaFileStore = FakeDraftMediaFileStore,
+            advertOutcomeStore = AdvertOutcomeStore(InMemoryOlxKeyValueStore(), testJson),
             analyticsConsentRepository = analyticsConsentRepository,
             errorParser = errorParser,
             analytics = analytics,
