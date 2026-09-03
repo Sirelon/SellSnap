@@ -355,7 +355,7 @@
     <string name="advert_state_moderated">OLX відхилив це оголошення. Вам написали на пошту, що виправити — виправте й опублікуйте знову.</string>
     <string name="advert_state_blocked">OLX заблокував це оголошення. Вам написали на пошту причину.</string>
     <string name="advert_state_removed_by_moderator">OLX видалив це оголошення.</string>
-    <string name="advert_state_disabled">Хтось з OLX перевіряє це оголошення вручну, тому це займає більше часу, ніж зазвичай. Вам нічого не потрібно робити.</string>
+    <string name="advert_state_disabled">OLX досі перевіряє це оголошення. Це може зайняти довше, ніж зазвичай — вам нічого не потрібно робити.</string>
     <string name="advert_state_limited">Ви вичерпали безкоштовні оголошення в цій категорії. Придбайте пакет на OLX, щоб опублікувати це оголошення.</string>
     <string name="advert_state_unconfirmed">OLX просить підтвердити це оголошення. Перевірте лист від OLX.</string>
     <string name="advert_state_unpaid">За це оголошення потрібно заплатити на OLX, перш ніж його побачать покупці.</string>

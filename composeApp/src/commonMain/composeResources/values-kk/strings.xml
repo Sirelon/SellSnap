@@ -352,7 +352,7 @@
     <string name="advert_state_moderated">OLX бұл хабарландыруды қабылдамады. Не өзгерту керектігін хатпен жазды — түзетіп, қайта жариялай аласың.</string>
     <string name="advert_state_blocked">OLX бұл хабарландыруды бұғаттады. Себебін хатпен жазды.</string>
     <string name="advert_state_removed_by_moderator">OLX бұл хабарландыруды жойды.</string>
-    <string name="advert_state_disabled">OLX-тегі біреу бұл хабарландыруды қолмен тексеріп жатыр, сондықтан бұл әдеттегіден ұзағырақ созылады. Саған ештеңе істеудің қажеті жоқ.</string>
+    <string name="advert_state_disabled">OLX бұл хабарландыруды әлі тексеріп жатыр. Бұл әдеттегіден ұзағырақ созылуы мүмкін — саған ештеңе істеудің қажеті жоқ.</string>
     <string name="advert_state_limited">Бұл санаттағы тегін хабарландыруларды жұмсап қойдың. Мұны жариялау үшін OLX-тен пакет сатып ал.</string>
     <string name="advert_state_unconfirmed">OLX бұл хабарландыруды растауыңды сұрайды. OLX-тен келген хатты тексер.</string>
     <string name="advert_state_unpaid">Сатып алушылар көру үшін бұл хабарландыруға OLX-те төлем жасау керек.</string>

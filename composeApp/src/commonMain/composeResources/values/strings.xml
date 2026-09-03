@@ -354,7 +354,7 @@
     <string name="advert_state_moderated">OLX turned this listing down. They emailed you what to change — fix it and post it again.</string>
     <string name="advert_state_blocked">OLX blocked this listing. They emailed you why.</string>
     <string name="advert_state_removed_by_moderator">OLX removed this listing.</string>
-    <string name="advert_state_disabled">Someone at OLX is checking this listing by hand, so it takes longer than usual. Nothing for you to do.</string>
+    <string name="advert_state_disabled">OLX is still checking this listing. It can take longer than usual — nothing for you to do.</string>
     <string name="advert_state_limited">You've run out of free listings in this category. Buy a package on OLX to put this one up.</string>
     <string name="advert_state_unconfirmed">OLX needs you to confirm this listing. Check your email from OLX.</string>
     <string name="advert_state_unpaid">This one needs paying for on OLX before buyers can see it.</string>

@@ -352,7 +352,7 @@
     <string name="advert_state_moderated">OLX a refuzat acest anunț. Ți-au trimis un email cu ce trebuie corectat — corectează-l și republică-l.</string>
     <string name="advert_state_blocked">OLX a blocat acest anunț. Ți-au trimis un email cu motivul.</string>
     <string name="advert_state_removed_by_moderator">OLX a eliminat acest anunț.</string>
-    <string name="advert_state_disabled">Cineva de la OLX verifică manual acest anunț, așa că durează mai mult decât de obicei. Nu ai nimic de făcut.</string>
+    <string name="advert_state_disabled">OLX încă verifică acest anunț. Poate dura mai mult decât de obicei — nu ai nimic de făcut.</string>
     <string name="advert_state_limited">Ai epuizat anunțurile gratuite din această categorie. Cumpără un pachet pe OLX ca să îl publici.</string>
     <string name="advert_state_unconfirmed">OLX are nevoie să confirmi acest anunț. Verifică emailul de la OLX.</string>
     <string name="advert_state_unpaid">Acest anunț trebuie plătit pe OLX înainte ca cumpărătorii să îl vadă.</string>

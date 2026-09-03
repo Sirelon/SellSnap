@@ -352,7 +352,7 @@
     <string name="advert_state_moderated">OLX отказа тази обява. Писаха ти по имейл какво да промениш — оправи го и я публикувай отново.</string>
     <string name="advert_state_blocked">OLX блокира тази обява. Писаха ти по имейл защо.</string>
     <string name="advert_state_removed_by_moderator">OLX премахна тази обява.</string>
-    <string name="advert_state_disabled">Някой в OLX преглежда тази обява ръчно, затова отнема повече време от обичайно. Няма какво да правиш.</string>
+    <string name="advert_state_disabled">OLX все още преглежда тази обява. Може да отнеме повече време от обичайното — няма какво да правиш.</string>
     <string name="advert_state_limited">Изчерпа безплатните обяви в тази категория. Купи пакет в OLX, за да публикуваш тази обява.</string>
     <string name="advert_state_unconfirmed">OLX иска да потвърдиш тази обява. Провери имейла от OLX.</string>
     <string name="advert_state_unpaid">Тази обява трябва да се плати в OLX, преди купувачите да я видят.</string>

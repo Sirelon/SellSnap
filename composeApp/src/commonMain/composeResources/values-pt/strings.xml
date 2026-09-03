@@ -352,7 +352,7 @@
     <string name="advert_state_moderated">O OLX recusou este anúncio. Enviaram um email a dizer o que corrigir — corrija-o e publique-o de novo.</string>
     <string name="advert_state_blocked">O OLX bloqueou este anúncio. Enviaram um email a explicar porquê.</string>
     <string name="advert_state_removed_by_moderator">O OLX removeu este anúncio.</string>
-    <string name="advert_state_disabled">Alguém do OLX está a analisar este anúncio manualmente, por isso demora mais do que o habitual. Não tem nada a fazer.</string>
+    <string name="advert_state_disabled">O OLX ainda está a analisar este anúncio. Pode demorar mais do que o habitual — não tem nada a fazer.</string>
     <string name="advert_state_limited">Esgotou os anúncios gratuitos nesta categoria. Compre um pacote no OLX para o publicar.</string>
     <string name="advert_state_unconfirmed">O OLX precisa que confirme este anúncio. Verifique o email do OLX.</string>
     <string name="advert_state_unpaid">Este anúncio tem de ser pago no OLX antes de os compradores o poderem ver.</string>
