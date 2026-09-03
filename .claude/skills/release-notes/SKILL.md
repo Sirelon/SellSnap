@@ -48,10 +48,10 @@ history screen (`composeApp/.../features/whatsnew/`) have real content.
 - **Language codes**: `en` (base, and the fallback `ReleaseMapper.kt` uses when a locale
   key is missing), `uk`, `ru`, `bg`, `kk`, `pl`, `pt`, `ro` — the same 8 as
   `composeApp/src/commonMain/composeResources/values*/`. **`ru` is a verbatim copy of
-  `uk`, never a real Russian translation** — same rule as the `localize` agent
-  (`.claude/agents/localize.md`), because the app has no audience that's Russian-speaking
+  `uk`, never a real russian translation** — same rule as the `localize` agent
+  (`.claude/agents/localize.md`), because the app has no audience that's russian-speaking
   but not Ukrainian-speaking. (This is separate from store-listing copy, which excludes
-  Russian entirely by product decision — see the `sellsnap-release` skill.)
+  russian entirely by product decision — see the `sellsnap-release` skill.)
 - **Source of truth**: `scripts/release-notes.json` — tracked in git (unlike
   `sellsnap-release`'s gitignored `.claude/tmp/release-metadata/`; this content is worth
   keeping history on). Array of release objects, newest first, same shape as the Firestore

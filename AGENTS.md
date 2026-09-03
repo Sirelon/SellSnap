@@ -231,6 +231,7 @@ Most features use some combination of:
 ## Localization
 - New user-facing strings go in `composeApp/src/commonMain/composeResources/values/strings.xml` (English base). Interpolate with `stringResource(id, arg)`; never `String.format`.
 - Translation of new or changed keys into every locale is done by the `localize` agent — `.claude/agents/localize.md` holds the locale map and all translation rules.
+- **No russian, anywhere, by product decision.** `values-ru/strings.xml` is not a translation — it's a byte-identical copy of `values-uk/strings.xml` kept only so a `ru` device/store locale falls back to Ukrainian (see `.claude/agents/localize.md` for the why and the sync step). Do not "fix" it into real russian, and do not add a russian option to the landing page (`docs/index.html`, `docs/assets/landing.js`) or any other SellSnap-facing surface (store listings, screenshots, release notes) — those exclude `ru` entirely, with no fallback shim at all.
 
 ## Edge-to-Edge / Insets Rules
 - New Android-facing Compose screens must respect edge-to-edge.
