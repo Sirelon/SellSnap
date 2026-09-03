@@ -132,7 +132,6 @@
     <string name="my_ads_connect_action">Conectează OLX</string>
     <string name="my_ads_load_more">Încarcă mai multe</string>
     <string name="my_ads_created_at">Creat</string>
-    <string name="my_ads_valid_to">Valabil până la</string>
     <string name="label_value_format">%1$s: %2$s</string>
     <string name="my_ads_untitled">Anunț OLX fără titlu</string>
     <string name="my_ads_price_not_set">Prețul nu este setat</string>
@@ -339,4 +338,99 @@
     <string name="my_ads_reconnect_title">Reconectează acest cont</string>
     <string name="my_ads_reconnect_description">Conexiunea acestui cont cu OLX a expirat. Reconectează-te pentru a-i vedea anunțurile.</string>
     <string name="my_ads_load_failed_account">Nu s-au putut încărca anunțurile pentru %1$s.</string>
+
+    <!-- Ad lifecycle -->
+    <string name="advert_actions_open_on_olx">Vezi pe OLX</string>
+    <string name="advert_action_edit">Editează anunțul</string>
+    <string name="advert_action_extend">Prelungește pentru încă o perioadă</string>
+    <string name="advert_action_deactivate">Retrage</string>
+    <string name="advert_action_reactivate">Reactivează</string>
+    <string name="advert_action_finish">Închide anunțul</string>
+    <string name="advert_action_delete">Șterge de pe OLX</string>
+    <string name="advert_action_in_progress">Lucrăm la asta…</string>
+
+    <!-- Ad lifecycle — states with nothing to act on. Each says what OLX is doing, not what the app can't do. -->
+    <string name="advert_state_new">OLX încă verifică acest anunț. N-ai nimic de făcut până termină.</string>
+    <string name="advert_state_moderated">Un moderator OLX se uită acum la acest anunț. Revine singur de îndată ce termină.</string>
+    <string name="advert_state_blocked">OLX a blocat acest anunț. Doar OLX poate ridica blocarea — verifică emailul de la ei pentru motiv.</string>
+    <string name="advert_state_removed_by_moderator">Un moderator OLX a eliminat acest anunț. Doar OLX îl poate restaura.</string>
+    <string name="advert_state_disabled">OLX a dezactivat acest anunț. Doar OLX îl poate reactiva.</string>
+    <string name="advert_state_unconfirmed">OLX așteaptă să confirmi acest anunț, pe site-ul lor sau în emailul primit de la ei.</string>
+    <string name="advert_state_unpaid">OLX așteaptă plata pentru acest anunț.</string>
+    <string name="advert_state_unknown">OLX nu a stabilit încă o stare pentru acest anunț. Trage pentru a reîmprospăta peste puțin timp.</string>
+
+    <!-- Ad lifecycle — confirmations. Every one says what happens on OLX. -->
+    <string name="advert_confirm_deactivate_message">Nu mai apare pe OLX, iar cumpărătorii nu-l mai găsesc. Nu pierzi nimic — îl poți reactiva oricând vrei.</string>
+    <string name="advert_confirm_finish_title">Închizi acest anunț?</string>
+    <string name="advert_confirm_finish_message">OLX îl marchează ca finalizat și nu-l mai oferă. Anunțul rămâne în contul tău OLX, așa că păstrezi fotografiile și textul.</string>
+    <string name="advert_confirm_finish_action">Închide-l</string>
+    <string name="advert_confirm_delete_title">Ștergi acest anunț de pe OLX?</string>
+    <string name="advert_confirm_delete_message">Asta îl elimină definitiv de pe OLX. Fotografiile și textul dispar odată cu el, și nu există anulare — nici pe OLX, nici aici.</string>
+    <string name="advert_confirm_delete_message_active">Acesta e încă activ, așa că OLX îl retrage mai întâi și apoi îl elimină definitiv. Fotografiile și textul dispar odată cu el, și nu există anulare.</string>
+    <string name="advert_confirm_delete_action">Șterge definitiv</string>
+    <string name="advert_confirm_extend_title">Prelungești acest anunț?</string>
+    <string name="advert_confirm_extend_message">OLX împinge data de expirare mai departe, ca anunțul să rămână activ.</string>
+    <string name="advert_confirm_extend_action">Prelungește-l</string>
+    <string name="advert_confirm_reactivate_title">Reactivezi acest anunț?</string>
+    <string name="advert_confirm_reactivate_message">OLX îl arată din nou cumpărătorilor, cu aceleași fotografii, text și preț.</string>
+    <string name="advert_confirm_reactivate_action">Reactivează-l</string>
+    <string name="advert_confirm_cancel">Anulează</string>
+
+    <!-- Ad lifecycle — did it sell? OLX requires this answer before it will take a listing down. -->
+    <string name="advert_sold_prompt_title">S-a vândut?</string>
+    <string name="advert_sold_prompt_message">OLX întreabă asta înainte să retragă un anunț.</string>
+    <string name="advert_sold_prompt_yes">Da, s-a vândut</string>
+    <string name="advert_sold_prompt_no">Nu, nu s-a vândut</string>
+    <string name="advert_sold_price_title">Cu cât s-a vândut?</string>
+    <string name="advert_sold_price_message">Doar tu vezi asta. Îl ajută pe SellSnap să învețe cu cât se vând de fapt lucrurile tale, ca următorul preț sugerat să fie mai aproape de realitate.</string>
+    <string name="advert_sold_price_label">Preț de vânzare</string>
+    <string name="advert_sold_price_confirm">Salvează și retrage</string>
+    <string name="advert_sold_price_skip">Sari peste</string>
+
+    <!-- Ad lifecycle — results -->
+    <string name="advert_action_done_deactivate">Retras de pe OLX.</string>
+    <string name="advert_action_done_reactivate">Reactivat pe OLX.</string>
+    <string name="advert_action_done_finish">Închis pe OLX.</string>
+    <string name="advert_action_done_delete">Șters de pe OLX.</string>
+    <string name="advert_action_done_extend">Prelungit pe OLX.</string>
+    <string name="advert_action_done_edit">Modificările tale au fost trimise la OLX.</string>
+    <string name="advert_action_done_edit_moderated">Trimis la OLX. Verifică modificarea înainte să redevină activ.</string>
+    <string name="advert_action_failed">OLX a refuzat cererea: %1$s</string>
+    <string name="advert_action_needs_reconnect">%1$s trebuie reconectat pe OLX înainte de a putea modifica acest anunț.</string>
+    <string name="advert_action_failed_generic">Nu am putut contacta OLX pentru asta. Mai încearcă peste puțin timp.</string>
+    <string name="advert_delete_partial">Retras de pe OLX, dar ștergerea a eșuat. Anunțul e încă acolo — încearcă să-l ștergi din nou.</string>
+
+    <!-- Ad lifecycle — expiry -->
+    <string name="advert_expiry_expired">Expirat — cumpărătorii nu-l mai văd</string>
+    <string name="advert_expiry_today">Expiră azi</string>
+    <!-- Pluralisation differs across the Slavic locales, so this is a resource plural rather than a composed string. -->
+    <plurals name="advert_expiry_days_left">
+        <item quantity="one">Mai este %1$d zi</item>
+        <item quantity="few">Mai sunt %1$d zile</item>
+        <item quantity="other">Mai sunt %1$d de zile</item>
+    </plurals>
+    <string name="advert_extend_unavailable">OLX nu permite aplicațiilor să prelungească anunțuri în această țară. Îl poți prelungi în continuare direct pe OLX.</string>
+
+    <!-- Ad lifecycle — statistics -->
+    <string name="advert_stats_title">Cum merge</string>
+    <string name="advert_stats_views">Vizualizări</string>
+    <string name="advert_stats_phone_views">Vizualizări telefon</string>
+    <string name="advert_stats_observing">Urmăritori</string>
+    <string name="advert_stats_empty">Abia publicat — e prea devreme să știm.</string>
+    <string name="advert_stats_failed">Nu am putut încărca datele de pe OLX.</string>
+    <string name="advert_stats_hint_low_views">Puțini îl găsesc. Titlul, categoria sau prețul probabil nu se potrivesc cu ce caută cumpărătorii.</string>
+    <string name="advert_stats_hint_no_calls">Sunt destule vizualizări, dar nimeni nu întreabă. De obicei fotografiile sau prețul îi descurajează.</string>
+    <string name="advert_stats_hint_close">Lumea e interesată și urmărește anunțul. Prețul e aproape — o mică reducere, sau puțină răbdare, ar trebui să rezolve.</string>
+
+    <!-- Ad lifecycle — edit -->
+    <string name="advert_edit_title">Editează anunțul</string>
+    <string name="advert_edit_subtitle">Modificările merg direct la OLX. Tot ce nu atingi rămâne exact cum e.</string>
+    <string name="advert_edit_title_label">Titlu</string>
+    <string name="advert_edit_description_label">Descriere</string>
+    <string name="advert_edit_price_label">Preț</string>
+    <string name="advert_edit_save">Trimite la OLX</string>
+    <string name="advert_edit_will_change">Aceasta se va schimba pe OLX:</string>
+    <string name="advert_edit_change_price">Preț: %1$s → %2$s</string>
+    <string name="advert_edit_photos_note">Fotografiile și detaliile rămân cum sunt — schimbă-le pe OLX deocamdată.</string>
+    <string name="advert_edit_load_failed">Nu am putut încărca acest anunț de pe OLX.</string>
 </resources>

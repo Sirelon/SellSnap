@@ -354,6 +354,17 @@ Most features use some combination of:
   - `features/seller/categories/domain/AttributeValidator.kt`
 - Change price formatting / thousand-separator behavior:
   - `designsystem/InputTransformations.kt` (`DigitOnlyInputTransformation`, `ThousandSeparatorOutputTransformation`)
+- Change what a seller can do to a published listing (deactivate / reactivate / finish / delete /
+  extend / edit / statistics / expiry):
+  - `features/seller/my_ads/domain/AdvertAction.kt` (which actions each `AdvertStatus` may offer)
+  - `features/seller/my_ads/data/AdvertLifecycleRepository.kt` (the OLX calls)
+  - `features/seller/my_ads/presentation/MyAdvertsViewModel.kt` (the flow between them)
+  - `features/seller/my_ads/ui/AdvertActionsSheet.kt` (the one surface it all renders in)
+- Change the sold / not-sold outcome data or the AI price-accuracy measurement:
+  - `features/seller/my_ads/data/AdvertOutcomeStore.kt`
+  - `features/seller/my_ads/domain/AdvertAnalyticsBuckets.kt`
+- Change whether a market may extend listings:
+  - `features/seller/auth/domain/OlxCountry.kt` (`supportsExtendCommand`)
 
 ## Store Assets & Design Assets
 
@@ -447,6 +458,48 @@ These rules apply to every class that directly maps a JSON API response (OLX, Su
 - State updates use `setState { it.copy(...) }`. One-shot side effects use `postEffect(...)`.
 - Repositories return `Flow<T>`; VMs subscribe via `.launchIn(viewModelScope)` and use `.catch { ... }` to keep the stream alive across transient errors. `PreviewAdViewModel` is the canonical reference.
 - `CategoriesRepository` caches the (filtered) category tree via `shareIn(GlobalScope, Lazily, 1)` — see `BUGS.md` for why this is on the cleanup list.
+- **Testing an `Effect` whose text comes from `getString`:** `advanceUntilIdle()` / `runCurrent()`
+  cannot see it. compose-resources loads on its own dispatcher, so the effect is posted after the
+  virtual scheduler has already gone idle. Await it instead — `viewModel.effects.first()`, or
+  `.filterIsInstance<...>().first()` — and do NOT wrap that in `withTimeout`, which runs on
+  `runTest`'s virtual clock and fires the instant the scheduler idles. `runTest`'s own real-time
+  watchdog is what fails the test if the effect never arrives. The drain-then-assert pattern still
+  present in several `PreviewAdViewModelTest` cases is a latent flake, not a model to copy.
+
+### Ad lifecycle (post-publish actions)
+
+- Every advert action resolves its OWN access token via `SellerAccountRepository.accessTokenFor`
+  on the *unauthenticated* `OlxApiClient` (`olxUnauthenticatedApiClientQualifier`), through
+  `my_ads/data/AccountScopedCall.kt`. The shared authorized client only ever serves whichever
+  account is globally active, while My Ads shows every connected account at once — using it here
+  would act on the wrong OLX account. `withAccountToken` wraps exactly ONE request, never a
+  multi-call sequence, because its single reactive refresh retry would otherwise replay a command
+  that already landed.
+- `AdvertAction.availableActions(status, supportsExtendCommand)` is the single source of truth for
+  which actions are offered. An action OLX would reject must never be rendered; `AdvertActionTest`
+  iterates every `AdvertStatus` so a newly added status cannot silently gain one.
+- Commands answer 204 with no body, and OLX may resolve a status differently from what was
+  requested, so a row is always re-read via `GET adverts/{id}` after an action rather than patched
+  from the action that was attempted.
+- `DELETE adverts/{id}` is rejected while an advert is active. Deleting a live listing is
+  deactivate-then-delete, which also means answering OLX's required `is_success`. When only the
+  first half lands, `AdvertDeactivatedNotDeleted` carries the refreshed row so the seller is told
+  the listing is down but still there.
+- `PUT adverts/{id}` takes the full create payload and resets whatever is omitted. Edits therefore
+  re-send `AdvertEditSnapshot.updatePayload` — the raw `data` object from `GET adverts/{id}` minus
+  `AdvertResponseOnlyKeys` — with only the edited keys replaced. Never rebuild a PUT body from app
+  state. Photo and attribute editing stays out until the live checks in
+  `SPIKE-SIR-99-advert-edit-round-trip.md` are closed against a real advert.
+- `extend` is rejected by OLX in Ukraine and Portugal (`OlxCountry.supportsExtendCommand`). There
+  is deliberately no publish-time `auto_extend_enabled` toggle: whether OLX honours the flag in
+  Ukraine is unverified, and a toggle that silently does nothing is worse than none. See
+  `SPIKE-SIR-100-auto-extend.md`.
+- Lifecycle analytics carry buckets and enums only — `AdvertAnalyticsBuckets`. No absolute prices,
+  no advert ids, no titles. `AdvertOutcomeStore` holds the raw figures on-device and is cleared by
+  `SellerAccountRepository.deleteSellSnapAccountData`.
+- Only `OlxApiError.ValidationError.fieldDetail` may be shown to a seller — that is OLX's own
+  response text. Every other `OlxApiError.userMessage` is an English developer diagnostic; the
+  presentation layer must substitute a localized string.
 
 ### Category filtering
 

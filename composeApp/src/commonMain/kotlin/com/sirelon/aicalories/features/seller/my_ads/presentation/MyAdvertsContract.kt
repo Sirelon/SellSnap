@@ -1,6 +1,8 @@
 package com.sirelon.sellsnap.features.seller.my_ads.presentation
 
 import androidx.compose.runtime.Immutable
+import com.sirelon.sellsnap.features.seller.auth.domain.OlxAdvertStatistics
+import com.sirelon.sellsnap.features.seller.my_ads.domain.AdvertAction
 import com.sirelon.sellsnap.features.seller.my_ads.model.MyAdvertItem
 
 interface MyAdvertsContract {
@@ -30,6 +32,71 @@ interface MyAdvertsContract {
         val hasLoaded: Boolean = false,
     )
 
+    /**
+     * The open advert sheet (SIR-101/103/105). Everything a seller can do with one listing lives
+     * here rather than in a new screen: the state OLX has it in, how long it has left, how it is
+     * performing, and the actions OLX will actually accept.
+     */
+    @Immutable
+    data class AdvertSheet(
+        val localIndex: Int,
+        val advert: MyAdvertItem,
+        /** Only what OLX will accept for this status - see
+         * [com.sirelon.sellsnap.features.seller.my_ads.domain.availableActions]. Empty means the
+         * state is explained instead. */
+        val actions: List<AdvertAction>,
+        /** Live listing in a market where OLX rejects `extend`. Shown as a note, never a button. */
+        val extendUnavailableHere: Boolean,
+        val statistics: OlxAdvertStatistics? = null,
+        val isLoadingStatistics: Boolean = false,
+        val statisticsFailed: Boolean = false,
+        /** Non-null while an action is in flight. Every action is disabled meanwhile, so a
+         * double tap cannot send a command twice - the second one would fail against OLX for a
+         * status the advert has already left. */
+        val pendingAction: AdvertAction? = null,
+    )
+
+    /** A destructive or state-changing action waiting on an explicit yes (SIR-101). */
+    @Immutable
+    data class ActionConfirm(
+        val localIndex: Int,
+        val advert: MyAdvertItem,
+        val action: AdvertAction,
+    )
+
+    /**
+     * OLX's "did it sell?" (SIR-102). Not an added feature: `deactivate` will not be accepted
+     * without an answer, so this fires on the only path that can take a listing down.
+     *
+     * [thenDelete] marks the prompt as a step inside deleting a live listing rather than a plain
+     * take-down - an active advert has to be deactivated before OLX accepts a delete, so the
+     * question is unavoidable there too.
+     */
+    @Immutable
+    data class SoldPrompt(
+        val localIndex: Int,
+        val advert: MyAdvertItem,
+        val thenDelete: Boolean,
+        /** True once the seller answered "it sold" and is being asked for the price. */
+        val askingPrice: Boolean = false,
+        val isSubmitting: Boolean = false,
+    )
+
+    /** The edit sheet (SIR-104). Text and price only; see [MyAdvertsViewModel.editSnapshot]. */
+    @Immutable
+    data class AdvertEdit(
+        val localIndex: Int,
+        val advert: MyAdvertItem,
+        val isLoading: Boolean = true,
+        val loadFailed: Boolean = false,
+        val isSaving: Boolean = false,
+        /** Seeded from `GET adverts/{id}`, which is the only place the description exists - the
+         * list call does not return it. */
+        val title: String = "",
+        val description: String = "",
+        val priceValue: Long? = null,
+    )
+
     @Immutable
     data class State(
         val pages: List<AccountPage> = emptyList(),
@@ -37,6 +104,10 @@ interface MyAdvertsContract {
         /** No accounts at all for the current country - distinct from any single page's
          * [AccountPage.needsReconnect]. */
         val requiresOlxConnection: Boolean = false,
+        val advertSheet: AdvertSheet? = null,
+        val actionConfirm: ActionConfirm? = null,
+        val soldPrompt: SoldPrompt? = null,
+        val advertEdit: AdvertEdit? = null,
     )
 
     sealed interface Event {
@@ -46,7 +117,23 @@ interface MyAdvertsContract {
         data class ReconnectClicked(val localIndex: Int) : Event
         data object ConnectOlxClicked : Event
         data object CreateListingClicked : Event
-        data class AdvertClicked(val advert: MyAdvertItem) : Event
+        data class AdvertClicked(val localIndex: Int, val advert: MyAdvertItem) : Event
+
+        data object AdvertSheetDismissed : Event
+        data object OpenOnOlxClicked : Event
+
+        /** Routes through [ActionConfirm] or [SoldPrompt] first where one is warranted. */
+        data class ActionClicked(val action: AdvertAction) : Event
+        data object ActionConfirmed : Event
+        data object ActionDismissed : Event
+
+        data class SoldAnswered(val isSold: Boolean) : Event
+        /** Null price means the seller skipped the optional field, which stays a completed answer. */
+        data class SoldPriceSubmitted(val price: Long?) : Event
+        data object SoldPromptDismissed : Event
+
+        data class EditSubmitted(val title: String, val description: String, val price: Long?) : Event
+        data object EditDismissed : Event
     }
 
     sealed interface Effect {

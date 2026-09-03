@@ -132,7 +132,6 @@
     <string name="my_ads_connect_action">Ligar o OLX</string>
     <string name="my_ads_load_more">Carregar mais</string>
     <string name="my_ads_created_at">Criado</string>
-    <string name="my_ads_valid_to">Válido até</string>
     <string name="label_value_format">%1$s: %2$s</string>
     <string name="my_ads_untitled">Anúncio OLX sem título</string>
     <string name="my_ads_price_not_set">Preço não definido</string>
@@ -339,4 +338,98 @@
     <string name="my_ads_reconnect_title">Reconecte esta conta</string>
     <string name="my_ads_reconnect_description">A ligação desta conta ao OLX expirou. Reconecte para ver os anúncios dela.</string>
     <string name="my_ads_load_failed_account">Não foi possível carregar os anúncios de %1$s.</string>
+
+    <!-- Ad lifecycle -->
+    <string name="advert_actions_open_on_olx">Ver no OLX</string>
+    <string name="advert_action_edit">Editar anúncio</string>
+    <string name="advert_action_extend">Prolongar por mais um período</string>
+    <string name="advert_action_deactivate">Retirar</string>
+    <string name="advert_action_reactivate">Reativar</string>
+    <string name="advert_action_finish">Terminar anúncio</string>
+    <string name="advert_action_delete">Eliminar do OLX</string>
+    <string name="advert_action_in_progress">A trabalhar nisso…</string>
+
+    <!-- Ad lifecycle — states with nothing to act on. Each says what OLX is doing, not what the app can't do. -->
+    <string name="advert_state_new">O OLX ainda está a rever este anúncio. Não há nada a fazer até terminar.</string>
+    <string name="advert_state_moderated">Um moderador do OLX está a analisar este anúncio. Volta sozinho assim que terminar.</string>
+    <string name="advert_state_blocked">O OLX bloqueou este anúncio. Só o OLX pode desbloquear — verifique o email deles para saber o motivo.</string>
+    <string name="advert_state_removed_by_moderator">Um moderador do OLX removeu este anúncio. Só o OLX pode restaurá-lo.</string>
+    <string name="advert_state_disabled">O OLX desativou este anúncio. Só o OLX pode reativá-lo.</string>
+    <string name="advert_state_unconfirmed">O OLX está à espera que confirme este anúncio, no site deles ou no email que lhe enviaram.</string>
+    <string name="advert_state_unpaid">O OLX está à espera do pagamento deste anúncio.</string>
+    <string name="advert_state_unknown">O OLX ainda não definiu um estado para este anúncio. Puxe para atualizar daqui a pouco.</string>
+
+    <!-- Ad lifecycle — confirmations. Every one says what happens on OLX. -->
+    <string name="advert_confirm_deactivate_message">Deixa de aparecer no OLX e os compradores já não o encontram. Não perde nada — pode reativá-lo quando quiser.</string>
+    <string name="advert_confirm_finish_title">Terminar este anúncio?</string>
+    <string name="advert_confirm_finish_message">O OLX marca-o como terminado e deixa de o oferecer. O anúncio mantém-se na sua conta OLX, por isso guarda as fotos e o texto.</string>
+    <string name="advert_confirm_finish_action">Terminar</string>
+    <string name="advert_confirm_delete_title">Eliminar este anúncio do OLX?</string>
+    <string name="advert_confirm_delete_message">Isto remove-o do OLX permanentemente. As fotos e o texto vão com ele, e não há como desfazer — nem no OLX, nem aqui.</string>
+    <string name="advert_confirm_delete_message_active">Este ainda está ativo, por isso o OLX retira-o primeiro e depois elimina-o permanentemente. As fotos e o texto vão com ele, e não há como desfazer.</string>
+    <string name="advert_confirm_delete_action">Eliminar permanentemente</string>
+    <string name="advert_confirm_extend_title">Prolongar este anúncio?</string>
+    <string name="advert_confirm_extend_message">O OLX adia a data de expiração para o anúncio continuar ativo.</string>
+    <string name="advert_confirm_extend_action">Prolongar</string>
+    <string name="advert_confirm_reactivate_title">Reativar este anúncio?</string>
+    <string name="advert_confirm_reactivate_message">O OLX volta a mostrá-lo aos compradores, com as mesmas fotos, texto e preço.</string>
+    <string name="advert_confirm_reactivate_action">Reativar</string>
+    <string name="advert_confirm_cancel">Cancelar</string>
+
+    <!-- Ad lifecycle — did it sell? OLX requires this answer before it will take a listing down. -->
+    <string name="advert_sold_prompt_title">Vendeu?</string>
+    <string name="advert_sold_prompt_message">O OLX pergunta isto antes de retirar um anúncio.</string>
+    <string name="advert_sold_prompt_yes">Sim, vendeu</string>
+    <string name="advert_sold_prompt_no">Não, não vendeu</string>
+    <string name="advert_sold_price_title">Por quanto vendeu?</string>
+    <string name="advert_sold_price_message">Só você vê isto. Ajuda o SellSnap a aprender por quanto as suas coisas realmente se vendem, para o próximo preço sugerido ser mais certeiro.</string>
+    <string name="advert_sold_price_label">Preço de venda</string>
+    <string name="advert_sold_price_confirm">Guardar e retirar</string>
+    <string name="advert_sold_price_skip">Saltar</string>
+
+    <!-- Ad lifecycle — results -->
+    <string name="advert_action_done_deactivate">Retirado do OLX.</string>
+    <string name="advert_action_done_reactivate">Reativado no OLX.</string>
+    <string name="advert_action_done_finish">Terminado no OLX.</string>
+    <string name="advert_action_done_delete">Eliminado do OLX.</string>
+    <string name="advert_action_done_extend">Prolongado no OLX.</string>
+    <string name="advert_action_done_edit">As suas alterações foram enviadas ao OLX.</string>
+    <string name="advert_action_done_edit_moderated">Enviado ao OLX. Estão a rever a alteração antes de voltar a ficar ativo.</string>
+    <string name="advert_action_failed">O OLX recusou esse pedido: %1$s</string>
+    <string name="advert_action_needs_reconnect">%1$s precisa de ser reconectada ao OLX antes de poder alterar este anúncio.</string>
+    <string name="advert_action_failed_generic">Não foi possível contactar o OLX para isso. Tente novamente daqui a pouco.</string>
+    <string name="advert_delete_partial">Retirado do OLX, mas a eliminação falhou. O anúncio ainda lá está — tente eliminá-lo novamente.</string>
+
+    <!-- Ad lifecycle — expiry -->
+    <string name="advert_expiry_expired">Expirado — os compradores não o veem</string>
+    <string name="advert_expiry_today">Expira hoje</string>
+    <!-- Pluralisation differs across the Slavic locales, so this is a resource plural rather than a composed string. -->
+    <plurals name="advert_expiry_days_left">
+        <item quantity="one">Falta %1$d dia</item>
+        <item quantity="other">Faltam %1$d dias</item>
+    </plurals>
+    <string name="advert_extend_unavailable">O OLX não permite que aplicações prolonguem anúncios neste país. Ainda pode prolongá-lo diretamente no OLX.</string>
+
+    <!-- Ad lifecycle — statistics -->
+    <string name="advert_stats_title">Como está a correr</string>
+    <string name="advert_stats_views">Visualizações</string>
+    <string name="advert_stats_phone_views">Visualizações do telefone</string>
+    <string name="advert_stats_observing">Interessados</string>
+    <string name="advert_stats_empty">Acabado de publicar — ainda é cedo para saber.</string>
+    <string name="advert_stats_failed">Não foi possível carregar os números do OLX.</string>
+    <string name="advert_stats_hint_low_views">Poucas pessoas o encontram. O título, a categoria ou o preço provavelmente não correspondem ao que os compradores procuram.</string>
+    <string name="advert_stats_hint_no_calls">Há bastantes visualizações, mas ninguém pergunta. Normalmente são as fotos ou o preço que afastam as pessoas.</string>
+    <string name="advert_stats_hint_close">Há gente interessada e a acompanhar. O preço está perto — uma pequena descida, ou paciência, deve resolver.</string>
+
+    <!-- Ad lifecycle — edit -->
+    <string name="advert_edit_title">Editar anúncio</string>
+    <string name="advert_edit_subtitle">As alterações vão diretamente para o OLX. Tudo o que não tocar mantém-se exatamente igual.</string>
+    <string name="advert_edit_title_label">Título</string>
+    <string name="advert_edit_description_label">Descrição</string>
+    <string name="advert_edit_price_label">Preço</string>
+    <string name="advert_edit_save">Enviar para o OLX</string>
+    <string name="advert_edit_will_change">Isto vai mudar no OLX:</string>
+    <string name="advert_edit_change_price">Preço: %1$s → %2$s</string>
+    <string name="advert_edit_photos_note">As fotos e os detalhes mantêm-se como estão — altere-os no OLX por agora.</string>
+    <string name="advert_edit_load_failed">Não foi possível carregar este anúncio do OLX.</string>
 </resources>
