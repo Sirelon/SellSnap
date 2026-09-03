@@ -47,6 +47,10 @@ interface MyAdvertsContract {
         val actions: List<AdvertAction>,
         /** Live listing in a market where OLX rejects `extend`. Shown as a note, never a button. */
         val extendUnavailableHere: Boolean,
+        /** OLX's own explanation, fetched only for an advert with no actions - see
+         * [MyAdvertsViewModel]. Preferred over this app's per-status copy whenever OLX has
+         * something to say, because the status vocabulary has no documented meaning. */
+        val olxReason: String? = null,
         val statistics: OlxAdvertStatistics? = null,
         val isLoadingStatistics: Boolean = false,
         val statisticsFailed: Boolean = false,

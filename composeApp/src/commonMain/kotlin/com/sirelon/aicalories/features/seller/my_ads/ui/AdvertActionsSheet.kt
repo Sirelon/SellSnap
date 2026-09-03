@@ -80,9 +80,11 @@ fun AdvertActionsSheet(
     ) {
         AdvertSummary(advert = sheet.advert)
 
-        statusExplanation(sheet.advert.status)?.let { explanation ->
-            StateNote(text = stringResource(explanation), isWarning = true)
-        }
+        // OLX's own words when it has any, this app's per-status copy otherwise. Quoting OLX is
+        // the same principle the action errors already follow, and here it is the only account of
+        // the state that is actually authoritative.
+        val explanation = sheet.olxReason ?: statusExplanation(sheet.advert.status)?.let { stringResource(it) }
+        explanation?.let { StateNote(text = it, isWarning = true) }
 
         if (sheet.extendUnavailableHere) {
             StateNote(text = stringResource(Res.string.advert_extend_unavailable), isWarning = false)

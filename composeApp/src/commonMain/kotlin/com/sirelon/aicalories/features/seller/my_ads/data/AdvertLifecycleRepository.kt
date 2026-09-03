@@ -83,6 +83,12 @@ internal class AdvertLifecycleRepository(
             unauthenticatedOlxApiClient.getAdvertStatistics(accessToken, advertId)
         }
 
+    /** OLX's own explanation for an advert the app cannot act on, or null if it has none. */
+    suspend fun moderationReason(localIndex: Int, advertId: Long): String? =
+        accountRepository.withAccountToken(localIndex) { accessToken ->
+            unauthenticatedOlxApiClient.getAdvertModerationReason(accessToken, advertId)
+        }
+
     suspend fun loadForEdit(localIndex: Int, advertId: Long): AdvertEditSnapshot =
         accountRepository.withAccountToken(localIndex) { accessToken ->
             unauthenticatedOlxApiClient.getAdvert(accessToken, advertId)

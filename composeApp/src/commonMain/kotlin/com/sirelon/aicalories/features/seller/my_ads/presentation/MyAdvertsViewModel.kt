@@ -306,6 +306,23 @@ class MyAdvertsViewModel internal constructor(
             )
         }
         loadStatistics(localIndex, advert.id)
+
+        // Nothing this app can do with this advert, so ask OLX why rather than showing a guess.
+        // Whether OLX answers is also the only reliable signal available: the status vocabulary
+        // documents no per-status meaning, and `disabled` has been observed on a listing that was
+        // live and editable on OLX's own site.
+        if (availableActions(advert.status, supportsExtend).isEmpty()) {
+            loadModerationReason(localIndex, advert.id)
+        }
+    }
+
+    private fun loadModerationReason(localIndex: Int, advertId: Long) {
+        viewModelScope.launch {
+            runCatching { lifecycleRepository.moderationReason(localIndex, advertId) }
+                .onSuccess { reason ->
+                    if (reason != null) updateSheet(advertId) { it.copy(olxReason = reason) }
+                }
+        }
     }
 
     private fun loadStatistics(localIndex: Int, advertId: Long) {

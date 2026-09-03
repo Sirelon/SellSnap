@@ -18,6 +18,7 @@ import io.ktor.http.content.TextContent
 import io.ktor.http.headersOf
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
@@ -304,4 +305,44 @@ class AdvertLifecycleApiTest {
             errorParser = errorParser,
         )
     }
+    @Test
+    fun `moderation reason strips the HTML OLX sends and yields plain text`() = runBlocking {
+        val engine = MockEngine {
+            respond(
+                // Unwrapped, and HTML per the spec - the same text OLX emails the seller.
+                """{"email_notification":"<p>Your advert was <b>moderated</b> because it&nbsp;promotes restricted items.</p>"}""",
+                status = HttpStatusCode.OK,
+                headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
+            )
+        }
+        val reason = apiClient(engine).getAdvertModerationReason("token", 42L)
+
+        // Shown inside a sentence in a bottom sheet, so the markup has to go - and OLX controls it.
+        assertEquals("Your advert was moderated because it promotes restricted items.", reason)
+    }
+
+    @Test
+    fun `an advert OLX has nothing to say about is not an error`() = runBlocking<Unit> {
+        // A 404 is the ordinary answer for an advert that was never moderated. Treating it as a
+        // failure would put an error in front of the seller for a perfectly normal listing.
+        val notFound = MockEngine {
+            respond(
+                """{"error":{"status":404,"title":"Not found"}}""",
+                status = HttpStatusCode.NotFound,
+                headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
+            )
+        }
+        assertNull(apiClient(notFound).getAdvertModerationReason("token", 42L))
+
+        // Same for an empty reason: nothing to quote means fall back to the app's own copy.
+        val blank = MockEngine {
+            respond(
+                """{"email_notification":""}""",
+                status = HttpStatusCode.OK,
+                headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
+            )
+        }
+        assertNull(apiClient(blank).getAdvertModerationReason("token", 42L))
+    }
+
 }

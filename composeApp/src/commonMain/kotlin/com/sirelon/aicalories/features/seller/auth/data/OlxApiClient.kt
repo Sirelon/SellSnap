@@ -6,6 +6,7 @@ import com.sirelon.sellsnap.features.seller.auth.data.response.OlxAdvertDetailRe
 import com.sirelon.sellsnap.features.seller.auth.data.response.OlxAdvertDetailRootResponse
 import com.sirelon.sellsnap.features.seller.auth.data.response.OlxAdvertStatisticsResponse
 import com.sirelon.sellsnap.features.seller.auth.data.response.OlxAdvertsRootResponse
+import com.sirelon.sellsnap.features.seller.auth.data.response.OlxModerationReasonResponse
 import com.sirelon.sellsnap.features.seller.auth.data.response.PostAdvertRootResponse
 import com.sirelon.sellsnap.features.seller.auth.data.response.OlxUserRootResponse
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxAdvert
@@ -34,6 +35,7 @@ import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
+import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import kotlinx.serialization.SerializationException
@@ -189,6 +191,31 @@ class OlxApiClient(
     internal suspend fun deleteAdvert(accessToken: String, advertId: Long) {
         val response = httpClient.delete("adverts/$advertId") { bearerAuth(accessToken) }
         response.ensureSuccess()
+    }
+
+    /**
+     * `GET adverts/{id}/moderation-reason`. OLX's own words for why an advert is in the state it
+     * is in, or null when it has none - a 404 is a perfectly ordinary answer here and must not
+     * surface as an error.
+     *
+     * Whether OLX answers at all is itself the useful signal: the status vocabulary has no
+     * documented per-status meaning, so an advert that returns a reason is one OLX considers
+     * moderated, whatever its status string happens to be called.
+     */
+    internal suspend fun getAdvertModerationReason(accessToken: String, advertId: Long): String? {
+        val response = httpClient.get("adverts/$advertId/moderation-reason") { bearerAuth(accessToken) }
+        if (response.status == HttpStatusCode.NotFound) return null
+        response.ensureSuccess()
+
+        val payload = response.bodyAsText()
+        if (payload.isBlank()) return null
+
+        return try {
+            json.decodeFromString<OlxModerationReasonResponse>(payload).toDomain()
+        } catch (exception: SerializationException) {
+            // Diagnostic text only. An unparseable reason is not worth failing the sheet over.
+            null
+        }
     }
 
     /**
