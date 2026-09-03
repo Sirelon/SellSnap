@@ -888,14 +888,19 @@ class MyAdvertsViewModelTest {
         viewModel.onEvent(Event.ActionClicked(AdvertAction.Deactivate))
         runCurrent()
         viewModel.onEvent(Event.SoldAnswered(isSold = false))
-        runCurrent()
+
+        // Awaited, not drained: the confirmation message is resolved through compose-resources
+        // `getString`, which hops off the test dispatcher, so `runCurrent()` can return before
+        // the action has finished reporting itself.
+        viewModel.effects.filterIsInstance<MyAdvertsContract.Effect.ShowMessage>().first()
 
         assertEquals(1, commandsSent)
         assertEquals("success", analytics.paramsFor(AnalyticsEvents.ADVERT_ACTION)?.get("result"))
         // The row keeps its old status rather than being patched from what was requested - OLX
         // may resolve it differently, and guessing would be worse than being briefly stale.
         assertEquals(AdvertStatus.Active, viewModel.state.value.pages.single().adverts.single().status)
-        assertNull(assertNotNull(viewModel.state.value.advertSheet).pendingAction)
+        // Still counts as a success, so the sheet closes and the snackbar behind it is visible.
+        assertNull(viewModel.state.value.advertSheet)
     }
 
     @Test
@@ -932,8 +937,8 @@ class MyAdvertsViewModelTest {
         val advert = viewModel.state.value.pages.single().adverts.single()
         viewModel.onEvent(Event.AdvertClicked(localIndex = 1, advert = advert))
         runCurrent()
-        // Expired advert: Finish is offered and confirms without the sold prompt.
-        viewModel.onEvent(Event.ActionClicked(AdvertAction.Finish))
+        // Expired advert: Reactivate confirms without going through the sold prompt.
+        viewModel.onEvent(Event.ActionClicked(AdvertAction.Reactivate))
         runCurrent()
         viewModel.onEvent(Event.ActionConfirmed)
         runCurrent()
@@ -946,14 +951,16 @@ class MyAdvertsViewModelTest {
         viewModel.onEvent(Event.AdvertClicked(localIndex = 1, advert = advert))
         runCurrent()
 
-        assertEquals(AdvertAction.Finish, assertNotNull(viewModel.state.value.advertSheet).pendingAction)
-        viewModel.onEvent(Event.ActionClicked(AdvertAction.Finish))
+        assertEquals(AdvertAction.Reactivate, assertNotNull(viewModel.state.value.advertSheet).pendingAction)
+        viewModel.onEvent(Event.ActionClicked(AdvertAction.Reactivate))
         runCurrent()
         assertEquals(1, commandsSent)
 
         commandGate.complete(Unit)
         runCurrent()
-        assertNull(assertNotNull(viewModel.state.value.advertSheet).pendingAction)
+        // The sheet closes on success: leaving it open showed the seller the buttons they had
+        // just pressed, which reads as nothing having happened.
+        assertNull(viewModel.state.value.advertSheet)
     }
 
     @Test
@@ -1139,7 +1146,7 @@ class MyAdvertsViewModelTest {
         harness.accountStore.markNeedsReconnect(1)
         runCurrent()
 
-        viewModel.onEvent(Event.ActionClicked(AdvertAction.Finish))
+        viewModel.onEvent(Event.ActionClicked(AdvertAction.Reactivate))
         runCurrent()
         viewModel.onEvent(Event.ActionConfirmed)
 

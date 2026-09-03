@@ -22,6 +22,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.PrimaryTabRow
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Tab
@@ -352,7 +353,14 @@ private fun AccountPageContent(
     page: AccountPage,
     onEvent: (Event) -> Unit,
 ) {
-    LoadingOverlay(isLoading = page.isLoading) {
+    // Pull down to refresh, per page. A lifecycle action can change a listing's state on OLX's
+    // side after the fact - moderation picking it up, an expiry passing - so the seller needs a
+    // way to re-read the list that does not involve finding the toolbar button.
+    PullToRefreshBox(
+        isRefreshing = page.isLoading,
+        onRefresh = { onEvent(Event.RefreshClicked(page.localIndex)) },
+        modifier = Modifier.fillMaxSize(),
+    ) {
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
@@ -415,6 +423,12 @@ private fun AccountPageContent(
             item {
                 Spacer(modifier = Modifier.height(AppDimens.Spacing.xl3))
             }
+        }
+
+        // Only the first load blanks the page; a pull-to-refresh has its own indicator and must
+        // not hide the list the seller is looking at.
+        if (page.isLoading && !page.hasLoaded) {
+            LoadingOverlay(isLoading = true) {}
         }
     }
 }

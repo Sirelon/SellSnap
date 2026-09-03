@@ -30,7 +30,7 @@ class AdvertActionTest {
 
     @Test
     fun `availableActions offers reactivate finish and delete for a taken-down listing regardless of extend support`() {
-        val expected = listOf(AdvertAction.Reactivate, AdvertAction.Finish, AdvertAction.Delete)
+        val expected = listOf(AdvertAction.Reactivate, AdvertAction.Delete)
 
         for (supportsExtend in listOf(true, false)) {
             assertEquals(expected, availableActions(AdvertStatus.RemovedByUser, supportsExtendCommand = supportsExtend))

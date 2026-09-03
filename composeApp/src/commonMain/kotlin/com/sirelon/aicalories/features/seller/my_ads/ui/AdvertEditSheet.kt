@@ -3,23 +3,26 @@ package com.sirelon.sellsnap.features.seller.my_ads.ui
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.rememberTextFieldState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.key
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import com.sirelon.sellsnap.designsystem.AppDimens
 import com.sirelon.sellsnap.designsystem.AppTheme
 import com.sirelon.sellsnap.designsystem.DigitOnlyInputTransformation
-import com.sirelon.sellsnap.designsystem.formatPrice
+import com.sirelon.sellsnap.designsystem.dismissKeyboardOnTapOutside
+import com.sirelon.sellsnap.designsystem.rememberKeyboardDismissAction
 import com.sirelon.sellsnap.designsystem.ThousandSeparatorOutputTransformation
 import com.sirelon.sellsnap.designsystem.TransparentInput
 import com.sirelon.sellsnap.designsystem.buttons.AppButton
@@ -32,14 +35,10 @@ import com.sirelon.sellsnap.generated.resources.advert_action_in_progress
 import com.sirelon.sellsnap.generated.resources.advert_confirm_cancel
 import com.sirelon.sellsnap.generated.resources.advert_edit_description_label
 import com.sirelon.sellsnap.generated.resources.advert_edit_load_failed
-import com.sirelon.sellsnap.generated.resources.advert_edit_photos_note
 import com.sirelon.sellsnap.generated.resources.advert_edit_price_label
 import com.sirelon.sellsnap.generated.resources.advert_edit_save
-import com.sirelon.sellsnap.generated.resources.advert_edit_subtitle
 import com.sirelon.sellsnap.generated.resources.advert_edit_title
 import com.sirelon.sellsnap.generated.resources.advert_edit_title_label
-import com.sirelon.sellsnap.generated.resources.advert_edit_change_price
-import com.sirelon.sellsnap.generated.resources.advert_edit_will_change
 import org.jetbrains.compose.resources.stringResource
 
 /**
@@ -55,6 +54,9 @@ import org.jetbrains.compose.resources.stringResource
  * its own image URLs back, and whether single-select attributes come back as a scalar or an array,
  * are unverified against a real advert; until they are, offering photo and attribute editing
  * risks a silently lossy save. See `SPIKE-SIR-99-advert-edit-round-trip.md`.
+ *
+ * There is deliberately no explanation of any of that in the UI. A seller changing their price
+ * does not need to be told how this app talks to OLX.
  */
 @Composable
 fun AdvertEditSheet(
@@ -62,10 +64,19 @@ fun AdvertEditSheet(
     onSubmit: (title: String, description: String, price: Long?) -> Unit,
     onDismiss: () -> Unit,
 ) {
+    val dismissKeyboard = rememberKeyboardDismissAction()
+
+    // The iOS number pad has no return key, so a price field can leave the keyboard up with the
+    // Save and Cancel buttons behind it and no way to reach them. `imePadding` lifts the content
+    // clear, `verticalScroll` keeps it reachable when the keyboard takes most of the sheet, and a
+    // tap anywhere off a field puts the keyboard away.
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .testTag("advert_edit_sheet")
+            .imePadding()
+            .verticalScroll(rememberScrollState())
+            .dismissKeyboardOnTapOutside(dismissKeyboard)
             .padding(horizontal = AppDimens.Spacing.xl4)
             .padding(bottom = AppDimens.Spacing.xl5),
         verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.xl3),
@@ -116,12 +127,6 @@ private fun EditForm(
     val descriptionState = rememberTextFieldState(edit.description)
     val priceState = rememberTextFieldState(edit.priceValue?.toString().orEmpty())
 
-    Text(
-        text = stringResource(Res.string.advert_edit_subtitle),
-        style = AppTheme.typography.body,
-        color = AppTheme.colors.onSurfaceMuted,
-    )
-
     FieldLabel(stringResource(Res.string.advert_edit_title_label))
     TransparentInput(
         state = titleState,
@@ -143,24 +148,6 @@ private fun EditForm(
         state = descriptionState,
         modifier = Modifier.testTag("advert_edit_description_input"),
         lineLimits = TextFieldLineLimits.MultiLine(minHeightInLines = 3, maxHeightInLines = 8),
-    )
-
-    Text(
-        text = stringResource(Res.string.advert_edit_photos_note),
-        style = AppTheme.typography.caption,
-        color = AppTheme.colors.onSurfaceMuted,
-    )
-
-    val editedTitle = titleState.text.toString().trim()
-    val editedDescription = descriptionState.text.toString().trim()
-    // A cleared field means "leave the price alone", matching what the ViewModel sends - so it
-    // must not be listed here as a change either.
-    val editedPrice = priceState.text.toString().toLongOrNull()?.takeIf { it != edit.priceValue }
-    ChangeSummary(
-        titleChanged = editedTitle != edit.title,
-        descriptionChanged = editedDescription != edit.description,
-        currentPrice = edit.priceValue,
-        newPrice = editedPrice,
     )
 
     AppButton(
@@ -186,51 +173,6 @@ private fun EditForm(
         enabled = !edit.isSaving,
         onClick = onDismiss,
         style = AppButtonDefaults.secondary(),
-    )
-}
-
-/**
- * What this save will actually send, in the same spirit as the publish confirmation: the seller
- * sees the change before it goes, without a second sheet in the way of the two-tap price drop
- * this feature exists for. Renders nothing until something differs from what OLX returned, so an
- * accidental Edit tap is a no-op the seller can see is a no-op.
- */
-@Composable
-private fun ChangeSummary(
-    titleChanged: Boolean,
-    descriptionChanged: Boolean,
-    currentPrice: Long?,
-    newPrice: Long?,
-) {
-    if (!titleChanged && !descriptionChanged && newPrice == null) return
-
-    Column(verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.xs)) {
-        Text(
-            text = stringResource(Res.string.advert_edit_will_change),
-            style = AppTheme.typography.caption,
-            color = AppTheme.colors.onSurfaceMuted,
-            fontWeight = FontWeight.SemiBold,
-        )
-        if (newPrice != null) {
-            ChangeLine(
-                stringResource(
-                    Res.string.advert_edit_change_price,
-                    currentPrice?.let { formatPrice(it.toFloat()) }.orEmpty(),
-                    formatPrice(newPrice.toFloat()),
-                ),
-            )
-        }
-        if (titleChanged) ChangeLine(stringResource(Res.string.advert_edit_title_label))
-        if (descriptionChanged) ChangeLine(stringResource(Res.string.advert_edit_description_label))
-    }
-}
-
-@Composable
-private fun ChangeLine(text: String) {
-    Text(
-        text = text,
-        style = AppTheme.typography.caption,
-        color = AppTheme.colors.onSurface,
     )
 }
 

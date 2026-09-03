@@ -16,6 +16,7 @@ import com.sirelon.sellsnap.designsystem.buttons.AppButton
 import com.sirelon.sellsnap.designsystem.buttons.AppButtonDefaults
 import com.sirelon.sellsnap.features.seller.ad.publish_success.AdvertStatus
 import com.sirelon.sellsnap.features.seller.my_ads.domain.AdvertAction
+import com.sirelon.sellsnap.features.seller.my_ads.domain.isLive
 import com.sirelon.sellsnap.features.seller.my_ads.model.MyAdvertItem
 import com.sirelon.sellsnap.features.seller.my_ads.presentation.MyAdvertsContract.ActionConfirm
 import com.sirelon.sellsnap.generated.resources.Res
@@ -27,9 +28,6 @@ import com.sirelon.sellsnap.generated.resources.advert_confirm_delete_title
 import com.sirelon.sellsnap.generated.resources.advert_confirm_extend_action
 import com.sirelon.sellsnap.generated.resources.advert_confirm_extend_message
 import com.sirelon.sellsnap.generated.resources.advert_confirm_extend_title
-import com.sirelon.sellsnap.generated.resources.advert_confirm_finish_action
-import com.sirelon.sellsnap.generated.resources.advert_confirm_finish_message
-import com.sirelon.sellsnap.generated.resources.advert_confirm_finish_title
 import com.sirelon.sellsnap.generated.resources.advert_confirm_reactivate_action
 import com.sirelon.sellsnap.generated.resources.advert_confirm_reactivate_message
 import com.sirelon.sellsnap.generated.resources.advert_confirm_reactivate_title
@@ -65,7 +63,7 @@ fun AdvertConfirmSheet(
             color = AppTheme.colors.onBackground,
         )
         Text(
-            text = stringResource(confirmMessage(confirm.action, isLive = confirm.advert.isLive)),
+            text = stringResource(confirmMessage(confirm.action, isLive = confirm.advert.status.isLive)),
             style = AppTheme.typography.body,
             color = AppTheme.colors.onSurfaceMuted,
         )
@@ -90,13 +88,12 @@ fun AdvertConfirmSheet(
 
 private fun confirmTitle(action: AdvertAction): StringResource = when (action) {
     AdvertAction.Delete -> Res.string.advert_confirm_delete_title
-    AdvertAction.Finish -> Res.string.advert_confirm_finish_title
     AdvertAction.Reactivate -> Res.string.advert_confirm_reactivate_title
     AdvertAction.Extend -> Res.string.advert_confirm_extend_title
     // Deactivate routes through the sold prompt, and Edit through the edit sheet, so neither
     // reaches this sheet.
     AdvertAction.Deactivate,
-    AdvertAction.Edit -> Res.string.advert_confirm_finish_title
+    AdvertAction.Edit -> Res.string.advert_confirm_reactivate_title
 }
 
 private fun confirmMessage(action: AdvertAction, isLive: Boolean): StringResource = when (action) {
@@ -106,25 +103,19 @@ private fun confirmMessage(action: AdvertAction, isLive: Boolean): StringResourc
         Res.string.advert_confirm_delete_message
     }
 
-    AdvertAction.Finish -> Res.string.advert_confirm_finish_message
     AdvertAction.Reactivate -> Res.string.advert_confirm_reactivate_message
     AdvertAction.Extend -> Res.string.advert_confirm_extend_message
     AdvertAction.Deactivate,
-    AdvertAction.Edit -> Res.string.advert_confirm_finish_message
+    AdvertAction.Edit -> Res.string.advert_confirm_reactivate_message
 }
 
 private fun confirmAction(action: AdvertAction): StringResource = when (action) {
     AdvertAction.Delete -> Res.string.advert_confirm_delete_action
-    AdvertAction.Finish -> Res.string.advert_confirm_finish_action
     AdvertAction.Reactivate -> Res.string.advert_confirm_reactivate_action
     AdvertAction.Extend -> Res.string.advert_confirm_extend_action
     AdvertAction.Deactivate,
-    AdvertAction.Edit -> Res.string.advert_confirm_finish_action
+    AdvertAction.Edit -> Res.string.advert_confirm_reactivate_action
 }
-
-/** Live on OLX, so a delete has to deactivate it first. */
-private val MyAdvertItem.isLive: Boolean
-    get() = status == AdvertStatus.Active || status == AdvertStatus.Limited
 
 @PreviewLightDark
 @Composable

@@ -17,7 +17,6 @@ import com.sirelon.sellsnap.generated.resources.advert_action_deactivate
 import com.sirelon.sellsnap.generated.resources.advert_action_delete
 import com.sirelon.sellsnap.generated.resources.advert_action_edit
 import com.sirelon.sellsnap.generated.resources.advert_action_extend
-import com.sirelon.sellsnap.generated.resources.advert_action_finish
 import com.sirelon.sellsnap.generated.resources.advert_action_reactivate
 import com.sirelon.sellsnap.generated.resources.advert_expiry_days_left
 import com.sirelon.sellsnap.generated.resources.advert_expiry_expired
@@ -30,7 +29,6 @@ import com.sirelon.sellsnap.generated.resources.advert_state_removed_by_moderato
 import com.sirelon.sellsnap.generated.resources.advert_state_unconfirmed
 import com.sirelon.sellsnap.generated.resources.advert_state_unknown
 import com.sirelon.sellsnap.generated.resources.advert_state_unpaid
-import com.sirelon.sellsnap.generated.resources.ic_circle_check_big
 import com.sirelon.sellsnap.generated.resources.ic_pen_line
 import com.sirelon.sellsnap.generated.resources.ic_refresh_cw
 import com.sirelon.sellsnap.generated.resources.ic_wifi_off
@@ -111,7 +109,6 @@ internal fun actionLabel(action: AdvertAction): StringResource = when (action) {
     AdvertAction.Extend -> Res.string.advert_action_extend
     AdvertAction.Deactivate -> Res.string.advert_action_deactivate
     AdvertAction.Reactivate -> Res.string.advert_action_reactivate
-    AdvertAction.Finish -> Res.string.advert_action_finish
     AdvertAction.Delete -> Res.string.advert_action_delete
 }
 
@@ -120,7 +117,6 @@ internal fun actionIcon(action: AdvertAction): DrawableResource = when (action) 
     AdvertAction.Extend -> Res.drawable.ic_refresh_cw
     AdvertAction.Deactivate -> Res.drawable.ic_wifi_off
     AdvertAction.Reactivate -> Res.drawable.ic_refresh_cw
-    AdvertAction.Finish -> Res.drawable.ic_circle_check_big
     AdvertAction.Delete -> Res.drawable.ic_x
 }
 

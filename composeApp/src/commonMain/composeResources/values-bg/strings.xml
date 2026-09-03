@@ -345,44 +345,40 @@
     <string name="advert_action_extend">Удължи за още един период</string>
     <string name="advert_action_deactivate">Деактивирай</string>
     <string name="advert_action_reactivate">Активирай отново</string>
-    <string name="advert_action_finish">Приключи обявата</string>
     <string name="advert_action_delete">Изтрий от OLX</string>
     <string name="advert_action_in_progress">Работим по това…</string>
 
     <!-- Ad lifecycle — states with nothing to act on. Each says what OLX is doing, not what the app can't do. -->
-    <string name="advert_state_new">OLX все още преглежда тази обява. Няма какво да правиш, докато не приключи.</string>
-    <string name="advert_state_moderated">Модератор на OLX преглежда тази обява в момента. Ще се върне сама, щом приключи.</string>
-    <string name="advert_state_blocked">OLX е блокирал тази обява. Само OLX може да свали блокировката — провери имейла от тях за причината.</string>
-    <string name="advert_state_removed_by_moderator">Модератор на OLX премахна тази обява. Само OLX може да я възстанови.</string>
+    <string name="advert_state_new">OLX все още преглежда тази обява.</string>
+    <string name="advert_state_moderated">OLX преглежда тази обява. Ще се върне сама.</string>
+    <string name="advert_state_blocked">OLX блокира тази обява. Само те могат да свалят блокировката — виж имейла от тях.</string>
+    <string name="advert_state_removed_by_moderator">OLX премахна тази обява. Само те могат да я възстановят.</string>
     <string name="advert_state_disabled">OLX е изключил тази обява. Само OLX може да я включи отново.</string>
-    <string name="advert_state_unconfirmed">OLX чака да потвърдиш тази обява — на сайта им или в имейла, който са ти изпратили.</string>
+    <string name="advert_state_unconfirmed">OLX чака да потвърдиш тази обява — виж имейла от тях.</string>
     <string name="advert_state_unpaid">OLX чака плащане за тази обява.</string>
-    <string name="advert_state_unknown">OLX все още не е определил статус за тази обява. Изчакай малко и опресни.</string>
+    <string name="advert_state_unknown">OLX все още не е определил статус за тази обява. Дръпни надолу, за да обновиш.</string>
 
     <!-- Ad lifecycle — confirmations. Every one says what happens on OLX. -->
-    <string name="advert_confirm_deactivate_message">Спира да се показва в OLX и купувачите вече не могат да я намерят. Нищо не се губи — можеш да я активираш отново, когато поискаш.</string>
-    <string name="advert_confirm_finish_title">Да приключим ли обявата?</string>
-    <string name="advert_confirm_finish_message">OLX я маркира като приключена и спира да я предлага. Обявата остава в акаунта ти в OLX, така че снимките и текстът остават запазени.</string>
-    <string name="advert_confirm_finish_action">Приключи</string>
+    <string name="advert_confirm_deactivate_message">Купувачите вече няма да я виждат. Можеш да я активираш отново по всяко време.</string>
     <string name="advert_confirm_delete_title">Да изтрием ли обявата от OLX?</string>
-    <string name="advert_confirm_delete_message">Това я премахва от OLX завинаги. Снимките и текстът изчезват заедно с нея и няма връщане назад — нито в OLX, нито тук.</string>
-    <string name="advert_confirm_delete_message_active">Тази обява все още е активна, затова OLX първо я деактивира, а после я премахва завинаги. Снимките и текстът изчезват заедно с нея и няма връщане назад.</string>
+    <string name="advert_confirm_delete_message">Изчезва от OLX завинаги — снимки, текст, всичко. Не може да се отмени.</string>
+    <string name="advert_confirm_delete_message_active">Все още е активна, затова първо се деактивира, а после изчезва завинаги. Не може да се отмени.</string>
     <string name="advert_confirm_delete_action">Изтрий завинаги</string>
     <string name="advert_confirm_extend_title">Да удължим ли обявата?</string>
-    <string name="advert_confirm_extend_message">OLX отлага датата на изтичане, за да продължи обявата да тече.</string>
+    <string name="advert_confirm_extend_message">Обявата получава още време, преди да изтече.</string>
     <string name="advert_confirm_extend_action">Удължи</string>
     <string name="advert_confirm_reactivate_title">Да активираме ли обявата отново?</string>
-    <string name="advert_confirm_reactivate_message">OLX започва да я показва на купувачите отново, със същите снимки, текст и цена.</string>
+    <string name="advert_confirm_reactivate_message">Купувачите ще я видят отново, точно както си беше.</string>
     <string name="advert_confirm_reactivate_action">Активирай отново</string>
     <string name="advert_confirm_cancel">Отказ</string>
 
     <!-- Ad lifecycle — did it sell? OLX requires this answer before it will take a listing down. -->
     <string name="advert_sold_prompt_title">Продаде ли се?</string>
-    <string name="advert_sold_prompt_message">OLX пита това, преди да деактивира обявата.</string>
+    <string name="advert_sold_prompt_message">OLX пита за това, преди да деактивира обява.</string>
     <string name="advert_sold_prompt_yes">Да, продаде се</string>
     <string name="advert_sold_prompt_no">Не, не се продаде</string>
     <string name="advert_sold_price_title">За колко се продаде?</string>
-    <string name="advert_sold_price_message">Само ти виждаш това. Помага на SellSnap да разбере на какви цени наистина се продават нещата ти, за да предлага по-добра цена следващия път.</string>
+    <string name="advert_sold_price_message">Само ти виждаш това. Помага на SellSnap да предложи по-добра цена следващия път.</string>
     <string name="advert_sold_price_label">Продажна цена</string>
     <string name="advert_sold_price_confirm">Запази и деактивирай</string>
     <string name="advert_sold_price_skip">Пропусни</string>
@@ -390,7 +386,6 @@
     <!-- Ad lifecycle — results -->
     <string name="advert_action_done_deactivate">Деактивирана в OLX.</string>
     <string name="advert_action_done_reactivate">Отново активна в OLX.</string>
-    <string name="advert_action_done_finish">Приключена в OLX.</string>
     <string name="advert_action_done_delete">Изтрита от OLX.</string>
     <string name="advert_action_done_extend">Удължена в OLX.</string>
     <string name="advert_action_done_edit">Промените са изпратени в OLX.</string>
@@ -398,7 +393,7 @@
     <string name="advert_action_failed">OLX отказа заявката: %1$s</string>
     <string name="advert_action_needs_reconnect">%1$s трябва да се свърже отново с OLX, преди да можеш да промениш тази обява.</string>
     <string name="advert_action_failed_generic">Не успяхме да се свържем с OLX за това. Опитай пак след малко.</string>
-    <string name="advert_delete_partial">Обявата е деактивирана в OLX, но изтриването се провали. Все още я има — опитай да я изтриеш отново.</string>
+    <string name="advert_delete_partial">Деактивирана е, но не изтрита. Опитай да я изтриеш отново.</string>
 
     <!-- Ad lifecycle — expiry -->
     <string name="advert_expiry_expired">Изтекла — купувачите не я виждат</string>
@@ -408,7 +403,7 @@
         <item quantity="one">Остава %1$d ден</item>
         <item quantity="other">Остават %1$d дни</item>
     </plurals>
-    <string name="advert_extend_unavailable">OLX не позволява на приложения да удължават обяви в тази държава. Можеш да я удължиш направо в OLX.</string>
+    <string name="advert_extend_unavailable">Удължаването не е достъпно тук. Можеш да го направиш направо в OLX.</string>
 
     <!-- Ad lifecycle — statistics -->
     <string name="advert_stats_title">Как върви</string>
@@ -423,13 +418,9 @@
 
     <!-- Ad lifecycle — edit -->
     <string name="advert_edit_title">Редактирай обявата</string>
-    <string name="advert_edit_subtitle">Промените отиват директно в OLX. Всичко, което не пипнеш, остава точно както си е.</string>
     <string name="advert_edit_title_label">Заглавие</string>
     <string name="advert_edit_description_label">Описание</string>
     <string name="advert_edit_price_label">Цена</string>
     <string name="advert_edit_save">Изпрати в OLX</string>
-    <string name="advert_edit_will_change">Това ще се промени в OLX:</string>
-    <string name="advert_edit_change_price">Цена: %1$s → %2$s</string>
-    <string name="advert_edit_photos_note">Снимките и детайлите остават същите — промени ги в OLX засега.</string>
     <string name="advert_edit_load_failed">Не успяхме да заредим тази обява от OLX.</string>
 </resources>

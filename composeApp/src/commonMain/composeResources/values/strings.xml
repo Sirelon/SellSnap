@@ -347,44 +347,40 @@
     <string name="advert_action_extend">Extend for another period</string>
     <string name="advert_action_deactivate">Take down</string>
     <string name="advert_action_reactivate">Put back up</string>
-    <string name="advert_action_finish">Close listing</string>
     <string name="advert_action_delete">Delete from OLX</string>
     <string name="advert_action_in_progress">Working on it…</string>
 
     <!-- Ad lifecycle — states with nothing to act on. Each says what OLX is doing, not what the app can't do. -->
-    <string name="advert_state_new">OLX is still reviewing this listing. Nothing to do until it finishes.</string>
-    <string name="advert_state_moderated">An OLX moderator is looking at this listing. It comes back on its own once they're done.</string>
-    <string name="advert_state_blocked">OLX has blocked this listing. Only OLX can lift that — check your email from them for the reason.</string>
-    <string name="advert_state_removed_by_moderator">An OLX moderator removed this listing. Only OLX can restore it.</string>
+    <string name="advert_state_new">OLX is still reviewing this listing.</string>
+    <string name="advert_state_moderated">OLX is reviewing this listing. It'll come back on its own.</string>
+    <string name="advert_state_blocked">OLX blocked this listing. Only they can undo it — check your email from them.</string>
+    <string name="advert_state_removed_by_moderator">OLX removed this listing. Only they can restore it.</string>
     <string name="advert_state_disabled">OLX has disabled this listing. Only OLX can turn it back on.</string>
-    <string name="advert_state_unconfirmed">OLX is waiting for you to confirm this listing, on their site or in your email from them.</string>
+    <string name="advert_state_unconfirmed">OLX is waiting for you to confirm this listing — check your email from them.</string>
     <string name="advert_state_unpaid">OLX is waiting for payment on this listing.</string>
-    <string name="advert_state_unknown">OLX hasn't settled on a state for this listing yet. Pull to refresh in a moment.</string>
+    <string name="advert_state_unknown">OLX hasn't settled this listing's state yet. Pull down to refresh.</string>
 
     <!-- Ad lifecycle — confirmations. Every one says what happens on OLX. -->
-    <string name="advert_confirm_deactivate_message">It stops showing on OLX and buyers can no longer find it. Nothing is lost — you can put it back up whenever you like.</string>
-    <string name="advert_confirm_finish_title">Close this listing?</string>
-    <string name="advert_confirm_finish_message">OLX marks it as finished and stops offering it. The listing stays in your OLX account, so you keep the photos and the text.</string>
-    <string name="advert_confirm_finish_action">Close it</string>
+    <string name="advert_confirm_deactivate_message">Buyers won't see it any more. You can put it back up any time.</string>
     <string name="advert_confirm_delete_title">Delete this listing from OLX?</string>
-    <string name="advert_confirm_delete_message">This removes it from OLX permanently. The photos and the text go with it, and there is no undo — on OLX or here.</string>
-    <string name="advert_confirm_delete_message_active">This one is still live, so OLX takes it down first and then removes it permanently. The photos and the text go with it, and there is no undo.</string>
+    <string name="advert_confirm_delete_message">Gone from OLX for good — photos, text, everything. This can't be undone.</string>
+    <string name="advert_confirm_delete_message_active">It's still live, so it comes down first, then it's gone for good. This can't be undone.</string>
     <string name="advert_confirm_delete_action">Delete permanently</string>
     <string name="advert_confirm_extend_title">Extend this listing?</string>
-    <string name="advert_confirm_extend_message">OLX pushes the expiry date out so the listing keeps running.</string>
+    <string name="advert_confirm_extend_message">Your listing gets more time before it expires.</string>
     <string name="advert_confirm_extend_action">Extend it</string>
     <string name="advert_confirm_reactivate_title">Put this listing back up?</string>
-    <string name="advert_confirm_reactivate_message">OLX starts showing it to buyers again, with the same photos, text and price.</string>
+    <string name="advert_confirm_reactivate_message">Buyers will see it again, exactly as it was.</string>
     <string name="advert_confirm_reactivate_action">Put it back up</string>
     <string name="advert_confirm_cancel">Cancel</string>
 
     <!-- Ad lifecycle — did it sell? OLX requires this answer before it will take a listing down. -->
     <string name="advert_sold_prompt_title">Did it sell?</string>
-    <string name="advert_sold_prompt_message">OLX asks this before taking a listing down.</string>
+    <string name="advert_sold_prompt_message">OLX asks before taking a listing down.</string>
     <string name="advert_sold_prompt_yes">Yes, it sold</string>
     <string name="advert_sold_prompt_no">No, it didn't sell</string>
     <string name="advert_sold_price_title">What did it go for?</string>
-    <string name="advert_sold_price_message">Only you see this. It teaches SellSnap what your things actually sell for, so the next price it suggests is a better guess.</string>
+    <string name="advert_sold_price_message">Only you see this. It helps SellSnap price your next item better.</string>
     <string name="advert_sold_price_label">Sold price</string>
     <string name="advert_sold_price_confirm">Save and take it down</string>
     <string name="advert_sold_price_skip">Skip</string>
@@ -392,7 +388,6 @@
     <!-- Ad lifecycle — results -->
     <string name="advert_action_done_deactivate">Taken down on OLX.</string>
     <string name="advert_action_done_reactivate">Back up on OLX.</string>
-    <string name="advert_action_done_finish">Closed on OLX.</string>
     <string name="advert_action_done_delete">Deleted from OLX.</string>
     <string name="advert_action_done_extend">Extended on OLX.</string>
     <string name="advert_action_done_edit">Sent your changes to OLX.</string>
@@ -400,7 +395,7 @@
     <string name="advert_action_failed">OLX turned down that request: %1$s</string>
     <string name="advert_action_needs_reconnect">%1$s needs reconnecting on OLX before you can change this listing.</string>
     <string name="advert_action_failed_generic">Couldn't reach OLX to do that. Try again in a moment.</string>
-    <string name="advert_delete_partial">Taken down on OLX, but deleting it failed. The listing is still there — try deleting it again.</string>
+    <string name="advert_delete_partial">It's down, but not deleted. Try deleting again.</string>
 
     <!-- Ad lifecycle — expiry -->
     <string name="advert_expiry_expired">Expired — buyers can't see it</string>
@@ -410,7 +405,7 @@
         <item quantity="one">%1$d day left</item>
         <item quantity="other">%1$d days left</item>
     </plurals>
-    <string name="advert_extend_unavailable">OLX doesn't let apps extend listings in this country. You can still extend it on OLX itself.</string>
+    <string name="advert_extend_unavailable">Extending isn't available here. You can still do it on OLX.</string>
 
     <!-- Ad lifecycle — statistics -->
     <string name="advert_stats_title">How it's doing</string>
@@ -425,13 +420,9 @@
 
     <!-- Ad lifecycle — edit -->
     <string name="advert_edit_title">Edit listing</string>
-    <string name="advert_edit_subtitle">Changes go straight to OLX. Everything you don't touch stays exactly as it is.</string>
     <string name="advert_edit_title_label">Title</string>
     <string name="advert_edit_description_label">Description</string>
     <string name="advert_edit_price_label">Price</string>
     <string name="advert_edit_save">Send to OLX</string>
-    <string name="advert_edit_will_change">This will change on OLX:</string>
-    <string name="advert_edit_change_price">Price: %1$s → %2$s</string>
-    <string name="advert_edit_photos_note">Photos and details stay as they are — change those on OLX for now.</string>
     <string name="advert_edit_load_failed">Couldn't load this listing from OLX.</string>
 </resources>

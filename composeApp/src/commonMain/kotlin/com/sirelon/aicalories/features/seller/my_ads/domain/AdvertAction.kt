@@ -10,9 +10,6 @@ enum class AdvertAction {
     /** Puts an inactive or expired listing back up. `activate` on the OLX side. */
     Reactivate,
 
-    /** Closes an inactive listing for good, without removing it. */
-    Finish,
-
     /** Removes the listing from OLX permanently. Only accepted while the advert is inactive. */
     Delete,
 
@@ -42,6 +39,10 @@ val AdvertStatus.isLive: Boolean
  * [com.sirelon.sellsnap.features.seller.auth.domain.OlxCountry.supportsExtendCommand]; `extend`
  * is documented as unavailable in Ukraine and Portugal.
  *
+ * OLX's `finish` command is deliberately not offered. On an inactive listing it does nothing a
+ * seller can perceive - the listing is already down, and "finish" next to "delete" reads as a
+ * second, unexplained kind of removal. The endpoint stays in the data layer; the button does not.
+ *
  * [AdvertAction.Edit] is offered only on live listings. `PUT adverts/{id}` is not documented as
  * status-restricted, but whether it is accepted on an inactive or expired advert is unverified
  * against a real advert, and "edit then reactivate" failing halfway is worse than not offering
@@ -56,7 +57,7 @@ fun availableActions(status: AdvertStatus, supportsExtendCommand: Boolean): List
         }
 
         status == AdvertStatus.RemovedByUser || status == AdvertStatus.Outdated ->
-            listOf(AdvertAction.Reactivate, AdvertAction.Finish, AdvertAction.Delete)
+            listOf(AdvertAction.Reactivate, AdvertAction.Delete)
 
         // Moderator-controlled, or blocked on OLX's side. Nothing this app sends would be
         // accepted, so the state is explained instead of being made to look actionable.

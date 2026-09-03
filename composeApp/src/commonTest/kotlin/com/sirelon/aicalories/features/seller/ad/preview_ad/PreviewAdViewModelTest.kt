@@ -273,14 +273,19 @@ class PreviewAdViewModelTest {
         // message through compose-resources `getString`, which hops off the test dispatcher, so
         // draining the virtual scheduler does not guarantee the effect has been posted yet. The
         // effects channel is buffered, so awaiting it cannot miss an already-sent one.
-        // No `withTimeout`: inside `runTest` that runs on virtual time and would fire the moment
-        // the scheduler idles, i.e. before the real resource load finishes. `runTest`'s own
-        // real-time watchdog is what fails this test if the effect never arrives.
-        val effect = viewModel.effects.first()
+        // Awaited rather than drained with `advanceUntilIdle()`: the message is resolved through
+        // compose-resources `getString`, which hops off the test dispatcher. No `withTimeout` -
+        // inside `runTest` that runs on virtual time and fires the moment the scheduler idles;
+        // `runTest`'s own real-time watchdog is what fails this test if nothing arrives.
+        //
+        // Waits for whichever of the two publish outcomes lands first, so the assertion covers
+        // both halves at once - a dead token must produce the named reconnect action, and must
+        // not fall through to the generic failure - while tolerating unrelated effects on the way.
+        val outcome = viewModel.effects.first {
+            it is PreviewAdEffect.PublishNeedsReconnect || it is PreviewAdEffect.PublishFailure
+        }
 
-        // Asserting on the FIRST effect covers both halves at once: a dead token must produce the
-        // named reconnect action, and must not fall through to the generic publish failure.
-        val reconnect = assertIs<PreviewAdEffect.PublishNeedsReconnect>(effect)
+        val reconnect = assertIs<PreviewAdEffect.PublishNeedsReconnect>(outcome)
         assertTrue(reconnect.message.contains("Seller One"))
         assertTrue(reconnect.actionLabel.contains("Seller One"))
     }

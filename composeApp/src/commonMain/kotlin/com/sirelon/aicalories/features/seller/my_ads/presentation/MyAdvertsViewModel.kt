@@ -37,7 +37,6 @@ import com.sirelon.sellsnap.generated.resources.advert_action_done_delete
 import com.sirelon.sellsnap.generated.resources.advert_action_done_edit
 import com.sirelon.sellsnap.generated.resources.advert_action_done_edit_moderated
 import com.sirelon.sellsnap.generated.resources.advert_action_done_extend
-import com.sirelon.sellsnap.generated.resources.advert_action_done_finish
 import com.sirelon.sellsnap.generated.resources.advert_action_done_reactivate
 import com.sirelon.sellsnap.generated.resources.advert_action_failed
 import com.sirelon.sellsnap.generated.resources.advert_action_failed_generic
@@ -319,6 +318,9 @@ class MyAdvertsViewModel internal constructor(
 
     private fun openOnOlx() {
         val advert = currentState().advertSheet?.advert ?: return
+        // Dismissed first: a modal sheet sitting over the screen swallows both the browser
+        // hand-off and the snackbar that explains why there is nothing to open.
+        setState { it.copy(advertSheet = null) }
         if (advert.url.isBlank()) {
             viewModelScope.launch { postEffect(Effect.ShowMessage(getString(Res.string.my_ads_missing_url))) }
         } else {
@@ -343,7 +345,6 @@ class MyAdvertsViewModel internal constructor(
             }
 
             AdvertAction.Delete,
-            AdvertAction.Finish,
             AdvertAction.Reactivate,
             AdvertAction.Extend -> setState {
                 it.copy(actionConfirm = ActionConfirm(sheet.localIndex, sheet.advert, action))
@@ -410,7 +411,6 @@ class MyAdvertsViewModel internal constructor(
                 when (action) {
                     AdvertAction.Deactivate -> lifecycleRepository.deactivate(localIndex, advert.id, isSold == true)
                     AdvertAction.Reactivate -> lifecycleRepository.reactivate(localIndex, advert.id)
-                    AdvertAction.Finish -> lifecycleRepository.finish(localIndex, advert.id)
                     AdvertAction.Extend -> lifecycleRepository.extend(localIndex, advert.id)
                     AdvertAction.Delete -> {
                         lifecycleRepository.delete(localIndex, advert.id, advert.status.isLive, isSold)
@@ -461,7 +461,6 @@ class MyAdvertsViewModel internal constructor(
         }
 
         if (action == AdvertAction.Delete) {
-            // Gone from OLX, so gone from the list. Nothing to refresh and nothing to show.
             setState {
                 it.copy(
                     // Only this advert's sheet: the seller may have dismissed it mid-delete and
@@ -480,20 +479,16 @@ class MyAdvertsViewModel internal constructor(
             return
         }
 
-        // A null row means only that the follow-up read failed, not that the action did. The
-        // action is still reported as the success it was; the row keeps its old status until the
-        // next refresh rather than being patched from what was requested, since OLX may have
-        // resolved it differently.
-        refreshed?.let { row ->
-            replaceRow(localIndex, row)
-            updateSheet(advert.id) { sheet ->
-                sheet.copy(
-                    advert = row,
-                    actions = availableActions(row.status, _currentOlxCountry.supportsExtendCommand),
-                )
-            }
-        }
-        updateSheet(advert.id) { it.copy(pendingAction = null) }
+        // A null row means only that the follow-up read failed, not that the action did - the
+        // action is still the success it was. The row is not patched from what was requested,
+        // since OLX may have resolved the status differently.
+        refreshed?.let { replaceRow(localIndex, it) }
+
+        // Close the sheet. Leaving it open showed the seller the same buttons they had just
+        // pressed, which reads as nothing having happened - and the confirmation snackbar is
+        // rendered by the screen underneath, so while the sheet is up it is not even visible.
+        // The updated row behind it is the feedback.
+        setState { it.copy(advertSheet = it.advertSheet?.takeIf { sheet -> sheet.advert.id != advert.id }) }
         postEffect(Effect.ShowMessage(getString(successMessageFor(action))))
     }
 
@@ -723,7 +718,6 @@ class MyAdvertsViewModel internal constructor(
                 "action" to when (action) {
                     AdvertAction.Reactivate -> AdvertCommand.Activate.wireValue
                     AdvertAction.Deactivate -> AdvertCommand.Deactivate.wireValue
-                    AdvertAction.Finish -> AdvertCommand.Finish.wireValue
                     AdvertAction.Extend -> AdvertCommand.Extend.wireValue
                     AdvertAction.Delete -> "delete"
                     AdvertAction.Edit -> "edit"
@@ -774,7 +768,6 @@ class MyAdvertsViewModel internal constructor(
     private fun successMessageFor(action: AdvertAction) = when (action) {
         AdvertAction.Deactivate -> Res.string.advert_action_done_deactivate
         AdvertAction.Reactivate -> Res.string.advert_action_done_reactivate
-        AdvertAction.Finish -> Res.string.advert_action_done_finish
         AdvertAction.Delete -> Res.string.advert_action_done_delete
         AdvertAction.Extend -> Res.string.advert_action_done_extend
         AdvertAction.Edit -> Res.string.advert_action_done_edit

@@ -3,9 +3,12 @@ package com.sirelon.sellsnap.features.seller.my_ads.ui
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.rememberTextFieldState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -16,6 +19,8 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import com.sirelon.sellsnap.designsystem.AppDimens
 import com.sirelon.sellsnap.designsystem.AppTheme
 import com.sirelon.sellsnap.designsystem.DigitOnlyInputTransformation
+import com.sirelon.sellsnap.designsystem.dismissKeyboardOnTapOutside
+import com.sirelon.sellsnap.designsystem.rememberKeyboardDismissAction
 import com.sirelon.sellsnap.designsystem.ThousandSeparatorOutputTransformation
 import com.sirelon.sellsnap.designsystem.TransparentInput
 import com.sirelon.sellsnap.designsystem.buttons.AppButton
@@ -50,10 +55,19 @@ fun MarkAsSoldSheet(
     onAnswer: (isSold: Boolean) -> Unit,
     onPriceSubmitted: (price: Long?) -> Unit,
 ) {
+    val dismissKeyboard = rememberKeyboardDismissAction()
+
+    // The iOS number pad has no return key, so a price field can leave the keyboard up with the
+    // Save and Cancel buttons behind it and no way to reach them. `imePadding` lifts the content
+    // clear, `verticalScroll` keeps it reachable when the keyboard takes most of the sheet, and a
+    // tap anywhere off a field puts the keyboard away.
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .testTag("advert_sold_sheet")
+            .imePadding()
+            .verticalScroll(rememberScrollState())
+            .dismissKeyboardOnTapOutside(dismissKeyboard)
             .padding(horizontal = AppDimens.Spacing.xl4)
             .padding(bottom = AppDimens.Spacing.xl5),
         verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.xl3),
