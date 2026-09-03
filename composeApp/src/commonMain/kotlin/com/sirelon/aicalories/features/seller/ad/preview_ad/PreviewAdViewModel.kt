@@ -441,7 +441,7 @@ class PreviewAdViewModel(
             publishSuccessData.value = successData
             analytics.logEvent(AnalyticsEvents.AD_PUBLISH_SUCCEEDED, mapOf("account_index" to accountIndex))
             s.currentAttemptId?.let { attemptId ->
-                adGenerationLogRepository.markPublished(attemptId, data.id.toString())
+                adGenerationLogRepository.markPublished(attemptId, data.id.toString(), user.id)
             }
             setState { it.copy(isPublishing = false) }
             postEffect(PreviewAdEffect.PublishSuccess(successData))

@@ -5,6 +5,7 @@ import dev.gitlive.firebase.firestore.Timestamp
 import dev.gitlive.firebase.firestore.firestore
 import dev.gitlive.firebase.firestore.fromDuration
 import dev.gitlive.firebase.firestore.toDuration
+import dev.gitlive.firebase.installations.installations
 import kotlinx.serialization.Serializable
 import kotlin.time.Duration.Companion.days
 import kotlin.uuid.Uuid
@@ -12,6 +13,7 @@ import org.koin.core.module.Module
 import org.koin.dsl.module
 
 private const val COLLECTION = "ad_generations"
+private const val ATTEMPTS_SUBCOLLECTION = "attempts"
 
 // Console-side TTL policy on `expireAt` deletes the doc after this window — these records hold
 // user photos and generated copy, not something to keep indefinitely.
@@ -35,13 +37,18 @@ private data class AdGenerationAttemptDocument(
     val voteUpdatedAt: Timestamp? = null,
     val didPublish: Boolean = false,
     val publishedAdId: String? = null,
+    val olxAccountId: Long? = null,
     val createdAt: Timestamp = Timestamp.now(),
     val expireAt: Timestamp = Timestamp.fromDuration(Timestamp.now().toDuration() + RETENTION),
 )
 
 internal class FirebaseAdGenerationLogRepository : AdGenerationLogRepository {
 
-    private val collection get() = Firebase.firestore.collection(COLLECTION)
+    // Nested under the Firebase installation ID (not an OLX account) so guest-mode attempts —
+    // which never have an OLX account — are grouped the same way authenticated ones are.
+    private suspend fun attemptsCollection() = Firebase.firestore.collection(COLLECTION)
+        .document(Firebase.installations.getId())
+        .collection(ATTEMPTS_SUBCOLLECTION)
 
     override suspend fun logAttempt(attempt: AdGenerationAttempt): String? = runCatching {
         val docId = Uuid.random().toString()
@@ -59,25 +66,26 @@ internal class FirebaseAdGenerationLogRepository : AdGenerationLogRepository {
             minPrice = attempt.minPrice,
             maxPrice = attempt.maxPrice,
         )
-        collection.document(docId)
+        attemptsCollection().document(docId)
             .set(AdGenerationAttemptDocument.serializer(), document) { encodeDefaults = true }
         docId
     }.getOrNull()
 
     override suspend fun updateVote(attemptId: String, vote: String?) {
         runCatching {
-            collection.document(attemptId).updateFields {
+            attemptsCollection().document(attemptId).updateFields {
                 "vote" to vote
                 "voteUpdatedAt" to Timestamp.now()
             }
         }
     }
 
-    override suspend fun markPublished(attemptId: String, publishedAdId: String) {
+    override suspend fun markPublished(attemptId: String, publishedAdId: String, olxAccountId: Long?) {
         runCatching {
-            collection.document(attemptId).updateFields {
+            attemptsCollection().document(attemptId).updateFields {
                 "didPublish" to true
                 "publishedAdId" to publishedAdId
+                "olxAccountId" to olxAccountId
             }
         }
     }

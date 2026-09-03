@@ -28,11 +28,11 @@ interface AdGenerationLogRepository {
     /** Returns the new document id, or null if the write failed. */
     suspend fun logAttempt(attempt: AdGenerationAttempt): String?
     suspend fun updateVote(attemptId: String, vote: String?)
-    suspend fun markPublished(attemptId: String, publishedAdId: String)
+    suspend fun markPublished(attemptId: String, publishedAdId: String, olxAccountId: Long?)
 }
 
 object NoOpAdGenerationLogRepository : AdGenerationLogRepository {
     override suspend fun logAttempt(attempt: AdGenerationAttempt): String? = null
     override suspend fun updateVote(attemptId: String, vote: String?) = Unit
-    override suspend fun markPublished(attemptId: String, publishedAdId: String) = Unit
+    override suspend fun markPublished(attemptId: String, publishedAdId: String, olxAccountId: Long?) = Unit
 }
