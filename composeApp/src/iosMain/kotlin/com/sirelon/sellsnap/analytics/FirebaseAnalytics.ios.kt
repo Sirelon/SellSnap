@@ -17,7 +17,7 @@ internal class FirebaseAnalyticsImpl : Analytics {
 
     override fun logEvent(name: String, params: Map<String, Any>) {
         withAnalytics {
-            Firebase.analytics.logEvent(name, params.ifEmpty { null })
+            Firebase.analytics.logEvent(name, params.normalizedForFirebase().ifEmpty { null })
         }
     }
 
