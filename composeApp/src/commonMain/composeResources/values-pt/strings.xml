@@ -352,7 +352,7 @@
     <string name="advert_state_moderated">O OLX está a rever este anúncio. Volta sozinho.</string>
     <string name="advert_state_blocked">O OLX bloqueou este anúncio. Só o OLX pode desbloqueá-lo — verifique o email deles.</string>
     <string name="advert_state_removed_by_moderator">O OLX removeu este anúncio. Só o OLX pode restaurá-lo.</string>
-    <string name="advert_state_disabled">O OLX desativou este anúncio. Só o OLX pode reativá-lo.</string>
+    <string name="advert_state_disabled">O SellSnap não pode alterar este anúncio. Abra-o no OLX para gerir aí.</string>
     <string name="advert_state_limited">O OLX precisa de um pacote pago antes deste anúncio ser publicado. Pode tratar disso no OLX.</string>
     <string name="advert_state_unconfirmed">O OLX está à espera que confirme este anúncio — verifique o email deles.</string>
     <string name="advert_state_unpaid">O OLX está à espera do pagamento deste anúncio.</string>

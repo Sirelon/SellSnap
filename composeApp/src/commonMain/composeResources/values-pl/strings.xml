@@ -352,7 +352,7 @@
     <string name="advert_state_moderated">OLX sprawdza to ogłoszenie. Wróci samo.</string>
     <string name="advert_state_blocked">OLX zablokował to ogłoszenie. Tylko OLX może to odblokować — sprawdź e-mail od nich.</string>
     <string name="advert_state_removed_by_moderator">OLX usunął to ogłoszenie. Tylko OLX może je przywrócić.</string>
-    <string name="advert_state_disabled">OLX wyłączył to ogłoszenie. Tylko OLX może je włączyć z powrotem.</string>
+    <string name="advert_state_disabled">SellSnap nie może zmienić tego ogłoszenia. Otwórz je na OLX, aby nim zarządzać.</string>
     <string name="advert_state_limited">OLX wymaga płatnego pakietu, zanim to ogłoszenie zostanie opublikowane. Możesz to załatwić na OLX.</string>
     <string name="advert_state_unconfirmed">OLX czeka, aż potwierdzisz to ogłoszenie — sprawdź e-mail od nich.</string>
     <string name="advert_state_unpaid">OLX czeka na płatność za to ogłoszenie.</string>
