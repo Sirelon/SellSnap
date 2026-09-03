@@ -14,7 +14,4 @@ data class MyAdvertItem(
     val currencyCode: String,
     val createdAt: String,
     val validTo: String,
-) {
-    val canOpen: Boolean
-        get() = url.isNotBlank()
-}
+)

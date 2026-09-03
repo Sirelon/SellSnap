@@ -110,15 +110,15 @@ fun AdvertActionsSheet(
             )
         }
 
-        if (sheet.advert.canOpen) {
-            AppButton(
-                modifier = Modifier.fillMaxWidth().testTag("advert_action_open_on_olx"),
-                text = stringResource(Res.string.advert_actions_open_on_olx),
-                leadingIcon = painterResource(Res.drawable.ic_share_2),
-                onClick = onOpenOnOlx,
-                style = AppButtonDefaults.outline(),
-            )
-        }
+        // Always offered. A listing still in review has no public link of its own, but it is
+        // reachable among the seller's listings on OLX, so the ViewModel sends them there.
+        AppButton(
+            modifier = Modifier.fillMaxWidth().testTag("advert_action_open_on_olx"),
+            text = stringResource(Res.string.advert_actions_open_on_olx),
+            leadingIcon = painterResource(Res.drawable.ic_share_2),
+            onClick = onOpenOnOlx,
+            style = AppButtonDefaults.outline(),
+        )
     }
 }
 

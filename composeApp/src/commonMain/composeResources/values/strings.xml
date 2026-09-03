@@ -137,7 +137,6 @@
     <string name="label_value_format">%1$s: %2$s</string>
     <string name="my_ads_untitled">Untitled OLX ad</string>
     <string name="my_ads_price_not_set">Price not set</string>
-    <string name="my_ads_missing_url">No public link yet — OLX is still processing it.</string>
     <string name="my_ads_load_failed">Couldn't load OLX ads.</string>
     <string name="my_ads_status_active">Active</string>
     <string name="my_ads_status_new">Under review</string>

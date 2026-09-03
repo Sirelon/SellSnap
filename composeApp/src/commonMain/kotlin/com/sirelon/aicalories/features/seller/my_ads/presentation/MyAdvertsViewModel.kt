@@ -46,7 +46,6 @@ import com.sirelon.sellsnap.generated.resources.advert_edit_load_failed
 import com.sirelon.sellsnap.generated.resources.my_ads_account_fallback_name
 import com.sirelon.sellsnap.generated.resources.my_ads_load_failed
 import com.sirelon.sellsnap.generated.resources.my_ads_load_failed_account
-import com.sirelon.sellsnap.generated.resources.my_ads_missing_url
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -318,14 +317,14 @@ class MyAdvertsViewModel internal constructor(
 
     private fun openOnOlx() {
         val advert = currentState().advertSheet?.advert ?: return
-        // Dismissed first: a modal sheet sitting over the screen swallows both the browser
-        // hand-off and the snackbar that explains why there is nothing to open.
+        // Dismissed first: a modal sheet sitting over the screen swallows the browser hand-off.
         setState { it.copy(advertSheet = null) }
-        if (advert.url.isBlank()) {
-            viewModelScope.launch { postEffect(Effect.ShowMessage(getString(Res.string.my_ads_missing_url))) }
-        } else {
-            postEffect(Effect.OpenUrl(advert.url))
-        }
+
+        // A listing OLX is still reviewing has no public URL yet, but the seller can still see it
+        // among their own listings on OLX - so fall back to that page rather than refusing to go
+        // anywhere. Same fallback the publish success screen already uses.
+        val url = advert.url.ifBlank { "https://www.${_currentOlxCountry.domain}/myaccount/" }
+        postEffect(Effect.OpenUrl(url))
     }
 
     /**

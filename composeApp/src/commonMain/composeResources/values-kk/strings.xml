@@ -135,7 +135,6 @@
     <string name="label_value_format">%1$s: %2$s</string>
     <string name="my_ads_untitled">Атаусыз OLX хабарландыруы</string>
     <string name="my_ads_price_not_set">Баға қойылмаған</string>
-    <string name="my_ads_missing_url">Әзірге сілтеме жоқ — OLX өңдеп жатыр.</string>
     <string name="my_ads_load_failed">OLX хабарландыруларын жүктеу мүмкін болмады.</string>
     <string name="my_ads_status_active">Белсенді</string>
     <string name="my_ads_status_new">Қарастырылуда</string>

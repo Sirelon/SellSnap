@@ -829,6 +829,43 @@ class MyAdvertsViewModelTest {
         assertTrue(body.contains("\"delivery_package_ids\":[\"pkg-1\"]"), body)
     }
 
+    @Test
+    fun `a listing OLX is still reviewing opens the seller's OLX listings instead of nowhere`() = runTest(testDispatcher) {
+        val engine = mockEngine(testDispatcher) {
+            addHandler { request ->
+                if (request.url.encodedPath.endsWith("/statistics")) {
+                    respond(statisticsJson(0, 0, 0), status = HttpStatusCode.OK, headers = jsonHeaders())
+                } else {
+                    // An advert under review: OLX has not given it a public URL yet.
+                    respond(
+                        """{"data":[{"id":111,"status":"new","url":""}]}""",
+                        status = HttpStatusCode.OK,
+                        headers = jsonHeaders(),
+                    )
+                }
+            }
+        }
+        val (viewModel, _) = setUpViewModel(
+            engine = engine,
+            accounts = listOf(account(localIndex = 1, olxUserId = 1L, accessToken = "token-1")),
+            activeIndex = 1,
+        )
+        runCurrent()
+
+        val advert = viewModel.state.value.pages.single().adverts.single()
+        assertEquals("", advert.url)
+        viewModel.onEvent(Event.AdvertClicked(localIndex = 1, advert = advert))
+        runCurrent()
+        viewModel.onEvent(Event.OpenOnOlxClicked)
+
+        // Refusing to navigate left the seller with no way to reach a listing under review at
+        // all. Their own OLX listings page is where it is visible, so that is where they go.
+        val opened = viewModel.effects.filterIsInstance<MyAdvertsContract.Effect.OpenUrl>().first()
+        assertEquals("https://www.olx.ua/myaccount/", opened.url)
+        // The sheet gets out of the way, or the browser hand-off is swallowed by its scrim.
+        assertNull(viewModel.state.value.advertSheet)
+    }
+
     private fun statisticsJson(views: Int, phoneViews: Int, observing: Int) =
         """{"advert_views":$views,"phone_views":$phoneViews,"users_observing":$observing}"""
 

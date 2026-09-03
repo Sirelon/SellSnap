@@ -53,7 +53,7 @@ class MyAdvertItemMapperTest {
         )
 
         assertEquals("", item.priceFormatted)
-        assertEquals(false, item.canOpen)
+        assertEquals("", item.url)
         // No price to pre-fill with, rather than a misleading zero.
         assertEquals(null, item.priceValue)
         assertEquals("", item.currencyCode)

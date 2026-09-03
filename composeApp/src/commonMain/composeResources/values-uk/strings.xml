@@ -131,7 +131,6 @@
     <string name="label_value_format">%1$s: %2$s</string>
     <string name="my_ads_untitled">Оголошення OLX без назви</string>
     <string name="my_ads_price_not_set">Ціну не вказано</string>
-    <string name="my_ads_missing_url">Публічне посилання ще не готове — OLX обробляє оголошення.</string>
     <string name="my_ads_load_failed">Не вдалося завантажити оголошення OLX.</string>
     <string name="my_ads_status_active">Активне</string>
     <string name="my_ads_status_new">На перевірці</string>
