@@ -163,3 +163,33 @@ SIR-104 starts, not be discovered mid-implementation. Also resolve (c)/(d)/(e) b
 edit-sheet copy, since each changes what the UI needs to tell the seller (status gating, generic
 error surfacing, a possible "back to review" notice) even though none of them block the
 title/description/price scope from shipping.
+
+---
+
+## Open question found on a real account (2026-09-03)
+
+A listing published from the app showed in My Ads as `disabled` ("Вимкнене" / "Disabled") with
+no actions offered, while on OLX's own site the same listing was live and could be edited and
+deactivated normally.
+
+`disabled` is **not in the spec's documented `Advert.status` enum**, which lists only
+`new | active | limited | removed_by_user`. The prose description of statuses lumps it in with
+"various moderation-related states like `moderated`, `blocked`, `disabled`, or
+`removed_by_moderator`" — which the observed behaviour contradicts.
+
+Until this is settled, `AdvertAction.availableActions` offers nothing for `Disabled` and the copy
+says only that SellSnap cannot change the listing, pointing the seller at OLX. Guessing that it
+means "inactive" would let Delete through, and deleting a live listing is not recoverable.
+
+**To settle it**, capture `GET /adverts` for an account holding such a listing and record:
+
+1. The exact `status` string, and whether `valid_to` is in the future.
+2. Whether the same listing is `active` in the OLX web UI at that moment.
+3. Whether it was created through the partner API or on the OLX website — a partner API reporting
+   `disabled` for adverts it does not own is the most likely explanation, in which case the state
+   is "not manageable by this integration" rather than anything about visibility, and the copy is
+   already right while the name is misleading.
+4. Whether `POST commands {"command":"deactivate"}` is accepted for it.
+
+If (3) holds, `Disabled` should be presented as "managed outside SellSnap" rather than as a
+moderation state, and it should keep offering no actions.

@@ -75,7 +75,14 @@ fun availableActions(status: AdvertStatus, supportsExtendCommand: Boolean): List
             status == AdvertStatus.Unconfirmed ||
             status == AdvertStatus.Unpaid -> listOf(AdvertAction.Delete)
 
-        // Blocked, RemovedByModerator, Disabled: OLX controls these, and Unknown means the app
-        // does not know what it is looking at. Explained rather than made to look actionable.
+        // Blocked and RemovedByModerator are OLX's own decisions, and Unknown means the app does
+        // not recognise what OLX sent.
+        //
+        // `Disabled` is here for a different reason: nobody knows what it means. It is not in the
+        // spec's documented `Advert.status` enum at all, the prose lumps it in with the moderation
+        // states, and yet a real account has reported it for a listing that was live and editable
+        // on OLX's own site. Offering Delete on that reading would risk permanently removing a
+        // live listing on a guess, so this stays empty and the copy sends the seller to OLX
+        // instead of claiming to know why. Worth settling with one captured payload.
         else -> emptyList()
     }
