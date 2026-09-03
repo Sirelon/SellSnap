@@ -479,19 +479,25 @@ These rules apply to every class that directly maps a JSON API response (OLX, Su
 - `AdvertAction.availableActions(status, supportsExtendCommand)` is the single source of truth for
   which actions are offered. An action OLX would reject must never be rendered; `AdvertActionTest`
   iterates every `AdvertStatus` so a newly added status cannot silently gain one.
-- **OLX publishes no status definitions and no transition table.** The spec's `Advert.status` enum
-  lists four values (`new`, `active`, `limited`, `removed_by_user`) while its prose names eight
-  more, and there is no status filter to enumerate them. The full matrix, with each cell marked
-  documented / inferred / unknown, is the KDoc on `availableActions` — read it before changing any
-  status behaviour, and update it in the same edit. Everything rests on two documented rules:
-  `deactivate` requires the advert to be `active`, and `DELETE` requires it not to be.
-- `limited` means OLX wants a paid packet before the listing goes up. The docs say to purchase one
-  and then send `activate`, but `POST adverts/{id}/packets` spends the seller's OLX balance, so no
-  button in this app triggers it — the state is explained and the seller is pointed at OLX.
-- `disabled` is not understood. It is absent from the documented enum, the prose groups it with the
-  moderation states, and a real account reported it for a listing that was live and editable on
-  OLX's own site. It offers no actions, and the sheet asks
-  `GET adverts/{id}/moderation-reason` for OLX's own explanation rather than asserting a cause.
+- **Read a non-PL spec for advert statuses.** `developer.olx.pl` omits the status definitions and
+  lists only four values on the `Advert.status` enum; `developer.olx.ua` and `developer.olx.pt`
+  carry an `Advert statuses` section defining all eleven, and PT's enum lists them all. The
+  vocabulary and the lifecycle are identical across markets — the only market difference anywhere
+  is `extend`, which the specs annotate as "not available in UA, PT". Each country has its own
+  portal at `developer.olx.<tld>`; plain `curl` gets a CloudFront 403, so fetch through a tool
+  that renders the page.
+- Two documented rules generate the whole action matrix: `deactivate` requires the advert to be
+  `active`, and `DELETE` requires it not to be. Every status except `active` is one OLX defines as
+  not visible to buyers, so Delete is offered for all of them, including ones OLX blocked —
+  refusing there was this app's invention. `Unknown` is the exception: an unrecognised status could
+  be an active advert. The table with OLX's definition per status is the KDoc on
+  `availableActions`; update it in the same edit as any behaviour change.
+- Two definitions are easy to get wrong and were: `moderated` is a **negative** moderation result,
+  not "under review", and `disabled` means "offer blocked and waiting for verification" — the
+  seller can still see and edit it on OLX's own site, which is why it looked like a bug.
+- `limited` means the free-listing limit for that category is used up. The docs say to purchase a
+  packet and then send `activate`, but `POST adverts/{id}/packets` spends the seller's OLX balance,
+  so no button in this app triggers it — the state is explained and the seller is pointed at OLX.
 - When an advert has no available actions, prefer OLX's own words: the sheet fetches the moderation
   reason and falls back to this app's per-status copy only when OLX has none. A 404 there is the
   ordinary answer for an advert that was never moderated, not an error.

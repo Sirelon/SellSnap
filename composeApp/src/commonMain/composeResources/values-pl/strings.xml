@@ -349,11 +349,11 @@
 
     <!-- Ad lifecycle — states with nothing to act on. Each says what OLX is doing, not what the app can't do. -->
     <string name="advert_state_new">OLX wciąż sprawdza to ogłoszenie.</string>
-    <string name="advert_state_moderated">OLX sprawdza to ogłoszenie. Wróci samo.</string>
-    <string name="advert_state_blocked">OLX zablokował to ogłoszenie. Tylko OLX może to odblokować — sprawdź e-mail od nich.</string>
-    <string name="advert_state_removed_by_moderator">OLX usunął to ogłoszenie. Tylko OLX może je przywrócić.</string>
-    <string name="advert_state_disabled">SellSnap nie może zmienić tego ogłoszenia. Otwórz je na OLX, aby nim zarządzać.</string>
-    <string name="advert_state_limited">OLX wymaga płatnego pakietu, zanim to ogłoszenie zostanie opublikowane. Możesz to załatwić na OLX.</string>
+    <string name="advert_state_moderated">OLX nie zaakceptował tego ogłoszenia. Sprawdź e-mail od nich, co trzeba poprawić.</string>
+    <string name="advert_state_blocked">OLX zablokował to ogłoszenie. Sprawdź e-mail od nich, aby poznać powód.</string>
+    <string name="advert_state_removed_by_moderator">Moderator OLX usunął to ogłoszenie.</string>
+    <string name="advert_state_disabled">OLX zablokował to ogłoszenie na czas weryfikacji. Sprawdź e-mail od nich w tej sprawie.</string>
+    <string name="advert_state_limited">Wykorzystano limit darmowych ogłoszeń w tej kategorii. OLX wymaga płatnego pakietu, zanim to ogłoszenie zostanie opublikowane — możesz go kupić na OLX.</string>
     <string name="advert_state_unconfirmed">OLX czeka, aż potwierdzisz to ogłoszenie — sprawdź e-mail od nich.</string>
     <string name="advert_state_unpaid">OLX czeka na płatność za to ogłoszenie.</string>
     <string name="advert_state_unknown">OLX jeszcze nie ustalił statusu tego ogłoszenia. Przesuń w dół, aby odświeżyć.</string>

@@ -352,11 +352,11 @@
 
     <!-- Ad lifecycle — states with nothing to act on. Each says what OLX is doing, not what the app can't do. -->
     <string name="advert_state_new">OLX ще перевіряє це оголошення.</string>
-    <string name="advert_state_moderated">OLX перевіряє це оголошення. Воно повернеться само.</string>
-    <string name="advert_state_blocked">OLX заблокував це оголошення. Скасувати це може лише OLX — перевірте лист від них.</string>
-    <string name="advert_state_removed_by_moderator">OLX видалив це оголошення. Відновити його може лише OLX.</string>
-    <string name="advert_state_disabled">SellSnap не може змінити це оголошення. Відкрийте його на OLX, щоб керувати ним там.</string>
-    <string name="advert_state_limited">OLX потребує платного пакета, перш ніж це оголошення опублікується. Владнати це можна на OLX.</string>
+    <string name="advert_state_moderated">OLX не схвалив це оголошення. Перевірте лист від них — там написано, що виправити.</string>
+    <string name="advert_state_blocked">OLX заблокував це оголошення. Перевірте лист від них — там вказана причина.</string>
+    <string name="advert_state_removed_by_moderator">Модератор OLX видалив це оголошення.</string>
+    <string name="advert_state_disabled">OLX заблокував це оголошення, поки перевіряє щось. Шукайте лист від них про це.</string>
+    <string name="advert_state_limited">Ви вичерпали безкоштовні оголошення в цій категорії. OLX потребує платного пакета, перш ніж це оголошення опублікується — придбати його можна на OLX.</string>
     <string name="advert_state_unconfirmed">OLX чекає, поки ви підтвердите це оголошення — перевірте лист від них.</string>
     <string name="advert_state_unpaid">OLX чекає оплату за це оголошення.</string>
     <string name="advert_state_unknown">OLX ще не визначився зі статусом цього оголошення. Потягніть вниз, щоб оновити.</string>

@@ -166,7 +166,7 @@ title/description/price scope from shipping.
 
 ---
 
-## Open question found on a real account (2026-09-03)
+## RESOLVED: what `disabled` means (2026-09-03)
 
 A listing published from the app showed in My Ads as `disabled` ("Вимкнене" / "Disabled") with
 no actions offered, while on OLX's own site the same listing was live and could be edited and
@@ -193,3 +193,33 @@ means "inactive" would let Delete through, and deleting a live listing is not re
 
 If (3) holds, `Disabled` should be presented as "managed outside SellSnap" rather than as a
 moderation state, and it should keep offering no actions.
+
+**Answered.** The question above was asked against `developer.olx.pl`, which omits the status
+definitions entirely and lists only four values on its `Advert.status` enum. `developer.olx.ua`
+and `developer.olx.pt` both carry an `Advert statuses` section defining all eleven:
+
+| Status | OLX's definition |
+| -- | -- |
+| `new` | fresh advert before activation and moderation |
+| `active` | visible on OLX |
+| `limited` | advert exceeded limit of free adverts in selected category |
+| `removed_by_user` | manually removed by user |
+| `outdated` | advert reached expiration date |
+| `unconfirmed` | waiting for confirmation |
+| `unpaid` | waiting for payment |
+| `moderated` | negative moderation result |
+| `blocked` | blocked by moderation |
+| `disabled` | disabled by moderation, offer blocked and waiting for verification |
+| `removed_by_moderator` | removed by moderator |
+
+So `disabled` is a moderation state after all: the offer is blocked to buyers while OLX verifies
+something. That is consistent with the report that the listing was live and editable on OLX's own
+site — an owner can always see and manage their own advert there, blocked or not. Nothing was
+wrong except this app's copy, which claimed OLX had turned the listing off for good.
+
+It also corrected `moderated`, which this app had been describing as "under review, it'll come
+back on its own". It is the opposite: a negative result.
+
+Lesson for anything else status-related: do not read the PL portal. Each market has its own at
+`developer.olx.<tld>`, the vocabulary is identical across them, and the UA and PT ones are the
+complete versions.

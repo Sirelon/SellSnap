@@ -351,11 +351,11 @@
 
     <!-- Ad lifecycle — states with nothing to act on. Each says what OLX is doing, not what the app can't do. -->
     <string name="advert_state_new">OLX is still reviewing this listing.</string>
-    <string name="advert_state_moderated">OLX is reviewing this listing. It'll come back on its own.</string>
-    <string name="advert_state_blocked">OLX blocked this listing. Only they can undo it — check your email from them.</string>
-    <string name="advert_state_removed_by_moderator">OLX removed this listing. Only they can restore it.</string>
-    <string name="advert_state_disabled">SellSnap can't change this listing. Open it on OLX to manage it there.</string>
-    <string name="advert_state_limited">OLX needs a paid package before this one goes up. You can sort that out on OLX.</string>
+    <string name="advert_state_moderated">OLX didn't approve this listing. Check your email from them for what needs fixing.</string>
+    <string name="advert_state_blocked">OLX blocked this listing. Check your email from them for the reason.</string>
+    <string name="advert_state_removed_by_moderator">An OLX moderator removed this listing.</string>
+    <string name="advert_state_disabled">OLX has blocked this listing while they check something. Look for their email about it.</string>
+    <string name="advert_state_limited">You've used up the free listings in this category. OLX wants a paid package before this one goes up — you can buy it on OLX.</string>
     <string name="advert_state_unconfirmed">OLX is waiting for you to confirm this listing — check your email from them.</string>
     <string name="advert_state_unpaid">OLX is waiting for payment on this listing.</string>
     <string name="advert_state_unknown">OLX hasn't settled this listing's state yet. Pull down to refresh.</string>

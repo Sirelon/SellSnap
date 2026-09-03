@@ -349,11 +349,11 @@
 
     <!-- Ad lifecycle — states with nothing to act on. Each says what OLX is doing, not what the app can't do. -->
     <string name="advert_state_new">OLX бұл хабарландыруды әлі тексеріп жатыр.</string>
-    <string name="advert_state_moderated">OLX бұл хабарландыруды тексеріп жатыр. Ол өзі қайта оралады.</string>
-    <string name="advert_state_blocked">OLX бұл хабарландыруды бұғаттады. Оны тек солар ғана шешеді — өздерінен келген хатты қара.</string>
-    <string name="advert_state_removed_by_moderator">OLX бұл хабарландыруды жойды. Оны тек солар ғана қалпына келтіре алады.</string>
-    <string name="advert_state_disabled">SellSnap бұл хабарландыруды өзгерте алмайды. Оны OLX-те ашып, сол жерден басқар.</string>
-    <string name="advert_state_limited">OLX бұл хабарландыруды жариялау үшін ақылы пакетті талап етеді. Мұны OLX-те шеше аласың.</string>
+    <string name="advert_state_moderated">OLX бұл хабарландыруды мақұлдамады. Не түзету керектігін өздерінен келген хаттан қара.</string>
+    <string name="advert_state_blocked">OLX бұл хабарландыруды бұғаттады. Себебін өздерінен келген хаттан қара.</string>
+    <string name="advert_state_removed_by_moderator">OLX модераторы бұл хабарландыруды жойды.</string>
+    <string name="advert_state_disabled">OLX бір нәрсені тексеріп жатқанда, бұл хабарландыруды бұғаттады. Осы туралы өздерінен келген хатты күт.</string>
+    <string name="advert_state_limited">Бұл санаттағы тегін хабарландыруларды жұмсап қойдың. OLX бұл хабарландыруды жариялау алдында ақылы пакетті талап етеді — оны OLX-те сатып ала аласың.</string>
     <string name="advert_state_unconfirmed">OLX бұл хабарландыруды растауыңды күтіп тұр — өздерінен келген хатты қара.</string>
     <string name="advert_state_unpaid">OLX бұл хабарландыру үшін төлемді күтіп тұр.</string>
     <string name="advert_state_unknown">OLX бұл хабарландыру үшін әлі күй белгілеген жоқ. Жаңарту үшін төмен қарай тарт.</string>

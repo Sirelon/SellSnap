@@ -72,31 +72,27 @@ class AdvertActionTest {
     }
 
     @Test
-    fun `availableActions offers nothing for a status OLX controls, for every AdvertStatus value`() {
-        // Blocked, RemovedByModerator and Disabled are OLX's decisions and nothing this app sends
-        // would be accepted; Unknown means the app does not know what it is looking at. Iterating
-        // every enum entry means a status added later and left out of the branches above fails
-        // this test instead of silently offering a doomed action.
-        val mapped = setOf(
-            AdvertStatus.Active,
-            AdvertStatus.Limited,
-            AdvertStatus.RemovedByUser,
-            AdvertStatus.Outdated,
-            AdvertStatus.New,
-            AdvertStatus.Moderated,
-            AdvertStatus.Unconfirmed,
-            AdvertStatus.Unpaid,
-        )
-
-        for (status in AdvertStatus.entries) {
-            if (status in mapped) continue
+    fun `a listing OLX blocked can still be deleted, because only an active advert refuses it`() {
+        // Refusing here was this app's own invention, not OLX's rule - it left sellers holding
+        // listings they wanted gone. OLX defines all three as not visible to buyers, and the only
+        // documented constraint on DELETE is that the advert not be active.
+        for (status in listOf(AdvertStatus.Blocked, AdvertStatus.RemovedByModerator, AdvertStatus.Disabled)) {
             for (supportsExtend in listOf(true, false)) {
                 assertEquals(
-                    emptyList(),
+                    listOf(AdvertAction.Delete),
                     availableActions(status, supportsExtendCommand = supportsExtend),
-                    "status $status must not offer an action that cannot succeed",
+                    "status $status is not active, so OLX accepts a delete",
                 )
             }
+        }
+    }
+
+    @Test
+    fun `an unrecognised status offers nothing, because it might be an active advert`() {
+        // The one case OLX documents as refused is deleting an active advert, and an unknown
+        // status string could be exactly that. Guessing wrong is not recoverable.
+        for (supportsExtend in listOf(true, false)) {
+            assertEquals(emptyList(), availableActions(AdvertStatus.Unknown, supportsExtendCommand = supportsExtend))
         }
     }
 
@@ -114,9 +110,9 @@ class AdvertActionTest {
             AdvertStatus.RemovedByUser to listOf(AdvertAction.Reactivate, AdvertAction.Delete),
             AdvertStatus.Unconfirmed to listOf(AdvertAction.Delete),
             AdvertStatus.Unpaid to listOf(AdvertAction.Delete),
-            AdvertStatus.Blocked to emptyList(),
-            AdvertStatus.RemovedByModerator to emptyList(),
-            AdvertStatus.Disabled to emptyList(),
+            AdvertStatus.Blocked to listOf(AdvertAction.Delete),
+            AdvertStatus.RemovedByModerator to listOf(AdvertAction.Delete),
+            AdvertStatus.Disabled to listOf(AdvertAction.Delete),
             AdvertStatus.Unknown to emptyList(),
         )
 

@@ -349,11 +349,11 @@
 
     <!-- Ad lifecycle — states with nothing to act on. Each says what OLX is doing, not what the app can't do. -->
     <string name="advert_state_new">O OLX ainda está a rever este anúncio.</string>
-    <string name="advert_state_moderated">O OLX está a rever este anúncio. Volta sozinho.</string>
-    <string name="advert_state_blocked">O OLX bloqueou este anúncio. Só o OLX pode desbloqueá-lo — verifique o email deles.</string>
-    <string name="advert_state_removed_by_moderator">O OLX removeu este anúncio. Só o OLX pode restaurá-lo.</string>
-    <string name="advert_state_disabled">O SellSnap não pode alterar este anúncio. Abra-o no OLX para gerir aí.</string>
-    <string name="advert_state_limited">O OLX precisa de um pacote pago antes deste anúncio ser publicado. Pode tratar disso no OLX.</string>
+    <string name="advert_state_moderated">O OLX não aprovou este anúncio. Verifique o email deles para saber o que corrigir.</string>
+    <string name="advert_state_blocked">O OLX bloqueou este anúncio. Verifique o email deles para saber o motivo.</string>
+    <string name="advert_state_removed_by_moderator">Um moderador do OLX removeu este anúncio.</string>
+    <string name="advert_state_disabled">O OLX bloqueou este anúncio enquanto verifica algo. Procure o email deles sobre isto.</string>
+    <string name="advert_state_limited">Esgotou os anúncios gratuitos nesta categoria. O OLX precisa de um pacote pago antes deste anúncio ser publicado — pode comprá-lo no OLX.</string>
     <string name="advert_state_unconfirmed">O OLX está à espera que confirme este anúncio — verifique o email deles.</string>
     <string name="advert_state_unpaid">O OLX está à espera do pagamento deste anúncio.</string>
     <string name="advert_state_unknown">O OLX ainda não definiu um estado para este anúncio. Puxe para baixo para atualizar.</string>
