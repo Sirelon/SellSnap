@@ -10,6 +10,8 @@ import com.sirelon.sellsnap.designsystem.AppTheme
 import com.sirelon.sellsnap.features.seller.ad.publish_success.AdvertStatus
 import com.sirelon.sellsnap.features.seller.my_ads.domain.AdvertAction
 import com.sirelon.sellsnap.features.seller.my_ads.domain.AdvertExpiry
+import com.sirelon.sellsnap.features.seller.my_ads.domain.AdvertState
+import com.sirelon.sellsnap.features.seller.my_ads.domain.state
 import com.sirelon.sellsnap.features.seller.my_ads.domain.advertExpiryOf
 import com.sirelon.sellsnap.features.seller.my_ads.domain.isExpiringSoon
 import com.sirelon.sellsnap.generated.resources.Res
@@ -21,88 +23,69 @@ import com.sirelon.sellsnap.generated.resources.advert_action_reactivate
 import com.sirelon.sellsnap.generated.resources.advert_expiry_days_left
 import com.sirelon.sellsnap.generated.resources.advert_expiry_expired
 import com.sirelon.sellsnap.generated.resources.advert_expiry_today
-import com.sirelon.sellsnap.generated.resources.advert_state_blocked
-import com.sirelon.sellsnap.generated.resources.advert_state_disabled
-import com.sirelon.sellsnap.generated.resources.advert_state_limited
-import com.sirelon.sellsnap.generated.resources.advert_state_moderated
-import com.sirelon.sellsnap.generated.resources.advert_state_new
-import com.sirelon.sellsnap.generated.resources.advert_state_removed_by_moderator
-import com.sirelon.sellsnap.generated.resources.advert_state_unconfirmed
 import com.sirelon.sellsnap.generated.resources.advert_state_unknown
-import com.sirelon.sellsnap.generated.resources.advert_state_unpaid
 import com.sirelon.sellsnap.generated.resources.ic_pen_line
 import com.sirelon.sellsnap.generated.resources.ic_refresh_cw
 import com.sirelon.sellsnap.generated.resources.ic_wifi_off
 import com.sirelon.sellsnap.generated.resources.ic_x
+import com.sirelon.sellsnap.generated.resources.advert_state_needs_confirmation
+import com.sirelon.sellsnap.generated.resources.advert_state_needs_payment
+import com.sirelon.sellsnap.generated.resources.advert_state_rejected
 import com.sirelon.sellsnap.generated.resources.my_ads_status_active
-import com.sirelon.sellsnap.generated.resources.my_ads_status_blocked
-import com.sirelon.sellsnap.generated.resources.my_ads_status_disabled
-import com.sirelon.sellsnap.generated.resources.my_ads_status_limited
-import com.sirelon.sellsnap.generated.resources.my_ads_status_moderated
-import com.sirelon.sellsnap.generated.resources.my_ads_status_new
-import com.sirelon.sellsnap.generated.resources.my_ads_status_outdated
-import com.sirelon.sellsnap.generated.resources.my_ads_status_removed_by_moderator
-import com.sirelon.sellsnap.generated.resources.my_ads_status_removed_by_user
-import com.sirelon.sellsnap.generated.resources.my_ads_status_unconfirmed
+import com.sirelon.sellsnap.generated.resources.my_ads_status_inactive
+import com.sirelon.sellsnap.generated.resources.my_ads_status_needs_confirmation
+import com.sirelon.sellsnap.generated.resources.my_ads_status_needs_payment
+import com.sirelon.sellsnap.generated.resources.my_ads_status_rejected
+import com.sirelon.sellsnap.generated.resources.my_ads_status_under_review
 import com.sirelon.sellsnap.generated.resources.my_ads_status_unknown
-import com.sirelon.sellsnap.generated.resources.my_ads_status_unpaid
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
-internal fun statusLabel(status: AdvertStatus): StringResource = when (status) {
-    AdvertStatus.Active -> Res.string.my_ads_status_active
-    AdvertStatus.New -> Res.string.my_ads_status_new
-    AdvertStatus.Limited -> Res.string.my_ads_status_limited
-    AdvertStatus.RemovedByUser -> Res.string.my_ads_status_removed_by_user
-    AdvertStatus.Outdated -> Res.string.my_ads_status_outdated
-    AdvertStatus.Unconfirmed -> Res.string.my_ads_status_unconfirmed
-    AdvertStatus.Unpaid -> Res.string.my_ads_status_unpaid
-    AdvertStatus.Moderated -> Res.string.my_ads_status_moderated
-    AdvertStatus.Blocked -> Res.string.my_ads_status_blocked
-    AdvertStatus.Disabled -> Res.string.my_ads_status_disabled
-    AdvertStatus.RemovedByModerator -> Res.string.my_ads_status_removed_by_moderator
-    AdvertStatus.Unknown -> Res.string.my_ads_status_unknown
-}
-
-@Composable
-internal fun statusColor(status: AdvertStatus): Color = when (status) {
-    AdvertStatus.Active -> AppTheme.colors.success
-    AdvertStatus.New,
-    AdvertStatus.Moderated,
-    AdvertStatus.Unconfirmed -> AppTheme.colors.warning
-    AdvertStatus.Limited,
-    AdvertStatus.Unpaid -> AppTheme.colors.warningVariant
-    AdvertStatus.RemovedByUser,
-    AdvertStatus.Outdated,
-    AdvertStatus.Blocked,
-    AdvertStatus.Disabled,
-    AdvertStatus.RemovedByModerator -> AppTheme.colors.error
-    AdvertStatus.Unknown -> AppTheme.colors.primary
+internal fun statusLabel(status: AdvertStatus): StringResource = when (status.state) {
+    AdvertState.Active -> Res.string.my_ads_status_active
+    AdvertState.UnderReview -> Res.string.my_ads_status_under_review
+    AdvertState.NeedsPayment -> Res.string.my_ads_status_needs_payment
+    AdvertState.NeedsConfirmation -> Res.string.my_ads_status_needs_confirmation
+    AdvertState.Rejected -> Res.string.my_ads_status_rejected
+    AdvertState.Inactive -> Res.string.my_ads_status_inactive
+    AdvertState.Unknown -> Res.string.my_ads_status_unknown
 }
 
 /**
- * What OLX is doing with a listing the seller cannot act on (SIR-101). Only these statuses have
- * one: for the rest, the actions themselves say what can be done, and a paragraph explaining an
- * actionable state is noise.
- *
- * `RemovedByUser` and `Outdated` are deliberately absent - both are offered Reactivate, Finish
- * and Delete, so nothing needs explaining.
+ * Three states share amber deliberately: the label carries the distinction between waiting on
+ * OLX, on a payment and on a confirmation, and a fourth tint would only raise the question of
+ * what the colour means.
  */
-internal fun statusExplanation(status: AdvertStatus): StringResource? = when (status) {
-    AdvertStatus.New -> Res.string.advert_state_new
-    AdvertStatus.Limited -> Res.string.advert_state_limited
-    AdvertStatus.Moderated -> Res.string.advert_state_moderated
-    AdvertStatus.Blocked -> Res.string.advert_state_blocked
-    AdvertStatus.RemovedByModerator -> Res.string.advert_state_removed_by_moderator
-    AdvertStatus.Disabled -> Res.string.advert_state_disabled
-    AdvertStatus.Unconfirmed -> Res.string.advert_state_unconfirmed
-    AdvertStatus.Unpaid -> Res.string.advert_state_unpaid
-    AdvertStatus.Unknown -> Res.string.advert_state_unknown
-    AdvertStatus.Active,
-    AdvertStatus.RemovedByUser,
-    AdvertStatus.Outdated -> null
+@Composable
+internal fun statusColor(status: AdvertStatus): Color = when (status.state) {
+    AdvertState.Active -> AppTheme.colors.success
+    AdvertState.UnderReview,
+    AdvertState.NeedsPayment,
+    AdvertState.NeedsConfirmation -> AppTheme.colors.warning
+    AdvertState.Rejected -> AppTheme.colors.error
+    AdvertState.Inactive,
+    AdvertState.Unknown -> AppTheme.colors.onSurfaceMuted
+}
+
+/**
+ * An explanation exists only where the seller has to do something somewhere else - pay, confirm -
+ * or where OLX said no. `Active`, `UnderReview` and `Inactive` need none: the badge and the
+ * available actions already say everything true about them, and a paragraph restating a badge is
+ * noise.
+ *
+ * For a rejected listing the sheet prefers OLX's own text from `moderation-reason` and falls back
+ * to this only when OLX returns nothing.
+ */
+internal fun statusExplanation(status: AdvertStatus): StringResource? = when (status.state) {
+    AdvertState.NeedsPayment -> Res.string.advert_state_needs_payment
+    AdvertState.NeedsConfirmation -> Res.string.advert_state_needs_confirmation
+    AdvertState.Rejected -> Res.string.advert_state_rejected
+    AdvertState.Unknown -> Res.string.advert_state_unknown
+    AdvertState.Active,
+    AdvertState.UnderReview,
+    AdvertState.Inactive -> null
 }
 
 internal fun actionLabel(action: AdvertAction): StringResource = when (action) {

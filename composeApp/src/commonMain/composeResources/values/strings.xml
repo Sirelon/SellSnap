@@ -139,17 +139,12 @@
     <string name="my_ads_price_not_set">Price not set</string>
     <string name="my_ads_load_failed">Couldn't load OLX ads.</string>
     <string name="my_ads_status_active">Active</string>
-    <string name="my_ads_status_new">Under review</string>
-    <string name="my_ads_status_limited">Limited</string>
-    <string name="my_ads_status_removed_by_user">Removed</string>
-    <string name="my_ads_status_outdated">Expired</string>
-    <string name="my_ads_status_unconfirmed">Unconfirmed</string>
-    <string name="my_ads_status_unpaid">Unpaid</string>
-    <string name="my_ads_status_moderated">Moderated</string>
-    <string name="my_ads_status_blocked">Blocked</string>
-    <string name="my_ads_status_disabled">Disabled</string>
-    <string name="my_ads_status_removed_by_moderator">Removed by moderator</string>
-    <string name="my_ads_status_unknown">Pending</string>
+    <string name="my_ads_status_under_review">Under review</string>
+    <string name="my_ads_status_needs_payment">Needs payment</string>
+    <string name="my_ads_status_needs_confirmation">Needs confirmation</string>
+    <string name="my_ads_status_rejected">Rejected</string>
+    <string name="my_ads_status_inactive">Inactive</string>
+    <string name="my_ads_status_unknown">Unknown</string>
 
     <!-- Navigation -->
     <string name="back">Back</string>
@@ -350,15 +345,10 @@
     <string name="advert_action_in_progress">Working on it…</string>
 
     <!-- Ad lifecycle — states with nothing to act on. Each says what OLX is doing, not what the app can't do. -->
-    <string name="advert_state_new">Buyers can't see it yet — OLX checks every new listing. Usually done in a minute.</string>
-    <string name="advert_state_moderated">OLX turned this listing down. They emailed you what to change — fix it and post it again.</string>
-    <string name="advert_state_blocked">OLX blocked this listing. They emailed you why.</string>
-    <string name="advert_state_removed_by_moderator">OLX removed this listing.</string>
-    <string name="advert_state_disabled">OLX is still checking this listing. It can take longer than usual — nothing for you to do.</string>
-    <string name="advert_state_limited">You've run out of free listings in this category. Buy a package on OLX to put this one up.</string>
-    <string name="advert_state_unconfirmed">OLX needs you to confirm this listing. Check your email from OLX.</string>
-    <string name="advert_state_unpaid">This one needs paying for on OLX before buyers can see it.</string>
-    <string name="advert_state_unknown">Can't tell what's happening with this one. Pull down to refresh.</string>
+    <string name="advert_state_needs_payment">OLX is waiting for payment before it shows this listing to buyers. You can pay on OLX.</string>
+    <string name="advert_state_needs_confirmation">OLX needs you to confirm this listing before buyers can see it. Open it on OLX to confirm.</string>
+    <string name="advert_state_rejected">OLX rejected this listing and emailed you why.</string>
+    <string name="advert_state_unknown">SellSnap can't tell what's happening with this listing. Open it on OLX to check.</string>
 
     <!-- Ad lifecycle — confirmations. Every one says what happens on OLX. -->
     <string name="advert_confirm_deactivate_message">Buyers won't see it any more. You can put it back up any time.</string>

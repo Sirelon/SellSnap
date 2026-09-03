@@ -137,17 +137,12 @@
     <string name="my_ads_price_not_set">Prețul nu este setat</string>
     <string name="my_ads_load_failed">Nu s-au putut încărca anunțurile OLX.</string>
     <string name="my_ads_status_active">Activ</string>
-    <string name="my_ads_status_new">În curs de revizuire</string>
-    <string name="my_ads_status_limited">Limitat</string>
-    <string name="my_ads_status_removed_by_user">Eliminat</string>
-    <string name="my_ads_status_outdated">Expirat</string>
-    <string name="my_ads_status_unconfirmed">Neconfirmat</string>
-    <string name="my_ads_status_unpaid">Neplătit</string>
-    <string name="my_ads_status_moderated">Moderat</string>
-    <string name="my_ads_status_blocked">Blocat</string>
-    <string name="my_ads_status_disabled">Dezactivat</string>
-    <string name="my_ads_status_removed_by_moderator">Eliminat de moderator</string>
-    <string name="my_ads_status_unknown">În așteptare</string>
+    <string name="my_ads_status_under_review">În curs de revizuire</string>
+    <string name="my_ads_status_needs_payment">De plătit</string>
+    <string name="my_ads_status_needs_confirmation">De confirmat</string>
+    <string name="my_ads_status_rejected">Respins</string>
+    <string name="my_ads_status_inactive">Inactiv</string>
+    <string name="my_ads_status_unknown">Necunoscut</string>
 
     <!-- Navigation -->
     <string name="back">Înapoi</string>
@@ -348,15 +343,10 @@
     <string name="advert_action_in_progress">Lucrăm la asta…</string>
 
     <!-- Ad lifecycle — states with nothing to act on. Each says what OLX is doing, not what the app can't do. -->
-    <string name="advert_state_new">Cumpărătorii încă nu îl văd — OLX verifică fiecare anunț nou. De obicei durează un minut.</string>
-    <string name="advert_state_moderated">OLX a refuzat acest anunț. Ți-au trimis un email cu ce trebuie corectat — corectează-l și republică-l.</string>
-    <string name="advert_state_blocked">OLX a blocat acest anunț. Ți-au trimis un email cu motivul.</string>
-    <string name="advert_state_removed_by_moderator">OLX a eliminat acest anunț.</string>
-    <string name="advert_state_disabled">OLX încă verifică acest anunț. Poate dura mai mult decât de obicei — nu ai nimic de făcut.</string>
-    <string name="advert_state_limited">Ai epuizat anunțurile gratuite din această categorie. Cumpără un pachet pe OLX ca să îl publici.</string>
-    <string name="advert_state_unconfirmed">OLX are nevoie să confirmi acest anunț. Verifică emailul de la OLX.</string>
-    <string name="advert_state_unpaid">Acest anunț trebuie plătit pe OLX înainte ca cumpărătorii să îl vadă.</string>
-    <string name="advert_state_unknown">Nu putem stabili ce se întâmplă cu acest anunț. Trage în jos pentru a reîmprospăta.</string>
+    <string name="advert_state_needs_payment">OLX așteaptă plata înainte să arate acest anunț cumpărătorilor. Poți plăti pe OLX.</string>
+    <string name="advert_state_needs_confirmation">OLX are nevoie să confirmi acest anunț înainte ca cumpărătorii să îl poată vedea. Deschide-l pe OLX ca să confirmi.</string>
+    <string name="advert_state_rejected">OLX a respins acest anunț și ți-a trimis un email cu motivul.</string>
+    <string name="advert_state_unknown">SellSnap nu poate stabili ce se întâmplă cu acest anunț. Deschide-l pe OLX ca să verifici.</string>
 
     <!-- Ad lifecycle — confirmations. Every one says what happens on OLX. -->
     <string name="advert_confirm_deactivate_message">Cumpărătorii nu-l mai văd. Îl poți reactiva oricând vrei.</string>

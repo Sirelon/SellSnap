@@ -137,17 +137,12 @@
     <string name="my_ads_price_not_set">Баға қойылмаған</string>
     <string name="my_ads_load_failed">OLX хабарландыруларын жүктеу мүмкін болмады.</string>
     <string name="my_ads_status_active">Белсенді</string>
-    <string name="my_ads_status_new">Қарастырылуда</string>
-    <string name="my_ads_status_limited">Шектеулі</string>
-    <string name="my_ads_status_removed_by_user">Жойылған</string>
-    <string name="my_ads_status_outdated">Мерзімі өткен</string>
-    <string name="my_ads_status_unconfirmed">Расталмаған</string>
-    <string name="my_ads_status_unpaid">Төленбеген</string>
-    <string name="my_ads_status_moderated">Модерацияда</string>
-    <string name="my_ads_status_blocked">Бұғатталған</string>
-    <string name="my_ads_status_disabled">Өшірілген</string>
-    <string name="my_ads_status_removed_by_moderator">Модератор жойған</string>
-    <string name="my_ads_status_unknown">Күтуде</string>
+    <string name="my_ads_status_under_review">Қарастырылуда</string>
+    <string name="my_ads_status_needs_payment">Төлем қажет</string>
+    <string name="my_ads_status_needs_confirmation">Растау қажет</string>
+    <string name="my_ads_status_rejected">Қабылданбады</string>
+    <string name="my_ads_status_inactive">Белсенді емес</string>
+    <string name="my_ads_status_unknown">Белгісіз</string>
 
     <!-- Navigation -->
     <string name="back">Артқа</string>
@@ -348,15 +343,10 @@
     <string name="advert_action_in_progress">Жұмыс жасалуда…</string>
 
     <!-- Ad lifecycle — states with nothing to act on. Each says what OLX is doing, not what the app can't do. -->
-    <string name="advert_state_new">Сатып алушылар оны әлі көрмейді — OLX әрбір жаңа хабарландыруды тексереді. Әдетте бір минутке созылады.</string>
-    <string name="advert_state_moderated">OLX бұл хабарландыруды қабылдамады. Не өзгерту керектігін хатпен жазды — түзетіп, қайта жариялай аласың.</string>
-    <string name="advert_state_blocked">OLX бұл хабарландыруды бұғаттады. Себебін хатпен жазды.</string>
-    <string name="advert_state_removed_by_moderator">OLX бұл хабарландыруды жойды.</string>
-    <string name="advert_state_disabled">OLX бұл хабарландыруды әлі тексеріп жатыр. Бұл әдеттегіден ұзағырақ созылуы мүмкін — саған ештеңе істеудің қажеті жоқ.</string>
-    <string name="advert_state_limited">Бұл санаттағы тегін хабарландыруларды жұмсап қойдың. Мұны жариялау үшін OLX-тен пакет сатып ал.</string>
-    <string name="advert_state_unconfirmed">OLX бұл хабарландыруды растауыңды сұрайды. OLX-тен келген хатты тексер.</string>
-    <string name="advert_state_unpaid">Сатып алушылар көру үшін бұл хабарландыруға OLX-те төлем жасау керек.</string>
-    <string name="advert_state_unknown">Бұл хабарландырумен не болып жатқанын анықтай алмай тұрмыз. Жаңарту үшін төмен қарай тарт.</string>
+    <string name="advert_state_needs_payment">OLX бұл хабарландыруды сатып алушыларға көрсетпес бұрын төлемді күтіп тұр. Төлемді OLX-те жасай аласың.</string>
+    <string name="advert_state_needs_confirmation">OLX бұл хабарландыруды сатып алушылар көрместен бұрын растауыңды сұрайды. Растау үшін оны OLX-те аш.</string>
+    <string name="advert_state_rejected">OLX бұл хабарландыруды қабылдамады және себебін хатпен жазды.</string>
+    <string name="advert_state_unknown">SellSnap бұл хабарландырумен не болып жатқанын анықтай алмайды. Тексеру үшін оны OLX-те аш.</string>
 
     <!-- Ad lifecycle — confirmations. Every one says what happens on OLX. -->
     <string name="advert_confirm_deactivate_message">Сатып алушылар оны бұдан былай көрмейді. Кез келген уақытта қайта қоса аласың.</string>

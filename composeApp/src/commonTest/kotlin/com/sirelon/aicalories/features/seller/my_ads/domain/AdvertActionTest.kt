@@ -7,131 +7,101 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 /**
- * Regression tests for the SIR-101 status-to-action mapping. An action that cannot succeed must
- * never be offered - guessing wrong means the seller taps a button and gets a server error - so
- * every branch is asserted, and [AdvertStatus.entries] is iterated so a newly added status
- * defaults to "no action" instead of silently inheriting whatever branch it happens to fall into.
+ * Pins the seller-facing state model (SIR-101). Two things must not drift: which of OLX's eleven
+ * statuses lands in which state, and which actions each state offers. An action OLX would reject
+ * must never be offered - guessing wrong means the seller taps a button and gets a server error.
  */
 class AdvertActionTest {
 
     @Test
-    fun `availableActions offers edit extend and deactivate for an active listing in a market that supports extend`() {
-        assertEquals(
-            listOf(AdvertAction.Edit, AdvertAction.Extend, AdvertAction.Deactivate),
-            availableActions(AdvertStatus.Active, supportsExtendCommand = true),
+    fun `every OLX status maps to the state a seller would recognise`() {
+        // Grouped only where the members differ in nothing the seller does. A status that moved
+        // buckets by accident fails here, and one added to the enum fails the key assertion.
+        val expected = mapOf(
+            AdvertStatus.Active to AdvertState.Active,
+            AdvertStatus.New to AdvertState.UnderReview,
+            AdvertStatus.Disabled to AdvertState.UnderReview,
+            AdvertStatus.Limited to AdvertState.NeedsPayment,
+            AdvertStatus.Unpaid to AdvertState.NeedsPayment,
+            AdvertStatus.Unconfirmed to AdvertState.NeedsConfirmation,
+            AdvertStatus.Moderated to AdvertState.Rejected,
+            AdvertStatus.Blocked to AdvertState.Rejected,
+            AdvertStatus.RemovedByModerator to AdvertState.Rejected,
+            AdvertStatus.RemovedByUser to AdvertState.Inactive,
+            AdvertStatus.Outdated to AdvertState.Inactive,
+            AdvertStatus.Unknown to AdvertState.Unknown,
         )
+
+        assertEquals(AdvertStatus.entries.toSet(), expected.keys)
+        for ((status, state) in expected) {
+            assertEquals(state, status.state, "status $status")
+        }
     }
 
     @Test
-    fun `availableActions drops extend for an active listing in Ukraine and Portugal, where OLX rejects the command`() {
-        assertEquals(
-            listOf(AdvertAction.Edit, AdvertAction.Deactivate),
-            availableActions(AdvertStatus.Active, supportsExtendCommand = false),
+    fun `the action set per state is pinned`() {
+        val expected = mapOf(
+            AdvertState.Active to listOf(AdvertAction.Edit, AdvertAction.Extend, AdvertAction.Deactivate),
+            AdvertState.Inactive to listOf(AdvertAction.Reactivate, AdvertAction.Delete),
+            AdvertState.UnderReview to listOf(AdvertAction.Delete),
+            AdvertState.NeedsPayment to listOf(AdvertAction.Delete),
+            AdvertState.NeedsConfirmation to listOf(AdvertAction.Delete),
+            AdvertState.Rejected to listOf(AdvertAction.Delete),
+            AdvertState.Unknown to emptyList(),
         )
+
+        // A state added to the enum has to be given an action set here before this passes.
+        assertEquals(AdvertState.entries.toSet(), expected.keys)
+
+        for (status in AdvertStatus.entries) {
+            assertEquals(
+                expected.getValue(status.state),
+                availableActions(status, supportsExtendCommand = true),
+                "status $status is ${status.state}",
+            )
+        }
     }
 
     @Test
-    fun `a Limited listing is not live, so it is never offered deactivate`() {
-        // OLX's documented lifecycle lands a posted advert in either `new` or `limited`, where
-        // `limited` requires purchasing a packet before it goes up. It is awaiting payment, not
-        // published - so `deactivate` would come back as "Ad has to be active", and a delete must
-        // not waste a deactivate on it first.
-        assertFalse(AdvertStatus.Limited.isLive)
+    fun `only an active listing differs by market, and only by extend`() {
+        // `extend` is the single market difference anywhere in the API - the specs annotate it as
+        // unavailable in UA and PT.
+        for (status in AdvertStatus.entries) {
+            val withExtend = availableActions(status, supportsExtendCommand = true)
+            val withoutExtend = availableActions(status, supportsExtendCommand = false)
+            assertEquals(
+                if (status.state == AdvertState.Active) listOf(AdvertAction.Extend) else emptyList(),
+                withExtend - withoutExtend.toSet(),
+                "status $status",
+            )
+        }
+    }
+
+    @Test
+    fun `deactivate is offered only where OLX accepts it, and delete only where it does not`() {
+        // The two documented rules the whole table rests on: `deactivate` needs the advert to be
+        // active, `DELETE` needs it not to be.
+        for (status in AdvertStatus.entries) {
+            val actions = availableActions(status, supportsExtendCommand = true)
+            if (status.isLive) {
+                assertTrue(AdvertAction.Deactivate in actions, "$status is live, so it can be taken down")
+                assertFalse(AdvertAction.Delete in actions, "$status is live, so OLX refuses a delete")
+            } else {
+                assertFalse(AdvertAction.Deactivate in actions, "$status is not live, so OLX refuses a deactivate")
+            }
+        }
+
+        // Only `active` is live - notably not `limited`, which is awaiting payment, not published.
         assertTrue(AdvertStatus.Active.isLive)
-
-        for (supportsExtend in listOf(true, false)) {
-            val actions = availableActions(AdvertStatus.Limited, supportsExtendCommand = supportsExtend)
-            assertEquals(listOf(AdvertAction.Delete), actions)
-        }
-    }
-
-    @Test
-    fun `availableActions offers reactivate and delete for a taken-down listing regardless of extend support`() {
-        val expected = listOf(AdvertAction.Reactivate, AdvertAction.Delete)
-
-        for (supportsExtend in listOf(true, false)) {
-            assertEquals(expected, availableActions(AdvertStatus.RemovedByUser, supportsExtendCommand = supportsExtend))
-            assertEquals(expected, availableActions(AdvertStatus.Outdated, supportsExtendCommand = supportsExtend))
-        }
-    }
-
-    @Test
-    fun `an advert still in review can be deleted, because OLX only refuses to delete an active one`() {
-        // Previously the sheet offered nothing at all for these, which left a seller who posted
-        // something by mistake with no way to take it back. `DELETE adverts/{id}` requires only
-        // that the advert not be `active`.
-        for (status in listOf(AdvertStatus.New, AdvertStatus.Moderated, AdvertStatus.Unconfirmed, AdvertStatus.Unpaid)) {
-            for (supportsExtend in listOf(true, false)) {
-                assertEquals(
-                    listOf(AdvertAction.Delete),
-                    availableActions(status, supportsExtendCommand = supportsExtend),
-                    "status $status is not active, so OLX accepts a delete",
-                )
-            }
-        }
-    }
-
-    @Test
-    fun `a listing OLX blocked can still be deleted, because only an active advert refuses it`() {
-        // Refusing here was this app's own invention, not OLX's rule - it left sellers holding
-        // listings they wanted gone. OLX defines all three as not visible to buyers, and the only
-        // documented constraint on DELETE is that the advert not be active.
-        for (status in listOf(AdvertStatus.Blocked, AdvertStatus.RemovedByModerator, AdvertStatus.Disabled)) {
-            for (supportsExtend in listOf(true, false)) {
-                assertEquals(
-                    listOf(AdvertAction.Delete),
-                    availableActions(status, supportsExtendCommand = supportsExtend),
-                    "status $status is not active, so OLX accepts a delete",
-                )
-            }
-        }
+        assertFalse(AdvertStatus.Limited.isLive)
     }
 
     @Test
     fun `an unrecognised status offers nothing, because it might be an active advert`() {
-        // The one case OLX documents as refused is deleting an active advert, and an unknown
-        // status string could be exactly that. Guessing wrong is not recoverable.
+        // Deleting an active advert is the one case OLX documents as refused, and it is not
+        // recoverable, so an unknown string gets no buttons at all.
         for (supportsExtend in listOf(true, false)) {
             assertEquals(emptyList(), availableActions(AdvertStatus.Unknown, supportsExtendCommand = supportsExtend))
-        }
-    }
-
-    @Test
-    fun `the whole status matrix is pinned, so no status changes behaviour unnoticed`() {
-        // The table in availableActions' KDoc, as executable form. OLX documents no per-status
-        // definitions and no transition table, so this is the only place the mapping is checked
-        // as a whole rather than status by status - and any edit to it has to be deliberate.
-        val expected = mapOf(
-            AdvertStatus.Active to listOf(AdvertAction.Edit, AdvertAction.Extend, AdvertAction.Deactivate),
-            AdvertStatus.Limited to listOf(AdvertAction.Delete),
-            AdvertStatus.New to listOf(AdvertAction.Delete),
-            AdvertStatus.Moderated to listOf(AdvertAction.Delete),
-            AdvertStatus.Outdated to listOf(AdvertAction.Reactivate, AdvertAction.Delete),
-            AdvertStatus.RemovedByUser to listOf(AdvertAction.Reactivate, AdvertAction.Delete),
-            AdvertStatus.Unconfirmed to listOf(AdvertAction.Delete),
-            AdvertStatus.Unpaid to listOf(AdvertAction.Delete),
-            AdvertStatus.Blocked to listOf(AdvertAction.Delete),
-            AdvertStatus.RemovedByModerator to listOf(AdvertAction.Delete),
-            AdvertStatus.Disabled to listOf(AdvertAction.Delete),
-            AdvertStatus.Unknown to emptyList(),
-        )
-
-        // Every status OLX can send has a row, so a value added to the enum fails here.
-        assertEquals(AdvertStatus.entries.toSet(), expected.keys)
-
-        for ((status, actions) in expected) {
-            assertEquals(actions, availableActions(status, supportsExtendCommand = true), "status $status")
-        }
-
-        // Extend is the only cell that varies by market, and only for an active listing.
-        for (status in AdvertStatus.entries) {
-            val withoutExtend = availableActions(status, supportsExtendCommand = false)
-            val difference = expected.getValue(status) - withoutExtend.toSet()
-            assertEquals(
-                if (status == AdvertStatus.Active) listOf(AdvertAction.Extend) else emptyList(),
-                difference,
-                "only an active listing may differ by market, and only by Extend - status $status",
-            )
         }
     }
 }

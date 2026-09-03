@@ -479,53 +479,39 @@ These rules apply to every class that directly maps a JSON API response (OLX, Su
 - `AdvertAction.availableActions(status, supportsExtendCommand)` is the single source of truth for
   which actions are offered. An action OLX would reject must never be rendered; `AdvertActionTest`
   iterates every `AdvertStatus` so a newly added status cannot silently gain one.
+- **`AdvertState` is the seller-facing model, and the single input to badges, colours,
+  explanations and `availableActions`.** OLX reports eleven statuses; the app shows seven states.
+  The wire-status-to-state table, with OLX's own definition per status and a one-line reason for
+  each grouping, is the KDoc on `AdvertStatus.state`. Both mappings are `when` expressions with no
+  `else`, so a new wire value stops compiling until someone places it, and `AdvertActionTest` pins
+  the whole table.
+- Mirroring all eleven statuses was the original mistake: it drew distinctions no seller acts on,
+  like automatic versus manual checking. Group a status separately only if the seller would *do*
+  something different about it.
+- A badge is one or two words the seller already sees in their own OLX cabinet — for Ukrainian,
+  `under_review` is "На модерації". An explanation paragraph exists only where the seller must act
+  somewhere else (pay, confirm) or where OLX said no; `Active`, `UnderReview` and `Inactive` have
+  none, because the badge and the buttons already say everything true about them.
 - **Read a non-PL spec for advert statuses.** `developer.olx.pl` omits the status definitions and
   lists only four values on the `Advert.status` enum; `developer.olx.ua` and `developer.olx.pt`
-  carry an `Advert statuses` section defining all eleven, and PT's enum lists them all. The
-  vocabulary and the lifecycle are identical across markets — the only market difference anywhere
-  is `extend`, which the specs annotate as "not available in UA, PT". Each country has its own
-  portal at `developer.olx.<tld>`; plain `curl` gets a CloudFront 403, so fetch through a tool
-  that renders the page.
+  carry an `Advert statuses` section defining all eleven. The vocabulary and lifecycle are
+  identical across markets — the only market difference anywhere is `extend`, which the specs
+  annotate as "not available in UA, PT". Each country has its own portal at
+  `developer.olx.<tld>`; plain `curl` gets a CloudFront 403, so fetch through a tool that renders.
 - Two documented rules generate the whole action matrix: `deactivate` requires the advert to be
-  `active`, and `DELETE` requires it not to be. Every status except `active` is one OLX defines as
-  not visible to buyers, so Delete is offered for all of them, including ones OLX blocked —
+  `active`, and `DELETE` requires it not to be. Every state except `Active` is one OLX defines as
+  not visible to buyers, so Delete is offered for all of them, including rejected listings —
   refusing there was this app's invention. `Unknown` is the exception: an unrecognised status could
-  be an active advert. The table with OLX's definition per status is the KDoc on
-  `availableActions`; update it in the same edit as any behaviour change.
-- Two definitions are easy to get wrong and were: `moderated` is a **negative** moderation result,
-  not "under review", and `disabled` means "offer blocked and waiting for verification" — the
-  seller can still see and edit it on OLX's own site, which is why it looked like a bug.
-- In practice `new` and `disabled` are the same thing at different speeds: OLX checks every
-  listing, in seconds normally and slower when it needs a closer look. Neither is a fault and
-  neither is permanent. `moderated` is the outcome when that check says no. The specs do not say
-  any of this; it is how OLX behaves. Whether a check is automatic or done by a person is OLX's
-  internal business and must not appear in user copy.
-- Write these states as what is happening to the seller's listing and whether they need to act.
-  Never translate OLX's API vocabulary — "moderation", "verification", "status" — into user copy,
-  and never leave a reason vague. Copy that said OLX was "checking something" was rejected outright
-  in review, and rightly.
-- `limited` means the free-listing limit for that category is used up. The docs say to purchase a
-  packet and then send `activate`, but `POST adverts/{id}/packets` spends the seller's OLX balance,
-  so no button in this app triggers it — the state is explained and the seller is pointed at OLX.
-- When an advert has no available actions, prefer OLX's own words: the sheet fetches the moderation
-  reason and falls back to this app's per-status copy only when OLX has none. A 404 there is the
-  ordinary answer for an advert that was never moderated, not an error.
-- Commands answer 204 with no body, and OLX may resolve a status differently from what was
-  requested, so a row is always re-read via `GET adverts/{id}` after an action rather than patched
-  from the action that was attempted.
-- `DELETE adverts/{id}` is rejected while an advert is active. Deleting a live listing is
-  deactivate-then-delete, which also means answering OLX's required `is_success`. When only the
-  first half lands, `AdvertDeactivatedNotDeleted` carries the refreshed row so the seller is told
-  the listing is down but still there.
-- `PUT adverts/{id}` takes the full create payload and resets whatever is omitted. Edits therefore
-  re-send `AdvertEditSnapshot.updatePayload` — the raw `data` object from `GET adverts/{id}` minus
-  `AdvertResponseOnlyKeys` — with only the edited keys replaced. Never rebuild a PUT body from app
-  state. Photo and attribute editing stays out until the live checks in
-  `SPIKE-SIR-99-advert-edit-round-trip.md` are closed against a real advert.
-- `extend` is rejected by OLX in Ukraine and Portugal (`OlxCountry.supportsExtendCommand`). There
-  is deliberately no publish-time `auto_extend_enabled` toggle: whether OLX honours the flag in
-  Ukraine is unverified, and a toggle that silently does nothing is worse than none. See
-  `SPIKE-SIR-100-auto-extend.md`.
+  be an active advert.
+- Never translate OLX's API vocabulary into user copy — no "moderation" as a process noun, no
+  "status", no "verification" — and never leave a reason vague. Copy saying OLX was "checking
+  something" was rejected outright in review, and rightly.
+- For a reviewed or rejected listing the sheet prefers OLX's own text from
+  `GET adverts/{id}/moderation-reason` and falls back to the app's copy only when OLX returns
+  nothing. A 404 there is the ordinary answer, not an error.
+- `NeedsPayment` covers `limited` and `unpaid`: money is the blocker and it is paid on OLX. The
+  docs say to purchase a packet then send `activate`, but `POST adverts/{id}/packets` spends the
+  seller's OLX balance, so no button in this app triggers it.
 - Lifecycle analytics carry buckets and enums only — `AdvertAnalyticsBuckets`. No absolute prices,
   no advert ids, no titles. `AdvertOutcomeStore` holds the raw figures on-device and is cleared by
   `SellerAccountRepository.deleteSellSnapAccountData`.

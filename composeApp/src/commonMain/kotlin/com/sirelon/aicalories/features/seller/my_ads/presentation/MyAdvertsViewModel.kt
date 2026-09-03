@@ -19,6 +19,8 @@ import com.sirelon.sellsnap.features.seller.my_ads.data.AdvertOutcomeStore
 import com.sirelon.sellsnap.features.seller.my_ads.data.MyAdvertsRepository
 import com.sirelon.sellsnap.features.seller.my_ads.domain.AdvertAction
 import com.sirelon.sellsnap.features.seller.my_ads.domain.AdvertAnalyticsBuckets
+import com.sirelon.sellsnap.features.seller.my_ads.domain.AdvertState
+import com.sirelon.sellsnap.features.seller.my_ads.domain.state
 import com.sirelon.sellsnap.features.seller.my_ads.domain.availableActions
 import com.sirelon.sellsnap.features.seller.my_ads.domain.isLive
 import com.sirelon.sellsnap.features.seller.my_ads.model.MyAdvertItem
@@ -307,11 +309,12 @@ class MyAdvertsViewModel internal constructor(
         }
         loadStatistics(localIndex, advert.id)
 
-        // Nothing this app can do with this advert, so ask OLX why rather than showing a guess.
-        // Whether OLX answers is also the only reliable signal available: the status vocabulary
-        // documents no per-status meaning, and `disabled` has been observed on a listing that was
-        // live and editable on OLX's own site.
-        if (availableActions(advert.status, supportsExtend).isEmpty()) {
+        // Only these two states have anything to explain, and OLX's own words beat ours. This was
+        // previously gated on the advert having no actions available, which stopped being true
+        // for rejected listings once Delete was offered on every non-active status - so the
+        // reason never actually showed for the listings it exists for.
+        val state = advert.status.state
+        if (state == AdvertState.Rejected || state == AdvertState.UnderReview) {
             loadModerationReason(localIndex, advert.id)
         }
     }
@@ -722,7 +725,7 @@ class MyAdvertsViewModel internal constructor(
                     // An edit can send an advert back to moderation. Saying so beats letting the
                     // status change surprise the seller later. Unknown when the row could not be
                     // re-read, in which case the plain confirmation is the honest one.
-                    val message = if (refreshed?.status == AdvertStatus.Moderated || refreshed?.status == AdvertStatus.New) {
+                    val message = if (refreshed?.status?.state == AdvertState.UnderReview) {
                         Res.string.advert_action_done_edit_moderated
                     } else {
                         Res.string.advert_action_done_edit
