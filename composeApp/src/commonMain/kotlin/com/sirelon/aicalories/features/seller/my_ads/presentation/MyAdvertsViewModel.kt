@@ -78,6 +78,20 @@ class MyAdvertsViewModel internal constructor(
      */
     private val inFlightActions = mutableMapOf<Long, AdvertAction>()
 
+    /**
+     * What a landed command implies about a row, until OLX catches up.
+     *
+     * OLX answers a command with 204 and then keeps reporting the old status on `GET adverts` for
+     * a moment, so every action refetches the list AND records what it expects. A reload applies
+     * [expected] to the row for as long as the server is still reporting [actedFrom] - the value
+     * we know is stale because we just changed it. The moment the server reports anything else it
+     * has caught up, the entry is dropped, and the server wins even if it resolved the advert to
+     * a different status than the one anticipated.
+     */
+    private class PendingStatus(val actedFrom: AdvertStatus, val expected: AdvertStatus)
+
+    private val pendingStatuses = mutableMapOf<Long, PendingStatus>()
+
     init {
         // Every emission (initial + every add/reconnect/disconnect/switch) resyncs pages by
         // localIndex, never by list position - SIR-87 drops the switchEpoch staleness guard
@@ -209,7 +223,7 @@ class MyAdvertsViewModel internal constructor(
                         it.updatePage(localIndex) { page ->
                             page.copy(
                                 isLoading = false,
-                                adverts = adverts,
+                                adverts = adverts.withPendingStatuses(),
                                 canLoadMore = adverts.size == PageSize,
                                 errorMessage = null,
                                 hasLoaded = true,
@@ -233,7 +247,7 @@ class MyAdvertsViewModel internal constructor(
                         it.updatePage(localIndex) { p ->
                             p.copy(
                                 isLoadingMore = false,
-                                adverts = p.adverts + adverts,
+                                adverts = p.adverts + adverts.withPendingStatuses(),
                                 canLoadMore = adverts.size == PageSize,
                             )
                         }
@@ -470,6 +484,7 @@ class MyAdvertsViewModel internal constructor(
                     },
                 )
             }
+            pendingStatuses.remove(advert.id)
             postEffect(Effect.ShowMessage(getString(Res.string.advert_action_done_delete)))
             fetchPage(localIndex)
             return
@@ -480,24 +495,18 @@ class MyAdvertsViewModel internal constructor(
         // rendered by the screen underneath, so while the sheet is up it is not even visible.
         setState { it.copy(advertSheet = it.advertSheet?.takeIf { sheet -> sheet.advert.id != advert.id }) }
 
-        // OLX accepted the command - it answered 204 - but its list endpoint keeps reporting the
-        // old status for a moment afterwards, so refetching here returned `active` for a listing
-        // that had just been taken down. The badge did not change, and reopening the sheet
-        // offered Deactivate on a listing that was already down.
-        //
-        // So the row takes the status the command implies, and is then left alone. Pull to
-        // refresh, a page switch or the next screen entry reconciles it with OLX. This is the
-        // optimistic update SIR-101 asked for; the per-row pending state alone was not enough.
-        //
-        // Applied before the message, so the state a seller sees never lags what they are told.
-        val expected = expectedStatusAfter(action)
-        expected?.let { setStatusLocally(localIndex, advert.id, it) }
+        // Applied before the message, so what the seller sees never lags what they are told.
+        expectedStatusAfter(action)?.let { expected ->
+            pendingStatuses[advert.id] = PendingStatus(actedFrom = advert.status, expected = expected)
+            setStatusLocally(localIndex, advert.id, expected)
+        }
 
         postEffect(Effect.ShowMessage(getString(successMessageFor(action))))
 
-        // Extend changes only `valid_to`, so there is no status to anticipate and a refetch is
-        // the only way to show the new date.
-        if (expected == null) fetchPage(localIndex)
+        // Every action refetches, so anything the command changed that cannot be anticipated -
+        // an extend's new expiry, an edit's price - actually appears. The expectation recorded
+        // above is what stops OLX's momentarily-stale status from undoing the row.
+        fetchPage(localIndex)
     }
 
     /**
@@ -511,6 +520,25 @@ class MyAdvertsViewModel internal constructor(
         AdvertAction.Extend,
         AdvertAction.Delete,
         AdvertAction.Edit -> null
+    }
+
+    /**
+     * Overlays [pendingStatuses] onto rows just loaded from OLX, and retires each entry as soon
+     * as the server stops reporting the status it was recorded against.
+     */
+    private fun List<MyAdvertItem>.withPendingStatuses(): List<MyAdvertItem> {
+        if (pendingStatuses.isEmpty()) return this
+
+        return map { row ->
+            val pending = pendingStatuses[row.id] ?: return@map row
+            if (row.status == pending.actedFrom) {
+                // Still the status we acted on, so OLX has not caught up yet.
+                row.copy(status = pending.expected)
+            } else {
+                pendingStatuses.remove(row.id)
+                row
+            }
+        }
     }
 
     private fun setStatusLocally(localIndex: Int, advertId: Long, status: AdvertStatus) {
@@ -548,8 +576,10 @@ class MyAdvertsViewModel internal constructor(
         updateSheet(advert.id) { it.copy(pendingAction = null) }
 
         // OLX resolved the status differently from what this app believed, so re-read the list -
-        // a rejected action usually means the mapping was working from a stale status.
+        // a rejected action usually means the mapping was working from a stale status. Any
+        // expectation for this advert is dropped first: it was evidently wrong.
         if (olxError is OlxApiError.ValidationError) {
+            pendingStatuses.remove(advert.id)
             fetchPage(localIndex)
         }
 

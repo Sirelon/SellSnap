@@ -874,6 +874,101 @@ class MyAdvertsViewModelTest {
         assertNull(viewModel.state.value.advertSheet)
     }
 
+    @Test
+    fun `every successful action refetches the list`() = runTest(testDispatcher) {
+        // The whole point: an action must leave the seller looking at fresh data. Deactivate and
+        // reactivate previously skipped the refetch entirely, which is why only some actions
+        // appeared to refresh anything.
+        var listReads = 0
+        val engine = mockEngine(testDispatcher) {
+            addHandler { request ->
+                val path = request.url.encodedPath
+                when {
+                    path.endsWith("/commands") -> respond("", status = HttpStatusCode.NoContent)
+
+                    path.endsWith("/statistics") ->
+                        respond(statisticsJson(0, 0, 0), status = HttpStatusCode.OK, headers = jsonHeaders())
+
+                    else -> {
+                        listReads++
+                        respond(advertsJson(111L, status = "outdated"), status = HttpStatusCode.OK, headers = jsonHeaders())
+                    }
+                }
+            }
+        }
+        val (viewModel, _) = setUpViewModel(
+            engine = engine,
+            accounts = listOf(account(localIndex = 1, olxUserId = 1L, accessToken = "token-1")),
+            activeIndex = 1,
+        )
+        runCurrent()
+        val afterFirstLoad = listReads
+
+        val advert = viewModel.state.value.pages.single().adverts.single()
+        viewModel.onEvent(Event.AdvertClicked(localIndex = 1, advert = advert))
+        runCurrent()
+        viewModel.onEvent(Event.ActionClicked(AdvertAction.Reactivate))
+        runCurrent()
+        viewModel.onEvent(Event.ActionConfirmed)
+
+        viewModel.effects.filterIsInstance<MyAdvertsContract.Effect.ShowMessage>().first()
+        advanceUntilIdle()
+
+        assertTrue(listReads > afterFirstLoad, "reactivate must refetch the list")
+    }
+
+    @Test
+    fun `a stale read cannot undo a status the command already changed`() = runTest(testDispatcher) {
+        // OLX answers the command with 204 and then keeps reporting the old status for a moment.
+        // The refetch must not put `active` back on a listing that was just taken down, or the
+        // badge reverts and the seller is offered Deactivate again.
+        var serverStatus = "active"
+        val engine = mockEngine(testDispatcher) {
+            addHandler { request ->
+                val path = request.url.encodedPath
+                when {
+                    path.endsWith("/commands") -> respond("", status = HttpStatusCode.NoContent)
+
+                    path.endsWith("/statistics") ->
+                        respond(statisticsJson(0, 0, 0), status = HttpStatusCode.OK, headers = jsonHeaders())
+
+                    else -> respond(advertsJson(111L, status = serverStatus), status = HttpStatusCode.OK, headers = jsonHeaders())
+                }
+            }
+        }
+        val (viewModel, _) = setUpViewModel(
+            engine = engine,
+            accounts = listOf(account(localIndex = 1, olxUserId = 1L, accessToken = "token-1")),
+            activeIndex = 1,
+        )
+        runCurrent()
+
+        val advert = viewModel.state.value.pages.single().adverts.single()
+        viewModel.onEvent(Event.AdvertClicked(localIndex = 1, advert = advert))
+        runCurrent()
+        viewModel.onEvent(Event.ActionClicked(AdvertAction.Deactivate))
+        runCurrent()
+        viewModel.onEvent(Event.SoldAnswered(isSold = false))
+
+        viewModel.effects.filterIsInstance<MyAdvertsContract.Effect.ShowMessage>().first()
+        advanceUntilIdle()
+
+        // The refetch happened and still said `active`; the row holds the new status anyway.
+        assertEquals(AdvertStatus.RemovedByUser, viewModel.state.value.pages.single().adverts.single().status)
+
+        // Another refresh while OLX is still behind must not flip it back either.
+        viewModel.onEvent(Event.RefreshClicked(1))
+        advanceUntilIdle()
+        assertEquals(AdvertStatus.RemovedByUser, viewModel.state.value.pages.single().adverts.single().status)
+
+        // Once OLX catches up - even to a different status than the one anticipated - the server
+        // wins and the expectation retires, so a later change on OLX's side is never masked.
+        serverStatus = "outdated"
+        viewModel.onEvent(Event.RefreshClicked(1))
+        advanceUntilIdle()
+        assertEquals(AdvertStatus.Outdated, viewModel.state.value.pages.single().adverts.single().status)
+    }
+
     private fun statisticsJson(views: Int, phoneViews: Int, observing: Int) =
         """{"advert_views":$views,"phone_views":$phoneViews,"users_observing":$observing}"""
 
