@@ -152,7 +152,7 @@ them. Everything else falls into one of two buckets:
 
 **Recommended scope for SIR-104, given live verification isn't currently possible:** ship edit for
 **title, description, and price only** (the fields already proven safe end-to-end, matching
-decision #6 already recorded in `PLAN-ad-lifecycle.md`), constructing the PUT payload by
+the approach SIR-104 shipped), constructing the PUT payload by
 taking the full GET response and overwriting only those fields — never re-deriving `images[]` or
 `attributes[]` from app state, only echoing them back verbatim from GET so nothing the seller
 didn't touch can be lost by our own mapping logic (images/attributes risk (a)/(b) is then OLX's
