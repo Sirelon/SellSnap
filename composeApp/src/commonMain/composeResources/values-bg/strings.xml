@@ -348,15 +348,15 @@
     <string name="advert_action_in_progress">Работим по това…</string>
 
     <!-- Ad lifecycle — states with nothing to act on. Each says what OLX is doing, not what the app can't do. -->
-    <string name="advert_state_new">OLX все още преглежда тази обява.</string>
-    <string name="advert_state_moderated">OLX не одобри тази обява. Виж имейла от тях какво трябва да поправиш.</string>
-    <string name="advert_state_blocked">OLX блокира тази обява. Виж имейла от тях за причината.</string>
-    <string name="advert_state_removed_by_moderator">Модератор на OLX премахна тази обява.</string>
-    <string name="advert_state_disabled">OLX блокира тази обява, докато проверява нещо. Виж имейла от тях за подробности.</string>
-    <string name="advert_state_limited">Изчерпа безплатните обяви в тази категория. OLX изисква платен пакет, преди тази обява да се публикува — можеш да го купиш в OLX.</string>
-    <string name="advert_state_unconfirmed">OLX чака да потвърдиш тази обява — виж имейла от тях.</string>
-    <string name="advert_state_unpaid">OLX чака плащане за тази обява.</string>
-    <string name="advert_state_unknown">OLX все още не е определил статус за тази обява. Дръпни надолу, за да обновиш.</string>
+    <string name="advert_state_new">Купувачите все още не я виждат — OLX преглежда всяка нова обява. Обикновено отнема минута.</string>
+    <string name="advert_state_moderated">OLX отказа тази обява. Писаха ти по имейл какво да промениш — оправи го и я публикувай отново.</string>
+    <string name="advert_state_blocked">OLX блокира тази обява. Писаха ти по имейл защо.</string>
+    <string name="advert_state_removed_by_moderator">OLX премахна тази обява.</string>
+    <string name="advert_state_disabled">Някой в OLX преглежда тази обява ръчно, затова отнема повече време от обичайно. Няма какво да правиш.</string>
+    <string name="advert_state_limited">Изчерпа безплатните обяви в тази категория. Купи пакет в OLX, за да публикуваш тази обява.</string>
+    <string name="advert_state_unconfirmed">OLX иска да потвърдиш тази обява. Провери имейла от OLX.</string>
+    <string name="advert_state_unpaid">Тази обява трябва да се плати в OLX, преди купувачите да я видят.</string>
+    <string name="advert_state_unknown">Не можем да разберем какво става с тази обява. Дръпни надолу, за да обновиш.</string>
 
     <!-- Ad lifecycle — confirmations. Every one says what happens on OLX. -->
     <string name="advert_confirm_deactivate_message">Купувачите вече няма да я виждат. Можеш да я активираш отново по всяко време.</string>
@@ -403,7 +403,7 @@
         <item quantity="one">Остава %1$d ден</item>
         <item quantity="other">Остават %1$d дни</item>
     </plurals>
-    <string name="advert_extend_unavailable">Удължаването не е достъпно тук. Можеш да го направиш направо в OLX.</string>
+    <string name="advert_extend_unavailable">Можеш да удължиш това само в OLX, не оттук.</string>
 
     <!-- Ad lifecycle — statistics -->
     <string name="advert_stats_title">Как върви</string>

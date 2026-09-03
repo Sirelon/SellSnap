@@ -348,15 +348,15 @@
     <string name="advert_action_in_progress">Жұмыс жасалуда…</string>
 
     <!-- Ad lifecycle — states with nothing to act on. Each says what OLX is doing, not what the app can't do. -->
-    <string name="advert_state_new">OLX бұл хабарландыруды әлі тексеріп жатыр.</string>
-    <string name="advert_state_moderated">OLX бұл хабарландыруды мақұлдамады. Не түзету керектігін өздерінен келген хаттан қара.</string>
-    <string name="advert_state_blocked">OLX бұл хабарландыруды бұғаттады. Себебін өздерінен келген хаттан қара.</string>
-    <string name="advert_state_removed_by_moderator">OLX модераторы бұл хабарландыруды жойды.</string>
-    <string name="advert_state_disabled">OLX бір нәрсені тексеріп жатқанда, бұл хабарландыруды бұғаттады. Осы туралы өздерінен келген хатты күт.</string>
-    <string name="advert_state_limited">Бұл санаттағы тегін хабарландыруларды жұмсап қойдың. OLX бұл хабарландыруды жариялау алдында ақылы пакетті талап етеді — оны OLX-те сатып ала аласың.</string>
-    <string name="advert_state_unconfirmed">OLX бұл хабарландыруды растауыңды күтіп тұр — өздерінен келген хатты қара.</string>
-    <string name="advert_state_unpaid">OLX бұл хабарландыру үшін төлемді күтіп тұр.</string>
-    <string name="advert_state_unknown">OLX бұл хабарландыру үшін әлі күй белгілеген жоқ. Жаңарту үшін төмен қарай тарт.</string>
+    <string name="advert_state_new">Сатып алушылар оны әлі көрмейді — OLX әрбір жаңа хабарландыруды тексереді. Әдетте бір минутке созылады.</string>
+    <string name="advert_state_moderated">OLX бұл хабарландыруды қабылдамады. Не өзгерту керектігін хатпен жазды — түзетіп, қайта жариялай аласың.</string>
+    <string name="advert_state_blocked">OLX бұл хабарландыруды бұғаттады. Себебін хатпен жазды.</string>
+    <string name="advert_state_removed_by_moderator">OLX бұл хабарландыруды жойды.</string>
+    <string name="advert_state_disabled">OLX-тегі біреу бұл хабарландыруды қолмен тексеріп жатыр, сондықтан бұл әдеттегіден ұзағырақ созылады. Саған ештеңе істеудің қажеті жоқ.</string>
+    <string name="advert_state_limited">Бұл санаттағы тегін хабарландыруларды жұмсап қойдың. Мұны жариялау үшін OLX-тен пакет сатып ал.</string>
+    <string name="advert_state_unconfirmed">OLX бұл хабарландыруды растауыңды сұрайды. OLX-тен келген хатты тексер.</string>
+    <string name="advert_state_unpaid">Сатып алушылар көру үшін бұл хабарландыруға OLX-те төлем жасау керек.</string>
+    <string name="advert_state_unknown">Бұл хабарландырумен не болып жатқанын анықтай алмай тұрмыз. Жаңарту үшін төмен қарай тарт.</string>
 
     <!-- Ad lifecycle — confirmations. Every one says what happens on OLX. -->
     <string name="advert_confirm_deactivate_message">Сатып алушылар оны бұдан былай көрмейді. Кез келген уақытта қайта қоса аласың.</string>
@@ -403,7 +403,7 @@
         <item quantity="one">%1$d күн қалды</item>
         <item quantity="other">%1$d күн қалды</item>
     </plurals>
-    <string name="advert_extend_unavailable">Мұнда ұзарту қолжетімсіз. Оны OLX-тің өзінде жасай аласың.</string>
+    <string name="advert_extend_unavailable">Мұны тек OLX-те ұзарта аласың, осы жерден емес.</string>
 
     <!-- Ad lifecycle — statistics -->
     <string name="advert_stats_title">Қалай жүріп жатыр</string>

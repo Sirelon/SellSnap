@@ -350,15 +350,15 @@
     <string name="advert_action_in_progress">Working on it…</string>
 
     <!-- Ad lifecycle — states with nothing to act on. Each says what OLX is doing, not what the app can't do. -->
-    <string name="advert_state_new">OLX is still reviewing this listing.</string>
-    <string name="advert_state_moderated">OLX didn't approve this listing. Check your email from them for what needs fixing.</string>
-    <string name="advert_state_blocked">OLX blocked this listing. Check your email from them for the reason.</string>
-    <string name="advert_state_removed_by_moderator">An OLX moderator removed this listing.</string>
-    <string name="advert_state_disabled">OLX has blocked this listing while they check something. Look for their email about it.</string>
-    <string name="advert_state_limited">You've used up the free listings in this category. OLX wants a paid package before this one goes up — you can buy it on OLX.</string>
-    <string name="advert_state_unconfirmed">OLX is waiting for you to confirm this listing — check your email from them.</string>
-    <string name="advert_state_unpaid">OLX is waiting for payment on this listing.</string>
-    <string name="advert_state_unknown">OLX hasn't settled this listing's state yet. Pull down to refresh.</string>
+    <string name="advert_state_new">Buyers can't see it yet — OLX checks every new listing. Usually done in a minute.</string>
+    <string name="advert_state_moderated">OLX turned this listing down. They emailed you what to change — fix it and post it again.</string>
+    <string name="advert_state_blocked">OLX blocked this listing. They emailed you why.</string>
+    <string name="advert_state_removed_by_moderator">OLX removed this listing.</string>
+    <string name="advert_state_disabled">Someone at OLX is checking this listing by hand, so it takes longer than usual. Nothing for you to do.</string>
+    <string name="advert_state_limited">You've run out of free listings in this category. Buy a package on OLX to put this one up.</string>
+    <string name="advert_state_unconfirmed">OLX needs you to confirm this listing. Check your email from OLX.</string>
+    <string name="advert_state_unpaid">This one needs paying for on OLX before buyers can see it.</string>
+    <string name="advert_state_unknown">Can't tell what's happening with this one. Pull down to refresh.</string>
 
     <!-- Ad lifecycle — confirmations. Every one says what happens on OLX. -->
     <string name="advert_confirm_deactivate_message">Buyers won't see it any more. You can put it back up any time.</string>
@@ -405,7 +405,7 @@
         <item quantity="one">%1$d day left</item>
         <item quantity="other">%1$d days left</item>
     </plurals>
-    <string name="advert_extend_unavailable">Extending isn't available here. You can still do it on OLX.</string>
+    <string name="advert_extend_unavailable">You can only extend this on OLX, not from here.</string>
 
     <!-- Ad lifecycle — statistics -->
     <string name="advert_stats_title">How it's doing</string>

@@ -495,6 +495,14 @@ These rules apply to every class that directly maps a JSON API response (OLX, Su
 - Two definitions are easy to get wrong and were: `moderated` is a **negative** moderation result,
   not "under review", and `disabled` means "offer blocked and waiting for verification" — the
   seller can still see and edit it on OLX's own site, which is why it looked like a bug.
+- In practice `new` and `disabled` are the same thing at different speeds: OLX moderates every
+  listing, automatically in seconds (`new`) or by a person when something needs a closer look
+  (`disabled`). Neither is a fault and neither is permanent. `moderated` is the outcome when that
+  check says no. The specs do not say any of this; it is how OLX behaves.
+- Write these states as what is happening to the seller's listing and whether they need to act.
+  Never translate OLX's API vocabulary — "moderation", "verification", "status" — into user copy,
+  and never leave a reason vague. Copy that said OLX was "checking something" was rejected outright
+  in review, and rightly.
 - `limited` means the free-listing limit for that category is used up. The docs say to purchase a
   packet and then send `activate`, but `POST adverts/{id}/packets` spends the seller's OLX balance,
   so no button in this app triggers it — the state is explained and the seller is pointed at OLX.

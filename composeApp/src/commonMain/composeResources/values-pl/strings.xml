@@ -348,15 +348,15 @@
     <string name="advert_action_in_progress">Pracujemy nad tym…</string>
 
     <!-- Ad lifecycle — states with nothing to act on. Each says what OLX is doing, not what the app can't do. -->
-    <string name="advert_state_new">OLX wciąż sprawdza to ogłoszenie.</string>
-    <string name="advert_state_moderated">OLX nie zaakceptował tego ogłoszenia. Sprawdź e-mail od nich, co trzeba poprawić.</string>
-    <string name="advert_state_blocked">OLX zablokował to ogłoszenie. Sprawdź e-mail od nich, aby poznać powód.</string>
-    <string name="advert_state_removed_by_moderator">Moderator OLX usunął to ogłoszenie.</string>
-    <string name="advert_state_disabled">OLX zablokował to ogłoszenie na czas weryfikacji. Sprawdź e-mail od nich w tej sprawie.</string>
-    <string name="advert_state_limited">Wykorzystano limit darmowych ogłoszeń w tej kategorii. OLX wymaga płatnego pakietu, zanim to ogłoszenie zostanie opublikowane — możesz go kupić na OLX.</string>
-    <string name="advert_state_unconfirmed">OLX czeka, aż potwierdzisz to ogłoszenie — sprawdź e-mail od nich.</string>
-    <string name="advert_state_unpaid">OLX czeka na płatność za to ogłoszenie.</string>
-    <string name="advert_state_unknown">OLX jeszcze nie ustalił statusu tego ogłoszenia. Przesuń w dół, aby odświeżyć.</string>
+    <string name="advert_state_new">Kupujący jeszcze go nie widzą — OLX sprawdza każde nowe ogłoszenie. Zwykle trwa to minutę.</string>
+    <string name="advert_state_moderated">OLX odrzucił to ogłoszenie. Napisali do ciebie mailem, co poprawić — popraw je i wystaw ponownie.</string>
+    <string name="advert_state_blocked">OLX zablokował to ogłoszenie. Napisali do ciebie mailem, dlaczego.</string>
+    <string name="advert_state_removed_by_moderator">OLX usunął to ogłoszenie.</string>
+    <string name="advert_state_disabled">Ktoś z OLX sprawdza to ogłoszenie ręcznie, dlatego trwa to dłużej niż zwykle. Nie musisz nic robić.</string>
+    <string name="advert_state_limited">Wykorzystano darmowe ogłoszenia w tej kategorii. Kup pakiet na OLX, żeby opublikować to ogłoszenie.</string>
+    <string name="advert_state_unconfirmed">OLX prosi o potwierdzenie tego ogłoszenia. Sprawdź e-mail od OLX.</string>
+    <string name="advert_state_unpaid">Za to ogłoszenie trzeba zapłacić na OLX, zanim zobaczą je kupujący.</string>
+    <string name="advert_state_unknown">Nie da się ustalić, co się dzieje z tym ogłoszeniem. Przesuń w dół, aby odświeżyć.</string>
 
     <!-- Ad lifecycle — confirmations. Every one says what happens on OLX. -->
     <string name="advert_confirm_deactivate_message">Kupujący go już nie zobaczą. Możesz je wznowić w każdej chwili.</string>
@@ -405,7 +405,7 @@
         <item quantity="many">Zostało %1$d dni</item>
         <item quantity="other">Zostało %1$d dnia</item>
     </plurals>
-    <string name="advert_extend_unavailable">Przedłużanie nie jest tu dostępne. Wciąż możesz to zrobić na OLX.</string>
+    <string name="advert_extend_unavailable">To ogłoszenie możesz przedłużyć tylko na OLX, nie stąd.</string>
 
     <!-- Ad lifecycle — statistics -->
     <string name="advert_stats_title">Jak sobie radzi</string>

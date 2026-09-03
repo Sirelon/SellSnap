@@ -351,15 +351,15 @@
     <string name="advert_action_in_progress">Працюємо…</string>
 
     <!-- Ad lifecycle — states with nothing to act on. Each says what OLX is doing, not what the app can't do. -->
-    <string name="advert_state_new">OLX ще перевіряє це оголошення.</string>
-    <string name="advert_state_moderated">OLX не схвалив це оголошення. Перевірте лист від них — там написано, що виправити.</string>
-    <string name="advert_state_blocked">OLX заблокував це оголошення. Перевірте лист від них — там вказана причина.</string>
-    <string name="advert_state_removed_by_moderator">Модератор OLX видалив це оголошення.</string>
-    <string name="advert_state_disabled">OLX заблокував це оголошення, поки перевіряє щось. Шукайте лист від них про це.</string>
-    <string name="advert_state_limited">Ви вичерпали безкоштовні оголошення в цій категорії. OLX потребує платного пакета, перш ніж це оголошення опублікується — придбати його можна на OLX.</string>
-    <string name="advert_state_unconfirmed">OLX чекає, поки ви підтвердите це оголошення — перевірте лист від них.</string>
-    <string name="advert_state_unpaid">OLX чекає оплату за це оголошення.</string>
-    <string name="advert_state_unknown">OLX ще не визначився зі статусом цього оголошення. Потягніть вниз, щоб оновити.</string>
+    <string name="advert_state_new">Покупці ще не бачать це оголошення — OLX перевіряє кожне нове оголошення. Зазвичай це займає хвилину.</string>
+    <string name="advert_state_moderated">OLX відхилив це оголошення. Вам написали на пошту, що виправити — виправте й опублікуйте знову.</string>
+    <string name="advert_state_blocked">OLX заблокував це оголошення. Вам написали на пошту причину.</string>
+    <string name="advert_state_removed_by_moderator">OLX видалив це оголошення.</string>
+    <string name="advert_state_disabled">Хтось з OLX перевіряє це оголошення вручну, тому це займає більше часу, ніж зазвичай. Вам нічого не потрібно робити.</string>
+    <string name="advert_state_limited">Ви вичерпали безкоштовні оголошення в цій категорії. Придбайте пакет на OLX, щоб опублікувати це оголошення.</string>
+    <string name="advert_state_unconfirmed">OLX просить підтвердити це оголошення. Перевірте лист від OLX.</string>
+    <string name="advert_state_unpaid">За це оголошення потрібно заплатити на OLX, перш ніж його побачать покупці.</string>
+    <string name="advert_state_unknown">Не вдається визначити, що відбувається з цим оголошенням. Потягніть вниз, щоб оновити.</string>
 
     <!-- Ad lifecycle — confirmations. Every one says what happens on OLX. -->
     <string name="advert_confirm_deactivate_message">Покупці більше його не побачать. Відновити публікацію можна будь-коли.</string>
@@ -408,7 +408,7 @@
         <item quantity="many">Залишилося %1$d днів</item>
         <item quantity="other">Залишилося %1$d дня</item>
     </plurals>
-    <string name="advert_extend_unavailable">Продовження тут недоступне. Ви можете зробити це безпосередньо на OLX.</string>
+    <string name="advert_extend_unavailable">Продовжити це можна лише на OLX, не звідси.</string>
 
     <!-- Ad lifecycle — statistics -->
     <string name="advert_stats_title">Як йдуть справи</string>
