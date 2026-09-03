@@ -56,6 +56,7 @@ import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -462,21 +463,22 @@ class MyAdvertsViewModelTest {
     @Test
     fun `answering not sold closes the listing without asking anything else`() = runTest(testDispatcher) {
         val commandBodies = mutableListOf<String>()
+        // OLX reports the new status through the LIST endpoint, which is what the app refetches
+        // after an action - a single-advert re-read straight after a command can still be stale.
+        var listStatus = "active"
         val engine = mockEngine(testDispatcher) {
             addHandler { request ->
                 when {
                     request.url.encodedPath.endsWith("/commands") -> {
                         commandBodies += (request.body as io.ktor.http.content.TextContent).text
+                        listStatus = "removed_by_user"
                         respond("", status = HttpStatusCode.NoContent)
                     }
 
                     request.url.encodedPath.endsWith("/statistics") ->
                         respond(statisticsJson(0, 0, 0), status = HttpStatusCode.OK, headers = jsonHeaders())
 
-                    request.url.encodedPath.contains("/adverts/111") ->
-                        respond(advertJson(111L, "removed_by_user"), status = HttpStatusCode.OK, headers = jsonHeaders())
-
-                    else -> respond(advertsJson(111L), status = HttpStatusCode.OK, headers = jsonHeaders())
+                    else -> respond(advertsJson(111L, status = listStatus), status = HttpStatusCode.OK, headers = jsonHeaders())
                 }
             }
         }
@@ -505,19 +507,26 @@ class MyAdvertsViewModelTest {
         assertEquals(false, assertNotNull(outcomeStore.outcomeFor(111L)).isSold)
         assertNotNull(analytics.paramsFor(AnalyticsEvents.ADVERT_CLOSED_UNSOLD))
 
-        // The row now carries whatever status OLX resolved to, read back from the server.
+        // The list is refetched, so the row carries whatever status OLX resolved to - and
+        // reopening the sheet offers the actions for that new status, not the old ones.
         assertEquals(AdvertStatus.RemovedByUser, viewModel.state.value.pages.single().adverts.single().status)
     }
 
     @Test
     fun `deleting a live listing deactivates first and says so plainly when only that half lands`() = runTest(testDispatcher) {
         val calls = mutableListOf<String>()
+        // The deactivate leg lands, so OLX now reports it inactive through the list; the delete
+        // leg does not.
+        var listStatus = "active"
         val engine = mockEngine(testDispatcher) {
             addHandler { request ->
                 val path = request.url.encodedPath
                 calls += "${request.method.value} $path"
                 when {
-                    path.endsWith("/commands") -> respond("", status = HttpStatusCode.NoContent)
+                    path.endsWith("/commands") -> {
+                        listStatus = "removed_by_user"
+                        respond("", status = HttpStatusCode.NoContent)
+                    }
 
                     path.endsWith("/statistics") ->
                         respond(statisticsJson(5, 1, 0), status = HttpStatusCode.OK, headers = jsonHeaders())
@@ -529,10 +538,7 @@ class MyAdvertsViewModelTest {
                         headers = jsonHeaders(),
                     )
 
-                    path.contains("/adverts/111") ->
-                        respond(advertJson(111L, "removed_by_user"), status = HttpStatusCode.OK, headers = jsonHeaders())
-
-                    else -> respond(advertsJson(111L), status = HttpStatusCode.OK, headers = jsonHeaders())
+                    else -> respond(advertsJson(111L, status = listStatus), status = HttpStatusCode.OK, headers = jsonHeaders())
                 }
             }
         }
@@ -557,7 +563,11 @@ class MyAdvertsViewModelTest {
         assertNotNull(viewModel.state.value.soldPrompt)
 
         viewModel.onEvent(Event.SoldAnswered(isSold = false))
-        runCurrent()
+
+        // Awaited, not drained: the message is resolved through compose-resources `getString`.
+        // The list refetch is kicked off after it, so drain once more for that.
+        viewModel.effects.filterIsInstance<MyAdvertsContract.Effect.ShowMessage>().first()
+        advanceUntilIdle()
 
         assertTrue(calls.any { it.startsWith("POST") && it.endsWith("/commands") })
         assertTrue(calls.any { it.startsWith("DELETE") })
@@ -568,8 +578,8 @@ class MyAdvertsViewModelTest {
     }
 
     @Test
-    fun `a rejected action quotes OLX's own reason and re-reads the row`() = runTest(testDispatcher) {
-        var advertsRead = 0
+    fun `a rejected action quotes OLX's own reason and re-reads the list`() = runTest(testDispatcher) {
+        var listReads = 0
         val engine = mockEngine(testDispatcher) {
             addHandler { request ->
                 val path = request.url.encodedPath
@@ -583,12 +593,10 @@ class MyAdvertsViewModelTest {
                     path.endsWith("/statistics") ->
                         respond(statisticsJson(0, 0, 0), status = HttpStatusCode.OK, headers = jsonHeaders())
 
-                    path.contains("/adverts/111") -> {
-                        advertsRead++
-                        respond(advertJson(111L, "removed_by_user"), status = HttpStatusCode.OK, headers = jsonHeaders())
+                    else -> {
+                        listReads++
+                        respond(advertsJson(111L, status = "removed_by_user"), status = HttpStatusCode.OK, headers = jsonHeaders())
                     }
-
-                    else -> respond(advertsJson(111L), status = HttpStatusCode.OK, headers = jsonHeaders())
                 }
             }
         }
@@ -600,6 +608,7 @@ class MyAdvertsViewModelTest {
             analytics = analytics,
         )
         runCurrent()
+        val readsAfterFirstLoad = listReads
 
         val advert = viewModel.state.value.pages.single().adverts.single()
         viewModel.onEvent(Event.AdvertClicked(localIndex = 1, advert = advert))
@@ -607,13 +616,17 @@ class MyAdvertsViewModelTest {
         viewModel.onEvent(Event.ActionClicked(AdvertAction.Deactivate))
         runCurrent()
         viewModel.onEvent(Event.SoldAnswered(isSold = false))
-        runCurrent()
+
+        // Awaited, not drained: the message is resolved through compose-resources `getString`.
+        viewModel.effects.filterIsInstance<MyAdvertsContract.Effect.ShowMessage>().first()
 
         // `rejected` (rather than `failed`) is the health signal for the status-to-action mapping:
         // a pattern of these against one status means a seller is being offered a dead button.
         assertEquals("rejected", analytics.paramsFor(AnalyticsEvents.ADVERT_ACTION)?.get("result"))
-        // OLX resolved the status differently from what the app believed, so the row is re-read.
-        assertTrue(advertsRead >= 1)
+        // OLX resolved the status differently from what the app believed, so the list is refetched
+        // and the stale row corrected - otherwise the seller is offered the dead button again.
+        assertTrue(listReads > readsAfterFirstLoad, "expected the list to be refetched")
+        assertEquals(AdvertStatus.RemovedByUser, viewModel.state.value.pages.single().adverts.single().status)
         assertNull(assertNotNull(viewModel.state.value.advertSheet).pendingAction)
     }
 

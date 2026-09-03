@@ -412,10 +412,7 @@ class MyAdvertsViewModel internal constructor(
                     AdvertAction.Deactivate -> lifecycleRepository.deactivate(localIndex, advert.id, isSold == true)
                     AdvertAction.Reactivate -> lifecycleRepository.reactivate(localIndex, advert.id)
                     AdvertAction.Extend -> lifecycleRepository.extend(localIndex, advert.id)
-                    AdvertAction.Delete -> {
-                        lifecycleRepository.delete(localIndex, advert.id, advert.status.isLive, isSold)
-                        null
-                    }
+                    AdvertAction.Delete -> lifecycleRepository.delete(localIndex, advert.id, advert.status.isLive, isSold)
                     // Edit never reaches here - it has its own sheet and its own submit path.
                     AdvertAction.Edit -> error("Edit is applied through submitEdit")
                 }
@@ -440,7 +437,7 @@ class MyAdvertsViewModel internal constructor(
             inFlightActions.remove(advert.id)
 
             result
-                .onSuccess { refreshed -> onActionSucceeded(localIndex, advert, action, refreshed) }
+                .onSuccess { onActionSucceeded(localIndex, advert, action) }
                 .onFailure { error -> onActionFailed(localIndex, advert, action, error) }
         }
     }
@@ -449,7 +446,6 @@ class MyAdvertsViewModel internal constructor(
         localIndex: Int,
         advert: MyAdvertItem,
         action: AdvertAction,
-        refreshed: MyAdvertItem?,
     ) {
         logAction(action, advert.status, "success")
 
@@ -476,20 +472,21 @@ class MyAdvertsViewModel internal constructor(
                 )
             }
             postEffect(Effect.ShowMessage(getString(Res.string.advert_action_done_delete)))
+            fetchPage(localIndex)
             return
         }
-
-        // A null row means only that the follow-up read failed, not that the action did - the
-        // action is still the success it was. The row is not patched from what was requested,
-        // since OLX may have resolved the status differently.
-        refreshed?.let { replaceRow(localIndex, it) }
 
         // Close the sheet. Leaving it open showed the seller the same buttons they had just
         // pressed, which reads as nothing having happened - and the confirmation snackbar is
         // rendered by the screen underneath, so while the sheet is up it is not even visible.
-        // The updated row behind it is the feedback.
         setState { it.copy(advertSheet = it.advertSheet?.takeIf { sheet -> sheet.advert.id != advert.id }) }
         postEffect(Effect.ShowMessage(getString(successMessageFor(action))))
+
+        // Refetch the list rather than patching the one row. OLX takes a moment to settle a
+        // status after a command, so a single-advert re-read straight afterwards reported the
+        // state the listing had just left - and reopening the sheet offered the same actions
+        // again, as if nothing had happened.
+        fetchPage(localIndex)
     }
 
     private suspend fun onActionFailed(
@@ -504,16 +501,9 @@ class MyAdvertsViewModel internal constructor(
             // Half of the delete landed. Saying "couldn't delete" alone would leave the seller
             // thinking their listing is still live when it is already down.
             logAction(action, advert.status, "partial")
-            error.advert?.let { replaceRow(localIndex, it) }
-            updateSheet(advert.id) { sheet ->
-                val updated = error.advert ?: sheet.advert
-                sheet.copy(
-                    advert = updated,
-                    actions = availableActions(updated.status, _currentOlxCountry.supportsExtendCommand),
-                    pendingAction = null,
-                )
-            }
+            setState { it.copy(advertSheet = it.advertSheet?.takeIf { sheet -> sheet.advert.id != advert.id }) }
             postEffect(Effect.ShowMessage(getString(Res.string.advert_delete_partial)))
+            fetchPage(localIndex)
             return
         }
 
@@ -521,10 +511,10 @@ class MyAdvertsViewModel internal constructor(
         logAction(action, advert.status, if (olxError is OlxApiError.ValidationError) "rejected" else "failed")
         updateSheet(advert.id) { it.copy(pendingAction = null) }
 
-        // OLX resolved the status differently from what this app believed, so re-read the row -
+        // OLX resolved the status differently from what this app believed, so re-read the list -
         // a rejected action usually means the mapping was working from a stale status.
         if (olxError is OlxApiError.ValidationError) {
-            refreshRow(localIndex, advert.id)
+            fetchPage(localIndex)
         }
 
         postEffect(Effect.ShowMessage(actionFailureMessage(localIndex, error)))
@@ -638,19 +628,14 @@ class MyAdvertsViewModel internal constructor(
                     )
                     logAction(AdvertAction.Edit, edit.advert.status, "success")
                     editSnapshot = null
-                    refreshed?.let { row ->
-                        replaceRow(edit.localIndex, row)
-                        updateSheet(row.id) { sheet ->
-                            sheet.copy(
-                                advert = row,
-                                actions = availableActions(
-                                    row.status,
-                                    _currentOlxCountry.supportsExtendCommand,
-                                ),
-                            )
-                        }
+                    // The edit sheet and the actions sheet underneath both close; the refreshed
+                    // list is the feedback.
+                    setState { state ->
+                        state.copy(
+                            advertEdit = null,
+                            advertSheet = state.advertSheet?.takeIf { it.advert.id != edit.advert.id },
+                        )
                     }
-                    setState { state -> state.copy(advertEdit = null) }
                     // An edit can send an advert back to moderation. Saying so beats letting the
                     // status change surprise the seller later. Unknown when the row could not be
                     // re-read, in which case the plain confirmation is the honest one.
@@ -660,6 +645,7 @@ class MyAdvertsViewModel internal constructor(
                         Res.string.advert_action_done_edit
                     }
                     postEffect(Effect.ShowMessage(getString(message)))
+                    fetchPage(edit.localIndex)
                 }
                 .onFailure { error ->
                     analytics.recordException(error, AnalyticsEvents.ADVERT_ACTION)
@@ -672,32 +658,6 @@ class MyAdvertsViewModel internal constructor(
                     setState { state -> state.copy(advertEdit = state.advertEdit?.copy(isSaving = false)) }
                     postEffect(Effect.ShowMessage(actionFailureMessage(edit.localIndex, error)))
                 }
-        }
-    }
-
-    private fun refreshRow(localIndex: Int, advertId: Long) {
-        viewModelScope.launch {
-            runCatching { repository.loadAdvert(localIndex, advertId) }
-                .onSuccess { refreshed ->
-                    replaceRow(localIndex, refreshed)
-                    updateSheet(advertId) { sheet ->
-                        sheet.copy(
-                            advert = refreshed,
-                            actions = availableActions(
-                                refreshed.status,
-                                _currentOlxCountry.supportsExtendCommand,
-                            ),
-                        )
-                    }
-                }
-        }
-    }
-
-    private fun replaceRow(localIndex: Int, advert: MyAdvertItem) {
-        setState { state ->
-            state.updatePage(localIndex) { page ->
-                page.copy(adverts = page.adverts.map { if (it.id == advert.id) advert else it })
-            }
         }
     }
 

@@ -3,6 +3,7 @@ package com.sirelon.sellsnap.features.seller.my_ads.data
 import com.sirelon.sellsnap.features.seller.auth.data.AdvertCommand
 import com.sirelon.sellsnap.features.seller.auth.data.AdvertEditSnapshot
 import com.sirelon.sellsnap.features.seller.auth.data.OlxApiClient
+import com.sirelon.sellsnap.features.seller.my_ads.domain.AdvertAction
 import com.sirelon.sellsnap.features.seller.auth.data.response.AdvertResponseOnlyKeys
 import com.sirelon.sellsnap.features.seller.auth.data.response.AdvertDeliveryResponseOnlyKeys
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxAdvertStatistics
@@ -18,7 +19,7 @@ import kotlinx.serialization.json.JsonPrimitive
  * second did not, so the seller can be told plainly that their listing is down but still there,
  * rather than being shown a generic failure for an action that half happened.
  */
-class AdvertDeactivatedNotDeleted(val advert: MyAdvertItem?, cause: Throwable) :
+class AdvertDeactivatedNotDeleted(cause: Throwable) :
     Exception("The listing was deactivated on OLX but could not be deleted.", cause)
 
 /**
@@ -29,10 +30,10 @@ class AdvertDeactivatedNotDeleted(val advert: MyAdvertItem?, cause: Throwable) :
  * `deactivate` twice would fail with OLX's "Ad has to be active", which is exactly the kind of
  * phantom error the retry exists to avoid.
  *
- * Reading a row back after a mutation is deliberately best-effort. A command answers 204 and is
- * irreversible the moment it lands; if the follow-up `GET adverts/{id}` then fails on a network
- * blip, the action still succeeded, and reporting it as a failure would send the seller round to
- * try again against a status the advert has already left.
+ * Commands do not read the advert back. OLX answers 204 with no body and can take a moment to
+ * settle a status, so a single-advert re-read straight afterwards was reporting the state the
+ * listing had just left - the seller reopened the sheet and saw the same buttons. The caller
+ * refetches the whole list instead, which is one call either way and is authoritative.
  */
 internal class AdvertLifecycleRepository(
     private val accountRepository: SellerAccountRepository,
@@ -43,18 +44,19 @@ internal class AdvertLifecycleRepository(
      * `is_success` is required by OLX, not optional: the marketplace asks whether the item sold
      * and will not take the advert down without an answer.
      */
-    suspend fun deactivate(localIndex: Int, advertId: Long, isSuccess: Boolean): MyAdvertItem? =
-        commandThenRefresh(localIndex, advertId, AdvertCommand.Deactivate, isSuccess)
+    suspend fun deactivate(localIndex: Int, advertId: Long, isSuccess: Boolean) =
+        sendCommand(localIndex, advertId, AdvertCommand.Deactivate, isSuccess)
 
-    suspend fun reactivate(localIndex: Int, advertId: Long): MyAdvertItem? =
-        commandThenRefresh(localIndex, advertId, AdvertCommand.Activate)
+    suspend fun reactivate(localIndex: Int, advertId: Long) =
+        sendCommand(localIndex, advertId, AdvertCommand.Activate, isSuccess = null)
 
-    suspend fun finish(localIndex: Int, advertId: Long): MyAdvertItem? =
-        commandThenRefresh(localIndex, advertId, AdvertCommand.Finish)
+    /** Not offered in the UI - see [AdvertAction]. Kept because SIR-98 covers all four commands. */
+    suspend fun finish(localIndex: Int, advertId: Long) =
+        sendCommand(localIndex, advertId, AdvertCommand.Finish, isSuccess = null)
 
     /** Rejected in Ukraine and Portugal - gate on `OlxCountry.supportsExtendCommand` before offering it. */
-    suspend fun extend(localIndex: Int, advertId: Long): MyAdvertItem? =
-        commandThenRefresh(localIndex, advertId, AdvertCommand.Extend)
+    suspend fun extend(localIndex: Int, advertId: Long) =
+        sendCommand(localIndex, advertId, AdvertCommand.Extend, isSuccess = null)
 
     /**
      * [isActive] decides whether the deactivate half is needed at all, and [isSuccess] answers
@@ -62,9 +64,6 @@ internal class AdvertLifecycleRepository(
      * never asks.
      */
     suspend fun delete(localIndex: Int, advertId: Long, isActive: Boolean, isSuccess: Boolean?) {
-        // Only the command, with no row refresh in between: the refresh is worthless here (the
-        // advert is about to be deleted) and a blip on it must not abort a delete whose first
-        // half has already landed.
         if (isActive) {
             sendCommand(localIndex, advertId, AdvertCommand.Deactivate, isSuccess ?: false)
         }
@@ -74,7 +73,7 @@ internal class AdvertLifecycleRepository(
                 unauthenticatedOlxApiClient.deleteAdvert(accessToken, advertId)
             }
         } catch (error: Throwable) {
-            if (isActive) throw AdvertDeactivatedNotDeleted(refreshOrNull(localIndex, advertId), error)
+            if (isActive) throw AdvertDeactivatedNotDeleted(error)
             throw error
         }
     }
@@ -122,16 +121,6 @@ internal class AdvertLifecycleRepository(
         return refreshOrNull(localIndex, snapshot.detail.id)
     }
 
-    private suspend fun commandThenRefresh(
-        localIndex: Int,
-        advertId: Long,
-        command: AdvertCommand,
-        isSuccess: Boolean? = null,
-    ): MyAdvertItem? {
-        sendCommand(localIndex, advertId, command, isSuccess)
-        return refreshOrNull(localIndex, advertId)
-    }
-
     private suspend fun sendCommand(
         localIndex: Int,
         advertId: Long,
@@ -144,10 +133,9 @@ internal class AdvertLifecycleRepository(
     }
 
     /**
-     * The new state of the row, or null if it could not be read. Commands answer 204 with no
-     * body and OLX may resolve a status differently from what was requested, so the row has to
-     * come from the server - but a failure to fetch it does not undo the command, and must not be
-     * reported as one.
+     * Only the edit path reads a single advert back, and only to decide whether to tell the
+     * seller their change went to moderation. A failure to fetch it does not undo the edit and
+     * must not be reported as one.
      */
     private suspend fun refreshOrNull(localIndex: Int, advertId: Long): MyAdvertItem? =
         runCatching { myAdvertsRepository.loadAdvert(localIndex, advertId) }.getOrNull()
