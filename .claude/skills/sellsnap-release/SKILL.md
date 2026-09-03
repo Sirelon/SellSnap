@@ -45,15 +45,15 @@ silently no-ops on one that does):
 | Portuguese (Portugal) | `pt-PT` | Yes | `pt-PT` | yes |
 | Kazakh | `kk` | Yes | — | not supported by Apple |
 
-**No Russian *store listing*, on either store, by product decision** — not an
+**No russian *store listing*, on either store, by product decision** — not an
 Apple/Google support gap. This is scoped to store metadata only (descriptions,
 keywords, promotional text, this skill's release notes): never add a `ru`/`ru-RU`
-folder anywhere under `.claude/tmp/release-metadata/`, never add a Russian section to
+folder anywhere under `.claude/tmp/release-metadata/`, never add a russian section to
 `store/copy/store-listing.md`, and if a stray `ios/ru/` or `android/ru-RU/` directory
 ever reappears, delete it rather than filling it in. **This does not apply to the
 in-app UI** — `composeApp/.../composeResources/values-ru/` still exists and must stay a
 byte-identical copy of `values-uk` (see `.claude/agents/localize.md`); it's a fallback
-so Russian-locale devices see Ukrainian, not a real translation. Don't conflate the two.
+so russian-locale devices see Ukrainian, not a real translation. Don't conflate the two.
 
 **Android: 6 real locales** — `uk, pl-PL, ro, bg, pt-PT, kk`. Do not add `en-US` back to
 the Android changelog automation without first actually creating that Play Store listing
@@ -186,7 +186,7 @@ This compiles, bumps `version.properties`, and runs `fastlane android beta` +
 After a real version bump ships — skip this for a build-only/hotfix bump where
 `VERSION_NAME` didn't change, same rule as step 2 — run the `release-notes` skill
 (`.claude/skills/release-notes/`). It mines this range's git history, drafts the in-app
-"What's New" copy in all 8 app languages (Russian included — the store-listing exclusion
+"What's New" copy in all 8 app languages (russian included — the store-listing exclusion
 in step 0 does not apply here), and publishes it to the `release-notes` Firestore
 collection that `features/whatsnew/` reads from. That skill owns the Firestore schema,
 translation voice, and publish pipeline end to end — don't re-derive or duplicate any of

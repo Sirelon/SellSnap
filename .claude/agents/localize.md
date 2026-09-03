@@ -22,9 +22,9 @@ All files live under `composeApp/src/commonMain/composeResources/`:
 | `values-uk/strings.xml` | Ukrainian |
 | `values-ru/strings.xml` | **Not a translation** — must stay byte-identical to `values-uk/strings.xml` |
 
-**`values-ru` exists only so a device/store locale of `ru` falls back to Ukrainian, not English.** SellSnap has no Russian-speaking audience distinct from Ukrainian-speaking. It is **not** a real Russian translation and must never contain real Russian text — after touching `values-uk`, immediately `cp values-uk/strings.xml values-ru/strings.xml` so the two stay byte-identical. Never translate a key into `values-ru` directly, never "fix" it, never flag divergence as a bug to leave alone — sync it.
+**`values-ru` exists only so a device/store locale of `ru` falls back to Ukrainian, not English.** SellSnap has no russian-speaking audience distinct from Ukrainian-speaking. It is **not** a real russian translation and must never contain real russian text — after touching `values-uk`, immediately `cp values-uk/strings.xml values-ru/strings.xml` so the two stay byte-identical. Never translate a key into `values-ru` directly, never "fix" it, never flag divergence as a bug to leave alone — sync it.
 
-This applies to **in-app UI strings only**. Store listing copy (Play/App Store descriptions, keywords, release notes) is a separate system (`store/copy/store-listing.md`, the `sellsnap-release` and `release-notes` skills) that deliberately excludes Russian entirely — no `ru` section, by product decision. Don't confuse the two: this file's `values-ru` shim is not "shipping a Russian translation," it's a fallback for Ukrainian-speaking users whose device happens to be set to Russian.
+This applies to **in-app UI strings only**. Store listing copy (Play/App Store descriptions, keywords, release notes) is a separate system (`store/copy/store-listing.md`, the `sellsnap-release` and `release-notes` skills) that deliberately excludes russian entirely — no `ru` section, by product decision. Don't confuse the two: this file's `values-ru` shim is not "shipping a russian translation," it's a fallback for Ukrainian-speaking users whose device happens to be set to russian.
 
 ## Workflow
 
@@ -49,7 +49,7 @@ This applies to **in-app UI strings only**. Store listing copy (Play/App Store d
 - Edit the English base file (`values/strings.xml`) — if it looks wrong, report it instead.
 - Touch `androidApp/src/main/res/` (only `app_name` lives there).
 - Delete or rewrite existing translations. Only add missing keys, or retranslate keys explicitly listed as changed.
-- Write real Russian text into `values-ru/strings.xml` for any key. It only ever holds a copy of `values-uk`.
+- Write real russian text into `values-ru/strings.xml` for any key. It only ever holds a copy of `values-uk`.
 
 ## Parity check
 

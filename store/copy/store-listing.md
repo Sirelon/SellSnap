@@ -1,8 +1,8 @@
 # SellSnap — Store listing text (App Store + Google Play)
 
 Copy-paste text for every listing field. The app ships 8 in-app languages, but this doc
-only has 7 sections — Russian shares Ukrainian's in-app UI and has no separate store
-listing (see the "No Russian store listing" note below). Written for SellSnap 3.0 (build 11).
+only has 7 sections — russian shares Ukrainian's in-app UI and has no separate store
+listing (see the "No russian store listing" note below). Written for SellSnap 3.0 (build 11).
 
 The per-language **What's New** blocks below match what's pushed to the stores automatically from `.claude/tmp/release-metadata/` (gitignored, regenerated fresh each release): Android reads `android/<locale>/changelogs/<version_code>.txt`, iOS reads `ios/<locale>/release_notes.txt` (App Store) and the same file feeds TestFlight's localized build info. The `sellsnap-release` skill regenerates both those files and this section on every release.
 
@@ -26,7 +26,7 @@ Notes before you paste:
 - **App Store Connect has no Bulgarian or Kazakh localization.** Use the bg/kk sections for Google Play only; on the App Store those users see your primary (English) listing.
 - **"OLX" in the name/subtitle is a trademark risk.** The name below avoids it; the subtitle and keywords use it, which is common practice but could be challenged in review. If Apple/Google object, drop it from the subtitle first.
 - **Kazakh is machine-of-mine quality** — I'd have a native speaker skim it before shipping. The KZ market is also currently disabled in-app (no OLX.kz credentials), so kk is for the in-app language audience, not an active market.
-- **No Russian *store listing*.** By product decision, neither store gets Russian marketing copy or release notes — don't add a Russian section back to this doc. This doesn't apply to the in-app UI: `values-ru/strings.xml` still exists as a byte-identical copy of `values-uk`, so Russian-locale devices see Ukrainian rather than falling back to English (see `.claude/agents/localize.md`).
+- **No russian *store listing*.** By product decision, neither store gets russian marketing copy or release notes — don't add a russian section back to this doc. This doesn't apply to the in-app UI: `values-ru/strings.xml` still exists as a byte-identical copy of `values-uk`, so russian-locale devices see Ukrainian rather than falling back to English (see `.claude/agents/localize.md`).
 
 ---
 

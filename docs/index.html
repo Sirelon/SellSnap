@@ -3,14 +3,19 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#FFF8F2" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#1E0D00" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#F5FBFA" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0D1615" media="(prefers-color-scheme: dark)">
   <title>SellSnap — Сфотографуй. ШІ напише. Публікуй на OLX.</title>
   <meta name="description" content="Фото — на вхід, оголошення — на вихід. ШІ напише назву, опис і ціну, а ви публікуєте на OLX в один тап.">
   <link rel="icon" type="image/png" href="assets/favicon.png">
   <link rel="apple-touch-icon" href="assets/app-icon.png">
   <link rel="alternate" hreflang="uk" href="./?lang=uk">
   <link rel="alternate" hreflang="en" href="./?lang=en">
+  <link rel="alternate" hreflang="bg" href="./?lang=bg">
+  <link rel="alternate" hreflang="kk" href="./?lang=kk">
+  <link rel="alternate" hreflang="pl" href="./?lang=pl">
+  <link rel="alternate" hreflang="pt" href="./?lang=pt">
+  <link rel="alternate" hreflang="ro" href="./?lang=ro">
   <link rel="alternate" hreflang="x-default" href="./">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -20,16 +25,17 @@
     // Set theme + lang BEFORE first paint to avoid FOUC.
     (function () {
       try {
+        var SUPPORTED = ["uk", "en", "bg", "kk", "pl", "pt", "ro"];
         var storedTheme = localStorage.getItem("sellsnap-theme");
         if (storedTheme === "light" || storedTheme === "dark") {
           document.documentElement.dataset.theme = storedTheme;
         }
         var q = new URLSearchParams(location.search).get("lang");
         var storedLang = localStorage.getItem("sellsnap-lang");
-        var nav = (navigator.language || "en").toLowerCase();
-        var lang = (q && (q === "uk" || q === "en")) ? q
-          : (storedLang === "uk" || storedLang === "en") ? storedLang
-          : (nav.indexOf("uk") === 0 ? "uk" : "en");
+        var nav = (navigator.language || "en").toLowerCase().slice(0, 2);
+        var lang = (q && SUPPORTED.indexOf(q) !== -1) ? q
+          : (storedLang && SUPPORTED.indexOf(storedLang) !== -1) ? storedLang
+          : (SUPPORTED.indexOf(nav) !== -1 ? nav : "en");
         document.documentElement.lang = lang;
         document.documentElement.dataset.lang = lang;
       } catch (e) {}
@@ -44,10 +50,15 @@
         <span>SellSnap</span>
       </a>
       <div class="controls">
-        <div class="pill lang-pill" role="group" aria-label="Language">
-          <button type="button" data-set-lang="uk" data-i18n="lang_uk" aria-pressed="false">UA</button>
-          <button type="button" data-set-lang="en" data-i18n="lang_en" aria-pressed="false">EN</button>
-        </div>
+        <select class="lang-select" data-lang-select aria-label="Language">
+          <option value="uk">Українська</option>
+          <option value="en">English</option>
+          <option value="bg">Български</option>
+          <option value="kk">Қазақша</option>
+          <option value="pl">Polski</option>
+          <option value="pt">Português</option>
+          <option value="ro">Română</option>
+        </select>
         <div class="pill theme-pill" role="group" aria-label="Theme">
           <button type="button" data-set-theme="system" aria-pressed="false" data-i18n-attr="aria-label:theme_system_label;title:theme_system_label">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M8 21h8M12 18v3"/></svg>
@@ -70,13 +81,22 @@
           <h1 data-i18n="hero_h1">Snap it. AI writes it. OLX gets it.</h1>
           <p class="hero-sub" data-i18n="hero_sub">Photo in, listing out — AI does the typing.</p>
           <div class="hero-cta">
-            <a class="store-badge" href="https://apps.apple.com/us/app/sellsnap-ai-%D0%BE%D0%B3%D0%BE%D0%BB%D0%BE%D1%88%D0%B5%D0%BD%D0%BD%D1%8F/id6776001373" target="_blank" rel="noopener" aria-label="App Store">
+            <a class="store-badge" href="https://apps.apple.com/ua/app/sellsnap-ai-%D0%BE%D0%B3%D0%BE%D0%BB%D0%BE%D1%88%D0%B5%D0%BD%D0%BD%D1%8F/id6776001373" target="_blank" rel="noopener" aria-label="App Store">
               <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                 <path d="M16.4 12.8c0-2.3 1.9-3.4 2-3.5-1.1-1.6-2.8-1.8-3.4-1.8-1.4-.1-2.8.9-3.5.9-.7 0-1.9-.8-3.1-.8-1.6 0-3.1.9-3.9 2.4-1.7 2.9-.4 7.2 1.2 9.5.8 1.1 1.7 2.4 2.9 2.3 1.2 0 1.6-.8 3.1-.8 1.4 0 1.8.8 3.1.7 1.3 0 2.1-1.1 2.8-2.3.9-1.3 1.3-2.6 1.3-2.7-.1 0-2.5-1-2.5-3.9zM14.3 5.1c.6-.8 1.1-2 1-3.1-.9 0-2.1.6-2.8 1.4-.6.7-1.2 1.9-1 3 1 .1 2.1-.5 2.8-1.3z"/>
               </svg>
               <span class="store-label">
                 <small data-i18n="store_apple_eyebrow">Download on the</small>
                 <strong data-i18n="store_apple_name">App Store</strong>
+              </span>
+            </a>
+            <a class="store-badge" href="https://play.google.com/store/apps/details?id=com.sirelon.sellsnap" target="_blank" rel="noopener" aria-label="Google Play">
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M8 5.14v13.72a1 1 0 0 0 1.5.86l11-6.86a1 1 0 0 0 0-1.72l-11-6.86A1 1 0 0 0 8 5.14z"/>
+              </svg>
+              <span class="store-label">
+                <small data-i18n="store_google_eyebrow">Get it on</small>
+                <strong data-i18n="store_google_name">Google Play</strong>
               </span>
             </a>
           </div>
@@ -166,10 +186,24 @@
             </div>
           </article>
           <article class="feature-card">
-            <div class="feature-icon">🗂️</div>
+            <div class="feature-icon">🔧</div>
             <div>
-              <h3 data-i18n="feature_manage_title">Every ad in one place</h3>
-              <p data-i18n="feature_manage_desc">Published listings show up inside the app.</p>
+              <h3 data-i18n="feature_manage_title">Full control after it's live</h3>
+              <p data-i18n="feature_manage_desc">Edit it, extend it, take it down or delete it — plus views and phone reveals, right in the app.</p>
+            </div>
+          </article>
+          <article class="feature-card">
+            <div class="feature-icon">👥</div>
+            <div>
+              <h3 data-i18n="feature_accounts_title">Run more than one OLX account</h3>
+              <p data-i18n="feature_accounts_desc">Connect up to 3 accounts and switch the active one in a tap.</p>
+            </div>
+          </article>
+          <article class="feature-card">
+            <div class="feature-icon">📤</div>
+            <div>
+              <h3 data-i18n="feature_share_title">Start from your camera roll</h3>
+              <p data-i18n="feature_share_desc">Share a photo straight from Photos — SellSnap picks up from there.</p>
             </div>
           </article>
           <article class="feature-card">
@@ -216,13 +250,22 @@
           <h2 data-i18n="final_cta_h2">Ready to sell faster?</h2>
           <p data-i18n="final_cta_sub">Done before your coffee cools.</p>
           <div class="hero-cta">
-            <a class="store-badge" href="https://apps.apple.com/us/app/sellsnap-ai-%D0%BE%D0%B3%D0%BE%D0%BB%D0%BE%D1%88%D0%B5%D0%BD%D0%BD%D1%8F/id6776001373" target="_blank" rel="noopener" aria-label="App Store">
+            <a class="store-badge" href="https://apps.apple.com/ua/app/sellsnap-ai-%D0%BE%D0%B3%D0%BE%D0%BB%D0%BE%D1%88%D0%B5%D0%BD%D0%BD%D1%8F/id6776001373" target="_blank" rel="noopener" aria-label="App Store">
               <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                 <path d="M16.4 12.8c0-2.3 1.9-3.4 2-3.5-1.1-1.6-2.8-1.8-3.4-1.8-1.4-.1-2.8.9-3.5.9-.7 0-1.9-.8-3.1-.8-1.6 0-3.1.9-3.9 2.4-1.7 2.9-.4 7.2 1.2 9.5.8 1.1 1.7 2.4 2.9 2.3 1.2 0 1.6-.8 3.1-.8 1.4 0 1.8.8 3.1.7 1.3 0 2.1-1.1 2.8-2.3.9-1.3 1.3-2.6 1.3-2.7-.1 0-2.5-1-2.5-3.9zM14.3 5.1c.6-.8 1.1-2 1-3.1-.9 0-2.1.6-2.8 1.4-.6.7-1.2 1.9-1 3 1 .1 2.1-.5 2.8-1.3z"/>
               </svg>
               <span class="store-label">
                 <small data-i18n="store_apple_eyebrow">Download on the</small>
                 <strong data-i18n="store_apple_name">App Store</strong>
+              </span>
+            </a>
+            <a class="store-badge" href="https://play.google.com/store/apps/details?id=com.sirelon.sellsnap" target="_blank" rel="noopener" aria-label="Google Play">
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M8 5.14v13.72a1 1 0 0 0 1.5.86l11-6.86a1 1 0 0 0 0-1.72l-11-6.86A1 1 0 0 0 8 5.14z"/>
+              </svg>
+              <span class="store-label">
+                <small data-i18n="store_google_eyebrow">Get it on</small>
+                <strong data-i18n="store_google_name">Google Play</strong>
               </span>
             </a>
           </div>
