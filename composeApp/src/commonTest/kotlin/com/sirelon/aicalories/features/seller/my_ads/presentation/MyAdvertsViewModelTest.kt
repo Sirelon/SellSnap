@@ -515,7 +515,7 @@ class MyAdvertsViewModelTest {
         viewModel.onEvent(Event.AdvertClicked(localIndex = 1, advert = row))
         runCurrent()
         assertEquals(
-            listOf(AdvertAction.Reactivate, AdvertAction.Delete),
+            listOf(AdvertAction.Edit, AdvertAction.Reactivate, AdvertAction.Delete),
             assertNotNull(viewModel.state.value.advertSheet).actions,
         )
     }

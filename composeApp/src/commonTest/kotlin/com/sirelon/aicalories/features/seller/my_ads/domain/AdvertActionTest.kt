@@ -42,11 +42,11 @@ class AdvertActionTest {
     fun `the action set per state is pinned`() {
         val expected = mapOf(
             AdvertState.Active to listOf(AdvertAction.Edit, AdvertAction.Extend, AdvertAction.Deactivate),
-            AdvertState.Inactive to listOf(AdvertAction.Reactivate, AdvertAction.Delete),
-            AdvertState.UnderReview to listOf(AdvertAction.Delete),
-            AdvertState.NeedsPayment to listOf(AdvertAction.Delete),
-            AdvertState.NeedsConfirmation to listOf(AdvertAction.Delete),
-            AdvertState.Rejected to listOf(AdvertAction.Delete),
+            AdvertState.Inactive to listOf(AdvertAction.Edit, AdvertAction.Reactivate, AdvertAction.Delete),
+            AdvertState.UnderReview to listOf(AdvertAction.Edit, AdvertAction.Delete),
+            AdvertState.NeedsPayment to listOf(AdvertAction.Edit, AdvertAction.Delete),
+            AdvertState.NeedsConfirmation to listOf(AdvertAction.Edit, AdvertAction.Delete),
+            AdvertState.Rejected to listOf(AdvertAction.Edit, AdvertAction.Delete),
             AdvertState.Unknown to emptyList(),
         )
 
@@ -104,4 +104,20 @@ class AdvertActionTest {
             assertEquals(emptyList(), availableActions(AdvertStatus.Unknown, supportsExtendCommand = supportsExtend))
         }
     }
+    @Test
+    fun `editing is offered wherever OLX has not said otherwise`() {
+        // `PUT adverts/{id}` carries no documented status restriction, and OLX's own web UI lets a
+        // seller edit a listing that is under review. Restricting Edit to active listings was this
+        // app's invention, and it withheld editing from the one listing a seller most wants to fix
+        // - a rejected one, where OLX has emailed them what to change.
+        for (status in AdvertStatus.entries) {
+            val actions = availableActions(status, supportsExtendCommand = true)
+            if (status.state == AdvertState.Unknown) {
+                assertFalse(AdvertAction.Edit in actions, "$status could be anything, so offer nothing")
+            } else {
+                assertTrue(AdvertAction.Edit in actions, "$status has no documented reason to block an edit")
+            }
+        }
+    }
+
 }

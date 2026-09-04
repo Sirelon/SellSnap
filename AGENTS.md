@@ -498,11 +498,25 @@ These rules apply to every class that directly maps a JSON API response (OLX, Su
   identical across markets — the only market difference anywhere is `extend`, which the specs
   annotate as "not available in UA, PT". Each country has its own portal at
   `developer.olx.<tld>`; plain `curl` gets a CloudFront 403, so fetch through a tool that renders.
-- Two documented rules generate the whole action matrix: `deactivate` requires the advert to be
-  `active`, and `DELETE` requires it not to be. Every state except `Active` is one OLX defines as
-  not visible to buyers, so Delete is offered for all of them, including rejected listings —
-  refusing there was this app's invention. `Unknown` is the exception: an unrecognised status could
-  be an active advert.
+- **The action matrix separates what OLX documents from what this app inferred**, and the KDoc on
+  `availableActions` says which is which per action. Documented: `deactivate` needs the advert
+  `active`, `DELETE` needs it not `active`, `extend` is unavailable in UA/PT, expired and
+  seller-removed listings can be reactivated. Inferred: that Delete works for every non-active
+  state. Not restricted by OLX at all: `PUT` carries no documented status restriction, so Edit is
+  offered everywhere except `Unknown`.
+- Two restrictions this app added and then removed, both worth remembering as the failure mode:
+  Edit was limited to active listings, which withheld editing from a rejected listing — the one a
+  seller most needs to fix; and Delete was withheld from listings OLX had blocked, which left
+  sellers holding listings they wanted gone. Neither restriction came from OLX. When in doubt,
+  prefer offering it: a refused call costs one error message quoting OLX's own reason, while a
+  missing button makes the feature useless and is invisible in telemetry.
+- `Unknown` is the one place to stay conservative: an unrecognised status could be an active
+  advert, and deleting an active advert is the single case OLX documents as refused.
+- Deactivate is `Active`-only for a product reason as well as OLX's rule — OLX requires an answer
+  to "did it sell?" first, and that question is nonsense for a listing buyers never saw. Delete is
+  the equivalent for those.
+- Everything inferred is watched: `advert_action` logs `result: rejected` with `from_status`, so a
+  cell OLX actually refuses shows up as a pattern rather than staying a guess.
 - Never translate OLX's API vocabulary into user copy — no "moderation" as a process noun, no
   "status", no "verification" — and never leave a reason vague. Copy saying OLX was "checking
   something" was rejected outright in review, and rightly.
