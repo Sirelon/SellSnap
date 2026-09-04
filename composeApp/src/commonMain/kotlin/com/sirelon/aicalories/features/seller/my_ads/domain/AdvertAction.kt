@@ -46,7 +46,7 @@ val AdvertStatus.isLive: Boolean
  *
  * | State | Actions |
  * | -- | -- |
- * | `Active` | Edit, Extend (where the market allows), Deactivate |
+ * | `Active` | Edit, Extend (where the market allows), Deactivate, Delete |
  * | `Inactive` | Edit, Reactivate, Delete |
  * | `UnderReview` | Edit, Delete |
  * | `NeedsPayment` | Edit, Delete |
@@ -54,9 +54,12 @@ val AdvertStatus.isLive: Boolean
  * | `Rejected` | Edit, Delete |
  * | `Unknown` | nothing |
  *
- * Deactivate stays `Active`-only for a product reason on top of OLX's rule: OLX requires an
- * answer to "did it sell?" before it will accept a deactivate, and that question is nonsense for
- * a listing buyers never saw. For those, withdrawing it means Delete, which is offered.
+ * Delete is offered on `Active` too: OLX only accepts `DELETE` once an advert is inactive, so
+ * deleting a live listing deactivates it first - `runConfirmedAction`'s `isLive` branch routes it
+ * through the same sold prompt Deactivate uses, and `AdvertLifecycleRepository.delete` sends both
+ * calls. `AdvertDeactivatedNotDeleted` covers the deactivate leg landing while the delete leg
+ * does not, so the seller is told their listing is down rather than shown a generic failure for
+ * an action that half happened.
  *
  * `Unknown` gets nothing: an unrecognised status string could be an active advert, and deleting
  * an active advert is the one case OLX documents as refused - and it is not recoverable.
@@ -79,6 +82,7 @@ fun availableActions(status: AdvertStatus, supportsExtendCommand: Boolean): List
             add(AdvertAction.Edit)
             if (supportsExtendCommand) add(AdvertAction.Extend)
             add(AdvertAction.Deactivate)
+            add(AdvertAction.Delete)
         }
 
         AdvertState.Inactive -> listOf(AdvertAction.Edit, AdvertAction.Reactivate, AdvertAction.Delete)

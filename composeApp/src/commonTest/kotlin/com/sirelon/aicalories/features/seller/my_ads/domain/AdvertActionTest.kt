@@ -41,7 +41,12 @@ class AdvertActionTest {
     @Test
     fun `the action set per state is pinned`() {
         val expected = mapOf(
-            AdvertState.Active to listOf(AdvertAction.Edit, AdvertAction.Extend, AdvertAction.Deactivate),
+            AdvertState.Active to listOf(
+                AdvertAction.Edit,
+                AdvertAction.Extend,
+                AdvertAction.Deactivate,
+                AdvertAction.Delete,
+            ),
             AdvertState.Inactive to listOf(AdvertAction.Edit, AdvertAction.Reactivate, AdvertAction.Delete),
             AdvertState.UnderReview to listOf(AdvertAction.Edit, AdvertAction.Delete),
             AdvertState.NeedsPayment to listOf(AdvertAction.Edit, AdvertAction.Delete),
@@ -78,16 +83,22 @@ class AdvertActionTest {
     }
 
     @Test
-    fun `deactivate is offered only where OLX accepts it, and delete only where it does not`() {
-        // The two documented rules the whole table rests on: `deactivate` needs the advert to be
-        // active, `DELETE` needs it not to be.
+    fun `deactivate is offered only where OLX accepts it, delete everywhere except unknown`() {
+        // `deactivate` needs the advert to be active - OLX's one documented rule for it. `DELETE`
+        // needs it not to be, but a live listing still offers Delete: the app deactivates it first
+        // (the same call Deactivate makes) and only then sends `DELETE`, so the seller never has to
+        // take down a listing in two separate visits to get rid of it.
         for (status in AdvertStatus.entries) {
             val actions = availableActions(status, supportsExtendCommand = true)
             if (status.isLive) {
                 assertTrue(AdvertAction.Deactivate in actions, "$status is live, so it can be taken down")
-                assertFalse(AdvertAction.Delete in actions, "$status is live, so OLX refuses a delete")
             } else {
                 assertFalse(AdvertAction.Deactivate in actions, "$status is not live, so OLX refuses a deactivate")
+            }
+            if (status.state == AdvertState.Unknown) {
+                assertFalse(AdvertAction.Delete in actions, "$status could be anything, so offer nothing")
+            } else {
+                assertTrue(AdvertAction.Delete in actions, "$status has a documented or inferred path to delete")
             }
         }
 

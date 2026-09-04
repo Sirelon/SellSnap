@@ -223,3 +223,33 @@ back on its own". It is the opposite: a negative result.
 Lesson for anything else status-related: do not read the PL portal. Each market has its own at
 `developer.olx.<tld>`, the vocabulary is identical across them, and the UA and PT ones are the
 complete versions.
+
+---
+
+## RESOLVED: risk (b), the attribute shape — by a real edit failing
+
+An edit of a real advert failed with OLX's own message:
+
+> compound forms expect an array or NULL on submission
+
+So the answer to (b) is that the response and the request are **not** symmetric for attributes.
+OLX returns a single-valued attribute as a scalar `attributes[].value`, and its submission
+validator rejects that same scalar, wanting `values` as an array (or NULL). Echoing the response
+verbatim — correct for every other field, and what keeps an edit from dropping data — is wrong
+for exactly this one.
+
+`AdvertLifecycleRepository.asSubmittableAttribute` now normalises every echoed attribute: a scalar
+becomes a one-element array, an existing array is untouched, and an attribute with neither is
+submitted as NULL. The array form is the one known to be accepted, because the publish path has
+always sent it for every attribute type, single-select included.
+
+Two consequences worth recording:
+
+1. **The "echo the response verbatim" strategy needs a per-field exception list, not blind trust.**
+   Two exceptions are now known: `ad_delivery.delivery_change_allowed`, which the request schema
+   does not accept at all, and attributes, whose shape differs between reading and writing. Assume
+   there may be more, and read OLX's error text rather than guessing when a PUT is refused.
+2. **Risk (a) — whether OLX accepts its own image URLs back — is now partly answered.** Edits were
+   reaching OLX's *validator*, which means the payload as a whole was being parsed; the failure was
+   field-specific. An edit that succeeds after this fix confirms (a) for adverts whose images came
+   from OLX.

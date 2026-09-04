@@ -389,7 +389,7 @@ class MyAdvertsViewModelTest {
         val sheet = assertNotNull(viewModel.state.value.advertSheet)
         // Ukraine: OLX rejects `extend` here, so it must not appear as a button - a seller who
         // taps it would only ever get a server error back.
-        assertEquals(listOf(AdvertAction.Edit, AdvertAction.Deactivate), sheet.actions)
+        assertEquals(listOf(AdvertAction.Edit, AdvertAction.Deactivate, AdvertAction.Delete), sheet.actions)
         assertTrue(sheet.extendUnavailableHere)
         assertEquals(212, assertNotNull(sheet.statistics).advertViews)
         // Statistics are fetched on open, not per row: one call for the one advert opened.
@@ -603,8 +603,12 @@ class MyAdvertsViewModelTest {
                         respond(statisticsJson(0, 0, 0), status = HttpStatusCode.OK, headers = jsonHeaders())
 
                     else -> {
+                        // Active for the load the sheet is opened from, so Deactivate is a real
+                        // offered action; every read after OLX rejects it reports what the seller
+                        // evidently could not see - the sheet was working from a stale status.
+                        val status = if (listReads == 0) "active" else "removed_by_user"
                         listReads++
-                        respond(advertsJson(111L, status = "removed_by_user"), status = HttpStatusCode.OK, headers = jsonHeaders())
+                        respond(advertsJson(111L, status = status), status = HttpStatusCode.OK, headers = jsonHeaders())
                     }
                 }
             }
@@ -637,7 +641,13 @@ class MyAdvertsViewModelTest {
         // and the stale row corrected - otherwise the seller is offered the dead button again.
         assertTrue(listReads > readsAfterFirstLoad, "expected the list to be refetched")
         assertEquals(AdvertStatus.RemovedByUser, viewModel.state.value.pages.single().adverts.single().status)
-        assertNull(assertNotNull(viewModel.state.value.advertSheet).pendingAction)
+        val sheet = assertNotNull(viewModel.state.value.advertSheet)
+        assertNull(sheet.pendingAction)
+        // The sheet was opened while the row read Active, offering Deactivate. OLX's rejection
+        // means that was already stale - the sheet must show what the refetch found, not what it
+        // was opened with, or the seller is offered the same dead button again.
+        assertEquals(AdvertStatus.RemovedByUser, sheet.advert.status)
+        assertEquals(listOf(AdvertAction.Edit, AdvertAction.Reactivate, AdvertAction.Delete), sheet.actions)
     }
 
     @Test
@@ -840,6 +850,67 @@ class MyAdvertsViewModelTest {
     }
 
     @Test
+    fun `pricing a listing OLX returned with no price falls back to the account's currency`() = runTest(testDispatcher) {
+        var putBody: String? = null
+        val engine = mockEngine(testDispatcher) {
+            addHandler { request ->
+                val path = request.url.encodedPath
+                when {
+                    request.method == io.ktor.http.HttpMethod.Put -> {
+                        putBody = (request.body as io.ktor.http.content.TextContent).text
+                        respond("", status = HttpStatusCode.NoContent)
+                    }
+
+                    path.endsWith("/statistics") ->
+                        respond(statisticsJson(0, 0, 0), status = HttpStatusCode.OK, headers = jsonHeaders())
+
+                    path.contains("/adverts/111") -> respond(
+                        // No "price" key at all - the listing was published without one.
+                        """
+                        {
+                          "data": {
+                            "id": 111,
+                            "status": "active",
+                            "valid_to": "2026-09-30T10:00:00+03:00",
+                            "title": "Nike Air Max 90",
+                            "description": "Worn twice.",
+                            "category_id": 1234,
+                            "location": { "city_id": 1234 }
+                          }
+                        }
+                        """.trimIndent(),
+                        status = HttpStatusCode.OK,
+                        headers = jsonHeaders(),
+                    )
+
+                    // Also priceless on the list, so `advert.currencyCode` is blank and the
+                    // fallback has to come from the active OLX country (UA/UAH in this harness).
+                    else -> respond(advertsJson(111L), status = HttpStatusCode.OK, headers = jsonHeaders())
+                }
+            }
+        }
+        val (viewModel, _) = setUpViewModel(
+            engine = engine,
+            accounts = listOf(account(localIndex = 1, olxUserId = 1L, accessToken = "token-1")),
+            activeIndex = 1,
+        )
+        runCurrent()
+
+        val advert = viewModel.state.value.pages.single().adverts.single()
+        viewModel.onEvent(Event.AdvertClicked(localIndex = 1, advert = advert))
+        runCurrent()
+        viewModel.onEvent(Event.ActionClicked(AdvertAction.Edit))
+        runCurrent()
+
+        val edit = assertNotNull(viewModel.state.value.advertEdit)
+        viewModel.onEvent(Event.EditSubmitted(title = edit.title, description = edit.description, price = 1500))
+        runCurrent()
+
+        val body = assertNotNull(putBody)
+        assertTrue(body.contains("\"price\":{\"value\":1500,\"currency\":\"UAH\"}"), body)
+    }
+
+    @Test
     fun `a listing OLX is still reviewing opens the seller's OLX listings instead of nowhere`() = runTest(testDispatcher) {
         val engine = mockEngine(testDispatcher) {
             addHandler { request ->
@@ -1031,6 +1102,80 @@ class MyAdvertsViewModelTest {
         val retrying = assertNotNull(viewModel.state.value.advertSheet)
         assertEquals(AdvertAction.Reactivate, retrying.pendingAction)
         assertNull(retrying.errorMessage)
+    }
+
+    @Test
+    fun `an edit submits every attribute as an array, whatever shape OLX returned it in`() = runTest(testDispatcher) {
+        // A real edit failed with OLX's "compound forms expect an array or NULL on submission".
+        // OLX returns a single-valued attribute as a scalar `value`, but will not accept that
+        // scalar back - so echoing the response verbatim, which is right for every other field,
+        // is wrong for exactly this one.
+        var putBody: String? = null
+        val engine = mockEngine(testDispatcher) {
+            addHandler { request ->
+                val path = request.url.encodedPath
+                when {
+                    request.method == io.ktor.http.HttpMethod.Put -> {
+                        putBody = (request.body as io.ktor.http.content.TextContent).text
+                        respond("", status = HttpStatusCode.NoContent)
+                    }
+
+                    path.endsWith("/statistics") ->
+                        respond(statisticsJson(0, 0, 0), status = HttpStatusCode.OK, headers = jsonHeaders())
+
+                    path.contains("/adverts/111") -> respond(
+                        """
+                        {
+                          "data": {
+                            "id": 111,
+                            "status": "active",
+                            "valid_to": "2026-09-30T10:00:00+03:00",
+                            "title": "Nike Air Max 90",
+                            "description": "Worn twice.",
+                            "category_id": 1234,
+                            "location": { "city_id": 1234 },
+                            "price": { "value": 1800, "currency": "UAH" },
+                            "attributes": [
+                              { "code": "condition", "value": "used" },
+                              { "code": "colour", "values": ["black", "white"] },
+                              { "code": "empty", "value": null }
+                            ]
+                          }
+                        }
+                        """.trimIndent(),
+                        status = HttpStatusCode.OK,
+                        headers = jsonHeaders(),
+                    )
+
+                    else -> respond(advertsJson(111L), status = HttpStatusCode.OK, headers = jsonHeaders())
+                }
+            }
+        }
+        val (viewModel, _) = setUpViewModel(
+            engine = engine,
+            accounts = listOf(account(localIndex = 1, olxUserId = 1L, accessToken = "token-1")),
+            activeIndex = 1,
+        )
+        runCurrent()
+
+        val advert = viewModel.state.value.pages.single().adverts.single()
+        viewModel.onEvent(Event.AdvertClicked(localIndex = 1, advert = advert))
+        runCurrent()
+        viewModel.onEvent(Event.ActionClicked(AdvertAction.Edit))
+        runCurrent()
+        val edit = assertNotNull(viewModel.state.value.advertEdit)
+        viewModel.onEvent(Event.EditSubmitted(title = edit.title, description = edit.description, price = 1500))
+        runCurrent()
+
+        val body = assertNotNull(putBody)
+        // The scalar became a one-element array...
+        assertTrue(body.contains("""{"code":"condition","values":["used"]}"""), body)
+        // ...an array was left alone...
+        assertTrue(body.contains("""{"code":"colour","values":["black","white"]}"""), body)
+        // ...and an attribute with no value at all goes as NULL, which OLX's own message allows.
+        assertTrue(body.contains("""{"code":"empty","values":null}"""), body)
+        // The scalar key itself must not survive, or OLX sees the shape it rejected.
+        assertTrue(!body.contains("\"value\":\"used\""), body)
     }
 
     private fun statisticsJson(views: Int, phoneViews: Int, observing: Int) =

@@ -9,6 +9,8 @@ import com.sirelon.sellsnap.features.seller.auth.data.response.AdvertDeliveryRes
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxAdvertStatistics
 import com.sirelon.sellsnap.features.seller.my_ads.model.MyAdvertItem
 import com.sirelon.sellsnap.features.seller.profile.data.SellerAccountRepository
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -147,6 +149,33 @@ internal class AdvertLifecycleRepository(
         runCatching { myAdvertsRepository.loadAdvert(localIndex, advertId) }.getOrNull()
 }
 
+/**
+ * Attributes are the one place the response and the request genuinely differ in shape, so echoing
+ * them back verbatim is not enough.
+ *
+ * OLX returns a single-valued attribute as a scalar `value`, but its submission validator answers
+ * "compound forms expect an array or NULL on submission" for the same attribute - a real edit
+ * failed on exactly this. `values` as an array is the shape known to be accepted, because that is
+ * what the publish path has always sent for every attribute type
+ * ([com.sirelon.sellsnap.features.seller.ad.data.PostAdvertRequestMapper] wraps even a
+ * single-select code in a one-element list).
+ *
+ * So a scalar becomes a one-element array, an existing array is left alone, and an attribute with
+ * neither is submitted as NULL, which the same message says is acceptable. This closes residual
+ * risk (b) in `SPIKE-SIR-99-advert-edit-round-trip.md`.
+ */
+private fun JsonElement.asSubmittableAttribute(): JsonElement {
+    val attribute = this as? JsonObject ?: return this
+    val submitted = attribute.toMutableMap()
+
+    val values = attribute["values"] as? JsonArray
+        ?: (attribute["value"]?.takeIf { it !is JsonNull })?.let { JsonArray(listOf(it)) }
+    submitted["values"] = values ?: JsonNull
+    submitted.remove("value")
+
+    return JsonObject(submitted)
+}
+
 private fun JsonObject.withEdits(
     title: String,
     description: String,
@@ -173,6 +202,10 @@ private fun JsonObject.withEdits(
     // [AdvertResponseOnlyKeys] filter in `OlxApiClient.getAdvert` cannot reach it.
     (edited["ad_delivery"] as? JsonObject)?.let { delivery ->
         edited["ad_delivery"] = JsonObject(delivery.filterKeys { it !in AdvertDeliveryResponseOnlyKeys })
+    }
+
+    (edited["attributes"] as? JsonArray)?.let { attributes ->
+        edited["attributes"] = JsonArray(attributes.map { it.asSubmittableAttribute() })
     }
 
     return JsonObject(edited)

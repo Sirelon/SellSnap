@@ -221,17 +221,19 @@ class MyAdvertsViewModel internal constructor(
             setState { it.updatePage(localIndex) { page -> page.copy(isLoading = true, isLoadingMore = false, errorMessage = null) } }
             runCatching { repository.loadAdverts(localIndex = localIndex, offset = 0, limit = PageSize) }
                 .onSuccess { adverts ->
+                    val refreshed = adverts.withPendingStatuses()
                     setState {
                         it.updatePage(localIndex) { page ->
                             page.copy(
                                 isLoading = false,
-                                adverts = adverts.withPendingStatuses(),
+                                adverts = refreshed,
                                 canLoadMore = adverts.size == PageSize,
                                 errorMessage = null,
                                 hasLoaded = true,
                             )
                         }
                     }
+                    refreshOpenSheetFrom(localIndex, refreshed)
                 }
                 .onFailure { error -> handlePageFailure(localIndex, error, isLoadMore = false) }
         }
@@ -316,6 +318,28 @@ class MyAdvertsViewModel internal constructor(
         val state = advert.status.state
         if (state == AdvertState.Rejected || state == AdvertState.UnderReview) {
             loadModerationReason(localIndex, advert.id)
+        }
+    }
+
+    /**
+     * Re-derives the open sheet's advert and actions from a just-refetched page, so a sheet left
+     * open across a refresh (most notably a rejected action) reflects the row OLX actually
+     * reports rather than the status it was opened with. `openAdvertSheet` computes `actions` the
+     * same way; a status change here means an action the seller can no longer take must stop
+     * being offered.
+     */
+    private fun refreshOpenSheetFrom(localIndex: Int, adverts: List<MyAdvertItem>) {
+        val sheet = currentState().advertSheet ?: return
+        if (sheet.localIndex != localIndex) return
+        val row = adverts.find { it.id == sheet.advert.id } ?: return
+
+        val supportsExtend = _currentOlxCountry.supportsExtendCommand
+        updateSheet(row.id) {
+            it.copy(
+                advert = row,
+                actions = availableActions(row.status, supportsExtend),
+                extendUnavailableHere = row.status.isLive && !supportsExtend,
+            )
         }
     }
 
