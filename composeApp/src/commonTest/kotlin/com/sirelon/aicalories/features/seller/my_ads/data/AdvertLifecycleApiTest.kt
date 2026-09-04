@@ -241,9 +241,9 @@ class AdvertLifecycleApiTest {
     @Test
     fun `getAdvert maps the typed fields and keeps the raw response for the edit path to reshape`() =
         runBlocking {
-            // This is the guarantee behind SIR-104: an edit re-sends updatePayload verbatim, so a
-            // price change cannot silently drop an attribute, a delivery setting, or a field this
-            // app does not model at all (the made-up key below stands in for that last case).
+            // updatePayload keeps the response whole, undocumented keys included (the made-up
+            // key below stands in for those), because it is what the PUT body is built from.
+            // What that body may carry is a separate question, pinned in AdvertUpdateBodyTest.
             val rawAdvertJson = """
                 {
                   "id": 42,

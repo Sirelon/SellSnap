@@ -789,7 +789,7 @@ class MyAdvertsViewModelTest {
     }
 
     @Test
-    fun `an edit strips the delivery flag OLX reports but does not accept back`() = runTest(testDispatcher) {
+    fun `an edit sends no delivery block, since the update schema defines no field for one`() = runTest(testDispatcher) {
         var putBody: String? = null
         val engine = mockEngine(testDispatcher) {
             addHandler { request ->
@@ -848,11 +848,13 @@ class MyAdvertsViewModelTest {
         runCurrent()
 
         val body = assertNotNull(putBody)
-        // `delivery_change_allowed` is OLX reporting whether delivery is editable and is in
-        // neither request schema, wherever OLX chooses to put it.
+        // `PUT adverts/{id}` has no delivery field of any kind: OLX reports the advert's delivery
+        // setup on read and owns it on its own side. Echoing the block back is submitting to a
+        // form that does not model it, which is what "compound forms expect an array or NULL on
+        // submission" was answering.
+        assertTrue(!body.contains("ad_delivery"), body)
         assertTrue(!body.contains("delivery_change_allowed"), body)
-        // The delivery setting itself still has to survive, or an edit silently drops it.
-        assertTrue(body.contains("\"delivery_package_ids\":[\"pkg-1\"]"), body)
+        assertTrue(!body.contains("delivery_package_ids"), body)
     }
 
     @Test
@@ -1111,11 +1113,12 @@ class MyAdvertsViewModelTest {
     }
 
     @Test
-    fun `an edit submits every attribute as an array, whatever shape OLX returned it in`() = runTest(testDispatcher) {
-        // A real edit failed with OLX's "compound forms expect an array or NULL on submission".
-        // OLX returns a single-valued attribute as a scalar `value`, but will not accept that
-        // scalar back - so echoing the response verbatim, which is right for every other field,
-        // is wrong for exactly this one.
+    fun `an edit sends each attribute under the key the schema defines for its arity`() = runTest(testDispatcher) {
+        // `value` and `values` are two different fields in the schema - `value` for an attribute
+        // that takes a single value, `values` for one that takes several - and the response fills
+        // whichever applies. Each therefore goes back under the key it arrived under; forcing them
+        // all into `values` arrays was a guess, and the spec defines neither shape as a substitute
+        // for the other.
         var putBody: String? = null
         val engine = mockEngine(testDispatcher) {
             addHandler { request ->
@@ -1174,16 +1177,14 @@ class MyAdvertsViewModelTest {
         runCurrent()
 
         val body = assertNotNull(putBody)
-        // The scalar became a one-element array of strings...
-        assertTrue(body.contains("""{"code":"condition","values":["used"]}"""), body)
-        // ...an array was kept...
+        // A single value stays a scalar under `value`...
+        assertTrue(body.contains("""{"code":"condition","value":"used"}"""), body)
+        // ...several stay an array under `values`...
         assertTrue(body.contains("""{"code":"colour","values":["black","white"]}"""), body)
         // ...and an attribute with no value is dropped, not sent as the string "null" -
         // `JsonNull` is itself a `JsonPrimitive`, so reading `.content` off it says "null".
         assertTrue(!body.contains("empty"), body)
         assertTrue(!body.contains("\"null\""), body)
-        // The scalar key itself must not survive, or OLX sees the shape it rejected.
-        assertTrue(!body.contains("\"value\":\"used\""), body)
     }
 
     private fun statisticsJson(views: Int, phoneViews: Int, observing: Int) =
@@ -1191,7 +1192,7 @@ class MyAdvertsViewModelTest {
 
     private fun advertJson(id: Long, status: String) = """{"data":{"id":$id,"status":"$status"}}"""
 
-    /** A realistic advert, including a field the app does not model, to prove the edit echo. */
+    /** A realistic advert, with the fields an edit has to carry back through the update body. */
     private fun fullAdvertJson(id: Long = 111, title: String = "Nike Air Max 90", price: Long = 1800) = """
         {
           "data": {

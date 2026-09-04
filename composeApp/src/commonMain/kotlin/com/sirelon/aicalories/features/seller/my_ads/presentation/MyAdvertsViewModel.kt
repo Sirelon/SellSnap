@@ -653,8 +653,12 @@ class MyAdvertsViewModel internal constructor(
     private suspend fun actionFailureMessage(localIndex: Int, error: Throwable): String {
         val olxError = (error as? OlxApiException)?.error
         return when {
+            // OLX's own text, prefixed with the field it named. The field is not seller-facing
+            // prose, but when OLX's message is its framework's rather than a human's - "compound
+            // forms expect an array or NULL on submission" - the field is the only part that says
+            // anything, and without it neither the seller nor a bug report can act on it.
             olxError is OlxApiError.ValidationError ->
-                getString(Res.string.advert_action_failed, olxError.fieldDetail)
+                getString(Res.string.advert_action_failed, "${olxError.field}: ${olxError.fieldDetail}")
 
             // An account whose token is genuinely dead cannot be retried into working. Telling
             // the seller to "try again in a moment" would send them round a loop that can only

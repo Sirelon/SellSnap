@@ -10,11 +10,10 @@ import kotlinx.serialization.json.JsonObject
  * `GET adverts/{id}` - one advert, richer than the list item [OlxAdvertResponse] models.
  *
  * [OlxAdvertDetailRootResponse.data] is deliberately kept as a raw [JsonObject] alongside the
- * typed view: `PUT adverts/{id}` takes the full create payload with no patch semantics, so an
- * edit has to send every field back. Echoing the untouched fields as the exact JSON OLX just
- * returned is the only way to guarantee that a seller who changes the price cannot lose their
- * attributes, delivery settings, or a field this app does not model at all - see
- * `SPIKE-SIR-99-advert-edit-round-trip.md`.
+ * typed view: `PUT adverts/{id}` takes the whole advert with no patch semantics, so an edit has to
+ * send back every field it is not changing, including ones this app does not model. The raw object
+ * is the source those are read from; `toUpdateBody` reshapes it into the update schema, which is
+ * not the same shape this response arrives in - see `SPIKE-SIR-99-advert-edit-round-trip.md`.
  */
 @Serializable
 internal class OlxAdvertDetailRootResponse(
@@ -76,8 +75,8 @@ internal class OlxAdvertDetailResponse(
 }
 
 /**
- * The keys `PUT adverts/{id}` requires, per the spec's `required:` list: everything else in its
- * request body is optional. An update that omits one of these is rejected.
+ * The keys `PUT adverts/{id}` requires, per the spec's `required:` list. An update that omits one
+ * of these is rejected.
  */
 internal val AdvertUpdateRequiredKeys = setOf(
     "title",
@@ -90,9 +89,13 @@ internal val AdvertUpdateRequiredKeys = setOf(
 )
 
 /**
- * Optional keys `PUT adverts/{id}` accepts and this app forwards when the advert has them, so an
- * edit does not cost the seller a setting it never asked about. Only `auto_extend_enabled` is
- * documented as unchanged when omitted, so it is deliberately never sent.
+ * The rest of the keys `PUT adverts/{id}` defines. Each is forwarded when the advert has it, so an
+ * edit does not cost the seller a setting the app never asked them about.
+ *
+ * This is the endpoint's whole vocabulary together with [AdvertUpdateRequiredKeys] - a response
+ * key absent from both is not an update field and does not go back. `auto_extend_enabled` is the
+ * one exception: it is defined, but the spec documents omitting it as leaving auto-renew
+ * unchanged, which is exactly what an edit should do, so it is never sent.
  */
 internal val AdvertUpdateOptionalKeys = setOf(
     "external_url",
@@ -101,17 +104,31 @@ internal val AdvertUpdateOptionalKeys = setOf(
     "price",
     "salary",
     "courier",
-    "ad_delivery",
     "product_safety_regulation",
 )
 
 /**
- * `GET adverts/{id}` nests the advert's location **inside `contact`**, while `PUT` takes
- * `location` as a required top-level field. Reading the response's own sample in the OLX docs is
- * the only way to know this, and getting it wrong means every edit is rejected: the location is
- * missing where it is required and present where the form does not model it.
+ * The properties `PUT adverts/{id}` defines inside each of its object fields, and for `images` the
+ * properties of one array item.
  *
- * Read from the top level first anyway, in case a market or a future version puts it there.
+ * `GET adverts/{id}` answers with more than these - the app has seen `delivery_change_allowed`
+ * arrive alongside a delivery block - so a field is narrowed to this list before it is sent.
+ *
+ * `product_safety_regulation` is absent on purpose: request and response both describe it with the
+ * same `$ref`, so what comes back is already the shape that goes out.
+ */
+internal val AdvertUpdateNestedKeys: Map<String, Set<String>> = mapOf(
+    "contact" to setOf("name", "phone"),
+    "location" to setOf("city_id", "district_id", "latitude", "longitude"),
+    "price" to setOf("value", "currency", "negotiable", "trade", "budget"),
+    "salary" to setOf("value_from", "value_to", "currency", "negotiable", "type"),
+    "images" to setOf("url"),
+)
+
+/**
+ * The advert's location. The spec places it at the top level of the advert, which is where this
+ * looks first; the fallback covers a response that nests it under `contact` instead, since `PUT`
+ * requires the field and an edit that omits it is refused outright.
  */
 internal fun JsonObject.advertLocation(): JsonObject? =
     this["location"] as? JsonObject
