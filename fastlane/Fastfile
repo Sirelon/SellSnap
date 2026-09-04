@@ -1,3 +1,5 @@
+require "shellwords"
+
 default_platform(:ios)
 
 
@@ -32,6 +34,32 @@ GOOGLE_SERVICE_INFO_PLIST = "iosApp/iosApp/GoogleService-Info.plist"
 # version, shared by Android (read directly in build.gradle.kts) and iOS
 # (synced into the Xcode project below before every build).
 VERSION_PROPERTIES = File.expand_path("../version.properties", __dir__)
+
+# -allowProvisioningUpdates lets xcodebuild create the signing assets a build
+# needs (distribution certificate, App IDs, profiles, App Group capabilities),
+# but only if it can authenticate. app_store_connect_api_key above feeds
+# pilot/deliver, not xcodebuild - without these three flags the archive export
+# fails with "No Accounts" and a cascade of "No signing certificate" errors.
+TEAM_ID = "5MF89WU7WQ"
+SHARE_EXTENSION_IDENTIFIER = "#{APP_IDENTIFIER}.ShareExtension"
+
+# The archive signs automatically, but the export must not: xcodebuild insists
+# on its own cloud-managed "iOS Team Store Provisioning Profile" there, which
+# fails with "Cloud signing permission error" and, since that profile predates
+# the share extension, also reports the App Group as unsupported. These two
+# profiles are the ones created by `fastlane run sigh` (recreate them the same
+# way after a certificate renewal - the names are sigh's own convention).
+APP_STORE_PROFILES = {
+  APP_IDENTIFIER => "#{APP_IDENTIFIER} AppStore",
+  SHARE_EXTENSION_IDENTIFIER => "#{SHARE_EXTENSION_IDENTIFIER} AppStore"
+}.freeze
+
+PROVISIONING_XCARGS = [
+  "-allowProvisioningUpdates",
+  "-authenticationKeyPath", Shellwords.escape(ASC_KEY_FILEPATH),
+  "-authenticationKeyID", ASC_KEY_ID,
+  "-authenticationKeyIssuerID", ASC_ISSUER_ID
+].join(" ")
 
 # Per-locale release notes / promotional text live outside the repo tree
 # (.claude/tmp/ is gitignored) - they're regenerated fresh every release by the
@@ -106,7 +134,13 @@ platform :ios do
         scheme: IOS_SCHEME,
         export_method: "app-store",
         derived_data_path: IOS_DERIVED_DATA_PATH,
-        xcargs: "-allowProvisioningUpdates"
+        xcargs: PROVISIONING_XCARGS,
+        export_team_id: TEAM_ID,
+        export_options: {
+          signingStyle: "manual",
+          signingCertificate: "Apple Distribution",
+          provisioningProfiles: APP_STORE_PROFILES
+        }
       )
     end
     upload_dsyms_to_crashlytics
