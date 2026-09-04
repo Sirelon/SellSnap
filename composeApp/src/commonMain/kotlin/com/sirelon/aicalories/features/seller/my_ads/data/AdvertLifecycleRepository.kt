@@ -4,7 +4,8 @@ import com.sirelon.sellsnap.features.seller.auth.data.AdvertCommand
 import com.sirelon.sellsnap.features.seller.auth.data.AdvertEditSnapshot
 import com.sirelon.sellsnap.features.seller.auth.data.OlxApiClient
 import com.sirelon.sellsnap.features.seller.my_ads.domain.AdvertAction
-import com.sirelon.sellsnap.features.seller.auth.data.response.AdvertDeliveryResponseOnlyKeys
+import com.sirelon.sellsnap.features.seller.auth.data.response.AdvertUpdateOptionalKeys
+import com.sirelon.sellsnap.features.seller.auth.data.response.advertLocation
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxAdvertStatistics
 import com.sirelon.sellsnap.features.seller.my_ads.model.MyAdvertItem
 import com.sirelon.sellsnap.features.seller.profile.data.SellerAccountRepository
@@ -112,7 +113,7 @@ internal class AdvertLifecycleRepository(
         priceValue: Long?,
         fallbackCurrencyCode: String,
     ): MyAdvertItem? {
-        val body = snapshot.updatePayload.withEdits(
+        val body = snapshot.updatePayload.toUpdateBody(
             title = title,
             description = description,
             priceValue = priceValue,
@@ -149,63 +150,108 @@ internal class AdvertLifecycleRepository(
 }
 
 /**
- * Attributes are the one place the response and the request genuinely differ in shape, so echoing
- * them back verbatim is not enough.
+ * Builds the `PUT adverts/{id}` body from what `GET adverts/{id}` returned, following the update
+ * endpoint's documented request schema rather than echoing the response.
  *
- * OLX returns a single-valued attribute as a scalar `value`, but its submission validator answers
- * "compound forms expect an array or NULL on submission" for the same attribute - a real edit
- * failed on exactly this. `values` as an array is the shape known to be accepted, because that is
- * what the publish path has always sent for every attribute type
- * ([com.sirelon.sellsnap.features.seller.ad.data.PostAdvertRequestMapper] wraps even a
- * single-select code in a one-element list).
+ * Echoing was wrong because the two schemas are **not** the same shape, and the OLX docs' own
+ * response sample is the only place that says so:
  *
- * So a scalar becomes a one-element array, an existing array is left alone, and an attribute with
- * neither is submitted as NULL, which the same message says is acceptable. This closes residual
- * risk (b) in `SPIKE-SIR-99-advert-edit-round-trip.md`.
+ * - `location` comes back nested inside `contact`, but `PUT` takes it as a **required top-level
+ *   field**. An echo therefore omitted something required and included it where the form does not
+ *   model it. This is what OLX was rejecting with "compound forms expect an array or NULL on
+ *   submission".
+ * - `delivery_change_allowed` is a top-level sibling of `ad_delivery` in the response and is not
+ *   in the request at all.
+ * - An attribute comes back as a scalar `value` with `values: null`, sometimes numeric
+ *   (`"value": 2015`), while the request wants `values` as an array of strings.
+ *
+ * So only the documented fields are sent: the seven [AdvertUpdateRequiredKeys], plus each of
+ * [AdvertUpdateOptionalKeys] the advert actually has, so an edit does not cost the seller a
+ * setting they never touched. `auto_extend_enabled` is deliberately never sent - it is the one
+ * field the spec documents as unchanged when omitted.
  */
-private fun JsonElement.asSubmittableAttribute(): JsonElement {
-    val attribute = this as? JsonObject ?: return this
-    val submitted = attribute.toMutableMap()
-
-    val values = attribute["values"] as? JsonArray
-        ?: (attribute["value"]?.takeIf { it !is JsonNull })?.let { JsonArray(listOf(it)) }
-    submitted["values"] = values ?: JsonNull
-    submitted.remove("value")
-
-    return JsonObject(submitted)
-}
-
-private fun JsonObject.withEdits(
+private fun JsonObject.toUpdateBody(
     title: String,
     description: String,
     priceValue: Long?,
     fallbackCurrencyCode: String,
 ): JsonObject {
-    val edited = toMutableMap()
-    edited["title"] = JsonPrimitive(title)
-    edited["description"] = JsonPrimitive(description)
+    val body = mutableMapOf<String, JsonElement>()
 
-    if (priceValue != null) {
+    body["title"] = JsonPrimitive(title)
+    body["description"] = JsonPrimitive(description)
+    this["category_id"]?.takeIf { it !is JsonNull }?.let { body["category_id"] = it }
+    body["advertiser_type"] = this["advertiser_type"]?.takeIf { it !is JsonNull } ?: JsonPrimitive("private")
+
+    // Only the two fields the contact form models; the response also nests `location` in here.
+    (this["contact"] as? JsonObject)?.let { contact ->
+        body["contact"] = JsonObject(contact.filterKeys { it == "name" || it == "phone" })
+    }
+
+    advertLocation()?.let { location ->
+        body["location"] = JsonObject(
+            location.filterKeys { it in setOf("city_id", "district_id", "latitude", "longitude") }
+                .filterValues { it !is JsonNull },
+        )
+    }
+
+    // Required, so an advert with no attributes still sends an empty array.
+    body["attributes"] = JsonArray(
+        (this["attributes"] as? JsonArray).orEmpty().mapNotNull { it.toSubmittableAttribute() },
+    )
+
+    if (priceValue != null || this["price"] is JsonObject) {
         val price = (this["price"] as? JsonObject)?.toMutableMap() ?: mutableMapOf()
-        price["value"] = JsonPrimitive(priceValue)
-        // An explicit `null` currency counts as absent: OLX will not take a value without one,
-        // and `getOrPut` alone would leave the null in place because the key exists.
+        priceValue?.let { price["value"] = JsonPrimitive(it) }
         if (price["currency"].let { it == null || it is JsonNull }) {
             price["currency"] = JsonPrimitive(fallbackCurrencyCode)
         }
-        edited["price"] = JsonObject(price)
+        body["price"] = JsonObject(price.filterValues { it !is JsonNull })
     }
 
-    // `ad_delivery.delivery_change_allowed` is OLX telling us whether delivery is editable, and
-    // is absent from the request schema. It is nested, so the top-level
-    // [AdvertResponseOnlyKeys] filter in `OlxApiClient.getAdvert` cannot reach it.
-    (edited["ad_delivery"] as? JsonObject)?.let { delivery ->
-        edited["ad_delivery"] = JsonObject(delivery.filterKeys { it !in AdvertDeliveryResponseOnlyKeys })
+    // Forwarded only when the advert has them: the response returns `null` for the ones that do
+    // not apply, and sending a null where the form expects a structure is how this broke before.
+    for (key in AdvertUpdateOptionalKeys) {
+        if (key == "price") continue
+        val value = this[key]?.takeIf { it !is JsonNull } ?: continue
+        body[key] = if (key == "ad_delivery" && value is JsonObject) {
+            // OLX reports `delivery_change_allowed` - top-level in the docs' sample, nested in
+            // practice - and accepts it in neither request schema.
+            JsonObject(value.filterKeys { it != "delivery_change_allowed" })
+        } else {
+            value
+        }
     }
 
-    (edited["attributes"] as? JsonArray)?.let { attributes ->
-        edited["attributes"] = JsonArray(attributes.map { it.asSubmittableAttribute() })
-    }
+    return JsonObject(body)
+}
 
-    return JsonObject(edited)
+/**
+ * One attribute in the shape `PUT` accepts: `code` plus `values` as an array of strings.
+ *
+ * The response gives a scalar `value` with `values: null`, and the scalar is not always a string -
+ * the docs' own sample has `"value": 2015`. Dropped entirely if it carries no code or no value,
+ * since an attribute with neither says nothing and `code` is required.
+ */
+/** `JsonNull` is itself a [JsonPrimitive], so reading `.content` off it yields the string
+ * "null" - which is how an empty attribute became `values: ["null"]`. */
+private fun JsonElement?.contentOrNull(): String? =
+    (this as? JsonPrimitive)?.takeIf { it !is JsonNull }?.content
+
+private fun JsonElement.toSubmittableAttribute(): JsonObject? {
+    val attribute = this as? JsonObject ?: return null
+    val code = (attribute["code"] as? JsonPrimitive)?.content?.takeIf { it.isNotBlank() } ?: return null
+
+    val values = (attribute["values"] as? JsonArray)
+        ?.mapNotNull { it.contentOrNull() }
+        ?: attribute["value"].contentOrNull()?.let { listOf(it) }
+        ?: return null
+
+    if (values.isEmpty()) return null
+    return JsonObject(
+        mapOf(
+            "code" to JsonPrimitive(code),
+            "values" to JsonArray(values.map { JsonPrimitive(it) }),
+        ),
+    )
 }

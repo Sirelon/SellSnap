@@ -699,18 +699,24 @@ class MyAdvertsViewModelTest {
         runCurrent()
 
         val body = assertNotNull(putBody)
-        // Only the price changed...
-        assertTrue(body.contains("\"value\":1500"))
-        // ...and everything else came back byte-for-byte, including a field this app does not
-        // model at all. PUT resets whatever it is not sent, so anything dropped here is data the
-        // seller silently loses by editing their price.
-        assertTrue(body.contains("\"code\":\"condition\""))
-        assertTrue(body.contains("\"city_id\":1234"))
-        assertTrue(body.contains("\"product_safety_regulation\""))
-        assertTrue(body.contains("\"auto_extend_enabled\":true"))
-        // Response-only keys are not echoed - PUT does not accept them.
-        assertTrue(!body.contains("\"valid_to\""))
-        assertTrue(!body.contains("\"activated_at\""))
+        // The price the seller typed.
+        assertTrue(body.contains("\"value\":1500"), body)
+        // Every field PUT requires is present, including `location`, which OLX returns nested
+        // inside `contact` but requires at the top level - the mismatch that made every edit fail.
+        for (required in listOf("title", "description", "category_id", "advertiser_type", "contact", "location", "attributes")) {
+            assertTrue("\"$required\"" in body, "$required is required by PUT: $body")
+        }
+        assertTrue(body.contains("\"city_id\":1234"), body)
+        // Optional settings the advert has are carried through, so an edit does not cost them.
+        assertTrue(body.contains("\"code\":\"condition\""), body)
+        assertTrue(body.contains("\"product_safety_regulation\""), body)
+        // `location` must not also remain nested in `contact`, where the form does not model it.
+        assertTrue(!body.contains("\"phone\":\"+380501112233\",\"location\""), body)
+        // Response-only keys never reach PUT, and `auto_extend_enabled` is the one field
+        // documented as unchanged when omitted, so it is not sent at all.
+        for (absent in listOf("valid_to", "activated_at", "\"status\"", "auto_extend_enabled")) {
+            assertTrue(absent !in body, "$absent must not be sent: $body")
+        }
 
         assertEquals(true, analytics.paramsFor(AnalyticsEvents.ADVERT_EDITED)?.get("was_price_only"))
         assertNull(viewModel.state.value.advertEdit)
@@ -842,8 +848,8 @@ class MyAdvertsViewModelTest {
         runCurrent()
 
         val body = assertNotNull(putBody)
-        // `delivery_change_allowed` is OLX telling us whether delivery is editable; it is not in
-        // the request schema. It is nested, so the top-level response-only filter cannot reach it.
+        // `delivery_change_allowed` is OLX reporting whether delivery is editable and is in
+        // neither request schema, wherever OLX chooses to put it.
         assertTrue(!body.contains("delivery_change_allowed"), body)
         // The delivery setting itself still has to survive, or an edit silently drops it.
         assertTrue(body.contains("\"delivery_package_ids\":[\"pkg-1\"]"), body)
@@ -1168,12 +1174,14 @@ class MyAdvertsViewModelTest {
         runCurrent()
 
         val body = assertNotNull(putBody)
-        // The scalar became a one-element array...
+        // The scalar became a one-element array of strings...
         assertTrue(body.contains("""{"code":"condition","values":["used"]}"""), body)
-        // ...an array was left alone...
+        // ...an array was kept...
         assertTrue(body.contains("""{"code":"colour","values":["black","white"]}"""), body)
-        // ...and an attribute with no value at all goes as NULL, which OLX's own message allows.
-        assertTrue(body.contains("""{"code":"empty","values":null}"""), body)
+        // ...and an attribute with no value is dropped, not sent as the string "null" -
+        // `JsonNull` is itself a `JsonPrimitive`, so reading `.content` off it says "null".
+        assertTrue(!body.contains("empty"), body)
+        assertTrue(!body.contains("\"null\""), body)
         // The scalar key itself must not survive, or OLX sees the shape it rejected.
         assertTrue(!body.contains("\"value\":\"used\""), body)
     }

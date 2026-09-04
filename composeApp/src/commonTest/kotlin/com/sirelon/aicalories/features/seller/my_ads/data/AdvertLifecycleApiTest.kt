@@ -3,7 +3,6 @@ package com.sirelon.sellsnap.features.seller.my_ads.data
 import com.sirelon.sellsnap.features.seller.ad.publish_success.AdvertStatus
 import com.sirelon.sellsnap.features.seller.auth.data.AdvertCommand
 import com.sirelon.sellsnap.features.seller.auth.data.OlxApiClient
-import com.sirelon.sellsnap.features.seller.auth.data.response.AdvertUpdateAllowedKeys
 import com.sirelon.sellsnap.features.seller.auth.data.OlxRemoteErrorParser
 import com.sirelon.sellsnap.features.seller.auth.data.createOlxHttpClient
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxAdvertStatistics
@@ -240,7 +239,7 @@ class AdvertLifecycleApiTest {
     }
 
     @Test
-    fun `getAdvert maps typed fields and echoes every other field byte-for-byte, dropping only the response-only keys`() =
+    fun `getAdvert maps the typed fields and keeps the raw response for the edit path to reshape`() =
         runBlocking {
             // This is the guarantee behind SIR-104: an edit re-sends updatePayload verbatim, so a
             // price change cannot silently drop an attribute, a delivery setting, or a field this
@@ -287,28 +286,9 @@ class AdvertLifecycleApiTest {
             assertEquals("Barely used, well maintained", snapshot.detail.description)
             assertEquals(true, snapshot.detail.autoExtendEnabled)
 
-            // Response-only keys never reach PUT.
-            for (key in setOf("id", "status", "url", "created_at", "activated_at", "valid_to")) {
-                assertTrue(key !in snapshot.updatePayload, "$key is response-only and must not be echoed back to PUT")
-            }
-
-            // Only keys PUT documents are sent. Echoing the whole response was refused by OLX with
-            // "compound forms expect an array or NULL on submission" - some field OLX returns is
-            // not modelled by its own update form, so an allowlist removes the class rather than
-            // one offending key.
-            for (key in snapshot.updatePayload.keys) {
-                assertTrue(key in AdvertUpdateAllowedKeys, "$key is not in the documented PUT body")
-            }
-
-            // Everything documented that OLX did send is still forwarded, byte-for-byte - PUT
-            // resets what it is not sent, so a price edit must not drop attributes or delivery.
-            val expected = JsonObject(
-                (testJson.parseToJsonElement(rawAdvertJson) as JsonObject)
-                    .filterKeys { it in AdvertUpdateAllowedKeys },
-            )
-            assertEquals(expected, snapshot.updatePayload)
-            assertTrue("attributes" in snapshot.updatePayload)
-            assertTrue("location" in snapshot.updatePayload)
+            // The raw response is kept whole here: the PUT body is a different shape and is
+            // built from it in `AdvertLifecycleRepository`, not filtered out of it.
+            assertEquals(testJson.parseToJsonElement(rawAdvertJson), snapshot.updatePayload)
         }
 
     private fun apiClient(engine: MockEngine): OlxApiClient {

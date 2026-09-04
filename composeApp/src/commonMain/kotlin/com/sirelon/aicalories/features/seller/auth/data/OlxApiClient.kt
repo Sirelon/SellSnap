@@ -1,7 +1,6 @@
 package com.sirelon.sellsnap.features.seller.auth.data
 
 import com.sirelon.sellsnap.features.seller.ad.publish_success.AdvertStatus
-import com.sirelon.sellsnap.features.seller.auth.data.response.AdvertUpdateAllowedKeys
 import com.sirelon.sellsnap.features.seller.auth.data.response.OlxAdvertDetailResponse
 import com.sirelon.sellsnap.features.seller.auth.data.response.OlxAdvertDetailRootResponse
 import com.sirelon.sellsnap.features.seller.auth.data.response.OlxAdvertStatisticsResponse
@@ -111,10 +110,9 @@ class OlxApiClient(
     }
 
     /**
-     * `GET adverts/{id}` (SIR-98). Returns the typed view plus the raw `data` object narrowed to
-     * [AdvertUpdateAllowedKeys], so an edit can send every untouched field back to
-     * `PUT adverts/{id}` as OLX sent it, without carrying a key its update form does not model -
-     * see [AdvertEditSnapshot].
+     * `GET adverts/{id}` (SIR-98). Returns the typed view plus the raw `data` object, which the
+     * edit path reshapes into a `PUT` body - the two schemas are not the same shape, so the raw
+     * response is kept whole here and mapped there. See [AdvertEditSnapshot].
      */
     internal suspend fun getAdvert(accessToken: String, advertId: Long): AdvertEditSnapshot {
         val response = httpClient.get("adverts/$advertId") { bearerAuth(accessToken) }
@@ -127,7 +125,7 @@ class OlxApiClient(
 
         return AdvertEditSnapshot(
             detail = detail,
-            updatePayload = JsonObject(raw.filterKeys { it in AdvertUpdateAllowedKeys }),
+            updatePayload = raw,
         )
     }
 

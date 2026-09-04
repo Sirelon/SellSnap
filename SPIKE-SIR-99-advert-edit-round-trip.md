@@ -253,3 +253,45 @@ Two consequences worth recording:
    reaching OLX's *validator*, which means the payload as a whole was being parsed; the failure was
    field-specific. An edit that succeeds after this fix confirms (a) for adverts whose images came
    from OLX.
+
+---
+
+## RESOLVED: the response and the request are different shapes (2026-09-03)
+
+Reading the update endpoint's documentation properly — after two structural guesses failed —
+settled it. The OLX docs' own **response sample** for `PUT`/`GET` is the decisive artefact, not
+the schemas:
+
+```json
+"contact": { "name": "John", "phone": "...", "location": { "city_id": 1, ... } },
+"ad_delivery": { "delivery_package_ids": [...] },
+"delivery_change_allowed": true,
+"attributes": [ { "code": "model", "value": "cts", "values": null },
+                { "code": "year",  "value": 2015,  "values": null } ]
+```
+
+Three mismatches, none visible from the request schema alone:
+
+1. **`location` is nested inside `contact` in the response, and is a required top-level field in
+   the request.** Echoing the response therefore omitted something required *and* included it
+   where the contact form does not model it. This is what produced "compound forms expect an array
+   or NULL on submission".
+2. `delivery_change_allowed` is a top-level sibling of `ad_delivery` in the response and is in
+   neither request schema.
+3. An attribute returns as a scalar `value` with `values: null`, and the scalar is not always a
+   string — the sample has `"value": 2015` — while the request wants `values` as an array of
+   strings.
+
+**The echo strategy is abandoned.** `AdvertLifecycleRepository.toUpdateBody` now builds the body
+from the documented request schema: the seven required fields, plus each optional field the advert
+actually has, plus the seller's edits. `auto_extend_enabled` is never sent, being the one field
+the spec documents as unchanged when omitted.
+
+The original argument for echoing — that `PUT` resets whatever it is not sent, inferred from that
+same `auto_extend_enabled` note — was never documented for any other field. The spec says nothing
+about omitted fields generally. Forwarding the optional fields an advert has keeps the protection
+that mattered without inventing a rule.
+
+**Lesson worth more than the fix:** read the response *sample*, not only the schemas. Two schemas
+can each be correct and still not compose, and no amount of reasoning about them finds a nesting
+difference that only an example shows.
