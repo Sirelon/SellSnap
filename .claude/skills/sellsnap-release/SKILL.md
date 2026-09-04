@@ -191,22 +191,32 @@ blocks, git history already has them.
 
 ## 8. Promotional text — leave it alone unless asked
 
-`promotional_text.txt` is **not** touched by this skill by default. Context: the user
-once saw their App Store promotional text disappear after a release. That happens
-because Apple doesn't carry promotional text or What's New forward to a new App Store
-version draft automatically — creating that version by hand in App Store Connect leaves
-both blank. The fix is that the `ios release` lane attaches the build already sitting in
-TestFlight (`skip_binary_upload: true`, `build_number`/`app_version` read from
-`version.properties` — no rebuild) and auto-uploads whatever is currently in
-`.claude/tmp/release-metadata/ios/<locale>/{release_notes,promotional_text}.txt` at the
-same time (via deliver's folder convention, `skip_metadata: false`). That resupply is
-what prevents the wipe — it does not require the wording to change. Only rewrite
-`promotional_text.txt` if the user explicitly asks to update the pitch this run;
-otherwise the existing stable text keeps getting resupplied whenever `ios release` is
-eventually run (separately, manually — this skill never runs that lane, so it never
-touches Apple's live listing). These files are gitignored and don't propagate across git
-worktrees — if a fresh worktree is missing them, copy them from another checkout rather
-than regenerating with placeholder text.
+`promotional_text.txt` is **not** touched by this skill by default — but it does get
+re-uploaded on every ship, and that is the point.
+
+Apple carries neither promotional text nor What's New into a new App Store version. A
+version created by hand in App Store Connect therefore always comes up with both fields
+empty and no build selected, which is why filling them in used to be manual work every
+single release. `ship.sh` now closes that gap itself: after the two beta uploads it runs
+`fastlane ios release`, which creates/updates the version draft, resupplies
+`.claude/tmp/release-metadata/ios/<locale>/{release_notes,promotional_text}.txt` for all
+5 App Store locales via deliver's folder convention (`skip_metadata: false`), and
+attaches the build just uploaded (`skip_binary_upload: true` — no rebuild). **It does not
+submit for review**; the draft is left ready for a deliberate click.
+
+So the resupply is what keeps promotional text from going blank, and it does not require
+the wording to change. Only rewrite `promotional_text.txt` if the user explicitly asks to
+update the pitch this run.
+
+deliver picks a build only as part of submitting for review, so passing it `build_number`
+alone attaches nothing — `attach_build_to_app_store_version` in the Fastfile does that
+step explicitly. Server-side filtering on `preReleaseVersion.version` is rejected by the
+API, hence the local match over recent uploads there; don't "simplify" it back into the
+filter.
+
+These files are gitignored and don't propagate across git worktrees — if a fresh worktree
+is missing them, copy them from another checkout rather than regenerating with
+placeholder text.
 
 ## 9. Ship it
 
@@ -215,9 +225,18 @@ than regenerating with placeholder text.
 ./scripts/ship.sh 2.2         # marketing version bump to 2.2
 ```
 
-This compiles, bumps `version.properties`, and runs `fastlane android beta` +
-`fastlane ios beta` — Play internal track and TestFlight. Let it run to completion
-(background + wait for the notification if it takes a while; don't poll).
+This compiles, bumps `version.properties`, runs `fastlane android beta` +
+`fastlane ios beta` (Play internal track and TestFlight), then `fastlane ios release` to
+prepare the App Store draft — see step 8. Let it run to completion (background + wait for
+the notification if it takes a while; don't poll).
+
+The App Store step is deliberately non-fatal: both binaries are already uploaded by the
+time it runs, and its one expected failure is a version currently in review, which cannot
+be edited. A warning there does not mean the ship failed.
+
+The iOS framework's release link is the peak-memory task in the build and needs
+`org.gradle.jvmargs=-Xmx8g`; at 4g it died with a Kotlin/Native `OutOfMemoryError` partway
+through the archive, after Android had already uploaded.
 
 ## 10. Hand off for in-app What's New
 
@@ -237,6 +256,7 @@ all of it is fine and lets them catch a bad translation before it's live to inte
 testers). Confirm the Play and TestFlight uploads succeeded. Remind them that
 `version.properties` and `store/copy/store-listing.md` are modified but not committed —
 committing is their call, not automatic (the release-metadata files themselves are
-gitignored, so they never show up in `git status` at all). Remind them production
-promotion/submission is a separate manual step if they want to go further than beta, and
-that step 10 (in-app What's New) is a separate hand-off, not automatic.
+gitignored, so they never show up in `git status` at all). Tell them the App Store draft
+is prepared and populated but NOT submitted — submitting for review, and promoting on
+Play, are the two steps that stay theirs — and that step 10 (in-app What's New) is a
+separate hand-off, not automatic.

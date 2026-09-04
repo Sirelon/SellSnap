@@ -88,6 +88,39 @@ def read_version_properties
   end
 end
 
+# deliver picks a build only as part of submitting for review, and the ios release lane
+# deliberately does not submit - so passing it build_number sets nothing, and the App
+# Store version sits there with no binary until someone selects it by hand. Attach it
+# explicitly instead. Idempotent: re-attaching the build already selected is a no-op.
+def attach_build_to_app_store_version(props)
+  version_name = props.fetch("VERSION_NAME")
+  version_code = props.fetch("VERSION_CODE")
+
+  Spaceship::ConnectAPI.token = Spaceship::ConnectAPI::Token.create(
+    key_id: ASC_KEY_ID,
+    issuer_id: ASC_ISSUER_ID,
+    filepath: ASC_KEY_FILEPATH
+  )
+  app = Spaceship::ConnectAPI::App.find(APP_IDENTIFIER)
+  version = app.get_edit_app_store_version
+  UI.user_error!("No editable App Store version for #{version_name} - it may already be in review.") if version.nil?
+
+  # Filtering server-side on preReleaseVersion.version is rejected by the API, so match
+  # the train and build number locally over the most recent uploads instead.
+  build = Spaceship::ConnectAPI.get_builds(
+    filter: { app: app.id },
+    sort: "-uploadedDate",
+    limit: 20,
+    includes: "preReleaseVersion"
+  ).to_models.find do |candidate|
+    candidate.version.to_s == version_code && candidate.pre_release_version&.version.to_s == version_name
+  end
+  UI.user_error!("Build #{version_code} (#{version_name}) is not on App Store Connect yet - run `fastlane ios beta` first.") if build.nil?
+
+  version.select_build(build_id: build.id)
+  UI.success("Attached build #{version_code} to App Store version #{version.version_string}.")
+end
+
 # ---------------------------------------------------------------------------
 # iOS
 # ---------------------------------------------------------------------------
@@ -173,6 +206,7 @@ platform :ios do
       metadata_path: IOS_METADATA_DIR,
       force: true
     )
+    attach_build_to_app_store_version(props)
   end
 end
 

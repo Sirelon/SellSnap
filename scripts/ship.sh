@@ -57,3 +57,19 @@ fi
 
 bundle exec fastlane android beta
 bundle exec fastlane ios beta
+
+# Apple carries neither "What's New" nor promotional text into a new App Store version, so
+# a version created by hand in App Store Connect always comes up with both fields empty and
+# no build selected. Preparing the draft here keeps that from being manual work every
+# release: it creates/updates the version, resupplies both fields for all 5 locales from
+# .claude/tmp/release-metadata/ios/, and attaches the build just uploaded. It does NOT
+# submit for review - that stays a deliberate click in App Store Connect.
+#
+# Non-fatal on purpose: both binaries are already uploaded by this point, and the one
+# expected failure here is a version currently in review, which cannot be edited. Nothing
+# about that should make the whole ship look failed.
+if ! bundle exec fastlane ios release; then
+  echo
+  echo "WARNING: TestFlight and Play uploads succeeded, but preparing the App Store draft failed." >&2
+  echo "Check whether that version is already in review; if it is, there is nothing to do here." >&2
+fi
