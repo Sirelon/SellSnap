@@ -92,6 +92,17 @@ fun AdvertActionsSheet(
 
         StatisticsBlock(sheet = sheet)
 
+        // Above the buttons, so the seller reads why the last attempt failed before pressing
+        // anything again - and inside the sheet, because a snackbar is behind its scrim.
+        sheet.errorMessage?.let { message ->
+            Text(
+                modifier = Modifier.testTag("advert_action_error"),
+                text = message,
+                style = AppTheme.typography.body,
+                color = AppTheme.colors.error,
+            )
+        }
+
         sheet.actions.forEach { action ->
             val isPending = sheet.pendingAction == action
             AppButton(

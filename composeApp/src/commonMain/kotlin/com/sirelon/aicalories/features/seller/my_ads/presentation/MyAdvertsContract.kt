@@ -54,6 +54,10 @@ interface MyAdvertsContract {
         val statistics: OlxAdvertStatistics? = null,
         val isLoadingStatistics: Boolean = false,
         val statisticsFailed: Boolean = false,
+        /** Why the last action failed, shown inside the sheet. A snackbar cannot be seen behind
+         * the sheet's own scrim, and the failure belongs to the action the seller just pressed -
+         * which is in here, along with the button to try again. */
+        val errorMessage: String? = null,
         /** Non-null while an action is in flight. Every action is disabled meanwhile, so a
          * double tap cannot send a command twice - the second one would fail against OLX for a
          * status the advert has already left. */
@@ -94,6 +98,9 @@ interface MyAdvertsContract {
         val isLoading: Boolean = true,
         val loadFailed: Boolean = false,
         val isSaving: Boolean = false,
+        /** Why the save failed. Inline for the same reason as [AdvertSheet.errorMessage], and more
+         * so here: the edit sheet sits over the actions sheet, so a snackbar is behind two scrims. */
+        val errorMessage: String? = null,
         /** Seeded from `GET adverts/{id}`, which is the only place the description exists - the
          * list call does not return it. */
         val title: String = "",

@@ -625,8 +625,9 @@ class MyAdvertsViewModelTest {
         runCurrent()
         viewModel.onEvent(Event.SoldAnswered(isSold = false))
 
-        // Awaited, not drained: the message is resolved through compose-resources `getString`.
-        viewModel.effects.filterIsInstance<MyAdvertsContract.Effect.ShowMessage>().first()
+        // Awaited on the state: the reason now lands inside the sheet, not as a snackbar.
+        viewModel.state.first { it.advertSheet?.errorMessage != null }
+        advanceUntilIdle()
 
         // `rejected` (rather than `failed`) is the health signal for the status-to-action mapping:
         // a pattern of these against one status means a seller is being offered a dead button.
@@ -969,6 +970,68 @@ class MyAdvertsViewModelTest {
         assertEquals(AdvertStatus.Outdated, viewModel.state.value.pages.single().adverts.single().status)
     }
 
+    @Test
+    fun `a failed action shows why inside the sheet, where the seller can actually see it`() = runTest(testDispatcher) {
+        // A snackbar is rendered by the screen underneath, so while the sheet is up its scrim
+        // hides it - the seller pressed a button and nothing appeared to happen at all.
+        val secondAttempt = CompletableDeferred<Unit>()
+        var commandsSent = 0
+        val engine = mockEngine(testDispatcher) {
+            addHandler { request ->
+                val path = request.url.encodedPath
+                when {
+                    path.endsWith("/commands") -> {
+                        commandsSent++
+                        // The retry never resolves, so the cleared state stays observable.
+                        if (commandsSent > 1) secondAttempt.await()
+                        respond(
+                            """{"error":{"status":400,"title":"Invalid request","validation":[{"field":"ad","title":"Ad has to be active"}]}}""",
+                            status = HttpStatusCode.BadRequest,
+                            headers = jsonHeaders(),
+                        )
+                    }
+
+                    path.endsWith("/statistics") ->
+                        respond(statisticsJson(0, 0, 0), status = HttpStatusCode.OK, headers = jsonHeaders())
+
+                    else -> respond(advertsJson(111L, status = "outdated"), status = HttpStatusCode.OK, headers = jsonHeaders())
+                }
+            }
+        }
+        val (viewModel, _) = setUpViewModel(
+            engine = engine,
+            accounts = listOf(account(localIndex = 1, olxUserId = 1L, accessToken = "token-1")),
+            activeIndex = 1,
+        )
+        runCurrent()
+
+        val advert = viewModel.state.value.pages.single().adverts.single()
+        viewModel.onEvent(Event.AdvertClicked(localIndex = 1, advert = advert))
+        runCurrent()
+        viewModel.onEvent(Event.ActionClicked(AdvertAction.Reactivate))
+        runCurrent()
+        viewModel.onEvent(Event.ActionConfirmed)
+
+        // Awaited on the state, not drained: the reason is resolved through compose-resources
+        // `getString`, which hops off the test dispatcher.
+        val sheet = viewModel.state.first { it.advertSheet?.errorMessage != null }.advertSheet!!
+        // OLX's own reason, on the sheet, next to the button that produced it.
+        assertTrue(sheet.errorMessage!!.contains("Ad has to be active"), sheet.errorMessage!!)
+        // And the sheet stays open, so the seller keeps the context to try again.
+        assertNull(sheet.pendingAction)
+
+        // Trying again clears the stale reason rather than leaving it sitting under the new
+        // attempt. Held mid-flight so the assertion sees the cleared state, not the next failure.
+        viewModel.onEvent(Event.ActionClicked(AdvertAction.Reactivate))
+        runCurrent()
+        viewModel.onEvent(Event.ActionConfirmed)
+        runCurrent()
+
+        val retrying = assertNotNull(viewModel.state.value.advertSheet)
+        assertEquals(AdvertAction.Reactivate, retrying.pendingAction)
+        assertNull(retrying.errorMessage)
+    }
+
     private fun statisticsJson(views: Int, phoneViews: Int, observing: Int) =
         """{"advert_views":$views,"phone_views":$phoneViews,"users_observing":$observing}"""
 
@@ -1303,15 +1366,12 @@ class MyAdvertsViewModelTest {
         runCurrent()
         viewModel.onEvent(Event.ActionConfirmed)
 
-        // Awaited rather than drained with `runCurrent()`: the message is resolved through
-        // compose-resources `getString`, which hops off the test dispatcher.
-        // No `withTimeout`: inside `runTest` that runs on virtual time and would fire the moment
-        // the scheduler idles, i.e. before the real resource load finishes. `runTest`'s own
-        // real-time watchdog is what fails this test if the effect never arrives.
-        val message = viewModel.effects
-            .filterIsInstance<MyAdvertsContract.Effect.ShowMessage>()
-            .first()
-            .message
+        // Awaited on the state: the message is resolved through compose-resources `getString`,
+        // which hops off the test dispatcher, and it lands inside the sheet rather than as a
+        // snackbar the sheet's own scrim would hide.
+        val message = viewModel.state.first { it.advertSheet?.errorMessage != null }
+            .advertSheet!!
+            .errorMessage!!
 
         // "Try again in a moment" would send the seller round a loop that cannot succeed until
         // they reconnect, so the message has to name reconnecting - and must not be the publish

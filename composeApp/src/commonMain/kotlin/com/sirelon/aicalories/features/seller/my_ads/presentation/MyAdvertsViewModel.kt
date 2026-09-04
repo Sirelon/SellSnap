@@ -438,7 +438,7 @@ class MyAdvertsViewModel internal constructor(
     ) {
         viewModelScope.launch {
             inFlightActions[advert.id] = action
-            updateSheet(advert.id) { it.copy(pendingAction = action) }
+            updateSheet(advert.id) { it.copy(pendingAction = action, errorMessage = null) }
 
             val result = runCatching {
                 when (action) {
@@ -603,7 +603,21 @@ class MyAdvertsViewModel internal constructor(
             fetchPage(localIndex)
         }
 
-        postEffect(Effect.ShowMessage(actionFailureMessage(localIndex, error)))
+        reportFailure(advert.id, actionFailureMessage(localIndex, error))
+    }
+
+    /**
+     * Puts a failure where the seller will actually see it. While the sheet is open a snackbar is
+     * behind its scrim, so the message goes inline next to the button that produced it; once the
+     * sheet is gone there is nothing to hide it and the snackbar is the right place.
+     */
+    private suspend fun reportFailure(advertId: Long, message: String) {
+        val sheetIsOpen = currentState().advertSheet?.advert?.id == advertId
+        if (sheetIsOpen) {
+            updateSheet(advertId) { it.copy(errorMessage = message) }
+        } else {
+            postEffect(Effect.ShowMessage(message))
+        }
     }
 
     /**
@@ -691,7 +705,7 @@ class MyAdvertsViewModel internal constructor(
             return
         }
 
-        setState { it.copy(advertEdit = edit.copy(isSaving = true)) }
+        setState { it.copy(advertEdit = edit.copy(isSaving = true, errorMessage = null)) }
 
         viewModelScope.launch {
             runCatching {
@@ -741,8 +755,15 @@ class MyAdvertsViewModel internal constructor(
                         edit.advert.status,
                         if (olxError is OlxApiError.ValidationError) "rejected" else "failed",
                     )
-                    setState { state -> state.copy(advertEdit = state.advertEdit?.copy(isSaving = false)) }
-                    postEffect(Effect.ShowMessage(actionFailureMessage(edit.localIndex, error)))
+                    val message = actionFailureMessage(edit.localIndex, error)
+                    val editStillOpen = currentState().advertEdit?.advert?.id == edit.advert.id
+                    if (editStillOpen) {
+                        setState { state ->
+                            state.copy(advertEdit = state.advertEdit?.copy(isSaving = false, errorMessage = message))
+                        }
+                    } else {
+                        postEffect(Effect.ShowMessage(message))
+                    }
                 }
         }
     }

@@ -150,6 +150,16 @@ private fun EditForm(
         lineLimits = TextFieldLineLimits.MultiLine(minHeightInLines = 3, maxHeightInLines = 8),
     )
 
+    // The edit sheet sits over the actions sheet, so a snackbar here is behind two scrims.
+    edit.errorMessage?.let { message ->
+        Text(
+            modifier = Modifier.testTag("advert_edit_error"),
+            text = message,
+            style = AppTheme.typography.body,
+            color = AppTheme.colors.error,
+        )
+    }
+
     AppButton(
         modifier = Modifier.fillMaxWidth().testTag("advert_edit_save"),
         text = if (edit.isSaving) {
