@@ -4,74 +4,45 @@
 AI-optimized repo map for agents working in this workspace. Read this first; only crawl deeper when the task clearly needs it.
 
 These rules apply to every task in this project unless explicitly overridden.
-Bias: caution over speed on non-trivial work. Use judgment on trivial tasks.
 
-### Rule 1 — Think Before Coding
-State assumptions explicitly. If uncertain, ask rather than guess.
-Present multiple interpretations when ambiguity exists.
-Push back when a simpler approach exists.
-Stop when confused. Name what's unclear.
+## Rules
 
-### Rule 2 — Simplicity First
-Minimum code that solves the problem. Nothing speculative.
-No features beyond what was asked. No abstractions for single-use code.
-Test: would a senior engineer say this is overcomplicated? If yes, simplify.
+Each one is checkable. Where you cannot show it was met, say so (rule 7).
 
-### Rule 3 — Surgical Changes
-Touch only what you must. Clean up only your own mess.
-Don't "improve" adjacent code, comments, or formatting.
-Don't refactor what isn't broken. Match existing style.
+1. Read before you write: exports, callers, shared utilities, and this file's section for the
+   area. State assumptions. A decision that is not yours — product shape, user-facing copy,
+   what a user sees — is asked, in one line, with your recommended answer.
+2. Minimum code that solves the task. No speculative abstractions, no touching adjacent code,
+   match the existing style even where you disagree.
+3. External facts carry their source. Anything asserted about OLX — a status meaning, a
+   restriction, a market difference — cites portal and section in the KDoc next to the code.
+   Everything else is marked `Inferred:`. See Documentation / Lookup Rules.
+4. **Never invent a limitation.** Withhold a user action only on a documented refusal; if the
+   API does not say no, offer it and let the API's own error speak. A missing button is
+   invisible in telemetry, and every restriction this app invented cost the seller something.
+5. A user-facing state, label, or paragraph exists only if the user does something different
+   because of it. Two API values the user treats the same way are one state.
+6. User-facing copy is approved before it is translated: post the English `key → text` list,
+   wait, then run `localize` once. See Localization.
+7. Report what was skipped. "Completed" with a silent gap is wrong; name the gap.
+8. Name the cause before the second fix. If a symptom survives a fix, write the causal chain —
+   what was observed, what produced it — before touching code again.
+9. A gotcha that cost more than one attempt is written into this file, or the matching
+   `.claude/rules/` file, in the same commit as the fix.
+10. **Read the source, not a summary of it.** A schema, a status list, a limit: quote it from
+    the spec file, fetched and opened and searched. A tool that answers in prose has already
+    dropped whatever you did not know to ask about. Three fixes in a row were refused by OLX
+    because each came from a paraphrase rather than from the schema. See OLX partner API.
 
-### Rule 4 — Goal-Driven Execution
-Define success criteria. Loop until verified.
-Don't follow steps. Define success and iterate.
-Strong success criteria let you loop independently.
+Small fixes with obvious files: read the implementation and its immediate callers only,
+validate with the narrowest meaningful build or test command plus `git diff --check`, and skip
+anything above that does not apply.
 
-### Rule 5 — Use the model only for judgment calls
-Use me for: classification, drafting, summarization, extraction.
-Do NOT use me for: routing, retries, deterministic transforms.
-If code can answer, code answers.
+## Subagent limits (append to every brief, after the global block)
 
-### Rule 6 — Token budgets are not advisory
-Per-task: 4,000 tokens. Per-session: 30,000 tokens.
-If approaching budget, summarize and start fresh.
-Surface the breach. Do not silently overrun.
-
-### Rule 7 — Surface conflicts, don't average them
-If two patterns contradict, pick one (more recent / more tested).
-Explain why. Flag the other for cleanup.
-Don't blend conflicting patterns.
-
-### Rule 8 — Read before you write
-Before adding code, read exports, immediate callers, shared utilities.
-"Looks orthogonal" is dangerous. If unsure why code is structured a way, ask.
-
-### Rule 9 — Tests verify intent, not just behavior
-Tests must encode WHY behavior matters, not just WHAT it does.
-A test that can't fail when business logic changes is wrong.
-
-### Rule 10 — Checkpoint after every significant step
-Summarize what was done, what's verified, what's left.
-Don't continue from a state you can't describe back.
-If you lose track, stop and restate.
-
-### Rule 11 — Match the codebase's conventions, even if you disagree
-Conformance > taste inside the codebase.
-If you genuinely think a convention is harmful, surface it. Don't fork silently.
-
-### Rule 12 — Fail loud
-"Completed" is wrong if anything was skipped silently.
-"Tests pass" is wrong if any were skipped.
-Default to surfacing uncertainty, not hiding it.
-
-### Small Fix Fast Lane
-For narrow bug fixes where the affected files are obvious:
-- Skip memory lookup unless the bug depends on prior decisions or workspace history.
-- Inspect only the direct implementation files and immediate UI/state callers first.
-- Keep progress updates to major phase changes only.
-- Limit command output aggressively.
-- Validate with the narrowest meaningful build/test command plus `git diff --check`.
-- If asked to publish, use the standard git/PR flow without re-reading workflow docs unless blocked.
+> No russian text in any file. Never commit `screenshotMode = true`. Never attempt an OLX
+> login — accounts are banned after repeated failures; the owner logs in himself. Never call
+> anything that mutates the owner's OLX account (commands, PUT, DELETE, packets).
 
 ## Modules
 
@@ -230,19 +201,26 @@ Most features use some combination of:
 
 ## Localization
 - New user-facing strings go in `composeApp/src/commonMain/composeResources/values/strings.xml` (English base). Interpolate with `stringResource(id, arg)`; never `String.format`.
-- Translation of new or changed keys into every locale is done by the `localize` agent — `.claude/agents/localize.md` holds the locale map and all translation rules.
+- **English copy is approved before any locale is touched.** When a ticket adds or rewords
+  user-facing strings, post the list — one line per key, `key → text` — and wait for the owner's
+  answer. Then run the `localize` agent once, with the final key list. One `localize` run per
+  ticket is the budget; six runs on one milestone is what this rule exists to stop.
+- **Then show the Ukrainian.** Ukrainian is the language the owner actually reads and the primary
+  market, so after `localize` returns, post the `key → text` list for `values-uk` before calling
+  the ticket done. The other locales follow from it and are not posted.
+- Copy is written from the seller's side and answers two questions: what is happening to my
+  listing, and do I need to do anything. Words that fail: `status`, `moderation`, `verification`,
+  `API`, and anything describing how SellSnap talks to OLX ("Changes go straight to OLX"). A badge
+  is one or two words the seller sees in their own OLX cabinet. An explanation paragraph exists
+  only where the seller must act somewhere else or the marketplace said no; a state whose badge and
+  buttons already say everything has none.
+- Translation of new or changed keys into every locale is done by the `localize` agent — `.claude/agents/localize.md` holds the locale map and all translation rules. `.claude/rules/localization.md` loads the sequence when you open a `strings.xml`.
 - **No russian, anywhere, by product decision.** `values-ru/strings.xml` is not a translation — it's a byte-identical copy of `values-uk/strings.xml` kept only so a `ru` device/store locale falls back to Ukrainian (see `.claude/agents/localize.md` for the why and the sync step). Do not "fix" it into real russian, and do not add a russian option to the landing page (`docs/index.html`, `docs/assets/landing.js`) or any other SellSnap-facing surface (store listings, screenshots, release notes) — those exclude `ru` entirely, with no fallback shim at all.
 
 ## Edge-to-Edge / Insets Rules
-- New Android-facing Compose screens must respect edge-to-edge.
-- Prefer `AppScaffold`, which defaults to `WindowInsets.safeDrawing`, for screen-level layout.
-- If using raw Material `Scaffold`, set `contentWindowInsets = WindowInsets.safeDrawing` unless there is a specific reason not to.
-- Always apply scaffold `PaddingValues` to screen content and immediately call `consumeWindowInsets(paddingValues)` on the same content container.
-- For `LazyColumn`, `LazyRow`, and grids, pass scaffold insets through `contentPadding`; do not only pad a parent container around the list.
-- For vertical scroll content with text inputs, keep `android:windowSoftInputMode="adjustResize"` on the hosting activity and ensure the scroll/content container receives safe/IME-aware padding from `AppScaffold` or `WindowInsets.safeDrawing`.
-- Avoid screen-level `systemBarsPadding()`, `statusBarsPadding()`, or `navigationBarsPadding()` on parent containers because it prevents true edge-to-edge drawing. Use those modifiers only on individual controls that must stay tappable, such as overlay close buttons.
-- Bottom bars and FABs must account for navigation bars, either by living in `Scaffold` slots or by applying navigation-bar padding to the bar/control itself.
-- Full-screen dialogs should use edge-to-edge-safe internal content padding. In common Compose Multiplatform code, do not assume Android-only `DialogProperties` parameters are available.
+
+Rules: `.claude/rules/edge-to-edge.md` — loads when you open a `ui/`, `*Screen.kt` or
+`designsystem/` file.
 
 ## Platform Abstractions
 - Camera launcher uses expect/actual style placement under `camera/`.
@@ -286,32 +264,20 @@ Most features use some combination of:
 - iOS simulator tests: `./gradlew iosSimulatorArm64Test`
 
 ## UI Tests And Store Screenshots (Maestro)
-- Flows live in `.maestro/`; reusable pieces in `.maestro/subflows/`. Only top-level runnable
-  flows are listed in `.maestro/config.yaml`, so `maestro test .maestro/` does not try to run
-  the subflows standalone.
-- Runner scripts are in `scripts/maestro-*.sh`. They read credentials from `.maestro/.env`
-  (`OLX_EMAIL` / `OLX_PASSWORD`) and loop over countries, capturing light and dark per country.
-- **Android runs need API 33+.** Per-country language comes from `cmd locale set-app-locales`,
-  which does not exist below API 33 (`Can't find service: locale`) — the scripts refuse to
-  start rather than capture every country in the device language. `DEVICE` defaults to the
-  first attached device; `wm size`/`density` overrides and `emu geo fix` apply to emulators
-  only, so a physical phone captures its native panel and its real GPS position
-  (`ALLOW_REAL_GPS=1` to accept the latter).
-- **Photos are never picked through the OS picker.** With `screenshotMode = true`
-  (`features/seller/ad/ScreenshotMode.kt`), `GenerateAdViewModel` seeds the three bundled
-  photos from `composeResources/files/` on open, feeding them through the normal
-  prepare → persist → upload path. `PHPickerViewController` on iPad exposes nothing to the
-  accessibility tree, and Android needs different selectors per picker implementation, so
-  automating the picker is not viable. `subflows/wait_for_photos.yaml` just waits for them.
-- `screenshotMode` is committed as `false` and must be flipped to `true` **and the app
-  rebuilt/reinstalled** before a screenshot run; the scripts fail fast if the source says
-  `false`. Never commit it as `true` — it also bypasses the publish confirmation, and
-  `scripts/ship.sh` refuses to release while it is enabled.
-- Prefer `testTag` ids over visible text in selectors: the flows run in 4+ locales. Android
-  exposes them as resource-ids via `testTagsAsResourceId` (set in `MainActivity`).
+
+Flows live in `.maestro/`, runner scripts in `scripts/maestro-*.sh`. Three things bite:
+
+- **Android runs need API 33+** — per-country language uses `cmd locale set-app-locales`,
+  which does not exist below 33; the scripts refuse to start rather than capture every country
+  in the device language.
 - **Boot only one iOS simulator per run.** Maestro starts one driver per device and they
-  contend for the same port; the loser is silently ignored and hierarchy/screenshot calls
+  contend for the same port; the loser is silently ignored and hierarchy and screenshot calls
   return the *other* device's data.
+- **`screenshotMode` is committed as `false` and must never be committed `true`.** It bypasses
+  the publish confirmation, and `scripts/ship.sh` refuses to release while it is enabled.
+
+Prefer `testTag` ids over visible text in selectors — flows run in 4+ locales. Photos are never
+picked through the OS picker. Full workflow: the user-level `sellsnap-screenshots` skill (`~/.claude/skills/`).
 
 ## Fast “Where Do I Edit?” Guide
 - Add app-level screen/navigation:
@@ -355,51 +321,34 @@ Most features use some combination of:
   - `features/seller/categories/domain/AttributeValidator.kt`
 - Change price formatting / thousand-separator behavior:
   - `designsystem/InputTransformations.kt` (`DigitOnlyInputTransformation`, `ThousandSeparatorOutputTransformation`)
+- Change what a seller can do to a published listing (deactivate / reactivate / finish / delete /
+  extend / edit / statistics / expiry):
+  - `features/seller/my_ads/domain/AdvertAction.kt` (which actions each `AdvertStatus` may offer)
+  - `features/seller/my_ads/data/AdvertLifecycleRepository.kt` (the OLX calls)
+  - `features/seller/my_ads/presentation/MyAdvertsViewModel.kt` (the flow between them)
+  - `features/seller/my_ads/ui/AdvertActionsSheet.kt` (the one surface it all renders in)
+- Change the sold / not-sold outcome data or the AI price-accuracy measurement:
+  - `features/seller/my_ads/data/AdvertOutcomeStore.kt`
+  - `features/seller/my_ads/domain/AdvertAnalyticsBuckets.kt`
+- Change whether a market may extend listings:
+  - `features/seller/auth/domain/OlxCountry.kt` (`supportsExtendCommand`)
 
 ## Store Assets & Design Assets
 
-Everything that ships to App Store Connect / Play Console lives under `store/`. Brand source
+Everything that ships to App Store Connect / Play Console lives under `store/`; brand source
 material that is not a store asset lives under `brand/`.
 
-### `store/` directory layout
-- `copy/` — all listing text. `store-listing.md` (descriptions per language), `app-store.md` and
-  `play-store.md` (screenshot upload guides), `copy.json` (the localized screenshot captions the
-  generator reads).
-- `captures/<device>/<locale>/` — raw app screenshots written by the Maestro flows. Devices:
-  `iphone/`, `ipad/`, `android-phone/`, `android-tablet/`. **Input, never uploaded.**
-- `assets/app-store/{iphone-6.9,ipad-13}/<locale>/` — finished App Store screenshots.
-- `assets/play-store/phone/<locale>/` — finished Play Store phone screenshots (1080×1920 JPG).
-- `assets/play-store/feature-graphic/` — Google Play feature graphic (1024×500 and source).
-- `tools/` — `generate-store-screenshots.mjs` (the only generator) and `scenes.json` (its manifest).
-- `docs/` — `PROGRESS.md` (history + insights), `README.md`, `notes/` (per-device screen inventories).
-- `previews/` — per-device/locale contact sheets for reviewing a render.
+| Directory | Holds |
+| --- | --- |
+| `store/copy/` | All listing text, plus `copy.json` — the localized screenshot captions |
+| `store/captures/<device>/<locale>/` | Raw Maestro screenshots. Input, never uploaded |
+| `store/assets/` | Finished App Store and Play Store images |
+| `store/tools/` | `generate-store-screenshots.mjs` and its `scenes.json` manifest |
+| `store/docs/` | `PROGRESS.md` history and per-device screen inventories |
+| `brand/` | App icon sources, Claude Design prototype files |
 
-### `brand/` directory layout
-- `app-icons/` — app icon source files.
-- `claude-design/` — Claude Design project files (UI prototype, not store assets).
-
-### Store screenshot generator
-`store/tools/generate-store-screenshots.mjs` — Node.js script that composites raw captures into
-store-ready App Store and Play Store images.
-
-**What it does:** reads `store/captures/<device>/<locale>/<screen>_<theme>.png`, wraps each in a
-device frame on a branded gradient background, adds localized headline / subtitle / pill badges,
-renders via headless Chrome and downsamples with ImageMagick. Screenshot → caption pairing is an
-explicit semantic manifest (`scenes.json`) — **never** by filename index.
-
-**Dependencies:** Google Chrome (headless), ImageMagick (`magick` CLI), the Manrope font bundled in `composeApp/src/commonMain/composeResources/font/`.
-
-**Run** (from the repo root):
-- Everything it can find: `node store/tools/generate-store-screenshots.mjs`
-- One device: `node store/tools/generate-store-screenshots.mjs --device=android-phone`
-- One locale + contact sheet: `node store/tools/generate-store-screenshots.mjs --locale=pl --sheet`
-- Regenerate `store/copy/play-store.md` from the manifest: add `--doc`
-
-**Copy:** all translations live in `store/copy/copy.json`, keyed by language code → legacy
-screenshot filename (the keys are flow positions, not real files — do not rename them). Layout is
-in the script's device profiles. Update `copy.json` when screenshot text changes.
-
-Full workflow, preflight checks and known source defects: `.claude/skills/app-store-screenshots/`.
+Screenshot-to-caption pairing is an explicit manifest, never a filename index. Full workflow,
+preflight checks and known source defects: `.claude/skills/app-store-screenshots/`.
 
 ## Documentation / Lookup Rules
 - For Android or Google APIs/libraries, use the Google dev MCP tools instead of memory or generic web search.
@@ -410,36 +359,41 @@ Full workflow, preflight checks and known source defects: `.claude/skills/app-st
   - Google Play services
   - Firebase
 
+### OLX partner API
+
+Every market has its own portal — `developer.olx.pl`, `.ua`, `.pt`, `.ro`, `.bg`, `.kz` — and
+they are not equally complete. PL omits the advert-status definitions and lists 4 of the 11
+`Advert.status` values; UA and PT define all 11. Reading one portal and assuming it speaks for
+the rest is how this app shipped two wrong status meanings.
+
+- **Treat `developer.olx.ua` as the source of truth.** Ukraine is the primary market, and its
+  portal is one of the complete ones.
+- **Before relying on any behaviour, check whether the markets differ.** Read UA plus at least
+  one other portal for the same endpoint and compare. Where a difference exists, it belongs in
+  code as a per-country capability — `OlxCountry.supportsExtendCommand` is the pattern — never as
+  a single global assumption. A feature that works in Poland may be refused in Romania.
+- The only market difference found so far is the `extend` command, which the specs annotate as
+  unavailable in UA and PT. That is one data point, not a guarantee that the rest is uniform.
+- **Read the yaml itself.** It is at `https://developer.olx.<tld>/swagger/v2/partner_api.yaml`,
+  nested `$ref` files resolve against the same path, and plain `curl` gets a CloudFront 403.
+  `curl https://r.jina.ai/<url>` returns the whole file - about 145 KB - and from there the schema
+  is `grep -n` and `sed -n` like any other file. WebFetch and context7 answer in prose: they
+  summarize, and the summary is where `location`'s real position, the absence of `ad_delivery`
+  from the update schema, and the `value`/`values` split all went missing. Each was five lines of
+  yaml and each cost a release.
+- A request body this app assembles is pinned by a test against the spec's own example payload -
+  `AdvertUpdateBodyTest` is the pattern. A body whose only check is installing on a phone is a
+  guess with a delay attached.
+- Cite the portal and section in the KDoc next to the code that relies on the fact, and mark
+  anything you could not confirm `Inferred:` (rule 3). Do not invent a restriction the API does
+  not state (rule 4).
+- For live probes without a user account — token minting, routing checks — use
+  `.claude/skills/olx-api-verify`. Never attempt an OLX login.
+
 ## API Response Class Conventions
 
-These rules apply to every class that directly maps a JSON API response (OLX, Supabase, or any external service). Violating them will be rejected in review.
-
-### Naming
-- Suffix is `Response`, never `Dto` or `Model`. Example: `OlxAttributeResponse`, not `OlxAttributeDto`.
-- File lives in a `response/` sub-package inside the relevant `data/` package.
-
-### Visibility
-- Always `internal`. Response classes are an implementation detail of the data layer; nothing outside `data/` should reference them directly.
-
-### Class kind
-- Plain `class`, never `data class`. Response classes are deserialization targets, not value objects.
-
-### Serialization
-- Always annotate with `@Serializable`.
-- Every field must have `@SerialName("json_key_name")` — even when the Kotlin name matches the JSON key exactly. This makes the contract explicit and rename-safe.
-
-### Nullability and defaults
-- Every field must be nullable (`?`). The backend cannot be trusted to always send every field.
-- No default values in response classes. All defaults belong in the mapper.
-- The mapper must handle every `null` case explicitly and supply appropriate fallback values.
-
-### Mapper responsibilities
-- Skip / filter out response items that are missing essential identity fields (e.g., a `code` that is `null`). Use `mapNotNull` for list transformations.
-- Supply domain-layer defaults for missing optional fields (empty string, `false`, `emptyList()`, etc.).
-
-### Custom serializers
-- Avoid custom `KSerializer` implementations where the built-in behavior is sufficient.
-- The OLX Ktor client is configured with `isLenient = true`, which means numeric JSON primitives are accepted where a `String` is expected — no custom serializer needed for mixed int/string id fields.
+Rules: `.claude/rules/api-response.md` — loads when you open a `data/response/` file. Review
+rejects violations, so read it before adding a class that maps a JSON response.
 
 ### ViewModel / state pattern (seller-wide)
 
@@ -448,6 +402,19 @@ These rules apply to every class that directly maps a JSON API response (OLX, Su
 - State updates use `setState { it.copy(...) }`. One-shot side effects use `postEffect(...)`.
 - Repositories return `Flow<T>`; VMs subscribe via `.launchIn(viewModelScope)` and use `.catch { ... }` to keep the stream alive across transient errors. `PreviewAdViewModel` is the canonical reference.
 - `CategoriesRepository` caches the (filtered) category tree via `shareIn(GlobalScope, Lazily, 1)` — see `BUGS.md` for why this is on the cleanup list.
+- **Assert an effect with `viewModel.effects.awaitEffect<T>()`** (`commonTest`,
+  `features/common/presentation/AwaitEffect.kt`); never drain-then-assert. Anything resolved
+  through compose-resources `getString` is posted after the virtual scheduler has gone idle, so
+  `advanceUntilIdle()` and `runCurrent()` cannot see it, and `withTimeout` inside `runTest` fires
+  on the virtual clock. For state rather than an effect, await the state:
+  `viewModel.state.first { ... }`.
+
+### Ad lifecycle (post-publish actions)
+
+Rules: `.claude/rules/ad-lifecycle.md` — loads when you open anything under
+`features/seller/my_ads/`. Covers the seller-facing `AdvertState` model, what is documented
+versus inferred about OLX's statuses, OLX's eventual consistency after a command, and the
+effect-assertion trap.
 
 ### Category filtering
 

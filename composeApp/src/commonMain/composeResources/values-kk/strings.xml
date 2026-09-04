@@ -132,24 +132,17 @@
     <string name="my_ads_connect_action">OLX-ті қосу</string>
     <string name="my_ads_load_more">Тағы жүктеу</string>
     <string name="my_ads_created_at">Жасалған</string>
-    <string name="my_ads_valid_to">Дейін жарамды</string>
     <string name="label_value_format">%1$s: %2$s</string>
     <string name="my_ads_untitled">Атаусыз OLX хабарландыруы</string>
     <string name="my_ads_price_not_set">Баға қойылмаған</string>
-    <string name="my_ads_missing_url">Әзірге сілтеме жоқ — OLX өңдеп жатыр.</string>
     <string name="my_ads_load_failed">OLX хабарландыруларын жүктеу мүмкін болмады.</string>
     <string name="my_ads_status_active">Белсенді</string>
-    <string name="my_ads_status_new">Қарастырылуда</string>
-    <string name="my_ads_status_limited">Шектеулі</string>
-    <string name="my_ads_status_removed_by_user">Жойылған</string>
-    <string name="my_ads_status_outdated">Мерзімі өткен</string>
-    <string name="my_ads_status_unconfirmed">Расталмаған</string>
-    <string name="my_ads_status_unpaid">Төленбеген</string>
-    <string name="my_ads_status_moderated">Модерацияда</string>
-    <string name="my_ads_status_blocked">Бұғатталған</string>
-    <string name="my_ads_status_disabled">Өшірілген</string>
-    <string name="my_ads_status_removed_by_moderator">Модератор жойған</string>
-    <string name="my_ads_status_unknown">Күтуде</string>
+    <string name="my_ads_status_under_review">Қарастырылуда</string>
+    <string name="my_ads_status_needs_payment">Төлем қажет</string>
+    <string name="my_ads_status_needs_confirmation">Растау қажет</string>
+    <string name="my_ads_status_rejected">Қабылданбады</string>
+    <string name="my_ads_status_inactive">Белсенді емес</string>
+    <string name="my_ads_status_unknown">Белгісіз</string>
 
     <!-- Navigation -->
     <string name="back">Артқа</string>
@@ -339,4 +332,85 @@
     <string name="my_ads_reconnect_title">Бұл аккаунтты қайта қос</string>
     <string name="my_ads_reconnect_description">Бұл аккаунттың OLX байланысы аяқталды. Хабарландыруларын көру үшін қайта қос.</string>
     <string name="my_ads_load_failed_account">%1$s үшін хабарландыруларды жүктеу мүмкін болмады.</string>
+
+    <!-- Ad lifecycle -->
+    <string name="advert_actions_open_on_olx">OLX-те қарау</string>
+    <string name="advert_action_edit">Хабарландыруды өңдеу</string>
+    <string name="advert_action_extend">Тағы бір мерзімге ұзарту</string>
+    <string name="advert_action_deactivate">Тоқтата тұру</string>
+    <string name="advert_action_reactivate">Қайта қосу</string>
+    <string name="advert_action_delete">OLX-тен жою</string>
+    <string name="advert_action_in_progress">Жұмыс жасалуда…</string>
+
+    <!-- Ad lifecycle — states with nothing to act on. Each says what OLX is doing, not what the app can't do. -->
+    <string name="advert_state_needs_payment">OLX бұл хабарландыруды сатып алушыларға көрсетпес бұрын төлемді күтіп тұр. Төлемді OLX-те жасай аласың.</string>
+    <string name="advert_state_needs_confirmation">OLX бұл хабарландыруды сатып алушылар көрместен бұрын растауыңды сұрайды. Растау үшін оны OLX-те аш.</string>
+    <string name="advert_state_rejected">OLX бұл хабарландыруды қабылдамады және себебін хатпен жазды.</string>
+    <string name="advert_state_unknown">SellSnap бұл хабарландырумен не болып жатқанын анықтай алмайды. Тексеру үшін оны OLX-те аш.</string>
+
+    <!-- Ad lifecycle — confirmations. Every one says what happens on OLX. -->
+    <string name="advert_confirm_deactivate_message">Сатып алушылар оны бұдан былай көрмейді. Кез келген уақытта қайта қоса аласың.</string>
+    <string name="advert_confirm_delete_title">Хабарландыруды OLX-тен жоямыз ба?</string>
+    <string name="advert_confirm_delete_message">OLX-тен мүлдем жоғалады — суреттер, мәтін, бәрі. Бұл кері қайтарылмайды.</string>
+    <string name="advert_confirm_delete_message_active">Ол әлі белсенді, сондықтан алдымен тоқтатылады, содан кейін мүлдем жоғалады. Бұл кері қайтарылмайды.</string>
+    <string name="advert_confirm_delete_action">Мүлдем жою</string>
+    <string name="advert_confirm_extend_title">Хабарландыруды ұзартайық па?</string>
+    <string name="advert_confirm_extend_message">Хабарландыруың мерзімі бітпей тұрып, қосымша уақыт алады.</string>
+    <string name="advert_confirm_extend_action">Ұзарту</string>
+    <string name="advert_confirm_reactivate_title">Хабарландыруды қайта қосайық па?</string>
+    <string name="advert_confirm_reactivate_message">Сатып алушылар оны қайта көреді, дәл сол қалпында.</string>
+    <string name="advert_confirm_reactivate_action">Қайта қосу</string>
+    <string name="advert_confirm_cancel">Бас тарту</string>
+
+    <!-- Ad lifecycle — did it sell? OLX requires this answer before it will take a listing down. -->
+    <string name="advert_sold_prompt_title">Сатылды ма?</string>
+    <string name="advert_sold_prompt_message">OLX хабарландыруды тоқтата тұрмас бұрын осыны сұрайды.</string>
+    <string name="advert_sold_prompt_yes">Иә, сатылды</string>
+    <string name="advert_sold_prompt_no">Жоқ, сатылмады</string>
+    <string name="advert_sold_price_title">Қанша ақшаға сатылды?</string>
+    <string name="advert_sold_price_message">Мұны тек өзің көресің. Бұл SellSnap-қа келесі затыңа бағаны дәлірек ұсынуға көмектеседі.</string>
+    <string name="advert_sold_price_label">Сатылған бағасы</string>
+    <string name="advert_sold_price_confirm">Сақтап, тоқтата тұр</string>
+    <string name="advert_sold_price_skip">Өткізіп жіберу</string>
+
+    <!-- Ad lifecycle — results -->
+    <string name="advert_action_done_deactivate">OLX-те тоқтатылды.</string>
+    <string name="advert_action_done_reactivate">OLX-те қайта қосылды.</string>
+    <string name="advert_action_done_delete">OLX-тен жойылды.</string>
+    <string name="advert_action_done_extend">OLX-те ұзартылды.</string>
+    <string name="advert_action_done_edit">Өзгерістерің OLX-ке жіберілді.</string>
+    <string name="advert_action_done_edit_moderated">OLX-ке жіберілді. Ол қайта қосылмас бұрын өзгерісті тексеріп жатыр.</string>
+    <string name="advert_action_failed">OLX бұл сұранысты қабылдамады: %1$s</string>
+    <string name="advert_action_needs_reconnect">Бұл хабарландыруды өзгерту алдында %1$s OLX-те қайта қосылуы керек.</string>
+    <string name="advert_action_failed_generic">OLX-пен байланысып, мұны істей алмадық. Сәл кейін қайталап көр.</string>
+    <string name="advert_delete_partial">Тоқтатылды, бірақ жойылмады. Қайта жоюға тырыс.</string>
+
+    <!-- Ad lifecycle — expiry -->
+    <string name="advert_expiry_expired">Мерзімі өтті — сатып алушылар оны көрмейді</string>
+    <string name="advert_expiry_today">Бүгін аяқталады</string>
+    <!-- Pluralisation differs across the Slavic locales, so this is a resource plural rather than a composed string. -->
+    <plurals name="advert_expiry_days_left">
+        <item quantity="one">%1$d күн қалды</item>
+        <item quantity="other">%1$d күн қалды</item>
+    </plurals>
+    <string name="advert_extend_unavailable">Мұны тек OLX-те ұзарта аласың, осы жерден емес.</string>
+
+    <!-- Ad lifecycle — statistics -->
+    <string name="advert_stats_title">Қалай жүріп жатыр</string>
+    <string name="advert_stats_views">Қараулар</string>
+    <string name="advert_stats_phone_views">Телефонды ашулар</string>
+    <string name="advert_stats_observing">Бақылаушылар</string>
+    <string name="advert_stats_empty">Жаңа ғана жарияланды — бағалау үшін әлі ерте.</string>
+    <string name="advert_stats_failed">OLX-тен сандарды жүктей алмадық.</string>
+    <string name="advert_stats_hint_low_views">Оны аз адам табады. Тақырып, санат немесе баға сатып алушылардың іздеуіне сай келмей тұрған сияқты.</string>
+    <string name="advert_stats_hint_no_calls">Қараулар жеткілікті, бірақ ешкім сұрамайды. Әдетте суреттер немесе баға адамдарды тоқтатады.</string>
+    <string name="advert_stats_hint_close">Адамдар қызығып, бақылап жатыр. Баға жақын тұр — сәл түсіру немесе сабыр ету жеткілікті болады.</string>
+
+    <!-- Ad lifecycle — edit -->
+    <string name="advert_edit_title">Хабарландыруды өңдеу</string>
+    <string name="advert_edit_title_label">Тақырып</string>
+    <string name="advert_edit_description_label">Сипаттама</string>
+    <string name="advert_edit_price_label">Баға</string>
+    <string name="advert_edit_save">OLX-ке жіберу</string>
+    <string name="advert_edit_load_failed">Бұл хабарландыруды OLX-тен жүктей алмадық.</string>
 </resources>

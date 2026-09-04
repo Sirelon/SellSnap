@@ -9,9 +9,9 @@ data class MyAdvertItem(
     val url: String,
     val primaryImageUrl: String?,
     val priceFormatted: String,
+    /** Raw asking price, for pre-filling the sold price and the price edit. Null when OLX sent none. */
+    val priceValue: Long?,
+    val currencyCode: String,
     val createdAt: String,
     val validTo: String,
-) {
-    val canOpen: Boolean
-        get() = url.isNotBlank()
-}
+)

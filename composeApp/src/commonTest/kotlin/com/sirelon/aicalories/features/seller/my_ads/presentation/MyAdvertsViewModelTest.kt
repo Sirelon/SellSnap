@@ -29,6 +29,13 @@ import com.sirelon.sellsnap.features.seller.location.LocationProvider
 import com.sirelon.sellsnap.features.seller.location.data.LocationRepository
 import com.sirelon.sellsnap.features.seller.location.data.LocationStore
 import com.sirelon.sellsnap.features.seller.my_ads.data.MyAdvertsRepository
+import com.sirelon.sellsnap.analytics.AnalyticsEvents
+import com.sirelon.sellsnap.features.seller.ad.publish_success.AdvertStatus
+import com.sirelon.sellsnap.features.seller.my_ads.data.AdvertLifecycleRepository
+import com.sirelon.sellsnap.features.seller.my_ads.domain.AdvertAction
+import com.sirelon.sellsnap.features.common.presentation.awaitEffect
+import com.sirelon.sellsnap.features.seller.my_ads.presentation.MyAdvertsContract.Event
+import com.sirelon.sellsnap.features.seller.my_ads.data.AdvertOutcomeStore
 import com.sirelon.sellsnap.features.seller.profile.data.SellerAccountRepository
 import com.sirelon.sellsnap.startup.AnalyticsConsentRepository
 import com.sirelon.sellsnap.startup.AnalyticsConsentStore
@@ -44,9 +51,13 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -349,6 +360,1300 @@ class MyAdvertsViewModelTest {
         error("Page $localIndex did not settle in time")
     }
 
+    // ----- Ad lifecycle (SIR-101/102/103/104/106) -----
+
+    @Test
+    fun `opening a live advert offers only the actions OLX accepts and loads its statistics once`() = runTest(testDispatcher) {
+        val requestLog = mutableListOf<LoggedRequest>()
+        val engine = mockEngine(testDispatcher) {
+            addHandler { request ->
+                requestLog += request.toLogged()
+                if (request.url.encodedPath.endsWith("/statistics")) {
+                    respond(statisticsJson(212, 0, 0), status = HttpStatusCode.OK, headers = jsonHeaders())
+                } else {
+                    respond(advertsJson(111L), status = HttpStatusCode.OK, headers = jsonHeaders())
+                }
+            }
+        }
+        val (viewModel, _) = setUpViewModel(
+            engine = engine,
+            accounts = listOf(account(localIndex = 1, olxUserId = 1L, accessToken = "token-1")),
+            activeIndex = 1,
+        )
+        runCurrent()
+
+        val advert = viewModel.state.value.pages.single().adverts.single()
+        viewModel.onEvent(Event.AdvertClicked(localIndex = 1, advert = advert))
+        runCurrent()
+
+        val sheet = assertNotNull(viewModel.state.value.advertSheet)
+        // Ukraine: OLX rejects `extend` here, so it must not appear as a button - a seller who
+        // taps it would only ever get a server error back.
+        assertEquals(listOf(AdvertAction.Edit, AdvertAction.Deactivate, AdvertAction.Delete), sheet.actions)
+        assertTrue(sheet.extendUnavailableHere)
+        assertEquals(212, assertNotNull(sheet.statistics).advertViews)
+        // Statistics are fetched on open, not per row: one call for the one advert opened.
+        assertEquals(1, requestLog.count { it.path.endsWith("/statistics") })
+    }
+
+    @Test
+    fun `deactivating asks whether it sold and sends the answer OLX requires`() = runTest(testDispatcher) {
+        val commandBodies = mutableListOf<String>()
+        val engine = mockEngine(testDispatcher) {
+            addHandler { request ->
+                when {
+                    request.url.encodedPath.endsWith("/commands") -> {
+                        commandBodies += (request.body as io.ktor.http.content.TextContent).text
+                        respond("", status = HttpStatusCode.NoContent)
+                    }
+
+                    request.url.encodedPath.endsWith("/statistics") ->
+                        respond(statisticsJson(1, 0, 0), status = HttpStatusCode.OK, headers = jsonHeaders())
+
+                    // GET adverts/{id} - the row is re-read after the command rather than patched.
+                    request.url.encodedPath.contains("/adverts/111") ->
+                        respond(advertJson(111L, "removed_by_user"), status = HttpStatusCode.OK, headers = jsonHeaders())
+
+                    else -> respond(advertsJson(111L), status = HttpStatusCode.OK, headers = jsonHeaders())
+                }
+            }
+        }
+        val outcomeStore = AdvertOutcomeStore(InMemoryOlxKeyValueStore(), testJson)
+        val analytics = FakeAnalytics()
+        val (viewModel, _) = setUpViewModel(
+            engine = engine,
+            accounts = listOf(account(localIndex = 1, olxUserId = 1L, accessToken = "token-1")),
+            activeIndex = 1,
+            outcomeStore = outcomeStore,
+            analytics = analytics,
+        )
+        runCurrent()
+
+        val advert = viewModel.state.value.pages.single().adverts.single()
+        viewModel.onEvent(Event.AdvertClicked(localIndex = 1, advert = advert))
+        runCurrent()
+        viewModel.onEvent(Event.ActionClicked(AdvertAction.Deactivate))
+        runCurrent()
+
+        // No OLX call yet: `is_success` is a required field, so the question has to be answered
+        // before a take-down can even be attempted.
+        assertNotNull(viewModel.state.value.soldPrompt)
+        assertEquals(0, commandBodies.size)
+
+        viewModel.onEvent(Event.SoldAnswered(isSold = true))
+        runCurrent()
+        assertTrue(assertNotNull(viewModel.state.value.soldPrompt).askingPrice)
+
+        viewModel.onEvent(Event.SoldPriceSubmitted(price = 1500))
+        runCurrent()
+
+        assertEquals(1, commandBodies.size)
+        assertTrue(commandBodies.single().contains("\"command\":\"deactivate\""))
+        assertTrue(commandBodies.single().contains("\"is_success\":true"))
+
+        // The outcome is what the milestone exists to collect, so it must survive the action.
+        val outcome = assertNotNull(outcomeStore.outcomeFor(111L))
+        assertEquals(true, outcome.isSold)
+        assertEquals(1500L, outcome.achievedPrice)
+
+        assertNull(viewModel.state.value.soldPrompt)
+        assertEquals(true, analytics.paramsFor(AnalyticsEvents.ADVERT_SOLD)?.get("had_price_entered"))
+        assertEquals("success", analytics.paramsFor(AnalyticsEvents.ADVERT_ACTION)?.get("result"))
+    }
+
+    @Test
+    fun `answering not sold closes the listing without asking anything else`() = runTest(testDispatcher) {
+        val commandBodies = mutableListOf<String>()
+        // OLX keeps reporting the OLD status for a moment after accepting the command. This mock
+        // never stops saying `active`, which is the case that used to leave the badge unchanged
+        // and offer Deactivate a second time.
+        val engine = mockEngine(testDispatcher) {
+            addHandler { request ->
+                when {
+                    request.url.encodedPath.endsWith("/commands") -> {
+                        commandBodies += (request.body as io.ktor.http.content.TextContent).text
+                        respond("", status = HttpStatusCode.NoContent)
+                    }
+
+                    request.url.encodedPath.endsWith("/statistics") ->
+                        respond(statisticsJson(0, 0, 0), status = HttpStatusCode.OK, headers = jsonHeaders())
+
+                    else -> respond(advertsJson(111L, status = "active"), status = HttpStatusCode.OK, headers = jsonHeaders())
+                }
+            }
+        }
+        val outcomeStore = AdvertOutcomeStore(InMemoryOlxKeyValueStore(), testJson)
+        val analytics = FakeAnalytics()
+        val (viewModel, _) = setUpViewModel(
+            engine = engine,
+            accounts = listOf(account(localIndex = 1, olxUserId = 1L, accessToken = "token-1")),
+            activeIndex = 1,
+            outcomeStore = outcomeStore,
+            analytics = analytics,
+        )
+        runCurrent()
+
+        val advert = viewModel.state.value.pages.single().adverts.single()
+        viewModel.onEvent(Event.AdvertClicked(localIndex = 1, advert = advert))
+        runCurrent()
+        viewModel.onEvent(Event.ActionClicked(AdvertAction.Deactivate))
+        runCurrent()
+        viewModel.onEvent(Event.SoldAnswered(isSold = false))
+        runCurrent()
+
+        // A seller closing a listing that failed gets no follow-up form.
+        assertNull(viewModel.state.value.soldPrompt)
+        assertTrue(commandBodies.single().contains("\"is_success\":false"))
+        assertEquals(false, assertNotNull(outcomeStore.outcomeFor(111L)).isSold)
+        assertNotNull(analytics.paramsFor(AnalyticsEvents.ADVERT_CLOSED_UNSOLD))
+
+        // The row takes the status the command implies, even though OLX is still reporting
+        // `active` - otherwise the badge does not change and the seller is offered Deactivate on
+        // a listing they have already taken down.
+        val row = viewModel.state.value.pages.single().adverts.single()
+        assertEquals(AdvertStatus.RemovedByUser, row.status)
+        // And so reopening the sheet offers what you do to a listing that is down.
+        viewModel.onEvent(Event.AdvertClicked(localIndex = 1, advert = row))
+        runCurrent()
+        assertEquals(
+            listOf(AdvertAction.Edit, AdvertAction.Reactivate, AdvertAction.Delete),
+            assertNotNull(viewModel.state.value.advertSheet).actions,
+        )
+    }
+
+    @Test
+    fun `a delete OLX refuses on status is retried the documented way, by taking the listing down first`() =
+        runTest(testDispatcher) {
+            // Observed on a real account: a listing under moderation is offered Delete, and OLX
+            // refuses the DELETE even though the docs name only `active` as non-deletable. The
+            // documented way to remove an advert is deactivate then delete, so that is what a
+            // refusal on `field: ad` falls back to rather than dead-ending on the seller.
+            val calls = mutableListOf<String>()
+            var deactivated = false
+            val engine = mockEngine(testDispatcher) {
+                addHandler { request ->
+                    val path = request.url.encodedPath
+                    calls += "${request.method.value} $path"
+                    when {
+                        path.endsWith("/commands") -> {
+                            deactivated = true
+                            respond("", status = HttpStatusCode.NoContent)
+                        }
+
+                        path.endsWith("/statistics") ->
+                            respond(statisticsJson(0, 0, 0), status = HttpStatusCode.OK, headers = jsonHeaders())
+
+                        request.method == io.ktor.http.HttpMethod.Delete ->
+                            if (deactivated) {
+                                respond("", status = HttpStatusCode.NoContent)
+                            } else {
+                                respond(
+                                    """{"error":{"status":400,"title":"Invalid request","validation":[{"field":"ad","title":"Invalid status"}]}}""",
+                                    status = HttpStatusCode.BadRequest,
+                                    headers = jsonHeaders(),
+                                )
+                            }
+
+                        else -> respond(
+                            if (deactivated) """{"data":[]}""" else advertsJson(111L, status = "new"),
+                            status = HttpStatusCode.OK,
+                            headers = jsonHeaders(),
+                        )
+                    }
+                }
+            }
+            val (viewModel, _) = setUpViewModel(
+                engine = engine,
+                accounts = listOf(account(localIndex = 1, olxUserId = 1L, accessToken = "token-1")),
+                activeIndex = 1,
+            )
+            runCurrent()
+
+            val advert = viewModel.state.value.pages.single().adverts.single()
+            assertEquals(AdvertStatus.New, advert.status)
+            viewModel.onEvent(Event.AdvertClicked(localIndex = 1, advert = advert))
+            runCurrent()
+            viewModel.onEvent(Event.ActionClicked(AdvertAction.Delete))
+            runCurrent()
+            viewModel.onEvent(Event.ActionConfirmed)
+
+            viewModel.effects.awaitEffect<MyAdvertsContract.Effect.ShowMessage>()
+            advanceUntilIdle()
+
+            // A listing awaiting moderation never reached a buyer, so it is taken down as unsold
+            // without asking - "did it sell?" is a question about a listing buyers could see.
+            assertNull(viewModel.state.value.soldPrompt)
+            assertEquals(
+                listOf("DELETE", "POST", "DELETE"),
+                calls.filter { it.startsWith("DELETE") || it.endsWith("/commands") }
+                    .map { it.substringBefore(" ") },
+            )
+            assertTrue(viewModel.state.value.pages.single().adverts.isEmpty())
+        }
+
+    @Test
+    fun `a delete refused for anything other than the status is not answered with a deactivate`() =
+        runTest(testDispatcher) {
+            // The fallback exists for one documented refusal. Sending a deactivate after any
+            // failure would take a listing down for something as unrelated as a dead token.
+            val calls = mutableListOf<String>()
+            val engine = mockEngine(testDispatcher) {
+                addHandler { request ->
+                    val path = request.url.encodedPath
+                    calls += "${request.method.value} $path"
+                    when {
+                        path.endsWith("/statistics") ->
+                            respond(statisticsJson(0, 0, 0), status = HttpStatusCode.OK, headers = jsonHeaders())
+
+                        request.method == io.ktor.http.HttpMethod.Delete -> respond(
+                            """{"error":{"status":400,"title":"Invalid request","validation":[{"field":"id","title":"Advert does not belong to this user"}]}}""",
+                            status = HttpStatusCode.BadRequest,
+                            headers = jsonHeaders(),
+                        )
+
+                        else -> respond(
+                            advertsJson(111L, status = "removed_by_user"),
+                            status = HttpStatusCode.OK,
+                            headers = jsonHeaders(),
+                        )
+                    }
+                }
+            }
+            val (viewModel, _) = setUpViewModel(
+                engine = engine,
+                accounts = listOf(account(localIndex = 1, olxUserId = 1L, accessToken = "token-1")),
+                activeIndex = 1,
+            )
+            runCurrent()
+
+            val advert = viewModel.state.value.pages.single().adverts.single()
+            viewModel.onEvent(Event.AdvertClicked(localIndex = 1, advert = advert))
+            runCurrent()
+            viewModel.onEvent(Event.ActionClicked(AdvertAction.Delete))
+            runCurrent()
+            viewModel.onEvent(Event.ActionConfirmed)
+            advanceUntilIdle()
+
+            assertTrue(calls.none { it.endsWith("/commands") }, calls.toString())
+            // Still there, and the sheet carries OLX's own reason where the seller can read it.
+            assertEquals(1, viewModel.state.value.pages.single().adverts.size)
+            assertNotNull(assertNotNull(viewModel.state.value.advertSheet).errorMessage)
+        }
+
+    @Test
+    fun `deleting a live listing deactivates first and says so plainly when only that half lands`() = runTest(testDispatcher) {
+        val calls = mutableListOf<String>()
+        // The deactivate leg lands, so OLX now reports it inactive through the list; the delete
+        // leg does not.
+        var listStatus = "active"
+        val engine = mockEngine(testDispatcher) {
+            addHandler { request ->
+                val path = request.url.encodedPath
+                calls += "${request.method.value} $path"
+                when {
+                    path.endsWith("/commands") -> {
+                        listStatus = "removed_by_user"
+                        respond("", status = HttpStatusCode.NoContent)
+                    }
+
+                    path.endsWith("/statistics") ->
+                        respond(statisticsJson(5, 1, 0), status = HttpStatusCode.OK, headers = jsonHeaders())
+
+                    request.method == io.ktor.http.HttpMethod.Delete -> respond(
+                        // OLX rejects a delete it does not consider valid, with its own reason.
+                        """{"error":{"status":400,"title":"Invalid request","validation":[{"field":"ad","title":"Invalid status"}]}}""",
+                        status = HttpStatusCode.BadRequest,
+                        headers = jsonHeaders(),
+                    )
+
+                    else -> respond(advertsJson(111L, status = listStatus), status = HttpStatusCode.OK, headers = jsonHeaders())
+                }
+            }
+        }
+        val (viewModel, _) = setUpViewModel(
+            engine = engine,
+            accounts = listOf(account(localIndex = 1, olxUserId = 1L, accessToken = "token-1")),
+            activeIndex = 1,
+        )
+        runCurrent()
+
+        val advert = viewModel.state.value.pages.single().adverts.single()
+        viewModel.onEvent(Event.AdvertClicked(localIndex = 1, advert = advert))
+        runCurrent()
+        viewModel.onEvent(Event.ActionClicked(AdvertAction.Delete))
+        runCurrent()
+        assertNotNull(viewModel.state.value.actionConfirm)
+
+        viewModel.onEvent(Event.ActionConfirmed)
+        runCurrent()
+        // Deleting a live advert still has to answer "did it sell?", because OLX only accepts a
+        // delete once the advert is inactive.
+        assertNotNull(viewModel.state.value.soldPrompt)
+
+        viewModel.onEvent(Event.SoldAnswered(isSold = false))
+
+        // Awaited, not drained: the message is resolved through compose-resources `getString`.
+        // The list refetch is kicked off after it, so drain once more for that.
+        viewModel.effects.awaitEffect<MyAdvertsContract.Effect.ShowMessage>()
+        advanceUntilIdle()
+
+        assertTrue(calls.any { it.startsWith("POST") && it.endsWith("/commands") })
+        assertTrue(calls.any { it.startsWith("DELETE") })
+        // The listing is down but still on OLX. It must NOT be dropped from the list as if the
+        // delete had succeeded - the seller has to be told the truth and be able to retry.
+        assertEquals(1, viewModel.state.value.pages.single().adverts.size)
+        assertEquals(AdvertStatus.RemovedByUser, viewModel.state.value.pages.single().adverts.single().status)
+    }
+
+    @Test
+    fun `a rejected action quotes OLX's own reason and re-reads the list`() = runTest(testDispatcher) {
+        var listReads = 0
+        val engine = mockEngine(testDispatcher) {
+            addHandler { request ->
+                val path = request.url.encodedPath
+                when {
+                    path.endsWith("/commands") -> respond(
+                        """{"error":{"status":400,"title":"Invalid request","validation":[{"field":"ad","title":"Ad has to be active"}]}}""",
+                        status = HttpStatusCode.BadRequest,
+                        headers = jsonHeaders(),
+                    )
+
+                    path.endsWith("/statistics") ->
+                        respond(statisticsJson(0, 0, 0), status = HttpStatusCode.OK, headers = jsonHeaders())
+
+                    else -> {
+                        // Active for the load the sheet is opened from, so Deactivate is a real
+                        // offered action; every read after OLX rejects it reports what the seller
+                        // evidently could not see - the sheet was working from a stale status.
+                        val status = if (listReads == 0) "active" else "removed_by_user"
+                        listReads++
+                        respond(advertsJson(111L, status = status), status = HttpStatusCode.OK, headers = jsonHeaders())
+                    }
+                }
+            }
+        }
+        val analytics = FakeAnalytics()
+        val (viewModel, _) = setUpViewModel(
+            engine = engine,
+            accounts = listOf(account(localIndex = 1, olxUserId = 1L, accessToken = "token-1")),
+            activeIndex = 1,
+            analytics = analytics,
+        )
+        runCurrent()
+        val readsAfterFirstLoad = listReads
+
+        val advert = viewModel.state.value.pages.single().adverts.single()
+        viewModel.onEvent(Event.AdvertClicked(localIndex = 1, advert = advert))
+        runCurrent()
+        viewModel.onEvent(Event.ActionClicked(AdvertAction.Deactivate))
+        runCurrent()
+        viewModel.onEvent(Event.SoldAnswered(isSold = false))
+
+        // Awaited on the state: the reason now lands inside the sheet, not as a snackbar.
+        viewModel.state.first { it.advertSheet?.errorMessage != null }
+        advanceUntilIdle()
+
+        // `rejected` (rather than `failed`) is the health signal for the status-to-action mapping:
+        // a pattern of these against one status means a seller is being offered a dead button.
+        assertEquals("rejected", analytics.paramsFor(AnalyticsEvents.ADVERT_ACTION)?.get("result"))
+        // OLX resolved the status differently from what the app believed, so the list is refetched
+        // and the stale row corrected - otherwise the seller is offered the dead button again.
+        assertTrue(listReads > readsAfterFirstLoad, "expected the list to be refetched")
+        assertEquals(AdvertStatus.RemovedByUser, viewModel.state.value.pages.single().adverts.single().status)
+        val sheet = assertNotNull(viewModel.state.value.advertSheet)
+        assertNull(sheet.pendingAction)
+        // The sheet was opened while the row read Active, offering Deactivate. OLX's rejection
+        // means that was already stale - the sheet must show what the refetch found, not what it
+        // was opened with, or the seller is offered the same dead button again.
+        assertEquals(AdvertStatus.RemovedByUser, sheet.advert.status)
+        assertEquals(listOf(AdvertAction.Edit, AdvertAction.Reactivate, AdvertAction.Delete), sheet.actions)
+    }
+
+    @Test
+    fun `editing sends back every field OLX returned, changing only what the seller touched`() = runTest(testDispatcher) {
+        var putBody: String? = null
+        val engine = mockEngine(testDispatcher) {
+            addHandler { request ->
+                val path = request.url.encodedPath
+                when {
+                    request.method == io.ktor.http.HttpMethod.Put -> {
+                        putBody = (request.body as io.ktor.http.content.TextContent).text
+                        respond("", status = HttpStatusCode.NoContent)
+                    }
+
+                    path.endsWith("/statistics") ->
+                        respond(statisticsJson(30, 2, 1), status = HttpStatusCode.OK, headers = jsonHeaders())
+
+                    path.contains("/adverts/111") -> respond(
+                        fullAdvertJson(),
+                        status = HttpStatusCode.OK,
+                        headers = jsonHeaders(),
+                    )
+
+                    else -> respond(advertsJson(111L), status = HttpStatusCode.OK, headers = jsonHeaders())
+                }
+            }
+        }
+        val analytics = FakeAnalytics()
+        val (viewModel, _) = setUpViewModel(
+            engine = engine,
+            accounts = listOf(account(localIndex = 1, olxUserId = 1L, accessToken = "token-1")),
+            activeIndex = 1,
+            analytics = analytics,
+        )
+        runCurrent()
+
+        val advert = viewModel.state.value.pages.single().adverts.single()
+        viewModel.onEvent(Event.AdvertClicked(localIndex = 1, advert = advert))
+        runCurrent()
+        viewModel.onEvent(Event.ActionClicked(AdvertAction.Edit))
+        runCurrent()
+
+        val edit = assertNotNull(viewModel.state.value.advertEdit)
+        // The description exists only on GET adverts/{id}; the list call never returns it.
+        assertEquals("Worn twice.", edit.description)
+        assertEquals(1800L, edit.priceValue)
+
+        viewModel.onEvent(Event.EditSubmitted(title = edit.title, description = edit.description, price = 1500))
+        runCurrent()
+
+        val body = assertNotNull(putBody)
+        // The price the seller typed.
+        assertTrue(body.contains("\"value\":1500"), body)
+        // Every field PUT requires is present, including `location`, which OLX returns nested
+        // inside `contact` but requires at the top level - the mismatch that made every edit fail.
+        for (required in listOf("title", "description", "category_id", "advertiser_type", "contact", "location", "attributes")) {
+            assertTrue("\"$required\"" in body, "$required is required by PUT: $body")
+        }
+        assertTrue(body.contains("\"city_id\":1234"), body)
+        // Optional settings the advert has are carried through, so an edit does not cost them.
+        assertTrue(body.contains("\"code\":\"condition\""), body)
+        assertTrue(body.contains("\"product_safety_regulation\""), body)
+        // `location` must not also remain nested in `contact`, where the form does not model it.
+        assertTrue(!body.contains("\"phone\":\"+380501112233\",\"location\""), body)
+        // Response-only keys never reach PUT, and `auto_extend_enabled` is the one field
+        // documented as unchanged when omitted, so it is not sent at all.
+        for (absent in listOf("valid_to", "activated_at", "\"status\"", "auto_extend_enabled")) {
+            assertTrue(absent !in body, "$absent must not be sent: $body")
+        }
+
+        assertEquals(true, analytics.paramsFor(AnalyticsEvents.ADVERT_EDITED)?.get("was_price_only"))
+        assertNull(viewModel.state.value.advertEdit)
+    }
+
+    @Test
+    fun `pricing a listing OLX returned without a price sends the account country's currency`() = runTest(testDispatcher) {
+        var putBody: String? = null
+        val engine = mockEngine(testDispatcher) {
+            addHandler { request ->
+                val path = request.url.encodedPath
+                when {
+                    request.method == io.ktor.http.HttpMethod.Put -> {
+                        putBody = (request.body as io.ktor.http.content.TextContent).text
+                        respond("", status = HttpStatusCode.NoContent)
+                    }
+
+                    path.endsWith("/statistics") ->
+                        respond(statisticsJson(0, 0, 0), status = HttpStatusCode.OK, headers = jsonHeaders())
+
+                    // No `price` object at all, and an explicit-null currency is the same case:
+                    // OLX will not take a value without a currency, so one has to be supplied.
+                    path.contains("/adverts/111") -> respond(
+                        """
+                        {
+                          "data": {
+                            "id": 111,
+                            "status": "active",
+                            "valid_to": "2026-09-30T10:00:00+03:00",
+                            "title": "Free bookshelf",
+                            "description": "Collection only.",
+                            "category_id": 1234,
+                            "location": { "city_id": 1234 },
+                            "attributes": [ { "code": "condition", "values": ["used"] } ]
+                          }
+                        }
+                        """.trimIndent(),
+                        status = HttpStatusCode.OK,
+                        headers = jsonHeaders(),
+                    )
+
+                    else -> respond("""{"data":[{"id":111,"status":"active"}]}""", status = HttpStatusCode.OK, headers = jsonHeaders())
+                }
+            }
+        }
+        val (viewModel, _) = setUpViewModel(
+            engine = engine,
+            accounts = listOf(account(localIndex = 1, olxUserId = 1L, accessToken = "token-1")),
+            activeIndex = 1,
+        )
+        runCurrent()
+
+        val advert = viewModel.state.value.pages.single().adverts.single()
+        viewModel.onEvent(Event.AdvertClicked(localIndex = 1, advert = advert))
+        runCurrent()
+        viewModel.onEvent(Event.ActionClicked(AdvertAction.Edit))
+        runCurrent()
+
+        val edit = assertNotNull(viewModel.state.value.advertEdit)
+        assertNull(edit.priceValue)
+
+        viewModel.onEvent(Event.EditSubmitted(title = edit.title, description = edit.description, price = 500))
+        runCurrent()
+
+        val body = assertNotNull(putBody)
+        assertTrue(body.contains("\"value\":500"), body)
+        // The account's country is Ukraine, so the listing must be priced in UAH rather than
+        // being sent to OLX with no currency at all.
+        assertTrue(body.contains("\"currency\":\"UAH\""), body)
+    }
+
+    @Test
+    fun `an edit sends no delivery block, since the update schema defines no field for one`() = runTest(testDispatcher) {
+        var putBody: String? = null
+        val engine = mockEngine(testDispatcher) {
+            addHandler { request ->
+                val path = request.url.encodedPath
+                when {
+                    request.method == io.ktor.http.HttpMethod.Put -> {
+                        putBody = (request.body as io.ktor.http.content.TextContent).text
+                        respond("", status = HttpStatusCode.NoContent)
+                    }
+
+                    path.endsWith("/statistics") ->
+                        respond(statisticsJson(0, 0, 0), status = HttpStatusCode.OK, headers = jsonHeaders())
+
+                    path.contains("/adverts/111") -> respond(
+                        """
+                        {
+                          "data": {
+                            "id": 111,
+                            "status": "active",
+                            "valid_to": "2026-09-30T10:00:00+03:00",
+                            "title": "Nike Air Max 90",
+                            "description": "Worn twice.",
+                            "category_id": 1234,
+                            "location": { "city_id": 1234 },
+                            "price": { "value": 1800, "currency": "UAH" },
+                            "ad_delivery": {
+                              "delivery_package_ids": ["pkg-1"],
+                              "delivery_change_allowed": true
+                            }
+                          }
+                        }
+                        """.trimIndent(),
+                        status = HttpStatusCode.OK,
+                        headers = jsonHeaders(),
+                    )
+
+                    else -> respond(advertsJson(111L), status = HttpStatusCode.OK, headers = jsonHeaders())
+                }
+            }
+        }
+        val (viewModel, _) = setUpViewModel(
+            engine = engine,
+            accounts = listOf(account(localIndex = 1, olxUserId = 1L, accessToken = "token-1")),
+            activeIndex = 1,
+        )
+        runCurrent()
+
+        val advert = viewModel.state.value.pages.single().adverts.single()
+        viewModel.onEvent(Event.AdvertClicked(localIndex = 1, advert = advert))
+        runCurrent()
+        viewModel.onEvent(Event.ActionClicked(AdvertAction.Edit))
+        runCurrent()
+
+        val edit = assertNotNull(viewModel.state.value.advertEdit)
+        viewModel.onEvent(Event.EditSubmitted(title = edit.title, description = edit.description, price = 1500))
+        runCurrent()
+
+        val body = assertNotNull(putBody)
+        // `PUT adverts/{id}` has no delivery field of any kind: OLX reports the advert's delivery
+        // setup on read and owns it on its own side. Echoing the block back is submitting to a
+        // form that does not model it, which is what "compound forms expect an array or NULL on
+        // submission" was answering.
+        assertTrue(!body.contains("ad_delivery"), body)
+        assertTrue(!body.contains("delivery_change_allowed"), body)
+        assertTrue(!body.contains("delivery_package_ids"), body)
+    }
+
+    @Test
+    fun `pricing a listing OLX returned with no price falls back to the account's currency`() = runTest(testDispatcher) {
+        var putBody: String? = null
+        val engine = mockEngine(testDispatcher) {
+            addHandler { request ->
+                val path = request.url.encodedPath
+                when {
+                    request.method == io.ktor.http.HttpMethod.Put -> {
+                        putBody = (request.body as io.ktor.http.content.TextContent).text
+                        respond("", status = HttpStatusCode.NoContent)
+                    }
+
+                    path.endsWith("/statistics") ->
+                        respond(statisticsJson(0, 0, 0), status = HttpStatusCode.OK, headers = jsonHeaders())
+
+                    path.contains("/adverts/111") -> respond(
+                        // No "price" key at all - the listing was published without one.
+                        """
+                        {
+                          "data": {
+                            "id": 111,
+                            "status": "active",
+                            "valid_to": "2026-09-30T10:00:00+03:00",
+                            "title": "Nike Air Max 90",
+                            "description": "Worn twice.",
+                            "category_id": 1234,
+                            "location": { "city_id": 1234 }
+                          }
+                        }
+                        """.trimIndent(),
+                        status = HttpStatusCode.OK,
+                        headers = jsonHeaders(),
+                    )
+
+                    // Also priceless on the list, so `advert.currencyCode` is blank and the
+                    // fallback has to come from the active OLX country (UA/UAH in this harness).
+                    else -> respond(advertsJson(111L), status = HttpStatusCode.OK, headers = jsonHeaders())
+                }
+            }
+        }
+        val (viewModel, _) = setUpViewModel(
+            engine = engine,
+            accounts = listOf(account(localIndex = 1, olxUserId = 1L, accessToken = "token-1")),
+            activeIndex = 1,
+        )
+        runCurrent()
+
+        val advert = viewModel.state.value.pages.single().adverts.single()
+        viewModel.onEvent(Event.AdvertClicked(localIndex = 1, advert = advert))
+        runCurrent()
+        viewModel.onEvent(Event.ActionClicked(AdvertAction.Edit))
+        runCurrent()
+
+        val edit = assertNotNull(viewModel.state.value.advertEdit)
+        viewModel.onEvent(Event.EditSubmitted(title = edit.title, description = edit.description, price = 1500))
+        runCurrent()
+
+        val body = assertNotNull(putBody)
+        assertTrue(body.contains("\"price\":{\"value\":1500,\"currency\":\"UAH\"}"), body)
+    }
+
+    @Test
+    fun `a listing OLX is still reviewing opens the seller's OLX listings instead of nowhere`() = runTest(testDispatcher) {
+        val engine = mockEngine(testDispatcher) {
+            addHandler { request ->
+                if (request.url.encodedPath.endsWith("/statistics")) {
+                    respond(statisticsJson(0, 0, 0), status = HttpStatusCode.OK, headers = jsonHeaders())
+                } else {
+                    // An advert under review: OLX has not given it a public URL yet.
+                    respond(
+                        """{"data":[{"id":111,"status":"new","url":""}]}""",
+                        status = HttpStatusCode.OK,
+                        headers = jsonHeaders(),
+                    )
+                }
+            }
+        }
+        val (viewModel, _) = setUpViewModel(
+            engine = engine,
+            accounts = listOf(account(localIndex = 1, olxUserId = 1L, accessToken = "token-1")),
+            activeIndex = 1,
+        )
+        runCurrent()
+
+        val advert = viewModel.state.value.pages.single().adverts.single()
+        assertEquals("", advert.url)
+        viewModel.onEvent(Event.AdvertClicked(localIndex = 1, advert = advert))
+        runCurrent()
+        viewModel.onEvent(Event.OpenOnOlxClicked)
+
+        // Refusing to navigate left the seller with no way to reach a listing under review at
+        // all. Their own OLX listings page is where it is visible, so that is where they go.
+        val opened = viewModel.effects.awaitEffect<MyAdvertsContract.Effect.OpenUrl>()
+        assertEquals("https://www.olx.ua/myaccount/", opened.url)
+        // The sheet gets out of the way, or the browser hand-off is swallowed by its scrim.
+        assertNull(viewModel.state.value.advertSheet)
+    }
+
+    @Test
+    fun `every successful action refetches the list`() = runTest(testDispatcher) {
+        // The whole point: an action must leave the seller looking at fresh data. Deactivate and
+        // reactivate previously skipped the refetch entirely, which is why only some actions
+        // appeared to refresh anything.
+        var listReads = 0
+        val engine = mockEngine(testDispatcher) {
+            addHandler { request ->
+                val path = request.url.encodedPath
+                when {
+                    path.endsWith("/commands") -> respond("", status = HttpStatusCode.NoContent)
+
+                    path.endsWith("/statistics") ->
+                        respond(statisticsJson(0, 0, 0), status = HttpStatusCode.OK, headers = jsonHeaders())
+
+                    else -> {
+                        listReads++
+                        respond(advertsJson(111L, status = "outdated"), status = HttpStatusCode.OK, headers = jsonHeaders())
+                    }
+                }
+            }
+        }
+        val (viewModel, _) = setUpViewModel(
+            engine = engine,
+            accounts = listOf(account(localIndex = 1, olxUserId = 1L, accessToken = "token-1")),
+            activeIndex = 1,
+        )
+        runCurrent()
+        val afterFirstLoad = listReads
+
+        val advert = viewModel.state.value.pages.single().adverts.single()
+        viewModel.onEvent(Event.AdvertClicked(localIndex = 1, advert = advert))
+        runCurrent()
+        viewModel.onEvent(Event.ActionClicked(AdvertAction.Reactivate))
+        runCurrent()
+        viewModel.onEvent(Event.ActionConfirmed)
+
+        viewModel.effects.awaitEffect<MyAdvertsContract.Effect.ShowMessage>()
+        advanceUntilIdle()
+
+        assertTrue(listReads > afterFirstLoad, "reactivate must refetch the list")
+    }
+
+    @Test
+    fun `a stale read cannot undo a status the command already changed`() = runTest(testDispatcher) {
+        // OLX answers the command with 204 and then keeps reporting the old status for a moment.
+        // The refetch must not put `active` back on a listing that was just taken down, or the
+        // badge reverts and the seller is offered Deactivate again.
+        var serverStatus = "active"
+        val engine = mockEngine(testDispatcher) {
+            addHandler { request ->
+                val path = request.url.encodedPath
+                when {
+                    path.endsWith("/commands") -> respond("", status = HttpStatusCode.NoContent)
+
+                    path.endsWith("/statistics") ->
+                        respond(statisticsJson(0, 0, 0), status = HttpStatusCode.OK, headers = jsonHeaders())
+
+                    else -> respond(advertsJson(111L, status = serverStatus), status = HttpStatusCode.OK, headers = jsonHeaders())
+                }
+            }
+        }
+        val (viewModel, _) = setUpViewModel(
+            engine = engine,
+            accounts = listOf(account(localIndex = 1, olxUserId = 1L, accessToken = "token-1")),
+            activeIndex = 1,
+        )
+        runCurrent()
+
+        val advert = viewModel.state.value.pages.single().adverts.single()
+        viewModel.onEvent(Event.AdvertClicked(localIndex = 1, advert = advert))
+        runCurrent()
+        viewModel.onEvent(Event.ActionClicked(AdvertAction.Deactivate))
+        runCurrent()
+        viewModel.onEvent(Event.SoldAnswered(isSold = false))
+
+        viewModel.effects.awaitEffect<MyAdvertsContract.Effect.ShowMessage>()
+        advanceUntilIdle()
+
+        // The refetch happened and still said `active`; the row holds the new status anyway.
+        assertEquals(AdvertStatus.RemovedByUser, viewModel.state.value.pages.single().adverts.single().status)
+
+        // Another refresh while OLX is still behind must not flip it back either.
+        viewModel.onEvent(Event.RefreshClicked(1))
+        advanceUntilIdle()
+        assertEquals(AdvertStatus.RemovedByUser, viewModel.state.value.pages.single().adverts.single().status)
+
+        // Once OLX catches up - even to a different status than the one anticipated - the server
+        // wins and the expectation retires, so a later change on OLX's side is never masked.
+        serverStatus = "outdated"
+        viewModel.onEvent(Event.RefreshClicked(1))
+        advanceUntilIdle()
+        assertEquals(AdvertStatus.Outdated, viewModel.state.value.pages.single().adverts.single().status)
+    }
+
+    @Test
+    fun `a failed action shows why inside the sheet, where the seller can actually see it`() = runTest(testDispatcher) {
+        // A snackbar is rendered by the screen underneath, so while the sheet is up its scrim
+        // hides it - the seller pressed a button and nothing appeared to happen at all.
+        val secondAttempt = CompletableDeferred<Unit>()
+        var commandsSent = 0
+        val engine = mockEngine(testDispatcher) {
+            addHandler { request ->
+                val path = request.url.encodedPath
+                when {
+                    path.endsWith("/commands") -> {
+                        commandsSent++
+                        // The retry never resolves, so the cleared state stays observable.
+                        if (commandsSent > 1) secondAttempt.await()
+                        respond(
+                            """{"error":{"status":400,"title":"Invalid request","validation":[{"field":"ad","title":"Ad has to be active"}]}}""",
+                            status = HttpStatusCode.BadRequest,
+                            headers = jsonHeaders(),
+                        )
+                    }
+
+                    path.endsWith("/statistics") ->
+                        respond(statisticsJson(0, 0, 0), status = HttpStatusCode.OK, headers = jsonHeaders())
+
+                    else -> respond(advertsJson(111L, status = "outdated"), status = HttpStatusCode.OK, headers = jsonHeaders())
+                }
+            }
+        }
+        val (viewModel, _) = setUpViewModel(
+            engine = engine,
+            accounts = listOf(account(localIndex = 1, olxUserId = 1L, accessToken = "token-1")),
+            activeIndex = 1,
+        )
+        runCurrent()
+
+        val advert = viewModel.state.value.pages.single().adverts.single()
+        viewModel.onEvent(Event.AdvertClicked(localIndex = 1, advert = advert))
+        runCurrent()
+        viewModel.onEvent(Event.ActionClicked(AdvertAction.Reactivate))
+        runCurrent()
+        viewModel.onEvent(Event.ActionConfirmed)
+
+        // Awaited on the state, not drained: the reason is resolved through compose-resources
+        // `getString`, which hops off the test dispatcher.
+        val sheet = viewModel.state.first { it.advertSheet?.errorMessage != null }.advertSheet!!
+        // OLX's own reason, on the sheet, next to the button that produced it.
+        assertTrue(sheet.errorMessage!!.contains("Ad has to be active"), sheet.errorMessage!!)
+        // And the sheet stays open, so the seller keeps the context to try again.
+        assertNull(sheet.pendingAction)
+
+        // Trying again clears the stale reason rather than leaving it sitting under the new
+        // attempt. Held mid-flight so the assertion sees the cleared state, not the next failure.
+        viewModel.onEvent(Event.ActionClicked(AdvertAction.Reactivate))
+        runCurrent()
+        viewModel.onEvent(Event.ActionConfirmed)
+        runCurrent()
+
+        val retrying = assertNotNull(viewModel.state.value.advertSheet)
+        assertEquals(AdvertAction.Reactivate, retrying.pendingAction)
+        assertNull(retrying.errorMessage)
+    }
+
+    @Test
+    fun `an edit sends each attribute under the key the schema defines for its arity`() = runTest(testDispatcher) {
+        // `value` and `values` are two different fields in the schema - `value` for an attribute
+        // that takes a single value, `values` for one that takes several - and the response fills
+        // whichever applies. Each therefore goes back under the key it arrived under; forcing them
+        // all into `values` arrays was a guess, and the spec defines neither shape as a substitute
+        // for the other.
+        var putBody: String? = null
+        val engine = mockEngine(testDispatcher) {
+            addHandler { request ->
+                val path = request.url.encodedPath
+                when {
+                    request.method == io.ktor.http.HttpMethod.Put -> {
+                        putBody = (request.body as io.ktor.http.content.TextContent).text
+                        respond("", status = HttpStatusCode.NoContent)
+                    }
+
+                    path.endsWith("/statistics") ->
+                        respond(statisticsJson(0, 0, 0), status = HttpStatusCode.OK, headers = jsonHeaders())
+
+                    path.contains("/adverts/111") -> respond(
+                        """
+                        {
+                          "data": {
+                            "id": 111,
+                            "status": "active",
+                            "valid_to": "2026-09-30T10:00:00+03:00",
+                            "title": "Nike Air Max 90",
+                            "description": "Worn twice.",
+                            "category_id": 1234,
+                            "location": { "city_id": 1234 },
+                            "price": { "value": 1800, "currency": "UAH" },
+                            "attributes": [
+                              { "code": "condition", "value": "used" },
+                              { "code": "colour", "values": ["black", "white"] },
+                              { "code": "empty", "value": null }
+                            ]
+                          }
+                        }
+                        """.trimIndent(),
+                        status = HttpStatusCode.OK,
+                        headers = jsonHeaders(),
+                    )
+
+                    else -> respond(advertsJson(111L), status = HttpStatusCode.OK, headers = jsonHeaders())
+                }
+            }
+        }
+        val (viewModel, _) = setUpViewModel(
+            engine = engine,
+            accounts = listOf(account(localIndex = 1, olxUserId = 1L, accessToken = "token-1")),
+            activeIndex = 1,
+        )
+        runCurrent()
+
+        val advert = viewModel.state.value.pages.single().adverts.single()
+        viewModel.onEvent(Event.AdvertClicked(localIndex = 1, advert = advert))
+        runCurrent()
+        viewModel.onEvent(Event.ActionClicked(AdvertAction.Edit))
+        runCurrent()
+        val edit = assertNotNull(viewModel.state.value.advertEdit)
+        viewModel.onEvent(Event.EditSubmitted(title = edit.title, description = edit.description, price = 1500))
+        runCurrent()
+
+        val body = assertNotNull(putBody)
+        // A single value stays a scalar under `value`...
+        assertTrue(body.contains("""{"code":"condition","value":"used"}"""), body)
+        // ...several stay an array under `values`...
+        assertTrue(body.contains("""{"code":"colour","values":["black","white"]}"""), body)
+        // ...and an attribute with no value is dropped, not sent as the string "null" -
+        // `JsonNull` is itself a `JsonPrimitive`, so reading `.content` off it says "null".
+        assertTrue(!body.contains("empty"), body)
+        assertTrue(!body.contains("\"null\""), body)
+    }
+
+    private fun statisticsJson(views: Int, phoneViews: Int, observing: Int) =
+        """{"advert_views":$views,"phone_views":$phoneViews,"users_observing":$observing}"""
+
+    private fun advertJson(id: Long, status: String) = """{"data":{"id":$id,"status":"$status"}}"""
+
+    /** A realistic advert, with the fields an edit has to carry back through the update body. */
+    private fun fullAdvertJson(id: Long = 111, title: String = "Nike Air Max 90", price: Long = 1800) = """
+        {
+          "data": {
+            "id": $id,
+            "status": "active",
+            "url": "https://www.olx.ua/d/obyavlenie/x.html",
+            "created_at": "2026-08-01T10:00:00+03:00",
+            "activated_at": "2026-08-01T10:00:00+03:00",
+            "valid_to": "2026-09-30T10:00:00+03:00",
+            "title": "$title",
+            "description": "Worn twice.",
+            "category_id": 1234,
+            "advertiser_type": "private",
+            "contact": { "name": "Seller", "phone": "+380501112233" },
+            "location": { "city_id": 1234, "district_id": 77 },
+            "images": [ { "url": "https://cdn.olx.ua/a.jpg" } ],
+            "price": { "value": $price, "currency": "UAH", "negotiable": false },
+            "attributes": [ { "code": "condition", "values": ["used"] } ],
+            "auto_extend_enabled": true,
+            "product_safety_regulation": { "manufacturer": { "name": "Nike" } }
+          }
+        }
+    """.trimIndent()
+
+    // ----- Regressions found in review -----
+
+    @Test
+    fun `a command that landed shows on the row even when the list cannot be read`() = runTest(testDispatcher) {
+        var commandsSent = 0
+        val engine = mockEngine(testDispatcher) {
+            addHandler { request ->
+                val path = request.url.encodedPath
+                when {
+                    path.endsWith("/commands") -> {
+                        commandsSent++
+                        respond("", status = HttpStatusCode.NoContent)
+                    }
+
+                    path.endsWith("/statistics") ->
+                        respond(statisticsJson(0, 0, 0), status = HttpStatusCode.OK, headers = jsonHeaders())
+
+                    // The follow-up read fails. The take-down still happened, and OLX will not
+                    // accept a second one - so calling this a failure would send the seller round
+                    // to retry into a guaranteed "Ad has to be active".
+                    path.contains("/adverts/111") ->
+                        respond("", status = HttpStatusCode.InternalServerError, headers = jsonHeaders())
+
+                    else -> respond(advertsJson(111L), status = HttpStatusCode.OK, headers = jsonHeaders())
+                }
+            }
+        }
+        val analytics = FakeAnalytics()
+        val (viewModel, _) = setUpViewModel(
+            engine = engine,
+            accounts = listOf(account(localIndex = 1, olxUserId = 1L, accessToken = "token-1")),
+            activeIndex = 1,
+            analytics = analytics,
+        )
+        runCurrent()
+
+        val advert = viewModel.state.value.pages.single().adverts.single()
+        viewModel.onEvent(Event.AdvertClicked(localIndex = 1, advert = advert))
+        runCurrent()
+        viewModel.onEvent(Event.ActionClicked(AdvertAction.Deactivate))
+        runCurrent()
+        viewModel.onEvent(Event.SoldAnswered(isSold = false))
+
+        // Awaited, not drained: the confirmation message is resolved through compose-resources
+        // `getString`, which hops off the test dispatcher, so `runCurrent()` can return before
+        // the action has finished reporting itself.
+        viewModel.effects.awaitEffect<MyAdvertsContract.Effect.ShowMessage>()
+
+        assertEquals(1, commandsSent)
+        assertEquals("success", analytics.paramsFor(AnalyticsEvents.ADVERT_ACTION)?.get("result"))
+        // The command landed, so the row shows it - and does so without depending on a read that
+        // is failing. Reconciliation with OLX happens on the next pull-to-refresh.
+        assertEquals(AdvertStatus.RemovedByUser, viewModel.state.value.pages.single().adverts.single().status)
+        // Still counts as a success, so the sheet closes and the snackbar behind it is visible.
+        assertNull(viewModel.state.value.advertSheet)
+    }
+
+    @Test
+    fun `dismissing and reopening the sheet mid-action cannot fire the same command twice`() = runTest(testDispatcher) {
+        var commandsSent = 0
+        val commandGate = CompletableDeferred<Unit>()
+        val engine = mockEngine(testDispatcher) {
+            addHandler { request ->
+                val path = request.url.encodedPath
+                when {
+                    path.endsWith("/commands") -> {
+                        commandsSent++
+                        commandGate.await()
+                        respond("", status = HttpStatusCode.NoContent)
+                    }
+
+                    path.endsWith("/statistics") ->
+                        respond(statisticsJson(0, 0, 0), status = HttpStatusCode.OK, headers = jsonHeaders())
+
+                    path.contains("/adverts/111") ->
+                        respond(advertJson(111L, "removed_by_user"), status = HttpStatusCode.OK, headers = jsonHeaders())
+
+                    else -> respond(advertsJson(111L, status = "outdated"), status = HttpStatusCode.OK, headers = jsonHeaders())
+                }
+            }
+        }
+        val (viewModel, _) = setUpViewModel(
+            engine = engine,
+            accounts = listOf(account(localIndex = 1, olxUserId = 1L, accessToken = "token-1")),
+            activeIndex = 1,
+        )
+        runCurrent()
+
+        val advert = viewModel.state.value.pages.single().adverts.single()
+        viewModel.onEvent(Event.AdvertClicked(localIndex = 1, advert = advert))
+        runCurrent()
+        // Expired advert: Reactivate confirms without going through the sold prompt.
+        viewModel.onEvent(Event.ActionClicked(AdvertAction.Reactivate))
+        runCurrent()
+        viewModel.onEvent(Event.ActionConfirmed)
+        runCurrent()
+        assertEquals(1, commandsSent)
+
+        // Swipe the sheet away and tap the same row again while the command is still in flight.
+        // A fresh sheet must not come back with the action enabled.
+        viewModel.onEvent(Event.AdvertSheetDismissed)
+        runCurrent()
+        viewModel.onEvent(Event.AdvertClicked(localIndex = 1, advert = advert))
+        runCurrent()
+
+        assertEquals(AdvertAction.Reactivate, assertNotNull(viewModel.state.value.advertSheet).pendingAction)
+        viewModel.onEvent(Event.ActionClicked(AdvertAction.Reactivate))
+        runCurrent()
+        assertEquals(1, commandsSent)
+
+        commandGate.complete(Unit)
+        runCurrent()
+        // The sheet closes on success: leaving it open showed the seller the buttons they had
+        // just pressed, which reads as nothing having happened.
+        assertNull(viewModel.state.value.advertSheet)
+    }
+
+    @Test
+    fun `clearing the price field is not an edit`() = runTest(testDispatcher) {
+        var puts = 0
+        val engine = mockEngine(testDispatcher) {
+            addHandler { request ->
+                val path = request.url.encodedPath
+                when {
+                    request.method == io.ktor.http.HttpMethod.Put -> {
+                        puts++
+                        respond("", status = HttpStatusCode.NoContent)
+                    }
+
+                    path.endsWith("/statistics") ->
+                        respond(statisticsJson(0, 0, 0), status = HttpStatusCode.OK, headers = jsonHeaders())
+
+                    path.contains("/adverts/111") ->
+                        respond(fullAdvertJson(), status = HttpStatusCode.OK, headers = jsonHeaders())
+
+                    else -> respond(advertsJson(111L), status = HttpStatusCode.OK, headers = jsonHeaders())
+                }
+            }
+        }
+        val analytics = FakeAnalytics()
+        val (viewModel, _) = setUpViewModel(
+            engine = engine,
+            accounts = listOf(account(localIndex = 1, olxUserId = 1L, accessToken = "token-1")),
+            activeIndex = 1,
+            analytics = analytics,
+        )
+        runCurrent()
+
+        val advert = viewModel.state.value.pages.single().adverts.single()
+        viewModel.onEvent(Event.AdvertClicked(localIndex = 1, advert = advert))
+        runCurrent()
+        viewModel.onEvent(Event.ActionClicked(AdvertAction.Edit))
+        runCurrent()
+
+        val edit = assertNotNull(viewModel.state.value.advertEdit)
+        // OLX has no way to remove a price through this payload, so an emptied field means "leave
+        // it alone" - not a price-only edit that silently changes nothing.
+        viewModel.onEvent(Event.EditSubmitted(title = edit.title, description = edit.description, price = null))
+        runCurrent()
+
+        assertEquals(0, puts)
+        assertNull(viewModel.state.value.advertEdit)
+        assertNull(analytics.paramsFor(AnalyticsEvents.ADVERT_EDITED))
+    }
+
+    @Test
+    fun `an edit load that lands after the seller moved on cannot seed another advert's form`() = runTest(testDispatcher) {
+        val firstEditGate = CompletableDeferred<Unit>()
+        val engine = mockEngine(testDispatcher) {
+            addHandler { request ->
+                val path = request.url.encodedPath
+                when {
+                    path.endsWith("/statistics") ->
+                        respond(statisticsJson(0, 0, 0), status = HttpStatusCode.OK, headers = jsonHeaders())
+
+                    path.contains("/adverts/111") -> {
+                        firstEditGate.await()
+                        respond(fullAdvertJson(title = "Advert A", price = 1800), status = HttpStatusCode.OK, headers = jsonHeaders())
+                    }
+
+                    path.contains("/adverts/222") ->
+                        respond(fullAdvertJson(id = 222, title = "Advert B", price = 900), status = HttpStatusCode.OK, headers = jsonHeaders())
+
+                    else -> respond(
+                        """{"data":[{"id":111,"status":"active"},{"id":222,"status":"active"}]}""",
+                        status = HttpStatusCode.OK,
+                        headers = jsonHeaders(),
+                    )
+                }
+            }
+        }
+        val (viewModel, _) = setUpViewModel(
+            engine = engine,
+            accounts = listOf(account(localIndex = 1, olxUserId = 1L, accessToken = "token-1")),
+            activeIndex = 1,
+        )
+        runCurrent()
+
+        val adverts = viewModel.state.value.pages.single().adverts
+        val advertA = adverts.first { it.id == 111L }
+        val advertB = adverts.first { it.id == 222L }
+
+        // Start editing A, whose load hangs, then back out and edit B instead.
+        viewModel.onEvent(Event.AdvertClicked(localIndex = 1, advert = advertA))
+        runCurrent()
+        viewModel.onEvent(Event.ActionClicked(AdvertAction.Edit))
+        runCurrent()
+        viewModel.onEvent(Event.EditDismissed)
+        runCurrent()
+        viewModel.onEvent(Event.AdvertClicked(localIndex = 1, advert = advertB))
+        runCurrent()
+        viewModel.onEvent(Event.ActionClicked(AdvertAction.Edit))
+        runCurrent()
+
+        assertEquals("Advert B", assertNotNull(viewModel.state.value.advertEdit).title)
+
+        // A's load finally lands. It must be dropped: seeding B's form with A's title and
+        // description would push them onto advert B on the next save.
+        firstEditGate.complete(Unit)
+        runCurrent()
+
+        val edit = assertNotNull(viewModel.state.value.advertEdit)
+        assertEquals(222L, edit.advert.id)
+        assertEquals("Advert B", edit.title)
+        assertEquals(900L, edit.priceValue)
+        assertEquals(false, edit.loadFailed)
+    }
+
+    @Test
+    fun `putting a listing back up clears its outcome so a later sale is still measured`() = runTest(testDispatcher) {
+        val engine = mockEngine(testDispatcher) {
+            addHandler { request ->
+                val path = request.url.encodedPath
+                when {
+                    path.endsWith("/commands") -> respond("", status = HttpStatusCode.NoContent)
+
+                    path.endsWith("/statistics") ->
+                        respond(statisticsJson(0, 0, 0), status = HttpStatusCode.OK, headers = jsonHeaders())
+
+                    path.contains("/adverts/111") ->
+                        respond(advertJson(111L, "active"), status = HttpStatusCode.OK, headers = jsonHeaders())
+
+                    else -> respond(advertsJson(111L, status = "outdated"), status = HttpStatusCode.OK, headers = jsonHeaders())
+                }
+            }
+        }
+        val outcomeStore = AdvertOutcomeStore(InMemoryOlxKeyValueStore(), testJson)
+        outcomeStore.recordClosed(advertId = 111L, isSold = false, achievedPrice = null)
+        val (viewModel, _) = setUpViewModel(
+            engine = engine,
+            accounts = listOf(account(localIndex = 1, olxUserId = 1L, accessToken = "token-1")),
+            activeIndex = 1,
+            outcomeStore = outcomeStore,
+        )
+        runCurrent()
+
+        val advert = viewModel.state.value.pages.single().adverts.single()
+        viewModel.onEvent(Event.AdvertClicked(localIndex = 1, advert = advert))
+        runCurrent()
+        viewModel.onEvent(Event.ActionClicked(AdvertAction.Reactivate))
+        runCurrent()
+        viewModel.onEvent(Event.ActionConfirmed)
+        runCurrent()
+
+        // Live again means no outcome. Without this, the next genuine sale of this listing would
+        // be silently dropped from `advert_sold` - the one metric the milestone exists to produce.
+        assertNull(assertNotNull(outcomeStore.outcomeFor(111L)).isSold)
+    }
+
+    @Test
+    fun `an action on an account that needs reconnecting says so instead of offering a retry`() = runTest(testDispatcher) {
+        val engine = mockEngine(testDispatcher) {
+            addHandler { request ->
+                val path = request.url.encodedPath
+                when {
+                    path.endsWith("/statistics") ->
+                        respond(statisticsJson(0, 0, 0), status = HttpStatusCode.OK, headers = jsonHeaders())
+
+                    path.contains("/adverts/111") ->
+                        respond(advertJson(111L, "outdated"), status = HttpStatusCode.OK, headers = jsonHeaders())
+
+                    else -> respond(advertsJson(111L, status = "outdated"), status = HttpStatusCode.OK, headers = jsonHeaders())
+                }
+            }
+        }
+        val (viewModel, harness) = setUpViewModel(
+            engine = engine,
+            accounts = listOf(account(localIndex = 1, olxUserId = 1L, accessToken = "token-1")),
+            activeIndex = 1,
+        )
+        runCurrent()
+
+        val advert = viewModel.state.value.pages.single().adverts.single()
+        viewModel.onEvent(Event.AdvertClicked(localIndex = 1, advert = advert))
+        runCurrent()
+
+        // The account dies between opening the sheet and confirming the action.
+        harness.accountStore.markNeedsReconnect(1)
+        runCurrent()
+
+        viewModel.onEvent(Event.ActionClicked(AdvertAction.Reactivate))
+        runCurrent()
+        viewModel.onEvent(Event.ActionConfirmed)
+
+        // Awaited on the state: the message is resolved through compose-resources `getString`,
+        // which hops off the test dispatcher, and it lands inside the sheet rather than as a
+        // snackbar the sheet's own scrim would hide.
+        val message = viewModel.state.first { it.advertSheet?.errorMessage != null }
+            .advertSheet!!
+            .errorMessage!!
+
+        // "Try again in a moment" would send the seller round a loop that cannot succeed until
+        // they reconnect, so the message has to name reconnecting - and must not be the publish
+        // flow's wording, since the seller was closing a listing, not publishing one.
+        assertTrue(message.contains("reconnecting", ignoreCase = true), "got: $message")
+        assertTrue(!message.contains("publish", ignoreCase = true), "got: $message")
+    }
+
     private data class LoggedRequest(val path: String, val authHeader: String?)
 
     private fun io.ktor.client.request.HttpRequestData.toLogged() =
@@ -360,7 +1665,8 @@ class MyAdvertsViewModelTest {
         return MockEngine(config)
     }
 
-    private fun advertsJson(id: Long) = """{"data":[{"id":$id,"status":"active"}]}"""
+    private fun advertsJson(id: Long, status: String = "active") =
+        """{"data":[{"id":$id,"status":"$status"}]}"""
 
     private fun refreshTokenJson(accessToken: String) =
         """{"access_token":"$accessToken","refresh_token":"refresh-new","expires_in":86400,"token_type":"bearer","scope":"v2 read write"}"""
@@ -401,6 +1707,9 @@ class MyAdvertsViewModelTest {
         accounts: List<OlxAccountRecord>,
         activeIndex: Int,
         countryCode: String = "ua",
+        // Injectable so the lifecycle tests can assert what was recorded about a closed listing.
+        outcomeStore: AdvertOutcomeStore = AdvertOutcomeStore(InMemoryOlxKeyValueStore(), testJson),
+        analytics: FakeAnalytics = FakeAnalytics(),
     ): Pair<MyAdvertsViewModel, TestHarness> {
         val accountStore = OlxAccountStore(InMemoryOlxKeyValueStore(), testJson)
         accountStore.write(
@@ -415,7 +1724,17 @@ class MyAdvertsViewModelTest {
             accountRepository = harness.repository,
             unauthenticatedOlxApiClient = harness.unauthenticatedOlxApiClient,
         )
-        val viewModel = MyAdvertsViewModel(repository, harness.repository)
+        val viewModel = MyAdvertsViewModel(
+            repository = repository,
+            accountRepository = harness.repository,
+            lifecycleRepository = AdvertLifecycleRepository(
+                accountRepository = harness.repository,
+                unauthenticatedOlxApiClient = harness.unauthenticatedOlxApiClient,
+                myAdvertsRepository = repository,
+            ),
+            outcomeStore = outcomeStore,
+            analytics = analytics,
+        )
         return viewModel to harness
     }
 
@@ -466,17 +1785,19 @@ class MyAdvertsViewModelTest {
             locationRepository = locationRepository,
             olxCountryStore = countryStore,
             draftMediaFileStore = FakeDraftMediaFileStore,
+            advertOutcomeStore = AdvertOutcomeStore(InMemoryOlxKeyValueStore(), testJson),
             analyticsConsentRepository = analyticsConsentRepository,
             errorParser = errorParser,
             analytics = analytics,
         )
-        return TestHarness(repository, olxApiClient, unauthenticatedOlxApiClient)
+        return TestHarness(repository, olxApiClient, unauthenticatedOlxApiClient, accountStore)
     }
 
     private data class TestHarness(
         val repository: SellerAccountRepository,
         val olxApiClient: OlxApiClient,
         val unauthenticatedOlxApiClient: OlxApiClient,
+        val accountStore: OlxAccountStore,
     )
 
     private class TestCredentialsProvider : OlxCredentialsProvider {
@@ -500,7 +1821,13 @@ class MyAdvertsViewModelTest {
     }
 
     private class FakeAnalytics : Analytics {
-        override fun logEvent(name: String, params: Map<String, Any>) {}
+        val events = mutableListOf<Pair<String, Map<String, Any>>>()
+
+        fun paramsFor(name: String): Map<String, Any>? = events.lastOrNull { it.first == name }?.second
+
+        override fun logEvent(name: String, params: Map<String, Any>) {
+            events += name to params
+        }
         override fun setUserId(userId: String?) {}
         override fun setUserProperty(name: String, value: String?) {}
         override fun recordException(throwable: Throwable, message: String?) {}

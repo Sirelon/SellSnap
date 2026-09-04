@@ -5,4 +5,10 @@ paths:
 
 # String localization
 
-After adding or changing any key in `values/strings.xml`, launch the `localize` agent (Agent tool, `subagent_type: localize`) with the list of keys before finishing the task. Do not hand-translate inline and do not leave any locale out of sync — the agent owns all translation rules. (If you are the localize agent, proceed with your instructions.)
+Adding or changing a key in `values/strings.xml` creates a translation debt across seven locales.
+Pay it once: after the owner has approved the English `key → text` list (AGENTS.md,
+"Localization"), launch the `localize` agent (Agent tool, `subagent_type: localize`) with the
+final key list, then post the Ukrainian back for his check.
+
+Do not hand-translate inline, do not run `localize` mid-task, and do not run it again for a
+rewording the owner has not seen. (If you are the localize agent, proceed with your instructions.)

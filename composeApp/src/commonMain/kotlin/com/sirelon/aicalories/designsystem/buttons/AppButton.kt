@@ -302,4 +302,18 @@ data object AppButtonDefaults {
             elevation = 0.dp,
         )
     }
+
+    /**
+     * Irreversible action — solid flat red. Reserved for things that genuinely cannot be undone,
+     * so that the colour keeps meaning something: deleting a listing from OLX, not taking it down.
+     */
+    @Composable
+    @ReadOnlyComposable
+    fun destructive(): AppButtonStyle {
+        return AppButtonStyle(
+            backgroundColor = AppTheme.colors.error,
+            contentColor = AppTheme.colors.onError,
+            elevation = 0.dp,
+        )
+    }
 }

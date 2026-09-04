@@ -46,4 +46,31 @@ object AnalyticsEvents {
     // (stay | leave). The sheet's own screen_view only says it was shown; without this, a seller
     // who backs out and keeps editing is indistinguishable from one who abandons the draft.
     const val AD_DRAFT_EXIT_CHOICE = "ad_draft_exit_choice"
+
+    // Ad lifecycle (SIR-106). Buckets and enums only: no prices in absolute terms, no advert
+    // ids, no titles. Account identity is the localIndex convention, never anything identifying.
+
+    /** `action` (deactivate | activate | finish | delete | extend | edit), `from_status`,
+     * `result` (success | rejected | failed | partial). `rejected` is OLX refusing the action for
+     * this advert's state and is the health signal for the status-to-action mapping in
+     * `availableActions` - a pattern of it against one status means a seller is being offered a
+     * button that cannot work. `partial` is only ever a delete whose deactivate half landed and
+     * whose delete half did not. */
+    const val ADVERT_ACTION = "advert_action"
+
+    /** The one that matters: `price_delta_percent_bucket` is the gap between what the AI
+     * suggested and what the item actually went for. Aggregated by category and country, it is a
+     * direct read on whether the price suggestions are any good, which nothing else measures.
+     * Also carries `days_live_bucket` and `had_price_entered`. */
+    const val ADVERT_SOLD = "advert_sold"
+
+    /** The other half of the outcome picture - carries `days_live_bucket` only. */
+    const val ADVERT_CLOSED_UNSOLD = "advert_closed_unsold"
+
+    /** `advert_views_bucket`, `had_zero_views`. Whether the diagnostic numbers get looked at. */
+    const val ADVERT_STATISTICS_VIEWED = "advert_statistics_viewed"
+
+    /** `fields_changed` (count), `was_price_only`. Answers whether a price-only quick edit is the
+     * right primary path. */
+    const val ADVERT_EDITED = "advert_edited"
 }

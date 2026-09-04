@@ -16,6 +16,14 @@ data class OlxCountry(
     val apiBaseUrl: String get() = "https://www.$domain/api/partner/"
     val authBaseUrl: String get() = "https://www.$domain/oauth/authorize/"
 
+    /**
+     * Whether `POST adverts/{id}/commands` accepts the `extend` command here. OLX documents the
+     * command as unavailable in Ukraine and Portugal, so offering a renew action there would put
+     * a button in front of the seller that can only return an error - see SIR-100 and
+     * `SPIKE-SIR-100-auto-extend.md`.
+     */
+    val supportsExtendCommand: Boolean get() = code != "ua" && code != "pt"
+
     // Redact credentials so they never leak through logs, analytics, or crash reports.
     override fun toString(): String =
         "OlxCountry(code=$code, domain=$domain, language=$language, currencyCode=$currencyCode)"

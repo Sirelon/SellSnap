@@ -24,6 +24,7 @@ import com.sirelon.sellsnap.features.seller.auth.domain.OlxUser
 import com.sirelon.sellsnap.features.seller.auth.domain.SellerSessionMode
 import com.sirelon.sellsnap.features.seller.location.OlxLocation
 import com.sirelon.sellsnap.features.seller.location.data.LocationRepository
+import com.sirelon.sellsnap.features.seller.my_ads.data.AdvertOutcomeStore
 import com.sirelon.sellsnap.startup.AnalyticsConsentRepository
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.auth.authProvider
@@ -51,6 +52,7 @@ class SellerAccountRepository internal constructor(
     private val locationRepository: LocationRepository,
     private val olxCountryStore: OlxCountryStore,
     private val draftMediaFileStore: DraftMediaFileStore,
+    private val advertOutcomeStore: AdvertOutcomeStore,
     private val analyticsConsentRepository: AnalyticsConsentRepository,
     private val errorParser: OlxRemoteErrorParser,
     private val analytics: Analytics,
@@ -318,6 +320,7 @@ class SellerAccountRepository internal constructor(
         clearActiveAccountClientState(countryCode)
         locationRepository.clearSavedLocation()
         draftMediaFileStore.deleteAll()
+        advertOutcomeStore.clearAll()
         olxCountryStore.clear()
         analyticsConsentRepository.resetConsent()
         analytics.setUserProperty(USER_PROPERTY_CONNECTED_ACCOUNT_COUNT, "0")

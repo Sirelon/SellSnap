@@ -20,12 +20,15 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.PrimaryTabRow
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -34,9 +37,8 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -81,25 +83,11 @@ import com.sirelon.sellsnap.generated.resources.my_ads_price_not_set
 import com.sirelon.sellsnap.generated.resources.my_ads_reconnect_description
 import com.sirelon.sellsnap.generated.resources.my_ads_reconnect_title
 import com.sirelon.sellsnap.generated.resources.my_ads_screen_title
-import com.sirelon.sellsnap.generated.resources.my_ads_status_active
-import com.sirelon.sellsnap.generated.resources.my_ads_status_blocked
-import com.sirelon.sellsnap.generated.resources.my_ads_status_disabled
-import com.sirelon.sellsnap.generated.resources.my_ads_status_limited
-import com.sirelon.sellsnap.generated.resources.my_ads_status_moderated
-import com.sirelon.sellsnap.generated.resources.my_ads_status_new
-import com.sirelon.sellsnap.generated.resources.my_ads_status_outdated
-import com.sirelon.sellsnap.generated.resources.my_ads_status_removed_by_moderator
-import com.sirelon.sellsnap.generated.resources.my_ads_status_removed_by_user
-import com.sirelon.sellsnap.generated.resources.my_ads_status_unconfirmed
-import com.sirelon.sellsnap.generated.resources.my_ads_status_unknown
-import com.sirelon.sellsnap.generated.resources.my_ads_status_unpaid
 import com.sirelon.sellsnap.generated.resources.my_ads_untitled
-import com.sirelon.sellsnap.generated.resources.my_ads_valid_to
 import com.sirelon.sellsnap.generated.resources.profile_account_active_badge
 import com.sirelon.sellsnap.generated.resources.profile_reconnect_account_action
 import com.sirelon.sellsnap.generated.resources.retry
 import com.sirelon.sellsnap.platform.openUrl
-import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
@@ -233,6 +221,87 @@ private fun MyAdvertsScreen(
             }
         }
     }
+
+    AdvertSheets(state = state, onEvent = onEvent)
+}
+
+/**
+ * The lifecycle sheets (SIR-101/102/103/104), rendered inside this screen rather than as
+ * `AppKey` destinations like the PreviewAd flow's sheets.
+ *
+ * Each one needs the tapped [MyAdvertItem] plus per-advert async state - statistics in flight,
+ * a pending command, a loaded edit payload. Routing that through the back stack would mean either
+ * serializing the item into a nav key or wiring `SharedViewModelStoreNavEntryDecorator` onto the
+ * My Ads tab entry to share this ViewModel with sheet entries, for no behavioural gain.
+ *
+ * Only one is ever open at a time, and the order matters: a confirmation, the sold prompt or the
+ * edit form sits *over* the actions sheet, so the actions sheet stays out of the way while one of
+ * them is up.
+ */
+@Composable
+private fun AdvertSheets(
+    state: MyAdvertsContract.State,
+    onEvent: (Event) -> Unit,
+) {
+    val hasForegroundSheet = state.actionConfirm != null ||
+        state.soldPrompt != null ||
+        state.advertEdit != null
+
+    state.advertSheet?.takeIf { !hasForegroundSheet }?.let { sheet ->
+        ModalBottomSheet(
+            onDismissRequest = { onEvent(Event.AdvertSheetDismissed) },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        ) {
+            AdvertActionsSheet(
+                sheet = sheet,
+                onOpenOnOlx = { onEvent(Event.OpenOnOlxClicked) },
+                onAction = { onEvent(Event.ActionClicked(it)) },
+            )
+        }
+    }
+
+    state.actionConfirm?.let { confirm ->
+        ModalBottomSheet(
+            onDismissRequest = { onEvent(Event.ActionDismissed) },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        ) {
+            AdvertConfirmSheet(
+                confirm = confirm,
+                onConfirm = { onEvent(Event.ActionConfirmed) },
+                onDismiss = { onEvent(Event.ActionDismissed) },
+            )
+        }
+    }
+
+    state.soldPrompt?.let { prompt ->
+        ModalBottomSheet(
+            // Swipe-to-dismiss abandons the take-down entirely: OLX will not accept a
+            // `deactivate` without an answer, so half an answer is not a state to be in.
+            onDismissRequest = { if (!prompt.isSubmitting) onEvent(Event.SoldPromptDismissed) },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        ) {
+            MarkAsSoldSheet(
+                prompt = prompt,
+                onAnswer = { onEvent(Event.SoldAnswered(it)) },
+                onPriceSubmitted = { onEvent(Event.SoldPriceSubmitted(it)) },
+            )
+        }
+    }
+
+    state.advertEdit?.let { edit ->
+        ModalBottomSheet(
+            onDismissRequest = { if (!edit.isSaving) onEvent(Event.EditDismissed) },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        ) {
+            AdvertEditSheet(
+                edit = edit,
+                onSubmit = { title, description, price ->
+                    onEvent(Event.EditSubmitted(title, description, price))
+                },
+                onDismiss = { onEvent(Event.EditDismissed) },
+            )
+        }
+    }
 }
 
 @Composable
@@ -284,7 +353,14 @@ private fun AccountPageContent(
     page: AccountPage,
     onEvent: (Event) -> Unit,
 ) {
-    LoadingOverlay(isLoading = page.isLoading) {
+    // Pull down to refresh, per page. A lifecycle action can change a listing's state on OLX's
+    // side after the fact - moderation picking it up, an expiry passing - so the seller needs a
+    // way to re-read the list that does not involve finding the toolbar button.
+    PullToRefreshBox(
+        isRefreshing = page.isLoading,
+        onRefresh = { onEvent(Event.RefreshClicked(page.localIndex)) },
+        modifier = Modifier.fillMaxSize(),
+    ) {
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
@@ -317,7 +393,7 @@ private fun AccountPageContent(
                     ) { advert ->
                         AdvertCard(
                             advert = advert,
-                            onClick = { onEvent(Event.AdvertClicked(advert)) },
+                            onClick = { onEvent(Event.AdvertClicked(page.localIndex, advert)) },
                         )
                     }
 
@@ -347,6 +423,12 @@ private fun AccountPageContent(
             item {
                 Spacer(modifier = Modifier.height(AppDimens.Spacing.xl3))
             }
+        }
+
+        // Only the first load blanks the page; a pull-to-refresh has its own indicator and must
+        // not hide the list the seller is looking at.
+        if (page.isLoading && !page.hasLoaded) {
+            LoadingOverlay(isLoading = true) {}
         }
     }
 }
@@ -490,13 +572,12 @@ private fun AdvertCard(
     onClick: () -> Unit,
 ) {
     AppCard(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().testTag("my_ads_advert_card"),
         onClick = onClick,
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .alpha(if (advert.canOpen) 1f else 0.62f)
                 .padding(AppDimens.Spacing.xl4),
             horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing.xl4),
             verticalAlignment = Alignment.CenterVertically,
@@ -538,10 +619,7 @@ private fun AdvertCard(
                     label = stringResource(Res.string.my_ads_created_at),
                     value = advert.createdAt,
                 )
-                DateLine(
-                    label = stringResource(Res.string.my_ads_valid_to),
-                    value = advert.validTo,
-                )
+                AdvertExpiryLine(validTo = advert.validTo)
             }
 
             Icon(
@@ -611,37 +689,6 @@ private fun StatusChip(status: AdvertStatus) {
             overflow = TextOverflow.Ellipsis,
         )
     }
-}
-
-@Composable
-private fun statusColor(status: AdvertStatus): Color = when (status) {
-    AdvertStatus.Active -> AppTheme.colors.success
-    AdvertStatus.New,
-    AdvertStatus.Moderated,
-    AdvertStatus.Unconfirmed -> AppTheme.colors.warning
-    AdvertStatus.Limited,
-    AdvertStatus.Unpaid -> AppTheme.colors.warningVariant
-    AdvertStatus.RemovedByUser,
-    AdvertStatus.Outdated,
-    AdvertStatus.Blocked,
-    AdvertStatus.Disabled,
-    AdvertStatus.RemovedByModerator -> AppTheme.colors.error
-    AdvertStatus.Unknown -> AppTheme.colors.primary
-}
-
-private fun statusLabel(status: AdvertStatus): StringResource = when (status) {
-    AdvertStatus.Active -> Res.string.my_ads_status_active
-    AdvertStatus.New -> Res.string.my_ads_status_new
-    AdvertStatus.Limited -> Res.string.my_ads_status_limited
-    AdvertStatus.RemovedByUser -> Res.string.my_ads_status_removed_by_user
-    AdvertStatus.Outdated -> Res.string.my_ads_status_outdated
-    AdvertStatus.Unconfirmed -> Res.string.my_ads_status_unconfirmed
-    AdvertStatus.Unpaid -> Res.string.my_ads_status_unpaid
-    AdvertStatus.Moderated -> Res.string.my_ads_status_moderated
-    AdvertStatus.Blocked -> Res.string.my_ads_status_blocked
-    AdvertStatus.Disabled -> Res.string.my_ads_status_disabled
-    AdvertStatus.RemovedByModerator -> Res.string.my_ads_status_removed_by_moderator
-    AdvertStatus.Unknown -> Res.string.my_ads_status_unknown
 }
 
 @Composable
