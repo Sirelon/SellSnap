@@ -33,6 +33,7 @@ import com.sirelon.sellsnap.analytics.AnalyticsEvents
 import com.sirelon.sellsnap.features.seller.ad.publish_success.AdvertStatus
 import com.sirelon.sellsnap.features.seller.my_ads.data.AdvertLifecycleRepository
 import com.sirelon.sellsnap.features.seller.my_ads.domain.AdvertAction
+import com.sirelon.sellsnap.features.common.presentation.awaitEffect
 import com.sirelon.sellsnap.features.seller.my_ads.presentation.MyAdvertsContract.Event
 import com.sirelon.sellsnap.features.seller.my_ads.data.AdvertOutcomeStore
 import com.sirelon.sellsnap.features.seller.profile.data.SellerAccountRepository
@@ -574,7 +575,7 @@ class MyAdvertsViewModelTest {
 
         // Awaited, not drained: the message is resolved through compose-resources `getString`.
         // The list refetch is kicked off after it, so drain once more for that.
-        viewModel.effects.filterIsInstance<MyAdvertsContract.Effect.ShowMessage>().first()
+        viewModel.effects.awaitEffect<MyAdvertsContract.Effect.ShowMessage>()
         advanceUntilIdle()
 
         assertTrue(calls.any { it.startsWith("POST") && it.endsWith("/commands") })
@@ -869,7 +870,7 @@ class MyAdvertsViewModelTest {
 
         // Refusing to navigate left the seller with no way to reach a listing under review at
         // all. Their own OLX listings page is where it is visible, so that is where they go.
-        val opened = viewModel.effects.filterIsInstance<MyAdvertsContract.Effect.OpenUrl>().first()
+        val opened = viewModel.effects.awaitEffect<MyAdvertsContract.Effect.OpenUrl>()
         assertEquals("https://www.olx.ua/myaccount/", opened.url)
         // The sheet gets out of the way, or the browser hand-off is swallowed by its scrim.
         assertNull(viewModel.state.value.advertSheet)
@@ -912,7 +913,7 @@ class MyAdvertsViewModelTest {
         runCurrent()
         viewModel.onEvent(Event.ActionConfirmed)
 
-        viewModel.effects.filterIsInstance<MyAdvertsContract.Effect.ShowMessage>().first()
+        viewModel.effects.awaitEffect<MyAdvertsContract.Effect.ShowMessage>()
         advanceUntilIdle()
 
         assertTrue(listReads > afterFirstLoad, "reactivate must refetch the list")
@@ -951,7 +952,7 @@ class MyAdvertsViewModelTest {
         runCurrent()
         viewModel.onEvent(Event.SoldAnswered(isSold = false))
 
-        viewModel.effects.filterIsInstance<MyAdvertsContract.Effect.ShowMessage>().first()
+        viewModel.effects.awaitEffect<MyAdvertsContract.Effect.ShowMessage>()
         advanceUntilIdle()
 
         // The refetch happened and still said `active`; the row holds the new status anyway.
@@ -1108,7 +1109,7 @@ class MyAdvertsViewModelTest {
         // Awaited, not drained: the confirmation message is resolved through compose-resources
         // `getString`, which hops off the test dispatcher, so `runCurrent()` can return before
         // the action has finished reporting itself.
-        viewModel.effects.filterIsInstance<MyAdvertsContract.Effect.ShowMessage>().first()
+        viewModel.effects.awaitEffect<MyAdvertsContract.Effect.ShowMessage>()
 
         assertEquals(1, commandsSent)
         assertEquals("success", analytics.paramsFor(AnalyticsEvents.ADVERT_ACTION)?.get("result"))

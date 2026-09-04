@@ -284,6 +284,9 @@ class PreviewAdViewModelTest {
         val outcome = viewModel.effects.first {
             it is PreviewAdEffect.PublishNeedsReconnect || it is PreviewAdEffect.PublishFailure
         }
+        // The other tests in this file still drain-then-assert on effects, which is the trap
+        // `awaitEffect` exists for - see AwaitEffect.kt. They pass today because their effects
+        // carry no compose-resources text; adding any would make them flaky.
 
         val reconnect = assertIs<PreviewAdEffect.PublishNeedsReconnect>(outcome)
         assertTrue(reconnect.message.contains("Seller One"))
