@@ -76,10 +76,40 @@ internal class OlxAdvertDetailResponse(
 }
 
 /**
- * Top-level keys `GET adverts/{id}` returns that `PUT adverts/{id}` does not accept, per the
- * OpenAPI spec's `Advert` schema vs the update request body. Stripped before an edit is sent back.
+ * The top-level keys `PUT adverts/{id}` documents in its request body, per the OpenAPI spec. An
+ * edit sends these and nothing else.
+ *
+ * An allowlist rather than a list of keys to strip. Blind echoing of the whole `GET` response was
+ * refused by OLX with "compound forms expect an array or NULL on submission" - a Symfony Forms
+ * error meaning some nested field received the wrong kind of value. Rather than hunt the one
+ * offending key, only documented keys are sent, which removes the whole class: a field OLX returns
+ * but its update form does not model can no longer reach the request.
+ *
+ * Every documented key is still forwarded when present, so the reason for echoing in the first
+ * place holds - `PUT` resets what it is not sent, and a seller changing their price must not lose
+ * their delivery settings or attributes.
+ *
+ * Keys deliberately absent because the response carries them and the request does not: `id`,
+ * `status`, `url`, `created_at`, `activated_at`, `valid_to`.
  */
-internal val AdvertResponseOnlyKeys = setOf("id", "status", "url", "created_at", "activated_at", "valid_to")
+internal val AdvertUpdateAllowedKeys = setOf(
+    "title",
+    "description",
+    "category_id",
+    "advertiser_type",
+    "external_url",
+    "external_id",
+    "contact",
+    "location",
+    "images",
+    "price",
+    "salary",
+    "attributes",
+    "courier",
+    "ad_delivery",
+    "auto_extend_enabled",
+    "product_safety_regulation",
+)
 
 /**
  * The same, nested inside `ad_delivery`. `delivery_change_allowed` is OLX reporting whether

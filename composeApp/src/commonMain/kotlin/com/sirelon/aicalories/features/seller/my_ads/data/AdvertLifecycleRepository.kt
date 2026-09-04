@@ -4,7 +4,6 @@ import com.sirelon.sellsnap.features.seller.auth.data.AdvertCommand
 import com.sirelon.sellsnap.features.seller.auth.data.AdvertEditSnapshot
 import com.sirelon.sellsnap.features.seller.auth.data.OlxApiClient
 import com.sirelon.sellsnap.features.seller.my_ads.domain.AdvertAction
-import com.sirelon.sellsnap.features.seller.auth.data.response.AdvertResponseOnlyKeys
 import com.sirelon.sellsnap.features.seller.auth.data.response.AdvertDeliveryResponseOnlyKeys
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxAdvertStatistics
 import com.sirelon.sellsnap.features.seller.my_ads.model.MyAdvertItem
