@@ -522,6 +522,125 @@ class MyAdvertsViewModelTest {
     }
 
     @Test
+    fun `a delete OLX refuses on status is retried the documented way, by taking the listing down first`() =
+        runTest(testDispatcher) {
+            // Observed on a real account: a listing under moderation is offered Delete, and OLX
+            // refuses the DELETE even though the docs name only `active` as non-deletable. The
+            // documented way to remove an advert is deactivate then delete, so that is what a
+            // refusal on `field: ad` falls back to rather than dead-ending on the seller.
+            val calls = mutableListOf<String>()
+            var deactivated = false
+            val engine = mockEngine(testDispatcher) {
+                addHandler { request ->
+                    val path = request.url.encodedPath
+                    calls += "${request.method.value} $path"
+                    when {
+                        path.endsWith("/commands") -> {
+                            deactivated = true
+                            respond("", status = HttpStatusCode.NoContent)
+                        }
+
+                        path.endsWith("/statistics") ->
+                            respond(statisticsJson(0, 0, 0), status = HttpStatusCode.OK, headers = jsonHeaders())
+
+                        request.method == io.ktor.http.HttpMethod.Delete ->
+                            if (deactivated) {
+                                respond("", status = HttpStatusCode.NoContent)
+                            } else {
+                                respond(
+                                    """{"error":{"status":400,"title":"Invalid request","validation":[{"field":"ad","title":"Invalid status"}]}}""",
+                                    status = HttpStatusCode.BadRequest,
+                                    headers = jsonHeaders(),
+                                )
+                            }
+
+                        else -> respond(
+                            if (deactivated) """{"data":[]}""" else advertsJson(111L, status = "new"),
+                            status = HttpStatusCode.OK,
+                            headers = jsonHeaders(),
+                        )
+                    }
+                }
+            }
+            val (viewModel, _) = setUpViewModel(
+                engine = engine,
+                accounts = listOf(account(localIndex = 1, olxUserId = 1L, accessToken = "token-1")),
+                activeIndex = 1,
+            )
+            runCurrent()
+
+            val advert = viewModel.state.value.pages.single().adverts.single()
+            assertEquals(AdvertStatus.New, advert.status)
+            viewModel.onEvent(Event.AdvertClicked(localIndex = 1, advert = advert))
+            runCurrent()
+            viewModel.onEvent(Event.ActionClicked(AdvertAction.Delete))
+            runCurrent()
+            viewModel.onEvent(Event.ActionConfirmed)
+
+            viewModel.effects.awaitEffect<MyAdvertsContract.Effect.ShowMessage>()
+            advanceUntilIdle()
+
+            // A listing awaiting moderation never reached a buyer, so it is taken down as unsold
+            // without asking - "did it sell?" is a question about a listing buyers could see.
+            assertNull(viewModel.state.value.soldPrompt)
+            assertEquals(
+                listOf("DELETE", "POST", "DELETE"),
+                calls.filter { it.startsWith("DELETE") || it.endsWith("/commands") }
+                    .map { it.substringBefore(" ") },
+            )
+            assertTrue(viewModel.state.value.pages.single().adverts.isEmpty())
+        }
+
+    @Test
+    fun `a delete refused for anything other than the status is not answered with a deactivate`() =
+        runTest(testDispatcher) {
+            // The fallback exists for one documented refusal. Sending a deactivate after any
+            // failure would take a listing down for something as unrelated as a dead token.
+            val calls = mutableListOf<String>()
+            val engine = mockEngine(testDispatcher) {
+                addHandler { request ->
+                    val path = request.url.encodedPath
+                    calls += "${request.method.value} $path"
+                    when {
+                        path.endsWith("/statistics") ->
+                            respond(statisticsJson(0, 0, 0), status = HttpStatusCode.OK, headers = jsonHeaders())
+
+                        request.method == io.ktor.http.HttpMethod.Delete -> respond(
+                            """{"error":{"status":400,"title":"Invalid request","validation":[{"field":"id","title":"Advert does not belong to this user"}]}}""",
+                            status = HttpStatusCode.BadRequest,
+                            headers = jsonHeaders(),
+                        )
+
+                        else -> respond(
+                            advertsJson(111L, status = "removed_by_user"),
+                            status = HttpStatusCode.OK,
+                            headers = jsonHeaders(),
+                        )
+                    }
+                }
+            }
+            val (viewModel, _) = setUpViewModel(
+                engine = engine,
+                accounts = listOf(account(localIndex = 1, olxUserId = 1L, accessToken = "token-1")),
+                activeIndex = 1,
+            )
+            runCurrent()
+
+            val advert = viewModel.state.value.pages.single().adverts.single()
+            viewModel.onEvent(Event.AdvertClicked(localIndex = 1, advert = advert))
+            runCurrent()
+            viewModel.onEvent(Event.ActionClicked(AdvertAction.Delete))
+            runCurrent()
+            viewModel.onEvent(Event.ActionConfirmed)
+            advanceUntilIdle()
+
+            assertTrue(calls.none { it.endsWith("/commands") }, calls.toString())
+            // Still there, and the sheet carries OLX's own reason where the seller can read it.
+            assertEquals(1, viewModel.state.value.pages.single().adverts.size)
+            assertNotNull(assertNotNull(viewModel.state.value.advertSheet).errorMessage)
+        }
+
+    @Test
     fun `deleting a live listing deactivates first and says so plainly when only that half lands`() = runTest(testDispatcher) {
         val calls = mutableListOf<String>()
         // The deactivate leg lands, so OLX now reports it inactive through the list; the delete

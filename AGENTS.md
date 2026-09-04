@@ -29,6 +29,10 @@ Each one is checkable. Where you cannot show it was met, say so (rule 7).
    what was observed, what produced it — before touching code again.
 9. A gotcha that cost more than one attempt is written into this file, or the matching
    `.claude/rules/` file, in the same commit as the fix.
+10. **Read the source, not a summary of it.** A schema, a status list, a limit: quote it from
+    the spec file, fetched and opened and searched. A tool that answers in prose has already
+    dropped whatever you did not know to ask about. Three fixes in a row were refused by OLX
+    because each came from a paraphrase rather than from the schema. See OLX partner API.
 
 Small fixes with obvious files: read the implementation and its immediate callers only,
 validate with the narrowest meaningful build or test command plus `git diff --check`, and skip
@@ -370,9 +374,16 @@ the rest is how this app shipped two wrong status meanings.
   a single global assumption. A feature that works in Poland may be refused in Romania.
 - The only market difference found so far is the `extend` command, which the specs annotate as
   unavailable in UA and PT. That is one data point, not a guarantee that the rest is uniform.
-- The OpenAPI yaml is `https://developer.olx.<tld>/swagger/v2/partner_api.yaml`, and nested
-  `$ref` files resolve against the same path. Plain `curl` gets a CloudFront 403; fetch through a
-  tool that renders (WebFetch, or context7 `/websites/developer_olx_pl_api_doc`).
+- **Read the yaml itself.** It is at `https://developer.olx.<tld>/swagger/v2/partner_api.yaml`,
+  nested `$ref` files resolve against the same path, and plain `curl` gets a CloudFront 403.
+  `curl https://r.jina.ai/<url>` returns the whole file - about 145 KB - and from there the schema
+  is `grep -n` and `sed -n` like any other file. WebFetch and context7 answer in prose: they
+  summarize, and the summary is where `location`'s real position, the absence of `ad_delivery`
+  from the update schema, and the `value`/`values` split all went missing. Each was five lines of
+  yaml and each cost a release.
+- A request body this app assembles is pinned by a test against the spec's own example payload -
+  `AdvertUpdateBodyTest` is the pattern. A body whose only check is installing on a phone is a
+  guess with a delay attached.
 - Cite the portal and section in the KDoc next to the code that relies on the fact, and mark
   anything you could not confirm `Inferred:` (rule 3). Do not invent a restriction the API does
   not state (rule 4).

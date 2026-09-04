@@ -3,6 +3,8 @@ package com.sirelon.sellsnap.features.seller.my_ads.data
 import com.sirelon.sellsnap.features.seller.auth.data.AdvertCommand
 import com.sirelon.sellsnap.features.seller.auth.data.AdvertEditSnapshot
 import com.sirelon.sellsnap.features.seller.auth.data.OlxApiClient
+import com.sirelon.sellsnap.features.seller.auth.domain.OlxApiError
+import com.sirelon.sellsnap.features.seller.auth.domain.OlxApiException
 import com.sirelon.sellsnap.features.seller.my_ads.domain.AdvertAction
 import com.sirelon.sellsnap.features.seller.auth.data.response.AdvertUpdateNestedKeys
 import com.sirelon.sellsnap.features.seller.auth.data.response.AdvertUpdateOptionalKeys
@@ -63,24 +65,46 @@ internal class AdvertLifecycleRepository(
         sendCommand(localIndex, advertId, AdvertCommand.Extend, isSuccess = null)
 
     /**
-     * [isActive] decides whether the deactivate half is needed at all, and [isSuccess] answers
-     * OLX's "did it sell?" for that half. Deleting an already-inactive advert is a single call and
-     * never asks.
+     * OLX documents deactivate-then-delete as *the* way to remove an advert, with `DELETE` alone
+     * accepted only while the advert is not `active`. [isActive] therefore decides whether the
+     * deactivate half is needed up front, and [isSuccess] answers OLX's "did it sell?" for it.
+     *
+     * A listing that is not active can still be refused - a listing under moderation was, on a
+     * real account, even though the docs name only `active` as non-deletable ("e.g. `active`" is
+     * how they put it, so the list is open). OLX reports that refusal against `field: ad`, and the
+     * answer to it is the documented removal path: take the listing down first, then delete. So a
+     * refusal on `ad` retries as deactivate-then-delete instead of dead-ending, and any other
+     * failure is passed straight through rather than being met with a command the seller did not
+     * ask for.
      */
     suspend fun delete(localIndex: Int, advertId: Long, isActive: Boolean, isSuccess: Boolean?) {
         if (isActive) {
-            sendCommand(localIndex, advertId, AdvertCommand.Deactivate, isSuccess ?: false)
+            deactivateThenDelete(localIndex, advertId, isSuccess ?: false)
+            return
         }
 
         try {
-            accountRepository.withAccountToken(localIndex) { accessToken ->
-                unauthenticatedOlxApiClient.deleteAdvert(accessToken, advertId)
-            }
+            deleteAdvert(localIndex, advertId)
         } catch (error: Throwable) {
-            if (isActive) throw AdvertDeactivatedNotDeleted(error)
-            throw error
+            if (!error.isAdvertStatusRefusal) throw error
+            deactivateThenDelete(localIndex, advertId, isSuccess ?: false)
         }
     }
+
+    private suspend fun deactivateThenDelete(localIndex: Int, advertId: Long, isSuccess: Boolean) {
+        sendCommand(localIndex, advertId, AdvertCommand.Deactivate, isSuccess)
+
+        try {
+            deleteAdvert(localIndex, advertId)
+        } catch (error: Throwable) {
+            throw AdvertDeactivatedNotDeleted(error)
+        }
+    }
+
+    private suspend fun deleteAdvert(localIndex: Int, advertId: Long) =
+        accountRepository.withAccountToken(localIndex) { accessToken ->
+            unauthenticatedOlxApiClient.deleteAdvert(accessToken, advertId)
+        }
 
     suspend fun statistics(localIndex: Int, advertId: Long): OlxAdvertStatistics =
         accountRepository.withAccountToken(localIndex) { accessToken ->
@@ -150,6 +174,15 @@ internal class AdvertLifecycleRepository(
     private suspend fun refreshOrNull(localIndex: Int, advertId: Long): MyAdvertItem? =
         runCatching { myAdvertsRepository.loadAdvert(localIndex, advertId) }.getOrNull()
 }
+
+/**
+ * Whether OLX refused a request because of the advert's status rather than anything about the
+ * request itself. Both status refusals the docs list - "Ad has to be active" for a deactivate and
+ * "Invalid status" for a delete - are reported against `field: ad`, and the field is the part to
+ * match on: the titles alongside it come back in the market's own language.
+ */
+private val Throwable.isAdvertStatusRefusal: Boolean
+    get() = ((this as? OlxApiException)?.error as? OlxApiError.ValidationError)?.field == "ad"
 
 /**
  * Builds the `PUT adverts/{id}` body from what `GET adverts/{id}` returned, sending only the

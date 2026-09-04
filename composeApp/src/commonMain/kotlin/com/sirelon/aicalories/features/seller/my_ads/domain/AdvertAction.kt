@@ -33,10 +33,12 @@ val AdvertStatus.isLive: Boolean
  * specs as unavailable in UA and PT. The lifecycle text says an expired or seller-removed advert
  * "can be reactivated".
  *
- * **Inferred, not documented.** That Delete works for every non-active state. It follows from the
- * DELETE rule and OLX's own definitions - all of those states are ones OLX describes as not
- * visible to buyers - but no document lists it per status, and it is unverified against a real
- * advert of each kind. A wrong inference here costs one error message quoting OLX, not data.
+ * **Observed, and handled rather than assumed.** `DELETE` is refused for more statuses than
+ * `active`: a listing awaiting moderation was refused on a real account, and the docs leave room
+ * for it by writing "a non-deletable status (e.g. `active`)". Which statuses those are is not
+ * listed anywhere, so Delete is offered for every non-active state and
+ * `AdvertLifecycleRepository.delete` answers a refusal on `field: ad` with OLX's own documented
+ * removal path - deactivate, then delete. Nothing here needs to know the list.
  *
  * **Not restricted by OLX at all.** `PUT adverts/{id}` carries no documented status restriction,
  * and OLX's own web UI lets a seller edit a listing that is under review. Edit is therefore
@@ -57,9 +59,11 @@ val AdvertStatus.isLive: Boolean
  * Delete is offered on `Active` too: OLX only accepts `DELETE` once an advert is inactive, so
  * deleting a live listing deactivates it first - `runConfirmedAction`'s `isLive` branch routes it
  * through the same sold prompt Deactivate uses, and `AdvertLifecycleRepository.delete` sends both
- * calls. `AdvertDeactivatedNotDeleted` covers the deactivate leg landing while the delete leg
- * does not, so the seller is told their listing is down rather than shown a generic failure for
- * an action that half happened.
+ * calls. A listing that was never live is taken down as unsold without the prompt, because "did
+ * it sell?" is a question about a listing buyers could actually see.
+ * `AdvertDeactivatedNotDeleted` covers the deactivate leg landing while the delete leg does not,
+ * so the seller is told their listing is down rather than shown a generic failure for an action
+ * that half happened.
  *
  * `Unknown` gets nothing: an unrecognised status string could be an active advert, and deleting
  * an active advert is the one case OLX documents as refused - and it is not recoverable.

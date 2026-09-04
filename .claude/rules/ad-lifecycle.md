@@ -27,6 +27,12 @@ paths:
 - Deactivate is `Active`-only for a product reason as well as OLX's rule — OLX requires an answer
   to "did it sell?" first, and that question is nonsense for a listing buyers never saw. Delete is
   the equivalent for those.
+- **`DELETE` is refused for more statuses than `active`, and the set is not documented** — the docs
+  say "a non-deletable status (e.g. `active`)", and a listing under moderation was refused on a
+  real account. So no status is withheld from Delete on a guess: `AdvertLifecycleRepository.delete`
+  answers a refusal on `field: ad` with the documented removal path, deactivate then delete, and
+  passes every other failure through untouched. Match on the field, never the title — the titles
+  come back in the market's own language.
 - Everything inferred is watched: `advert_action` logs `result: rejected` with `from_status`, so a
   cell OLX actually refuses shows up as a pattern rather than staying a guess.
 - For a reviewed or rejected listing the sheet prefers OLX's own text from
