@@ -17,6 +17,7 @@ import com.sirelon.sellsnap.features.seller.auth.data.createOlxAuthorizedHttpCli
 import com.sirelon.sellsnap.features.seller.auth.data.createOlxHttpClient
 import com.sirelon.sellsnap.features.seller.auth.presentation.SellerAuthViewModel
 import com.sirelon.sellsnap.features.seller.currency.data.CurrencyRepository
+import com.sirelon.sellsnap.features.seller.my_ads.data.AdvertOutcomeStore
 import io.ktor.client.HttpClient
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.core.qualifier.named
@@ -43,6 +44,7 @@ val sellerAuthModule = module {
     single { BuildConfigOlxCredentialsProvider() } bind OlxCredentialsProvider::class
     single { OlxTokenStore(get()) }
     single { OlxAccountStore(get()) }
+    single { AdvertOutcomeStore(get()) }
     single { OlxAccountMigration(accountStore = get(), legacyTokenStore = get(), countryStore = get()) }
     single { OlxAuthSessionStore(get()) }
     single { GuestModeStore() }

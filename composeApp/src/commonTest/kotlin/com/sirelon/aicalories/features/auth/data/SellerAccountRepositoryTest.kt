@@ -30,6 +30,7 @@ import com.sirelon.sellsnap.features.seller.location.data.LocationRepository
 import com.sirelon.sellsnap.features.seller.location.data.LocationStore
 import com.sirelon.sellsnap.features.seller.profile.data.AddAccountFailureReason
 import com.sirelon.sellsnap.features.seller.profile.data.AddAccountOutcome
+import com.sirelon.sellsnap.features.seller.my_ads.data.AdvertOutcomeStore
 import com.sirelon.sellsnap.features.seller.profile.data.SellerAccountRepository
 import com.sirelon.sellsnap.startup.AnalyticsConsentRepository
 import com.sirelon.sellsnap.startup.AnalyticsConsentStore
@@ -511,6 +512,7 @@ class SellerAccountRepositoryTest {
             locationRepository = locationRepository,
             olxCountryStore = countryStore,
             draftMediaFileStore = FakeDraftMediaFileStore,
+            advertOutcomeStore = AdvertOutcomeStore(InMemoryOlxKeyValueStore(), testJson),
             analyticsConsentRepository = analyticsConsentRepository,
             errorParser = errorParser,
             analytics = analytics,

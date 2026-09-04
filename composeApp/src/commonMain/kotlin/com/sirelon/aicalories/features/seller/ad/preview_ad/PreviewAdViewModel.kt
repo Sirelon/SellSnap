@@ -44,6 +44,7 @@ import com.sirelon.sellsnap.features.seller.categories.domain.AttributeValidator
 import com.sirelon.sellsnap.features.seller.categories.domain.OlxCategory
 import com.sirelon.sellsnap.features.seller.currency.data.CurrencyRepository
 import com.sirelon.sellsnap.features.seller.location.data.LocationRepository
+import com.sirelon.sellsnap.features.seller.my_ads.data.AdvertOutcomeStore
 import com.sirelon.sellsnap.features.seller.openai.AD_GENERATION_MODEL_ID
 import com.sirelon.sellsnap.features.seller.openai.AD_GENERATION_PROMPT_VERSION
 import com.sirelon.sellsnap.features.seller.profile.data.SellerAccountRepository
@@ -76,6 +77,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import kotlin.math.roundToLong
 import kotlin.uuid.Uuid
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
@@ -86,7 +88,7 @@ private const val TitleMinLength = 10
 private const val DescriptionMinLength = 30
 private const val PreviewAdSavedStateKey = "preview_ad_saved_state"
 
-class PreviewAdViewModel(
+class PreviewAdViewModel internal constructor(
     private val filledAdvertisement: AdvertisementWithAttributes,
     private val categoriesRepository: CategoriesRepository,
     private val locationRepository: LocationRepository,
@@ -105,6 +107,11 @@ class PreviewAdViewModel(
     private val analytics: Analytics,
     private val openAiClient: OpenAIClient,
     private val adGenerationLogRepository: AdGenerationLogRepository,
+    // SIR-102: records the AI's price range against the advert id at publish time. Without the
+    // suggestion on file, the "did it sell, and for how much?" answer collected later has nothing
+    // to be compared against, and the suggested -> published -> achieved chain cannot be
+    // reconstructed retroactively.
+    private val advertOutcomeStore: AdvertOutcomeStore,
 ) : BaseViewModel<PreviewAdState, PreviewAdEvent, PreviewAdEffect>() {
 
     private val advertisement = filledAdvertisement.advertisement
@@ -456,9 +463,22 @@ class PreviewAdViewModel(
                 accountName = contactName,
             )
             publishSuccessData.value = successData
+            // Guarded at the call site: this is opportunistic data collection sitting inside the
+            // publish try/catch, and a failure here must never be reported to the seller as a
+            // failed publish for an advert that is already live on OLX.
+            runCatching {
+                advertOutcomeStore.recordPublished(
+                    advertId = data.id,
+                    suggestedPrice = advertisement.suggestedPrice.roundToLong(),
+                    minPrice = advertisement.minPrice.roundToLong(),
+                    maxPrice = advertisement.maxPrice.roundToLong(),
+                    publishedPrice = s.price.roundToLong(),
+                    currency = s.currency.code,
+                )
+            }
             analytics.logEvent(AnalyticsEvents.AD_PUBLISH_SUCCEEDED, mapOf("account_index" to accountIndex))
             s.currentAttemptId?.let { attemptId ->
-                adGenerationLogRepository.markPublished(attemptId, data.id.toString())
+                adGenerationLogRepository.markPublished(attemptId, data.id.toString(), user.id)
             }
             setState { it.copy(isPublishing = false) }
             postEffect(PreviewAdEffect.PublishSuccess(successData))

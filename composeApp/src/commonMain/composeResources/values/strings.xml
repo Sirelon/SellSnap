@@ -134,24 +134,17 @@
     <string name="my_ads_connect_action">Connect OLX</string>
     <string name="my_ads_load_more">Load more</string>
     <string name="my_ads_created_at">Created</string>
-    <string name="my_ads_valid_to">Valid to</string>
     <string name="label_value_format">%1$s: %2$s</string>
     <string name="my_ads_untitled">Untitled OLX ad</string>
     <string name="my_ads_price_not_set">Price not set</string>
-    <string name="my_ads_missing_url">No public link yet — OLX is still processing it.</string>
     <string name="my_ads_load_failed">Couldn't load OLX ads.</string>
     <string name="my_ads_status_active">Active</string>
-    <string name="my_ads_status_new">Under review</string>
-    <string name="my_ads_status_limited">Limited</string>
-    <string name="my_ads_status_removed_by_user">Removed</string>
-    <string name="my_ads_status_outdated">Expired</string>
-    <string name="my_ads_status_unconfirmed">Unconfirmed</string>
-    <string name="my_ads_status_unpaid">Unpaid</string>
-    <string name="my_ads_status_moderated">Moderated</string>
-    <string name="my_ads_status_blocked">Blocked</string>
-    <string name="my_ads_status_disabled">Disabled</string>
-    <string name="my_ads_status_removed_by_moderator">Removed by moderator</string>
-    <string name="my_ads_status_unknown">Pending</string>
+    <string name="my_ads_status_under_review">Under review</string>
+    <string name="my_ads_status_needs_payment">Needs payment</string>
+    <string name="my_ads_status_needs_confirmation">Needs confirmation</string>
+    <string name="my_ads_status_rejected">Rejected</string>
+    <string name="my_ads_status_inactive">Inactive</string>
+    <string name="my_ads_status_unknown">Unknown</string>
 
     <!-- Navigation -->
     <string name="back">Back</string>
@@ -341,4 +334,85 @@
     <string name="my_ads_reconnect_title">Reconnect this account</string>
     <string name="my_ads_reconnect_description">This account\'s OLX connection expired. Reconnect to see its listings.</string>
     <string name="my_ads_load_failed_account">Couldn\'t load ads for %1$s.</string>
+
+    <!-- Ad lifecycle -->
+    <string name="advert_actions_open_on_olx">View on OLX</string>
+    <string name="advert_action_edit">Edit listing</string>
+    <string name="advert_action_extend">Extend for another period</string>
+    <string name="advert_action_deactivate">Take down</string>
+    <string name="advert_action_reactivate">Put back up</string>
+    <string name="advert_action_delete">Delete from OLX</string>
+    <string name="advert_action_in_progress">Working on it…</string>
+
+    <!-- Ad lifecycle — states with nothing to act on. Each says what OLX is doing, not what the app can't do. -->
+    <string name="advert_state_needs_payment">OLX is waiting for payment before it shows this listing to buyers. You can pay on OLX.</string>
+    <string name="advert_state_needs_confirmation">OLX needs you to confirm this listing before buyers can see it. Open it on OLX to confirm.</string>
+    <string name="advert_state_rejected">OLX rejected this listing and emailed you why.</string>
+    <string name="advert_state_unknown">SellSnap can't tell what's happening with this listing. Open it on OLX to check.</string>
+
+    <!-- Ad lifecycle — confirmations. Every one says what happens on OLX. -->
+    <string name="advert_confirm_deactivate_message">Buyers won't see it any more. You can put it back up any time.</string>
+    <string name="advert_confirm_delete_title">Delete this listing from OLX?</string>
+    <string name="advert_confirm_delete_message">Gone from OLX for good — photos, text, everything. This can't be undone.</string>
+    <string name="advert_confirm_delete_message_active">It's still live, so it comes down first, then it's gone for good. This can't be undone.</string>
+    <string name="advert_confirm_delete_action">Delete permanently</string>
+    <string name="advert_confirm_extend_title">Extend this listing?</string>
+    <string name="advert_confirm_extend_message">Your listing gets more time before it expires.</string>
+    <string name="advert_confirm_extend_action">Extend it</string>
+    <string name="advert_confirm_reactivate_title">Put this listing back up?</string>
+    <string name="advert_confirm_reactivate_message">Buyers will see it again, exactly as it was.</string>
+    <string name="advert_confirm_reactivate_action">Put it back up</string>
+    <string name="advert_confirm_cancel">Cancel</string>
+
+    <!-- Ad lifecycle — did it sell? OLX requires this answer before it will take a listing down. -->
+    <string name="advert_sold_prompt_title">Did it sell?</string>
+    <string name="advert_sold_prompt_message">OLX asks before taking a listing down.</string>
+    <string name="advert_sold_prompt_yes">Yes, it sold</string>
+    <string name="advert_sold_prompt_no">No, it didn't sell</string>
+    <string name="advert_sold_price_title">What did it go for?</string>
+    <string name="advert_sold_price_message">Only you see this. It helps SellSnap price your next item better.</string>
+    <string name="advert_sold_price_label">Sold price</string>
+    <string name="advert_sold_price_confirm">Save and take it down</string>
+    <string name="advert_sold_price_skip">Skip</string>
+
+    <!-- Ad lifecycle — results -->
+    <string name="advert_action_done_deactivate">Taken down on OLX.</string>
+    <string name="advert_action_done_reactivate">Back up on OLX.</string>
+    <string name="advert_action_done_delete">Deleted from OLX.</string>
+    <string name="advert_action_done_extend">Extended on OLX.</string>
+    <string name="advert_action_done_edit">Sent your changes to OLX.</string>
+    <string name="advert_action_done_edit_moderated">Sent to OLX. They're reviewing the change before it goes back up.</string>
+    <string name="advert_action_failed">OLX turned down that request: %1$s</string>
+    <string name="advert_action_needs_reconnect">%1$s needs reconnecting on OLX before you can change this listing.</string>
+    <string name="advert_action_failed_generic">Couldn't reach OLX to do that. Try again in a moment.</string>
+    <string name="advert_delete_partial">It's down, but not deleted. Try deleting again.</string>
+
+    <!-- Ad lifecycle — expiry -->
+    <string name="advert_expiry_expired">Expired — buyers can't see it</string>
+    <string name="advert_expiry_today">Expires today</string>
+    <!-- Pluralisation differs across the Slavic locales, so this is a resource plural rather than a composed string. -->
+    <plurals name="advert_expiry_days_left">
+        <item quantity="one">%1$d day left</item>
+        <item quantity="other">%1$d days left</item>
+    </plurals>
+    <string name="advert_extend_unavailable">You can only extend this on OLX, not from here.</string>
+
+    <!-- Ad lifecycle — statistics -->
+    <string name="advert_stats_title">How it's doing</string>
+    <string name="advert_stats_views">Views</string>
+    <string name="advert_stats_phone_views">Phone reveals</string>
+    <string name="advert_stats_observing">Watching</string>
+    <string name="advert_stats_empty">Just published — too early to tell.</string>
+    <string name="advert_stats_failed">Couldn't load the numbers from OLX.</string>
+    <string name="advert_stats_hint_low_views">Few people are finding it. The title, category or price is probably off for how buyers search.</string>
+    <string name="advert_stats_hint_no_calls">Plenty of views, but nobody's asking. Usually the photos or the price are putting people off.</string>
+    <string name="advert_stats_hint_close">People are interested and watching. The price is close — a small drop, or patience, should do it.</string>
+
+    <!-- Ad lifecycle — edit -->
+    <string name="advert_edit_title">Edit listing</string>
+    <string name="advert_edit_title_label">Title</string>
+    <string name="advert_edit_description_label">Description</string>
+    <string name="advert_edit_price_label">Price</string>
+    <string name="advert_edit_save">Send to OLX</string>
+    <string name="advert_edit_load_failed">Couldn't load this listing from OLX.</string>
 </resources>

@@ -71,9 +71,14 @@ class OlxRemoteErrorParser(private val json: Json) {
 
         val fieldErrors = apiError?.error?.validation.orEmpty()
         if (fieldErrors.isNotEmpty()) {
-            val first = fieldErrors.first()
-            val field = first.field ?: "unknown"
-            val detail = first.detail ?: first.title ?: "Invalid value"
+            // Every problem OLX reported, not just the first. Keeping only the first hid the rest,
+            // and when a request is refused for several reasons the others are exactly what is
+            // needed to fix it.
+            val field = fieldErrors.first().field ?: "unknown"
+            val detail = fieldErrors.joinToString("; ") { error ->
+                val text = error.detail ?: error.title ?: "Invalid value"
+                if (fieldErrors.size == 1) text else "${error.field ?: "unknown"}: $text"
+            }
             return OlxApiException(OlxApiError.ValidationError(field, detail))
         }
 

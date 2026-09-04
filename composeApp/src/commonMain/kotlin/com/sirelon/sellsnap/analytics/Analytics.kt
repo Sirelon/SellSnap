@@ -15,6 +15,20 @@ interface Analytics {
 }
 
 /**
+ * Rewrites parameter values into types Firebase actually stores.
+ *
+ * Firebase Analytics accepts only String, long and double event parameters. The gitlive adapter
+ * maps a Kotlin `Boolean` onto `Bundle.putBoolean`, which the SDK then drops - so a boolean param
+ * arrives absent rather than as `false`, which is indistinguishable from the event never carrying
+ * it. Booleans become `"true"`/`"false"` so both values stay queryable, and so the same event
+ * has the same parameter type on Android and iOS.
+ *
+ * Every platform [Analytics] implementation must apply this before handing params to Firebase.
+ */
+internal fun Map<String, Any>.normalizedForFirebase(): Map<String, Any> =
+    mapValues { (_, value) -> if (value is Boolean) value.toString() else value }
+
+/**
  * This app is single-activity/single-ViewController Compose Multiplatform, so Firebase's
  * automatic per-Activity screen tracking never fires. Call this on every navigation change to
  * report screens manually using Firebase's reserved `screen_view` event and param names.

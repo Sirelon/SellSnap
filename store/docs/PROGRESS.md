@@ -13,7 +13,7 @@ Date: 2026-08-03 · Branch: `main`
 Produce App Store–ready screenshots for **iPhone** and **iPad**, per store locale,
 where every caption is *logically bound* to the screen it sits on. Plus a
 copy-paste doc of all store text. Ukrainian is already shipped and out of scope.
-Russian and Kazakh are out of scope.
+russian and Kazakh are out of scope.
 
 ---
 
