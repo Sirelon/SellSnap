@@ -65,6 +65,7 @@ import com.sirelon.sellsnap.generated.resources.error_regenerate_description_fai
 import com.sirelon.sellsnap.generated.resources.validation_error_desc_too_short
 import com.sirelon.sellsnap.generated.resources.validation_error_title_too_short
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
@@ -123,6 +124,7 @@ class PreviewAdViewModel internal constructor(
 
     private val selectedCategoryId = MutableStateFlow<Int?>(null)
     private val publishSuccessData = MutableStateFlow(restoredSavedState.publishSuccessData)
+    private var publishJob: Job? = null
     private var nonGuestSetupStarted = false
     private var currencyLoadStarted = false
     private var skipRestoredTitleSuggestion = restoredSavedState.selectedCategoryId != null
@@ -287,7 +289,14 @@ class PreviewAdViewModel internal constructor(
             PreviewAdEvent.OnChangeCategoryClick -> postEffect(PreviewAdEffect.GoToGategoryPicker)
 
             Publish -> {
-                viewModelScope.launch { publishAdvert() }
+                // OLX creates a new advert per POST - there is no idempotency key on
+                // `POST /partner/adverts` (developer.olx.ua, Adverts / Create advert), so two
+                // deliveries of this event are two live listings. `isPublishing` cannot guard it:
+                // publishAdvert() suspends several times before it sets that flag, and the confirm
+                // sheet stays hit-testable through its dismiss animation, so a double tap lands
+                // inside the gap. The job is the only state that flips synchronously.
+                if (publishJob?.isActive == true) return
+                publishJob = viewModelScope.launch { publishAdvert() }
             }
 
             is PreviewAdEvent.SwitchAccountRequested -> viewModelScope.launch {

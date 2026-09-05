@@ -185,6 +185,47 @@ class PreviewAdViewModelTest {
     }
 
     @Test
+    fun `two Publish events in a row post one advert, not two`() = runTest(testDispatcher) {
+        val accountStore = OlxAccountStore(InMemoryOlxKeyValueStore(), testJson)
+        accountStore.write(
+            OlxAccountsRecord(
+                accounts = listOf(account(localIndex = 1, olxUserId = 100L, accessToken = "token-a")),
+                activeByCountry = mapOf("ua" to 1),
+                nextLocalIndex = 2,
+            ),
+        )
+        var postAdvertRequests = 0
+        val engine = buildEngine {
+            addHandler { request ->
+                when {
+                    request.url.encodedPath.contains("users/me") ->
+                        respond(userJson(id = 100L, name = "Seller"), status = HttpStatusCode.OK, headers = jsonHeaders())
+
+                    request.url.encodedPath.contains("adverts") && request.method == HttpMethod.Post -> {
+                        postAdvertRequests += 1
+                        respond(postAdvertJson(id = 7L), status = HttpStatusCode.OK, headers = jsonHeaders())
+                    }
+
+                    else -> respond("{}", status = HttpStatusCode.OK, headers = jsonHeaders())
+                }
+            }
+        }
+        val harness = harness(engine, accountStore)
+        val viewModel = buildViewModel(harness)
+        viewModel.setState { it.copy(selectedCategory = testCategory, location = testLocation, attributesLoadState = AttributesLoadState.Loaded) }
+        val effects = mutableListOf<PreviewAdEffect>()
+        backgroundScope.launch { viewModel.effects.collect { effects += it } }
+
+        // The seller double-taps Confirm: the sheet is still hit-testable through its dismiss
+        // animation, so both taps reach the ViewModel before the first publish has suspended once.
+        viewModel.onEvent(PreviewAdEvent.Publish)
+        viewModel.onEvent(PreviewAdEvent.Publish)
+        advanceUntilIdle()
+
+        assertEquals(1, postAdvertRequests, "OLX has no idempotency key - a second POST is a second live listing")
+        assertEquals(1, effects.filterIsInstance<PreviewAdEffect.PublishSuccess>().size)
+    }
+    @Test
     fun `publish refuses to POST while the category's attributes have not loaded`() = runTest(testDispatcher) {
         val accountStore = OlxAccountStore(InMemoryOlxKeyValueStore(), testJson)
         accountStore.write(
