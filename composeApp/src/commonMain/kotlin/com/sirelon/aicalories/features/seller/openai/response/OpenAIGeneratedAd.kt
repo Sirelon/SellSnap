@@ -15,4 +15,8 @@ internal class OpenAIGeneratedAd(
     val minPrice: Float?,
     @SerialName("maxPrice")
     val maxPrice: Float?,
+    // Set instead of the listing fields when the photos cannot carry a listing. Every other field
+    // is already nullable, so a refusal payload decodes without a second schema.
+    @SerialName("unrecognized")
+    val unrecognized: String? = null,
 )

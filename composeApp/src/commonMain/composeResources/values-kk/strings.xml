@@ -250,6 +250,8 @@
     <string name="error_upload_file_failed">Фотолардың бірін жүктеу мүмкін болмады.</string>
     <string name="error_publish_failed">Жариялау сәтсіз аяқталды. Қайталап көр.</string>
     <string name="error_generate_ad_failed">Хабарландыруды жасау мүмкін болмады. Қайталап көресің бе?</string>
+    <string name="error_photo_unreadable">Фотодағы затты тани алмадық. Қайта түсіріп көр.</string>
+    <string name="error_photo_different_items">Бұл әртүрлі заттар сияқты. Сатылмайтындарын алып таста.</string>
     <string name="error_regenerate_description_failed">Сипаттаманы қайта жасау мүмкін болмады. Қайталап көресің бе?</string>
     <string name="regenerate_pill_default">Қайта жасау</string>
     <string name="vote_up_label">Пайдалы</string>

@@ -8,11 +8,17 @@ data class AdGenerationAttempt(
     val modelId: String,
     val promptVersion: String,
     val imagePaths: List<String>,
+    val sellerPrompt: String,
     val title: String,
     val description: String,
     val suggestedPrice: Float,
     val minPrice: Float,
     val maxPrice: Float,
+    /**
+     * Reason code when the model declined to write a listing for these photos. Set on a refusal,
+     * where the listing fields are empty; null on every attempt that produced copy.
+     */
+    val unrecognized: String? = null,
 )
 
 /**
@@ -28,11 +34,35 @@ interface AdGenerationLogRepository {
     /** Returns the new document id, or null if the write failed. */
     suspend fun logAttempt(attempt: AdGenerationAttempt): String?
     suspend fun updateVote(attemptId: String, vote: String?)
-    suspend fun markPublished(attemptId: String, publishedAdId: String, olxAccountId: Long?)
+
+    /**
+     * Records the OLX advert this attempt became.
+     *
+     * [publishedAdUrl] is the advert URL as OLX returned it at publish time. `url` is a required
+     * property of the `Advert` schema and `POST adverts` answers with the full advert model
+     * (developer.olx.ua, partner_api.yaml - `Advert` schema and the "Posting Advert" section), so
+     * it arrives at `new` and `limited` too, not only once the advert is `active`.
+     *
+     * Inferred: moderation moves `status` and leaves `url` alone, so the URL survives the
+     * moderation step. A title edit is what can outdate it, since OLX advert URLs carry a title
+     * slug - which is why [publishedAdId] stays the durable key and `GET adverts/{id}` is the way
+     * to the current URL.
+     */
+    suspend fun markPublished(
+        attemptId: String,
+        publishedAdId: String,
+        publishedAdUrl: String?,
+        olxAccountId: Long?,
+    )
 }
 
 object NoOpAdGenerationLogRepository : AdGenerationLogRepository {
     override suspend fun logAttempt(attempt: AdGenerationAttempt): String? = null
     override suspend fun updateVote(attemptId: String, vote: String?) = Unit
-    override suspend fun markPublished(attemptId: String, publishedAdId: String, olxAccountId: Long?) = Unit
+    override suspend fun markPublished(
+        attemptId: String,
+        publishedAdId: String,
+        publishedAdUrl: String?,
+        olxAccountId: Long?,
+    ) = Unit
 }

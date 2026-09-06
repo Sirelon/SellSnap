@@ -252,6 +252,8 @@
     <string name="error_upload_file_failed">Couldn't upload one of the photos.</string>
     <string name="error_publish_failed">Publishing didn't go through. Give it another shot.</string>
     <string name="error_generate_ad_failed">Couldn't generate the ad. Try again?</string>
+    <string name="error_photo_unreadable">Couldn't recognise the item in your photos. Try retaking them.</string>
+    <string name="error_photo_different_items">These look like different items. Remove the ones you're not selling.</string>
     <string name="error_regenerate_description_failed">Couldn't regenerate the description. Try again?</string>
     <string name="regenerate_pill_default">Regenerate</string>
     <string name="vote_up_label">Helpful</string>

@@ -28,15 +28,18 @@ private data class AdGenerationAttemptDocument(
     val modelId: String,
     val promptVersion: String,
     val imagePaths: List<String>,
+    val sellerPrompt: String,
     val title: String,
     val description: String,
     val suggestedPrice: Float,
     val minPrice: Float,
     val maxPrice: Float,
+    val unrecognized: String? = null,
     val vote: String? = null,
     val voteUpdatedAt: Timestamp? = null,
     val didPublish: Boolean = false,
     val publishedAdId: String? = null,
+    val publishedAdUrl: String? = null,
     val olxAccountId: Long? = null,
     val createdAt: Timestamp = Timestamp.now(),
     val expireAt: Timestamp = Timestamp.fromDuration(Timestamp.now().toDuration() + RETENTION),
@@ -60,11 +63,13 @@ internal class FirebaseAdGenerationLogRepository : AdGenerationLogRepository {
             modelId = attempt.modelId,
             promptVersion = attempt.promptVersion,
             imagePaths = attempt.imagePaths,
+            sellerPrompt = attempt.sellerPrompt,
             title = attempt.title,
             description = attempt.description,
             suggestedPrice = attempt.suggestedPrice,
             minPrice = attempt.minPrice,
             maxPrice = attempt.maxPrice,
+            unrecognized = attempt.unrecognized,
         )
         attemptsCollection().document(docId)
             .set(AdGenerationAttemptDocument.serializer(), document) { encodeDefaults = true }
@@ -80,11 +85,17 @@ internal class FirebaseAdGenerationLogRepository : AdGenerationLogRepository {
         }
     }
 
-    override suspend fun markPublished(attemptId: String, publishedAdId: String, olxAccountId: Long?) {
+    override suspend fun markPublished(
+        attemptId: String,
+        publishedAdId: String,
+        publishedAdUrl: String?,
+        olxAccountId: Long?,
+    ) {
         runCatching {
             attemptsCollection().document(attemptId).updateFields {
                 "didPublish" to true
                 "publishedAdId" to publishedAdId
+                "publishedAdUrl" to publishedAdUrl
                 "olxAccountId" to olxAccountId
             }
         }

@@ -16,6 +16,7 @@ import com.sirelon.sellsnap.features.media.upload.UploadedFile
 import com.sirelon.sellsnap.features.media.upload.UploadingItem
 import com.sirelon.sellsnap.features.seller.ad.AdFlowTimerStore
 import com.sirelon.sellsnap.features.seller.ad.AdvertisementWithAttributes
+import com.sirelon.sellsnap.features.seller.ad.data.IncompleteGeneratedAdException
 import com.sirelon.sellsnap.features.seller.ad.generation_log.AdGenerationAttempt
 import com.sirelon.sellsnap.features.seller.ad.generation_log.AdGenerationLogRepository
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAuthRepository
@@ -27,16 +28,21 @@ import com.sirelon.sellsnap.features.seller.categories.data.CategoriesRepository
 import com.sirelon.sellsnap.features.seller.categories.data.UnsupportedOlxCategoryException
 import com.sirelon.sellsnap.features.seller.openai.AD_GENERATION_MODEL_ID
 import com.sirelon.sellsnap.features.seller.openai.AD_GENERATION_PROMPT_VERSION
+import com.sirelon.sellsnap.features.seller.openai.AdAnalysis
 import com.sirelon.sellsnap.features.seller.openai.OpenAIClient
+import com.sirelon.sellsnap.features.seller.openai.UnusablePhotoReason
 import com.sirelon.sellsnap.generated.resources.Res
 import com.sirelon.sellsnap.generated.resources.error_category_not_supported
 import com.sirelon.sellsnap.generated.resources.error_generate_ad_failed
+import com.sirelon.sellsnap.generated.resources.error_photo_different_items
+import com.sirelon.sellsnap.generated.resources.error_photo_unreadable
 import com.sirelon.sellsnap.generated.resources.error_selected_files_process_failed
 import com.sirelon.sellsnap.generated.resources.error_upload_file_failed
 import kotlin.uuid.Uuid
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
@@ -49,6 +55,7 @@ import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
+import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.getString
 
 private const val GuestProcessingStepCount = 3
@@ -176,8 +183,23 @@ class GenerateAdViewModel(
             .map { uploadFilesAndGetPublicUrls() }
             .onEach { setState { it.copy(completedSteps = 1) } }
 
-            .map { openAi.analyzeThing(images = it, sellerPrompt = state.value.prompt, country = countryStore.current) }
-            .onEach { (_, generatedAd) ->
+            .map { images ->
+                images to openAi.analyzeThing(
+                    images = images,
+                    sellerPrompt = state.value.prompt,
+                    country = countryStore.current,
+                )
+            }
+
+            .flatMapLatest { (images, analysis) ->
+                if (analysis is AdAnalysis.Unusable) {
+                    // The seller has something to fix, so the flow stops here rather than opening a
+                    // preview of a listing the model never managed to write.
+                    logUnusablePhotos(analysis.reason, generationSessionId, images)
+                    return@flatMapLatest emptyFlow()
+                }
+
+                val generatedAd = (analysis as AdAnalysis.Generated).advertisement
                 setState { it.copy(completedSteps = 2) }
                 generationAttemptId = adGenerationLogRepository.logAttempt(
                     AdGenerationAttempt(
@@ -188,6 +210,7 @@ class GenerateAdViewModel(
                         modelId = AD_GENERATION_MODEL_ID,
                         promptVersion = AD_GENERATION_PROMPT_VERSION,
                         imagePaths = generatedAd.images,
+                        sellerPrompt = state.value.prompt,
                         title = generatedAd.title,
                         description = generatedAd.description,
                         suggestedPrice = generatedAd.suggestedPrice,
@@ -195,13 +218,11 @@ class GenerateAdViewModel(
                         maxPrice = generatedAd.maxPrice,
                     )
                 )
-            }
 
-            .flatMapLatest { data ->
                 if (isGuest) {
                     flowOf(
                         AdvertisementWithAttributes(
-                            advertisement = data.second,
+                            advertisement = generatedAd,
                             filledAttributes = emptyMap(),
                             sellerPrompt = state.value.prompt,
                             generationSessionId = generationSessionId,
@@ -212,14 +233,14 @@ class GenerateAdViewModel(
                     }
                 } else {
                     categoriesRepository
-                        .categorySuggestion(data.second.title)
+                        .categorySuggestion(generatedAd.title)
                         .onEach { setState { it.copy(completedSteps = 3) } }
 
                         .flatMapLatest { categoriesRepository.getAttributes(it.id) }
                         .onEach { setState { it.copy(completedSteps = 4) } }
                         .map {
                             openAi.fillAdditionalInfo(
-                                previousResponseId = data.first,
+                                previousResponseId = analysis.responseId,
                                 attributes = it,
                                 sellerPrompt = state.value.prompt
                             )
@@ -227,7 +248,7 @@ class GenerateAdViewModel(
                         .onEach { setState { it.copy(completedSteps = AuthenticatedProcessingStepCount) } }
                         .map {
                             AdvertisementWithAttributes(
-                                advertisement = data.second,
+                                advertisement = generatedAd,
                                 filledAttributes = it,
                                 sellerPrompt = state.value.prompt,
                                 generationSessionId = generationSessionId,
@@ -396,6 +417,42 @@ class GenerateAdViewModel(
         postEffect(GenerateAdContract.GenerateAdEffect.ShowMessage(message))
     }
 
+    /**
+     * The model read the photos and declined to write a listing. That is an outcome the seller can
+     * act on, not a breakage, so it carries its own event and never counts as a generation failure.
+     * The attempt is still recorded - reason set, copy empty - so refusals stay measurable next to
+     * the attempts that did produce a listing.
+     */
+    private suspend fun logUnusablePhotos(
+        reason: UnusablePhotoReason,
+        generationSessionId: String,
+        images: List<String>,
+    ) {
+        adGenerationLogRepository.logAttempt(
+            AdGenerationAttempt(
+                sessionId = generationSessionId,
+                attemptNumber = 0,
+                previousAttemptId = null,
+                countryCode = countryStore.current.code,
+                modelId = AD_GENERATION_MODEL_ID,
+                promptVersion = AD_GENERATION_PROMPT_VERSION,
+                imagePaths = images,
+                sellerPrompt = state.value.prompt,
+                title = "",
+                description = "",
+                suggestedPrice = 0f,
+                minPrice = 0f,
+                maxPrice = 0f,
+                unrecognized = reason.code,
+            )
+        )
+        analytics.logEvent(
+            AnalyticsEvents.AD_GENERATION_PHOTOS_UNUSABLE,
+            mapOf("reason" to reason.code),
+        )
+        showError(getString(reason.messageRes))
+    }
+
     private fun showError(message: String) {
         setState { it.copy(errorMessage = message) }
         postEffect(GenerateAdContract.GenerateAdEffect.ShowMessage(message))
@@ -412,6 +469,7 @@ class GenerateAdViewModel(
 
     private fun Throwable.toFailureReason(): String = when {
         this is UnsupportedOlxCategoryException -> "unsupported_category"
+        this is IncompleteGeneratedAdException -> "incomplete_ad"
         message?.startsWith(OpenAIRequestFailedPrefix) == true -> "openai_error"
         else -> "other"
     }
@@ -474,3 +532,18 @@ class GenerateAdViewModel(
         return readSavedState().photos.firstOrNull { it.path == path }
     }
 }
+
+/**
+ * Blur, darkness and an empty frame are one state to the seller - the photo did not work, take
+ * another - so they share a message. The codes stay separate in the generation log, where telling
+ * them apart is what would justify ever splitting the copy again.
+ */
+private val UnusablePhotoReason.messageRes: StringResource
+    get() = when (this) {
+        UnusablePhotoReason.TooBlurry,
+        UnusablePhotoReason.TooDark,
+        UnusablePhotoReason.NotAnItem,
+        -> Res.string.error_photo_unreadable
+
+        UnusablePhotoReason.DifferentItems -> Res.string.error_photo_different_items
+    }
