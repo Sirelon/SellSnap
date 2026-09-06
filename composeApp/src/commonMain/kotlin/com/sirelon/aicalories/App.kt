@@ -457,9 +457,9 @@ fun App() {
                                     // Pop first: PublishingScreen() renders inside the PreviewAd
                                     // entry underneath, so leaving this sheet up would hide the
                                     // loading state (and any failure snackbar/Reconnect action)
-                                    // behind the sheet's scrim - see PreviewAdEvent.Publish's lack
-                                    // of a re-entry guard for why a stuck sheet also risks a
-                                    // double-publish.
+                                    // behind the sheet's scrim. A tap that still lands on this
+                                    // button while it animates away is caught by
+                                    // PreviewAdEvent.Publish's re-entry guard.
                                     if (navVm.backStack.lastOrNull() is AppKey.PreviewPublishConfirm) {
                                         navVm.popDestination()
                                     }

@@ -291,10 +291,11 @@ class PreviewAdViewModel internal constructor(
             Publish -> {
                 // OLX creates a new advert per POST - there is no idempotency key on
                 // `POST /partner/adverts` (developer.olx.ua, Adverts / Create advert), so two
-                // deliveries of this event are two live listings. `isPublishing` cannot guard it:
-                // publishAdvert() suspends several times before it sets that flag, and the confirm
-                // sheet stays hit-testable through its dismiss animation, so a double tap lands
-                // inside the gap. The job is the only state that flips synchronously.
+                // deliveries of this event are two live listings, and the confirm sheet stays
+                // hit-testable through its dismiss animation. Guarding on the job rather than on
+                // `isPublishing` keeps that independent of the dispatcher: `launch` marks the job
+                // active synchronously, while `isPublishing` is only set once the coroutine body
+                // actually runs.
                 if (publishJob?.isActive == true) return
                 publishJob = viewModelScope.launch { publishAdvert() }
             }
