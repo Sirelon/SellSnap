@@ -43,7 +43,7 @@ navigation3Ui = "1.2.0-alpha02"
 # https://github.com/MohamedRejeb/Calf/releases
 calf = "0.13.0"
 # https://github.com/supabase-community/supabase-kt/releases
-supabase = "3.7.0"
+supabase = "3.8.0"
 # https://github.com/yshrsmz/BuildKonfig/releases
 buildKonfig = "0.22.0"
 
