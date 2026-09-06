@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.sirelon.sellsnap.analytics.Analytics
 import com.sirelon.sellsnap.analytics.AnalyticsEvents
 import com.sirelon.sellsnap.features.common.presentation.BaseViewModel
+import com.sirelon.sellsnap.features.review.ReviewPromptCoordinator
 import com.sirelon.sellsnap.features.seller.ad.AdFlowTimerStore
 import com.sirelon.sellsnap.features.seller.ad.AdvertisementWithAttributes
 import com.sirelon.sellsnap.features.seller.ad.ScreenshotPlaceholderAccount
@@ -114,6 +115,10 @@ class PreviewAdViewModel internal constructor(
     // to be compared against, and the suggested -> published -> achieved chain cannot be
     // reconstructed retroactively.
     private val advertOutcomeStore: AdvertOutcomeStore,
+    // Counts successful publishes and records that a publish failed this session - the two inputs
+    // the store-review gate cannot get anywhere else, since this is the only place that knows a
+    // POST landed. See ReviewPromptGate.
+    private val reviewPromptCoordinator: ReviewPromptCoordinator,
 ) : BaseViewModel<PreviewAdState, PreviewAdEvent, PreviewAdEffect>() {
 
     private val advertisement = filledAdvertisement.advertisement
@@ -487,6 +492,9 @@ class PreviewAdViewModel internal constructor(
                     currency = s.currency.code,
                 )
             }
+            // Same guard and same reason as recordPublished above: a DataStore write failing must
+            // never be reported as a failed publish for an advert that is already live.
+            runCatching { reviewPromptCoordinator.onPublishSucceeded() }
             analytics.logEvent(AnalyticsEvents.AD_PUBLISH_SUCCEEDED, mapOf("account_index" to accountIndex))
             s.currentAttemptId?.let { attemptId ->
                 adGenerationLogRepository.markPublished(
@@ -500,6 +508,7 @@ class PreviewAdViewModel internal constructor(
             postEffect(PreviewAdEffect.PublishSuccess(successData))
         } catch (error: Throwable) {
             val olxError = (error as? OlxApiException)?.error
+            reviewPromptCoordinator.onPublishFailed()
             analytics.recordException(error, AnalyticsEvents.AD_PUBLISH_FAILED)
             analytics.logEvent(
                 AnalyticsEvents.AD_PUBLISH_FAILED,

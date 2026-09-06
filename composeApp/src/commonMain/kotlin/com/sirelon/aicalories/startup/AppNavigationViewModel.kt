@@ -6,6 +6,7 @@ import androidx.lifecycle.serialization.saved
 import androidx.lifecycle.viewModelScope
 import androidx.navigation3.runtime.NavBackStack
 import com.sirelon.sellsnap.config.AppConfig
+import com.sirelon.sellsnap.features.review.ReviewPromptCoordinator
 import com.sirelon.sellsnap.features.seller.ad.AdFlowTimerStore
 import com.sirelon.sellsnap.features.media.SharedImagesBridge
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountMigration
@@ -32,6 +33,7 @@ class AppNavigationViewModel(
     private val olxAccountMigration: OlxAccountMigration,
     private val sellerAccountRepository: SellerAccountRepository,
     private val whatsNewStore: WhatsNewStore,
+    private val reviewPromptCoordinator: ReviewPromptCoordinator,
 ) : ViewModel() {
 
     // Owns the real back stack directly (persisted across process death via SavedStateHandle) -
@@ -136,8 +138,13 @@ class AppNavigationViewModel(
     }
 
     private suspend fun resolveStartupDestination() {
+        val hasSeenOnboarding = startupStore.hasSeenOnboarding()
+        // Read before the marker is written below, which makes it the answer to "has this app ever
+        // been opened before?" - the store-review gate's strongest signal, for free and without a
+        // second stored key. See ReviewPromptGate.
+        reviewPromptCoordinator.isReturningSession = hasSeenOnboarding
         val initial: AppKey = when {
-            !startupStore.hasSeenOnboarding() -> {
+            !hasSeenOnboarding -> {
                 startupStore.markOnboardingSeen()
                 // A fresh install has nothing to catch up on — seed the marker so the
                 // What's New prompt never fires for this, the user's very first session.

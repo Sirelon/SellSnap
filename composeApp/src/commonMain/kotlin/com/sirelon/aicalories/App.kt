@@ -55,6 +55,7 @@ import com.sirelon.sellsnap.designsystem.screens.LoadingOverlay
 import com.sirelon.sellsnap.di.appModule
 import com.sirelon.sellsnap.di.networkModule
 import com.sirelon.sellsnap.features.consent.ConsentScreen
+import com.sirelon.sellsnap.features.review.StoreReviewPromptEffect
 import com.sirelon.sellsnap.features.seller.ad.generate_ad.GenerateAdScreen
 import com.sirelon.sellsnap.features.seller.ad.preview_ad.PreviewAdContentRoute
 import com.sirelon.sellsnap.features.seller.ad.preview_ad.PreviewAdContract
@@ -605,6 +606,7 @@ fun App() {
                         }
 
                         entry<AppKey.SellerPublishSuccess> { destination ->
+                            StoreReviewPromptEffect()
                             PublishSuccessScreen(
                                 data = destination.data,
                                 onViewOnOlx = {

@@ -49,6 +49,8 @@ buildKonfig = "0.22.0"
 
 compose = "1.12.0-rc01"
 playServicesLocation = "21.4.0"
+# https://developer.android.com/guide/playcore/in-app-review
+playReview = "2.0.2"
 # https://github.com/GitLiveApp/firebase-kotlin-sdk/releases
 gitliveFirebase = "2.6.0"
 googleServices = "4.5.0"
@@ -125,6 +127,7 @@ supabase-compose-auth-ui = { module = "io.github.jan-tennert.supabase:compose-au
 supabase-coil3-integration = { module = "io.github.jan-tennert.supabase:coil3-integration", version.ref = "supabase" }
 supabase-realtime = { module = "io.github.jan-tennert.supabase:realtime-kt", version.ref = "supabase" }
 play-services-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "playServicesLocation" }
+play-review-ktx = { module = "com.google.android.play:review-ktx", version.ref = "playReview" }
 gitlive-firebase-analytics = { module = "dev.gitlive:firebase-analytics", version.ref = "gitliveFirebase" }
 gitlive-firebase-crashlytics = { module = "dev.gitlive:firebase-crashlytics", version.ref = "gitliveFirebase" }
 gitlive-firebase-storage = { module = "dev.gitlive:firebase-storage", version.ref = "gitliveFirebase" }

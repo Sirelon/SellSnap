@@ -77,4 +77,15 @@ object AnalyticsEvents {
     /** `fields_changed` (count), `was_price_only`. Answers whether a price-only quick edit is the
      * right primary path. */
     const val ADVERT_EDITED = "advert_edited"
+
+    // Store-review prompt. The native APIs report nothing back - not whether the sheet was shown,
+    // not whether a rating was left - so `requested` is the furthest this can ever be tracked, and
+    // the skip `reason` histogram is the only way to tell a gate that is working from one that has
+    // silently starved. Cross-check the actual counts in App Store Connect / Play Console.
+
+    /** Carries `publish_count` and `returning_session`. */
+    const val REVIEW_PROMPT_REQUESTED = "review_prompt_requested"
+
+    /** Carries `reason` - see ReviewPromptSkipReason. */
+    const val REVIEW_PROMPT_SKIPPED = "review_prompt_skipped"
 }

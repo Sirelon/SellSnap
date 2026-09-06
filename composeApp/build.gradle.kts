@@ -136,6 +136,7 @@ kotlin {
             implementation(libs.ktor.client.okhttp)
             implementation(libs.kotlinx.coroutines.android)
             implementation(libs.play.services.location)
+            implementation(libs.play.review.ktx)
             implementation(project.dependencies.platform(libs.firebase.bom))
             implementation(libs.gitlive.firebase.analytics)
             implementation(libs.gitlive.firebase.crashlytics)
