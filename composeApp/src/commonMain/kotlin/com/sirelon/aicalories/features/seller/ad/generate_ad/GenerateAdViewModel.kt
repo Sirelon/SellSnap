@@ -16,6 +16,7 @@ import com.sirelon.sellsnap.features.media.upload.UploadedFile
 import com.sirelon.sellsnap.features.media.upload.UploadingItem
 import com.sirelon.sellsnap.features.seller.ad.AdFlowTimerStore
 import com.sirelon.sellsnap.features.seller.ad.AdvertisementWithAttributes
+import com.sirelon.sellsnap.features.seller.ad.data.IncompleteGeneratedAdException
 import com.sirelon.sellsnap.features.seller.ad.generation_log.AdGenerationAttempt
 import com.sirelon.sellsnap.features.seller.ad.generation_log.AdGenerationLogRepository
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAuthRepository
@@ -468,6 +469,7 @@ class GenerateAdViewModel(
 
     private fun Throwable.toFailureReason(): String = when {
         this is UnsupportedOlxCategoryException -> "unsupported_category"
+        this is IncompleteGeneratedAdException -> "incomplete_ad"
         message?.startsWith(OpenAIRequestFailedPrefix) == true -> "openai_error"
         else -> "other"
     }
