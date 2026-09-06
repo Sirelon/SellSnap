@@ -28,7 +28,7 @@ const val AD_GENERATION_MODEL_ID = "gpt-4.1"
 
 // Bump whenever adGenerationInstructions changes, so ad-generation-log records stay attributable
 // to the exact prompt that produced them.
-const val AD_GENERATION_PROMPT_VERSION = "v2"
+const val AD_GENERATION_PROMPT_VERSION = "v3"
 
 private val DEFAULT_MODEL = ModelId(AD_GENERATION_MODEL_ID)
 private const val DEFAULT_IMAGE_DETAIL = "high"
@@ -38,10 +38,23 @@ private fun adGenerationInstructions(country: OlxCountry): String = """
 You are writing a single second-hand listing for OLX ${country.nameEn}.
 Write like a real private seller talking about their own item — warm, concrete, specific.
 Do not sound like a product catalogue, an image caption, or a bot.
+Warmth comes from plain, specific language about what is actually in front of you, never from invented history.
 
 You have two sources:
 - The photos of the item.
 - An optional seller note (free text) that the seller wrote about this exact item.
+
+When the photos cannot carry a listing, say so instead of writing one. Return only:
+  {"unrecognized":"<code>"}
+with exactly one of these codes:
+- too_blurry: too out of focus or motion-blurred to make out what the item is.
+- too_dark: too dark or too blown out to make out what the item is.
+- not_an_item: nothing sellable in frame — a bare wall, a floor, the sky, a person on their own.
+- different_items: the photos show unrelated items rather than one item from several angles.
+
+Refuse only when one of those plainly applies. A usable photo of an ordinary item is never a refusal, and clutter or a busy background is not `different_items` — pick the main item and write the listing.
+A seller note that names the item is enough to write a listing even from poor photos: when a note names it, write the listing rather than refusing.
+`different_items` is the one exception — report it even when a seller note is present, because every photo the seller uploaded is published alongside the listing.
 
 If the seller note is present, treat it as the source of truth.
 - Preserve the seller's exact tokens for brand, model, size, condition, and purchase age.
@@ -58,14 +71,17 @@ Output fields:
 Guardrails:
 - Every statement in the title and description must be supported by the seller note or clearly visible in the photos. If it is not, leave it out. This is absolute — an accurate short listing beats a fuller one containing anything you filled in yourself.
 - This applies to the whole listing, not only the item. Unless the seller note states it, never mention: a city, district, region, or any pickup location; delivery, shipping, courier, or postage; payment methods; warranty, receipts, or original packaging; the reason for selling.
+- With no seller note you know nothing beyond the photos. Do not write how long the item was owned or used, how often it was worn, what it was bought for, who used it, or why it is being sold. Phrases like "barely worn", "used a couple of times", or "selling because I bought another one" are inventions unless the seller wrote them.
 - ${country.nameEn} is the marketplace, not a fact about this seller. Never turn it into a place the item is located or can be collected from.
 - Do not invent brand, size, material, defects, or condition.
 - Do not infer the season of clothing unless the seller says so or the photos make it unmistakable.
 - If uncertain, simply omit it rather than guessing.
 - Do not add filler phrases that are generic placeholders — write only real content.
 
-Return ONLY valid JSON with this exact shape:
+Return ONLY valid JSON. A listing has this exact shape:
   {"title":"string","description":"string","suggestedPrice":number,"minPrice":number,"maxPrice":number}
+A refusal has this exact shape:
+  {"unrecognized":"string"}
 The response must start with `{` and end with `}`.
 """
 
@@ -95,6 +111,32 @@ Return ONLY valid JSON with this exact shape:
   {"attributes":[{"code":"string","valueCodes":["string"],"valueText":"string","confidence":"high|medium|low"}]}
 The response must start with `{` and end with `}`.
 """
+
+/**
+ * Why the model declined to write a listing rather than inventing one. [code] is the wire value
+ * the prompt tells the model to answer with.
+ */
+enum class UnusablePhotoReason(val code: String) {
+    TooBlurry("too_blurry"),
+    TooDark("too_dark"),
+    NotAnItem("not_an_item"),
+    DifferentItems("different_items");
+
+    internal companion object {
+        fun from(code: String): UnusablePhotoReason? {
+            val normalized = code.trim().lowercase()
+            return entries.firstOrNull { it.code == normalized }
+        }
+    }
+}
+
+/** The two outcomes of reading a seller's photos. */
+sealed interface AdAnalysis {
+    /** [responseId] chains the attribute-fill turn onto the same thread. */
+    data class Generated(val responseId: ResponseId, val advertisement: Advertisement) : AdAnalysis
+
+    data class Unusable(val reason: UnusablePhotoReason) : AdAnalysis
+}
 
 class OpenAIClient(
     private val openAI: OpenAI,
@@ -146,7 +188,7 @@ class OpenAIClient(
         country: OlxCountry,
         model: ModelId = DEFAULT_MODEL,
         imageDetail: String = DEFAULT_IMAGE_DETAIL,
-    ): Pair<ResponseId, Advertisement> {
+    ): AdAnalysis {
         require(images.isNotEmpty()) { "At least one image is required to generate an advertisement." }
         require(model.id != "gpt-4") {
             "Legacy gpt-4 does not support image input or structured outputs for this flow. Use gpt-4.1, gpt-4o, or a newer model."
@@ -177,7 +219,18 @@ class OpenAIClient(
 
         val listingJson = extractTextPayload(listingResponse)
         val generatedAd = json.decodeFromString<OpenAIGeneratedAd>(listingJson)
-        return listingResponse.id to mapper.mapToDomain(generatedAd, images)
+
+        val refusalCode = generatedAd.unrecognized?.trim()?.takeIf { it.isNotEmpty() }
+        if (refusalCode != null) {
+            // A refusal we cannot name has no message to show, and mapping it to a listing would
+            // put the placeholder title back in front of the seller - the thing this branch exists
+            // to stop. Fail loudly instead, so the unknown code surfaces.
+            val reason = UnusablePhotoReason.from(refusalCode)
+                ?: error("Ad generation refused with an unknown code: " + refusalCode)
+            return AdAnalysis.Unusable(reason)
+        }
+
+        return AdAnalysis.Generated(listingResponse.id, mapper.mapToDomain(generatedAd, images))
     }
 
     private fun createListingAnalysisUserItem(

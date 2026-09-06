@@ -45,6 +45,7 @@ import com.sirelon.sellsnap.features.seller.currency.data.CurrencyRepository
 import com.sirelon.sellsnap.features.seller.location.data.LocationRepository
 import com.sirelon.sellsnap.features.seller.my_ads.data.AdvertOutcomeStore
 import com.sirelon.sellsnap.features.seller.openai.AD_GENERATION_MODEL_ID
+import com.sirelon.sellsnap.features.seller.openai.AdAnalysis
 import com.sirelon.sellsnap.features.seller.openai.AD_GENERATION_PROMPT_VERSION
 import com.sirelon.sellsnap.features.seller.profile.data.SellerAccountRepository
 import com.sirelon.sellsnap.features.seller.openai.OpenAIClient
@@ -461,7 +462,12 @@ class PreviewAdViewModel internal constructor(
             }
             analytics.logEvent(AnalyticsEvents.AD_PUBLISH_SUCCEEDED, mapOf("account_index" to accountIndex))
             s.currentAttemptId?.let { attemptId ->
-                adGenerationLogRepository.markPublished(attemptId, data.id.toString(), user.id)
+                adGenerationLogRepository.markPublished(
+                    attemptId = attemptId,
+                    publishedAdId = data.id.toString(),
+                    publishedAdUrl = data.url,
+                    olxAccountId = user.id,
+                )
             }
             setState { it.copy(isPublishing = false) }
             postEffect(PreviewAdEffect.PublishSuccess(successData))
@@ -550,11 +556,22 @@ class PreviewAdViewModel internal constructor(
         setState { it.copy(isRegeneratingDescription = true) }
         analytics.logEvent(AnalyticsEvents.AD_DESCRIPTION_REGENERATE_STARTED)
         try {
-            val (_, generated) = openAiClient.analyzeThing(
+            val analysis = openAiClient.analyzeThing(
                 images = advertisement.images,
                 sellerPrompt = filledAdvertisement.sellerPrompt,
                 country = olxCountryStore.current,
             )
+            // These photos already carried a listing once, so a refusal here is a regeneration that
+            // did not work rather than a fresh verdict on the photos: the seller keeps the text they
+            // have and can try again, instead of being sent back to re-shoot.
+            val generated = when (analysis) {
+                is AdAnalysis.Generated -> analysis.advertisement
+                is AdAnalysis.Unusable -> {
+                    analytics.logEvent(AnalyticsEvents.AD_DESCRIPTION_REGENERATE_FAILED)
+                    postEffect(ShowMessage(getString(Res.string.error_regenerate_description_failed)))
+                    return
+                }
+            }
             descriptionState.setTextAndPlaceCursorAtEnd(generated.description)
             val attemptNumber = currentState().regenerationCount + 1
             val attemptId = adGenerationLogRepository.logAttempt(
@@ -566,6 +583,7 @@ class PreviewAdViewModel internal constructor(
                     modelId = AD_GENERATION_MODEL_ID,
                     promptVersion = AD_GENERATION_PROMPT_VERSION,
                     imagePaths = advertisement.images,
+                    sellerPrompt = filledAdvertisement.sellerPrompt,
                     title = generated.title,
                     description = generated.description,
                     suggestedPrice = generated.suggestedPrice,

@@ -250,6 +250,8 @@
     <string name="error_upload_file_failed">Não foi possível carregar uma das fotos.</string>
     <string name="error_publish_failed">A publicação não foi concluída. Tente novamente.</string>
     <string name="error_generate_ad_failed">Não foi possível gerar o anúncio. Tentar novamente?</string>
+    <string name="error_photo_unreadable">Não conseguimos reconhecer o artigo nas tuas fotos. Tenta tirá-las de novo.</string>
+    <string name="error_photo_different_items">Parecem ser artigos diferentes. Remove os que não estás a vender.</string>
     <string name="error_regenerate_description_failed">Não foi possível gerar a descrição novamente. Tentar de novo?</string>
     <string name="regenerate_pill_default">Gerar novamente</string>
     <string name="vote_up_label">Útil</string>
