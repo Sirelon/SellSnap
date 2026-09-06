@@ -46,6 +46,16 @@ enum class GeneratedContentVote { Up, Down }
 interface PreviewAdContract {
 
     @Immutable
+    /**
+     * Whether the attribute list for [PreviewAdState.selectedCategory] has actually been fetched.
+     *
+     * Publish validation iterates [PreviewAdState.attributeItems], so an empty list reports zero
+     * errors - while OLX enforces `required` attributes at POST time (`state` and `size` are both
+     * required on Moda > Buty damskie, for example). Without this, a category whose attributes
+     * failed to load publishes an advert OLX is guaranteed to reject.
+     */
+    enum class AttributesLoadState { Loading, Loaded, Failed }
+
     data class PreviewAdState(
         val categoryLabel: String,
         val selectedCategory: OlxCategory? = null,
@@ -60,6 +70,7 @@ interface PreviewAdContract {
         val location: OlxLocation? = null,
         val locationLoading: Boolean = false,
         val attributeItems: List<OlxAttributeState> = emptyList(),
+        val attributesLoadState: AttributesLoadState = AttributesLoadState.Loading,
         val isGuest: Boolean = false,
         // SIR-83: the account new listings will publish to. Shown only when there is a real
         // decision to make - i.e. screenshotMode (placeholder identity) or 2+ connected accounts

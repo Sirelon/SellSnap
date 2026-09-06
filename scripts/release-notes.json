@@ -1,5 +1,367 @@
 [
   {
+    "version": "3.2",
+    "date": "2026-09-04",
+    "active": true,
+    "changes": [
+      {
+        "id": "manage-listings-after-publishing",
+        "icon": "feature",
+        "title": {
+          "en": "Manage listings after they go live",
+          "uk": "Керуйте оголошеннями після публікації",
+          "ru": "Керуйте оголошеннями після публікації",
+          "bg": "Управлявай обявите след публикуване",
+          "kk": "Хабарландыруларды жарияланғаннан кейін де басқар",
+          "pl": "Zarządzaj ogłoszeniami po ich publikacji",
+          "pt": "Gerir anúncios depois de publicados",
+          "ro": "Gestionează anunțurile după publicare"
+        },
+        "summary": {
+          "en": "Edit, take down, put back up, extend or delete any listing straight from My ads.",
+          "uk": "Редагуйте, знімайте з публікації, відновлюйте, продовжуйте чи видаляйте будь-яке оголошення прямо з «Моїх оголошень».",
+          "ru": "Редагуйте, знімайте з публікації, відновлюйте, продовжуйте чи видаляйте будь-яке оголошення прямо з «Моїх оголошень».",
+          "bg": "Редактирай, деактивирай, активирай отново, удължавай или изтривай всяка обява директно от „Моите обяви“.",
+          "kk": "«Менің хабарландыруларым» бөлімінен кез келген хабарландыруды өңде, тоқтата тұр, қайта қос, ұзарт немесе жой.",
+          "pl": "Edytuj, wstrzymuj, wznawiaj, przedłużaj lub usuwaj dowolne ogłoszenie prosto z „Moich ogłoszeń”.",
+          "pt": "Edite, retire, reative, prolongue ou elimine qualquer anúncio diretamente em «Os meus anúncios».",
+          "ro": "Editează, retrage, reactivează, prelungește sau șterge orice anunț direct din „Anunțurile mele”."
+        },
+        "detail": {
+          "en": "Tap a listing to open its actions. Taking one down asks whether it sold — you can note what it went for, which only you see and which helps SellSnap price your next item.",
+          "uk": "Торкніться оголошення, щоб відкрити дії з ним. Якщо знімаєте з публікації, ми запитаємо, чи продане воно — можна вказати ціну продажу: це бачите лише ви, і це допомагає SellSnap краще оцінити вашу наступну річ.",
+          "ru": "Торкніться оголошення, щоб відкрити дії з ним. Якщо знімаєте з публікації, ми запитаємо, чи продане воно — можна вказати ціну продажу: це бачите лише ви, і це допомагає SellSnap краще оцінити вашу наступну річ.",
+          "bg": "Докосни обява, за да отвориш действията ѝ. Ако я деактивираш, ще те попитаме дали е продадена — можеш да въведеш цената, за която е излязла: само ти я виждаш и тя помага на SellSnap да предложи по-добра цена следващия път.",
+          "kk": "Әрекеттерін ашу үшін хабарландыруды түрт. Тоқтата тұрған кезде сатылды ма деп сұраймыз — қанша бағаға сатылғанын жаза аласың: мұны тек өзің көресің, әрі бұл SellSnap-қа келесі затыңа бағаны дәлірек ұсынуға көмектеседі.",
+          "pl": "Dotknij ogłoszenia, aby otworzyć dostępne działania. Wstrzymanie ogłoszenia pyta, czy zostało sprzedane — możesz podać cenę sprzedaży: widzisz to tylko Ty, a to pomaga SellSnap lepiej wycenić Twoją następną rzecz.",
+          "pt": "Toque num anúncio para abrir as suas ações. Ao retirá-lo, perguntamos se foi vendido — pode indicar o preço de venda: só você vê isto, e ajuda o SellSnap a sugerir um preço melhor no próximo artigo.",
+          "ro": "Atinge un anunț pentru a-i deschide acțiunile. Retragerea unui anunț te întreabă dacă s-a vândut — poți nota prețul la care s-a vândut: doar tu vezi asta, iar informația îl ajută pe SellSnap să stabilească un preț mai bun pentru următorul obiect."
+        }
+      },
+      {
+        "id": "listing-status-explained",
+        "icon": "improvement",
+        "title": {
+          "en": "See exactly where each listing stands",
+          "uk": "Точний статус кожного оголошення",
+          "ru": "Точний статус кожного оголошення",
+          "bg": "Виж точния статус на всяка обява",
+          "kk": "Әр хабарландырудың нақты жағдайын көр",
+          "pl": "Zobacz dokładny status każdego ogłoszenia",
+          "pt": "Veja exatamente o estado de cada anúncio",
+          "ro": "Vezi exact în ce stadiu este fiecare anunț"
+        },
+        "summary": {
+          "en": "Every listing now shows a plain status — under review, needs payment, rejected — and what to do about it.",
+          "uk": "Тепер кожне оголошення показує зрозумілий статус — на модерації, очікує оплати, відхилено — і що з цим робити.",
+          "ru": "Тепер кожне оголошення показує зрозумілий статус — на модерації, очікує оплати, відхилено — і що з цим робити.",
+          "bg": "Всяка обява вече показва ясен статус — при проверка, очаква плащане, отхвърлена — и какво да направиш с него.",
+          "kk": "Енді әр хабарландыру түсінікті мәртебені көрсетеді — қарастырылуда, төлем қажет, қабылданбады — және не істеу керектігін де.",
+          "pl": "Każde ogłoszenie pokazuje teraz jasny status — w trakcie weryfikacji, wymaga opłaty, odrzucone — i co z tym zrobić.",
+          "pt": "Cada anúncio mostra agora um estado claro — em revisão, por pagar, rejeitado — e o que fazer a seguir.",
+          "ro": "Fiecare anunț arată acum un status clar — în curs de revizuire, de plătit, respins — și ce ai de făcut."
+        },
+        "detail": {
+          "en": "When OLX reviews or rejects a listing, SellSnap shows OLX's own explanation, along with how long the listing has left before it expires.",
+          "uk": "Коли OLX перевіряє або відхиляє оголошення, SellSnap показує саме пояснення OLX, а також скільки часу залишилось до завершення терміну.",
+          "ru": "Коли OLX перевіряє або відхиляє оголошення, SellSnap показує саме пояснення OLX, а також скільки часу залишилось до завершення терміну.",
+          "bg": "Когато OLX прегледа или отхвърли обява, SellSnap показва обяснението на самия OLX, както и колко време остава на обявата преди да изтече.",
+          "kk": "OLX хабарландыруды қарастырғанда немесе қабылдамағанда, SellSnap OLX-тің өз түсіндірмесін, сондай-ақ хабарландырудың мерзімі аяқталғанға дейін қанша уақыт қалғанын көрсетеді.",
+          "pl": "Gdy OLX weryfikuje lub odrzuca ogłoszenie, SellSnap pokazuje wyjaśnienie samego OLX oraz ile czasu zostało do wygaśnięcia ogłoszenia.",
+          "pt": "Quando o OLX revê ou rejeita um anúncio, o SellSnap mostra a explicação do próprio OLX, além do tempo que falta até o anúncio expirar.",
+          "ro": "Când OLX revizuiește sau respinge un anunț, SellSnap arată explicația chiar de la OLX, plus cât timp mai are anunțul până expiră."
+        }
+      },
+      {
+        "id": "listing-stats",
+        "icon": "feature",
+        "title": {
+          "en": "Views and contacts for every listing",
+          "uk": "Перегляди й контакти для кожного оголошення",
+          "ru": "Перегляди й контакти для кожного оголошення",
+          "bg": "Разглеждания и контакти за всяка обява",
+          "kk": "Әр хабарландыру үшін қараулар мен контактілер",
+          "pl": "Wyświetlenia i kontakty dla każdego ogłoszenia",
+          "pt": "Visualizações e contactos de cada anúncio",
+          "ro": "Vizualizări și contacte pentru fiecare anunț"
+        },
+        "summary": {
+          "en": "See how many people viewed a listing, asked for your number or saved it, plus a hint on what to change.",
+          "uk": "Дивіться, скільки людей переглянули оголошення, запитали ваш номер або зберегли його, плюс підказку, що варто змінити.",
+          "ru": "Дивіться, скільки людей переглянули оголошення, запитали ваш номер або зберегли його, плюс підказку, що варто змінити.",
+          "bg": "Виж колко хора са разгледали обявата, поискали са телефона ти или са я запазили, плюс подсказка какво да промениш.",
+          "kk": "Хабарландыруды неше адам қарағанын, нөміріңді сұрағанын немесе сақтағанын, әрі не өзгерту керектігі туралы кеңесті көр.",
+          "pl": "Zobacz, ile osób wyświetliło ogłoszenie, poprosiło o Twój numer lub je zapisało, plus podpowiedź, co zmienić.",
+          "pt": "Veja quantas pessoas viram um anúncio, pediram o seu número ou o guardaram, mais uma sugestão do que mudar.",
+          "ro": "Vezi câți oameni au văzut un anunț, ți-au cerut numărul sau l-au salvat, plus un indiciu despre ce să schimbi."
+        }
+      },
+      {
+        "id": "fix-publish-before-attributes-load",
+        "icon": "fix",
+        "title": {
+          "en": "No more instant rejections from OLX",
+          "uk": "Більше жодних миттєвих відмов від OLX",
+          "ru": "Більше жодних миттєвих відмов від OLX",
+          "bg": "Край на моменталните откази от OLX",
+          "kk": "OLX-тен лезде бас тарту енді жоқ",
+          "pl": "Koniec z natychmiastowymi odrzuceniami przez OLX",
+          "pt": "Chega de rejeições instantâneas do OLX",
+          "ro": "Gata cu respingerile instantanee de la OLX"
+        },
+        "summary": {
+          "en": "SellSnap now waits for a category's required details to load before letting you publish.",
+          "uk": "SellSnap тепер чекає, поки завантажаться обов'язкові поля категорії, перш ніж дозволити публікацію.",
+          "ru": "SellSnap тепер чекає, поки завантажаться обов'язкові поля категорії, перш ніж дозволити публікацію.",
+          "bg": "SellSnap вече изчаква задължителните детайли на категорията да се заредят, преди да позволи публикуване.",
+          "kk": "SellSnap енді жариялауға рұқсат бермес бұрын санаттың міндетті сипаттамалары жүктелгенін күтеді.",
+          "pl": "SellSnap czeka teraz na załadowanie wymaganych szczegółów kategorii, zanim pozwoli opublikować.",
+          "pt": "O SellSnap agora espera que os detalhes obrigatórios da categoria carreguem antes de permitir publicar.",
+          "ro": "SellSnap așteaptă acum ca detaliile obligatorii ale categoriei să se încarce înainte să te lase să publici."
+        },
+        "detail": {
+          "en": "Publishing without them meant OLX rejected the listing straight away for a field you were never shown. If those details fail to load, you now see it right where the fields belong.",
+          "uk": "Без них публікація закінчувалася миттєвою відмовою OLX через поле, якого ви навіть не бачили. Якщо ці дані не завантажаться, тепер ви побачите це саме там, де мають бути поля.",
+          "ru": "Без них публікація закінчувалася миттєвою відмовою OLX через поле, якого ви навіть не бачили. Якщо ці дані не завантажаться, тепер ви побачите це саме там, де мають бути поля.",
+          "bg": "Публикуването без тях означаваше моментален отказ от OLX заради поле, което дори не си виждал. Ако тези детайли не се заредят, вече ще видиш това точно където трябва да бъдат полетата.",
+          "kk": "Оларсыз жариялау саған көрсетілмеген өріс үшін OLX-тің лезде бас тартуына әкелетін. Егер бұл сипаттамалар жүктелмесе, енді мұны дәл өрістер тұрған жерде көресің.",
+          "pl": "Publikacja bez nich kończyła się natychmiastowym odrzuceniem przez OLX z powodu pola, którego nigdy nie widziałeś. Jeśli te szczegóły nie załadują się, zobaczysz to teraz dokładnie tam, gdzie powinny być pola.",
+          "pt": "Publicar sem eles fazia o OLX rejeitar o anúncio de imediato por um campo que nunca lhe foi mostrado. Se esses detalhes não carregarem, agora vê isso mesmo onde os campos deveriam estar.",
+          "ro": "Publicarea fără ele însemna respingerea instantanee de către OLX pentru un câmp pe care nu l-ai văzut niciodată. Dacă acele detalii nu se încarcă, acum vezi asta exact acolo unde ar trebui să fie câmpurile."
+        }
+      },
+      {
+        "id": "fix-ios-external-links",
+        "icon": "fix",
+        "title": {
+          "en": "Links open again on iPhone",
+          "uk": "Посилання знову відкриваються на iPhone",
+          "ru": "Посилання знову відкриваються на iPhone",
+          "bg": "Линковете отново работят на iPhone",
+          "kk": "Сілтемелер iPhone-да қайта ашылады",
+          "pl": "Linki znów działają na iPhonie",
+          "pt": "Os links voltam a abrir no iPhone",
+          "ro": "Linkurile se deschid din nou pe iPhone"
+        },
+        "summary": {
+          "en": "Tapping \"View on OLX\", or any other link out of the app, did nothing on iPhone. Fixed.",
+          "uk": "Дотик на «Подивитись на OLX» чи будь-яке інше зовнішнє посилання нічого не робив на iPhone. Виправлено.",
+          "ru": "Дотик на «Подивитись на OLX» чи будь-яке інше зовнішнє посилання нічого не робив на iPhone. Виправлено.",
+          "bg": "Докосването на „Виж в OLX“ или на всеки друг линк извън приложението не правеше нищо на iPhone. Поправено.",
+          "kk": "«OLX-те қарау» немесе кез келген басқа сыртқы сілтемені түрту iPhone-да ештеңе істемейтін. Түзетілді.",
+          "pl": "Dotknięcie „Zobacz na OLX” lub dowolnego innego linku poza aplikacją nic nie robiło na iPhonie. Naprawione.",
+          "pt": "Tocar em «Ver no OLX», ou em qualquer outro link fora da app, não fazia nada no iPhone. Corrigido.",
+          "ro": "Atingerea „Vezi pe OLX”, sau a oricărui alt link către exterior, nu făcea nimic pe iPhone. Rezolvat."
+        }
+      },
+      {
+        "id": "all-validation-errors-shown",
+        "icon": "improvement",
+        "title": {
+          "en": "Every problem at once",
+          "uk": "Усі помилки одразу",
+          "ru": "Усі помилки одразу",
+          "bg": "Всички проблеми наведнъж",
+          "kk": "Барлық қате бірден",
+          "pl": "Wszystkie problemy naraz",
+          "pt": "Todos os problemas de uma vez",
+          "ro": "Toate problemele deodată"
+        },
+        "summary": {
+          "en": "When OLX turns a listing down for several reasons, SellSnap now shows all of them instead of only the first.",
+          "uk": "Коли OLX відхиляє оголошення з кількох причин, SellSnap тепер показує їх усі, а не лише першу.",
+          "ru": "Коли OLX відхиляє оголошення з кількох причин, SellSnap тепер показує їх усі, а не лише першу.",
+          "bg": "Когато OLX откаже обява по няколко причини, SellSnap вече показва всички, а не само първата.",
+          "kk": "OLX хабарландыруды бірнеше себеппен қабылдамағанда, SellSnap енді тек біріншісін емес, барлығын көрсетеді.",
+          "pl": "Gdy OLX odrzuca ogłoszenie z kilku powodów, SellSnap pokazuje teraz wszystkie, a nie tylko pierwszy.",
+          "pt": "Quando o OLX rejeita um anúncio por vários motivos, o SellSnap mostra agora todos, e não só o primeiro.",
+          "ro": "Când OLX respinge un anunț din mai multe motive, SellSnap le arată acum pe toate, nu doar pe primul."
+        }
+      },
+      {
+        "id": "pull-to-refresh-my-ads",
+        "icon": "improvement",
+        "title": {
+          "en": "Pull to refresh My ads",
+          "uk": "Потягніть, щоб оновити «Мої оголошення»",
+          "ru": "Потягніть, щоб оновити «Мої оголошення»",
+          "bg": "Дръпни, за да опресниш „Моите обяви“",
+          "kk": "«Менің хабарландыруларымды» жаңарту үшін төмен тарт",
+          "pl": "Przeciągnij, by odświeżyć „Moje ogłoszenia”",
+          "pt": "Puxe para atualizar «Os meus anúncios»",
+          "ro": "Trage pentru a reîmprospăta „Anunțurile mele”"
+        },
+        "summary": {
+          "en": "Pull down on any account's page to reload its listings.",
+          "uk": "Потягніть вниз на сторінці будь-якого акаунта, щоб оновити його оголошення.",
+          "ru": "Потягніть вниз на сторінці будь-якого акаунта, щоб оновити його оголошення.",
+          "bg": "Дръпни надолу на страницата на който и да е акаунт, за да презаредиш обявите му.",
+          "kk": "Кез келген аккаунттың бетінде төмен тарт — хабарландырулары қайта жүктеледі.",
+          "pl": "Przeciągnij w dół na stronie dowolnego konta, aby odświeżyć jego ogłoszenia.",
+          "pt": "Puxe para baixo na página de qualquer conta para recarregar os seus anúncios.",
+          "ro": "Trage în jos pe pagina oricărui cont pentru a-i reîncărca anunțurile."
+        }
+      }
+    ]
+  },
+  {
+    "version": "3.1",
+    "date": "2026-09-02",
+    "active": true,
+    "changes": [
+      {
+        "id": "share-photos-into-sellsnap",
+        "icon": "upload",
+        "title": {
+          "en": "Start a listing from your gallery",
+          "uk": "Почніть оголошення прямо з галереї",
+          "ru": "Почніть оголошення прямо з галереї",
+          "bg": "Започни обява направо от галерията",
+          "kk": "Хабарландыруды галереядан баста",
+          "pl": "Zacznij ogłoszenie prosto z galerii",
+          "pt": "Comece um anúncio a partir da galeria",
+          "ro": "Începe un anunț direct din galerie"
+        },
+        "summary": {
+          "en": "Share photos from your gallery or any other app straight into SellSnap to begin a listing.",
+          "uk": "Поділіться фото з галереї чи будь-якого іншого застосунку прямо в SellSnap, щоб почати оголошення.",
+          "ru": "Поділіться фото з галереї чи будь-якого іншого застосунку прямо в SellSnap, щоб почати оголошення.",
+          "bg": "Сподели снимки от галерията или от друго приложение директно в SellSnap, за да започнеш обява.",
+          "kk": "Суреттерді галереядан немесе басқа қолданбадан тікелей SellSnap-қа бөлісіп, хабарландыру бастай аласың.",
+          "pl": "Udostępnij zdjęcia z galerii lub dowolnej innej aplikacji prosto do SellSnap, aby zacząć ogłoszenie.",
+          "pt": "Partilhe fotos da galeria ou de qualquer outra app diretamente para o SellSnap para começar um anúncio.",
+          "ro": "Distribuie fotografii din galerie sau din orice altă aplicație direct în SellSnap pentru a începe un anunț."
+        },
+        "detail": {
+          "en": "On Android, pick SellSnap from the share sheet. On iPhone, share the photos and tap the notification to carry on in the app.",
+          "uk": "На Android оберіть SellSnap у меню «Поділитися». На iPhone поділіться фото й торкніться сповіщення, щоб продовжити в застосунку.",
+          "ru": "На Android оберіть SellSnap у меню «Поділитися». На iPhone поділіться фото й торкніться сповіщення, щоб продовжити в застосунку.",
+          "bg": "На Android избери SellSnap от менюто за споделяне. На iPhone сподели снимките и докосни известието, за да продължиш в приложението.",
+          "kk": "Android-те бөлісу мәзірінен SellSnap-ты таңда. iPhone-да суреттерді бөлісіп, қолданбада жалғастыру үшін хабарламаны түрт.",
+          "pl": "Na Androidzie wybierz SellSnap z listy udostępniania. Na iPhonie udostępnij zdjęcia i dotknij powiadomienia, aby kontynuować w aplikacji.",
+          "pt": "No Android, escolha o SellSnap no menu de partilha. No iPhone, partilhe as fotos e toque na notificação para continuar na app.",
+          "ro": "Pe Android, alege SellSnap din meniul de distribuire. Pe iPhone, distribuie fotografiile și atinge notificarea pentru a continua în aplicație."
+        }
+      },
+      {
+        "id": "my-ads-account-pager",
+        "icon": "feature",
+        "title": {
+          "en": "A page for every account in My ads",
+          "uk": "Окрема сторінка для кожного акаунта в «Моїх оголошеннях»",
+          "ru": "Окрема сторінка для кожного акаунта в «Моїх оголошеннях»",
+          "bg": "Отделна страница за всеки акаунт в „Моите обяви“",
+          "kk": "«Менің хабарландыруларымда» әр аккаунтқа жеке бет",
+          "pl": "Osobna strona dla każdego konta w „Moich ogłoszeniach”",
+          "pt": "Uma página para cada conta em «Os meus anúncios»",
+          "ro": "O pagină pentru fiecare cont în „Anunțurile mele”"
+        },
+        "summary": {
+          "en": "My ads now has its own swipeable page for each connected OLX account, each one loading on its own.",
+          "uk": "Тепер «Мої оголошення» мають окрему сторінку з гортанням для кожного підключеного акаунта OLX, і кожна завантажується самостійно.",
+          "ru": "Тепер «Мої оголошення» мають окрему сторінку з гортанням для кожного підключеного акаунта OLX, і кожна завантажується самостійно.",
+          "bg": "„Моите обяви“ вече имат собствена страница, между които можеш да плъзгаш, за всеки свързан акаунт в OLX, като всяка се зарежда самостоятелно.",
+          "kk": "Енді «Менің хабарландыруларымда» әр қосылған OLX аккаунты үшін өз бетімен сырғытып ауысуға болады, әрі әрқайсысы өзінше жүктеледі.",
+          "pl": "„Moje ogłoszenia” mają teraz osobną, przewijaną stronę dla każdego połączonego konta OLX, a każda ładuje się niezależnie.",
+          "pt": "«Os meus anúncios» tem agora a sua própria página, com deslize, para cada conta OLX ligada, cada uma a carregar de forma independente.",
+          "ro": "„Anunțurile mele” are acum o pagină proprie, cu glisare, pentru fiecare cont OLX conectat, fiecare încărcându-se independent."
+        },
+        "detail": {
+          "en": "Swiping between accounts never changes which one is active, and an account whose login has expired shows its own reconnect card.",
+          "uk": "Гортання між акаунтами ніколи не змінює, який з них активний, а акаунт з простроченим входом показує власну картку для повторного підключення.",
+          "ru": "Гортання між акаунтами ніколи не змінює, який з них активний, а акаунт з простроченим входом показує власну картку для повторного підключення.",
+          "bg": "Плъзгането между акаунти никога не сменя кой е активен, а акаунт с изтекъл вход показва собствена карта за повторно свързване.",
+          "kk": "Аккаунттар арасында сырғыту қай аккаунт белсенді екенін ешқашан өзгертпейді, ал кірісі аяқталған аккаунт өзінің қайта қосу картасын көрсетеді.",
+          "pl": "Przełączanie między kontami nigdy nie zmienia, które jest aktywne, a konto z wygasłym logowaniem pokazuje własną kartę ponownego połączenia.",
+          "pt": "Deslizar entre contas nunca muda qual está ativa, e uma conta cujo início de sessão expirou mostra o seu próprio cartão de reconexão.",
+          "ro": "Glisarea între conturi nu schimbă niciodată care este activ, iar un cont a cărui autentificare a expirat își arată propriul card de reconectare."
+        }
+      },
+      {
+        "id": "ai-stops-inventing-details",
+        "icon": "magic",
+        "title": {
+          "en": "The AI stops inventing details",
+          "uk": "ШІ більше не вигадує деталі",
+          "ru": "ШІ більше не вигадує деталі",
+          "bg": "AI спира да измисля детайли",
+          "kk": "AI енді деталь ойлап таппайды",
+          "pl": "AI przestaje wymyślać szczegóły",
+          "pt": "A IA deixa de inventar detalhes",
+          "ro": "AI nu mai inventează detalii"
+        },
+        "summary": {
+          "en": "Generated listings no longer mention delivery, payment, warranty or a location you never told SellSnap about.",
+          "uk": "Згенеровані оголошення більше не згадують доставку, оплату, гарантію чи місцезнаходження, про які ви не казали SellSnap.",
+          "ru": "Згенеровані оголошення більше не згадують доставку, оплату, гарантію чи місцезнаходження, про які ви не казали SellSnap.",
+          "bg": "Генерираните обяви вече не споменават доставка, плащане, гаранция или локация, за които не си казал на SellSnap.",
+          "kk": "Жасалған хабарландырулар енді сен SellSnap-қа айтпаған жеткізу, төлем, кепілдік немесе орналасқан жер туралы айтпайды.",
+          "pl": "Wygenerowane ogłoszenia nie wspominają już o dostawie, płatności, gwarancji ani lokalizacji, o których nigdy nie powiedziałeś SellSnap.",
+          "pt": "Os anúncios gerados já não mencionam entrega, pagamento, garantia ou uma localização que nunca indicou ao SellSnap.",
+          "ro": "Anunțurile generate nu mai menționează livrare, plată, garanție sau o locație despre care nu i-ai spus niciodată lui SellSnap."
+        },
+        "detail": {
+          "en": "Only what you wrote in your note, or what's visible in your photos, can appear in the title and description.",
+          "uk": "У заголовку й описі може з'явитися лише те, що ви написали в підказці для ШІ, або те, що видно на фото.",
+          "ru": "У заголовку й описі може з'явитися лише те, що ви написали в підказці для ШІ, або те, що видно на фото.",
+          "bg": "В заглавието и описанието може да се появи само това, което си написал в подсказката за AI, или това, което се вижда на снимките.",
+          "kk": "Тақырып пен сипаттамада тек AI-ға берген нұсқауыңда жазған немесе суреттерде көрінетін нәрсе ғана пайда бола алады.",
+          "pl": "W tytule i opisie może pojawić się tylko to, co napisałeś w podpowiedzi, albo to, co widać na Twoich zdjęciach.",
+          "pt": "Só o que escreveu na sua dica, ou o que é visível nas suas fotos, pode aparecer no título e na descrição.",
+          "ro": "Doar ce ai scris în indiciul tău, sau ce se vede în fotografiile tale, poate apărea în titlu și descriere."
+        }
+      },
+      {
+        "id": "flatter-button-design",
+        "icon": "improvement",
+        "title": {
+          "en": "A cleaner, flatter look",
+          "uk": "Чистіший, пласкіший вигляд",
+          "ru": "Чистіший, пласкіший вигляд",
+          "bg": "По-чист и плосък дизайн",
+          "kk": "Тазарақ, жалпақ көрініс",
+          "pl": "Czystszy, płaski wygląd",
+          "pt": "Um visual mais limpo e plano",
+          "ro": "Un aspect mai curat și mai plat"
+        },
+        "summary": {
+          "en": "Buttons and screens across the app moved to a simpler, flatter design.",
+          "uk": "Кнопки й екрани застосунку стали простішими та пласкішими.",
+          "ru": "Кнопки й екрани застосунку стали простішими та пласкішими.",
+          "bg": "Бутоните и екраните в приложението преминаха към по-опростен, плосък дизайн.",
+          "kk": "Қолданба бойынша түймелер мен экрандар қарапайымырақ, жалпақ дизайнға көшті.",
+          "pl": "Przyciski i ekrany w całej aplikacji przeszły na prostszy, płaski design.",
+          "pt": "Botões e ecrãs em toda a app passaram para um design mais simples e plano.",
+          "ro": "Butoanele și ecranele din aplicație au trecut la un design mai simplu, mai plat."
+        }
+      },
+      {
+        "id": "fix-preview-sheet-state-loss",
+        "icon": "fix",
+        "title": {
+          "en": "The preview keeps your edits",
+          "uk": "Попередній перегляд зберігає ваші правки",
+          "ru": "Попередній перегляд зберігає ваші правки",
+          "bg": "Прегледът пази редакциите ти",
+          "kk": "Алдын ала қарау өзгерістеріңді сақтайды",
+          "pl": "Podgląd zachowuje Twoje zmiany",
+          "pt": "A pré-visualização mantém as suas edições",
+          "ro": "Previzualizarea îți păstrează modificările"
+        },
+        "summary": {
+          "en": "Opening the account picker or a confirmation sheet from the preview screen no longer risks losing what you had changed.",
+          "uk": "Відкриття вибору акаунта чи вікна підтвердження з екрана попереднього перегляду більше не ризикує втратити ваші зміни.",
+          "ru": "Відкриття вибору акаунта чи вікна підтвердження з екрана попереднього перегляду більше не ризикує втратити ваші зміни.",
+          "bg": "Отварянето на избора на акаунт или на потвърждение от екрана за преглед вече не рискува да загубиш промените си.",
+          "kk": "Алдын ала қарау экранынан аккаунт таңдағышын немесе растау терезесін ашу енді өзгерткеніңді жоғалту қаупін тудырмайды.",
+          "pl": "Otwarcie wyboru konta lub arkusza potwierdzenia z ekranu podglądu nie grozi już utratą wprowadzonych zmian.",
+          "pt": "Abrir o seletor de contas ou uma folha de confirmação a partir do ecrã de pré-visualização já não arrisca perder o que tinha alterado.",
+          "ro": "Deschiderea selectorului de cont sau a unei foi de confirmare din ecranul de previzualizare nu mai riscă să piardă ce ai modificat."
+        }
+      }
+    ]
+  },
+  {
     "version": "3.0",
     "date": "2026-08-28",
     "active": true,

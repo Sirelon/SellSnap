@@ -15,6 +15,7 @@ import com.sirelon.sellsnap.features.seller.ad.data.PostAdvertRequestMapper
 import com.sirelon.sellsnap.features.seller.ad.generation_log.AdGenerationAttempt
 import com.sirelon.sellsnap.features.seller.ad.generation_log.AdGenerationLogRepository
 import com.sirelon.sellsnap.features.seller.ad.screenshotMode
+import com.sirelon.sellsnap.features.seller.ad.preview_ad.PreviewAdContract.AttributesLoadState
 import com.sirelon.sellsnap.features.seller.ad.preview_ad.PreviewAdContract.PreviewAdEffect
 import com.sirelon.sellsnap.features.seller.ad.preview_ad.PreviewAdContract.PreviewAdEffect.ShowMessage
 import com.sirelon.sellsnap.features.seller.ad.preview_ad.PreviewAdContract.PreviewAdEvent
@@ -64,6 +65,7 @@ import com.sirelon.sellsnap.generated.resources.error_regenerate_description_fai
 import com.sirelon.sellsnap.generated.resources.validation_error_desc_too_short
 import com.sirelon.sellsnap.generated.resources.validation_error_title_too_short
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
@@ -122,6 +124,7 @@ class PreviewAdViewModel internal constructor(
 
     private val selectedCategoryId = MutableStateFlow<Int?>(null)
     private val publishSuccessData = MutableStateFlow(restoredSavedState.publishSuccessData)
+    private var publishJob: Job? = null
     private var nonGuestSetupStarted = false
     private var currencyLoadStarted = false
     private var skipRestoredTitleSuggestion = restoredSavedState.selectedCategoryId != null
@@ -226,12 +229,18 @@ class PreviewAdViewModel internal constructor(
                                 selectedValues = restoredSavedState.attributeValues[attribute.code]
                                     ?: filledAdvertisement.filledAttributes[attribute.code].orEmpty(),
                             )
-                        }
+                        },
+                        attributesLoadState = AttributesLoadState.Loaded,
                     )
                 }
             }
             .catch {
-                setState { state -> state.copy(attributeItems = emptyList()) }
+                setState { state ->
+                    state.copy(
+                        attributeItems = emptyList(),
+                        attributesLoadState = AttributesLoadState.Failed,
+                    )
+                }
                 postEffect(ShowMessage(getString(Res.string.error_attributes_load_failed)))
             }
             .launchIn(viewModelScope)
@@ -280,7 +289,15 @@ class PreviewAdViewModel internal constructor(
             PreviewAdEvent.OnChangeCategoryClick -> postEffect(PreviewAdEffect.GoToGategoryPicker)
 
             Publish -> {
-                viewModelScope.launch { publishAdvert() }
+                // OLX creates a new advert per POST - there is no idempotency key on
+                // `POST /partner/adverts` (developer.olx.ua, Adverts / Create advert), so two
+                // deliveries of this event are two live listings, and the confirm sheet stays
+                // hit-testable through its dismiss animation. Guarding on the job rather than on
+                // `isPublishing` keeps that independent of the dispatcher: `launch` marks the job
+                // active synchronously, while `isPublishing` is only set once the coroutine body
+                // actually runs.
+                if (publishJob?.isActive == true) return
+                publishJob = viewModelScope.launch { publishAdvert() }
             }
 
             is PreviewAdEvent.SwitchAccountRequested -> viewModelScope.launch {
@@ -363,6 +380,16 @@ class PreviewAdViewModel internal constructor(
         val location = s.location
         if (category == null || location == null) {
             postEffect(ShowMessage(getString(Res.string.error_publish_missing_category_or_location)))
+            return
+        }
+
+        // The attribute checks below iterate `attributeItems`, so they pass vacuously while that
+        // list is empty. Posting anyway is what produced the run of instant OLX rejections on
+        // 2026-09-02 (`params.state` on a category whose attributes had never loaded), so refuse
+        // until the fetch has actually landed - a category with genuinely zero attributes still
+        // reaches Loaded and publishes normally.
+        if (s.attributesLoadState != AttributesLoadState.Loaded) {
+            postEffect(ShowMessage(getString(Res.string.error_attributes_load_failed)))
             return
         }
 
@@ -466,10 +493,13 @@ class PreviewAdViewModel internal constructor(
             setState { it.copy(isPublishing = false) }
             postEffect(PreviewAdEffect.PublishSuccess(successData))
         } catch (error: Throwable) {
-            analytics.recordException(error, AnalyticsEvents.AD_PUBLISH_FAILED)
-            analytics.logEvent(AnalyticsEvents.AD_PUBLISH_FAILED, mapOf("account_index" to accountIndex))
-            setState { it.copy(isPublishing = false) }
             val olxError = (error as? OlxApiException)?.error
+            analytics.recordException(error, AnalyticsEvents.AD_PUBLISH_FAILED)
+            analytics.logEvent(
+                AnalyticsEvents.AD_PUBLISH_FAILED,
+                mapOf("account_index" to accountIndex, "reason" to publishFailureReason(error, olxError)),
+            )
+            setState { it.copy(isPublishing = false) }
             when {
                 olxError is OlxApiError.ValidationError && olxError.field.startsWith("contact.") ->
                     postEffect(PreviewAdEffect.NavigateToProfile(getString(Res.string.error_publish_missing_contact_name)))
@@ -490,6 +520,27 @@ class PreviewAdViewModel internal constructor(
                 else -> postEffect(PreviewAdEffect.PublishFailure(getString(Res.string.error_publish_failed)))
             }
         }
+    }
+
+    // Without this the event carries only `account_index`, so the cause of a publish failure is
+    // recoverable only by joining Crashlytics non-fatals on timestamp - and Crashlytics samples
+    // them, so most failures end up with no cause at all. Validation errors carry the rejected
+    // field because that is what distinguishes "seller typed something wrong" from "OLX enforces
+    // an attribute its own categories API reports as optional".
+    private fun publishFailureReason(error: Throwable, olxError: OlxApiError?): String = when (olxError) {
+        is OlxApiError.ValidationError -> "validation:${olxError.field}"
+        is OlxApiError.InvalidGrant -> "invalid_grant"
+        is OlxApiError.InvalidToken -> "invalid_token"
+        is OlxApiError.InvalidClient -> "invalid_client"
+        is OlxApiError.InsufficientScope -> "insufficient_scope"
+        is OlxApiError.RateLimited -> "rate_limited"
+        is OlxApiError.NetworkFailure -> "network"
+        is OlxApiError.MissingCode -> "missing_code"
+        is OlxApiError.InvalidState -> "invalid_state"
+        is OlxApiError.Unknown -> "unknown"
+        // Not every throwable reaching here is wrapped - a dropped connection surfaces as the raw
+        // engine exception (observed: DarwinHttpRequestException, NSURLErrorNetworkConnectionLost).
+        null -> error::class.simpleName ?: "unknown"
     }
 
     private suspend fun displayAccountName(account: OlxAccountRecord?): String {
@@ -607,6 +658,7 @@ class PreviewAdViewModel internal constructor(
                 categoryLabel = path.joinToString(" / "),
                 selectedCategory = category,
                 attributeItems = emptyList(),
+                attributesLoadState = AttributesLoadState.Loading,
             )
         }
         selectedCategoryId.value = category.id
