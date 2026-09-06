@@ -4,6 +4,7 @@ cd "$(dirname "$0")/.."
 
 VERSION_PROPERTIES="version.properties"
 SCREENSHOT_MODE_FILE="composeApp/src/commonMain/kotlin/com/sirelon/aicalories/features/seller/ad/ScreenshotMode.kt"
+REVIEW_PROMPT_FILE="composeApp/src/commonMain/kotlin/com/sirelon/aicalories/features/review/ReviewPromptCoordinator.kt"
 # Play Console's actual configured store-listing locales - confirmed via
 # download_from_play_store, not the full set of in-app-supported languages.
 # It has no en-US or ru-RU listing at all (no title, nothing), so pushing a
@@ -20,6 +21,14 @@ echo "Compiling..."
 # It must never ship enabled.
 if ! grep -q "screenshotMode = false" "$SCREENSHOT_MODE_FILE"; then
   echo "ERROR: screenshotMode must be false before shipping ($SCREENSHOT_MODE_FILE)." >&2
+  exit 1
+fi
+
+# Bypasses the store-review gate so every publish asks for the rating prompt. Shipping it enabled
+# would burn each user's Apple quota - three prompts per year - on their first publish.
+if ! grep -qE '^internal var reviewPromptAlwaysRequest = false$' "$REVIEW_PROMPT_FILE" ||
+  grep -qE '^[[:space:]]*internal var reviewPromptAlwaysRequest = true' "$REVIEW_PROMPT_FILE"; then
+  echo "ERROR: reviewPromptAlwaysRequest must be false before shipping ($REVIEW_PROMPT_FILE)." >&2
   exit 1
 fi
 

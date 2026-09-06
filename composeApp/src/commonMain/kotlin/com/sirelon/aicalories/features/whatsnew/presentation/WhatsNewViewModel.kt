@@ -3,6 +3,7 @@ package com.sirelon.sellsnap.features.whatsnew.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sirelon.sellsnap.config.AppConfig
+import com.sirelon.sellsnap.features.review.ReviewPromptCoordinator
 import com.sirelon.sellsnap.features.whatsnew.data.ReleaseNotesRepository
 import com.sirelon.sellsnap.features.whatsnew.data.WhatsNewStore
 import com.sirelon.sellsnap.features.whatsnew.model.Release
@@ -23,6 +24,7 @@ data class WhatsNewUiState(
 class WhatsNewViewModel(
     private val releaseNotesRepository: ReleaseNotesRepository,
     private val whatsNewStore: WhatsNewStore,
+    private val reviewPromptCoordinator: ReviewPromptCoordinator,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(WhatsNewUiState())
@@ -52,8 +54,14 @@ class WhatsNewViewModel(
         val loaded = withTimeoutOrNull(DIALOG_LOAD_TIMEOUT_MS) {
             state.first { !it.isLoading }
         } ?: return false
-        return loaded.currentRelease != null &&
+        val shouldShow = loaded.currentRelease != null &&
             whatsNewStore.lastSeenVersion() != AppConfig.appVersionName
+        // One uninvited interruption per session: a seller who has already been handed a dialog on
+        // launch is not also asked to rate the app after publishing. See ReviewPromptGate.
+        if (shouldShow) {
+            reviewPromptCoordinator.whatsNewShownThisSession = true
+        }
+        return shouldShow
     }
 
     fun markSeen() {

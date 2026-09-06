@@ -8,6 +8,8 @@ import com.sirelon.sellsnap.features.media.upload.DraftMediaFileStore
 import com.sirelon.sellsnap.features.media.upload.DraftPhoto
 import com.sirelon.sellsnap.features.media.upload.PersistedDraftPhoto
 import com.mohamedrejeb.calf.io.KmpFile
+import com.sirelon.sellsnap.features.review.ReviewPromptCoordinator
+import com.sirelon.sellsnap.features.review.ReviewPromptStore
 import com.sirelon.sellsnap.features.seller.ad.Advertisement
 import com.sirelon.sellsnap.features.seller.ad.AdFlowTimerStore
 import com.sirelon.sellsnap.features.seller.ad.AdvertisementWithAttributes
@@ -224,6 +226,11 @@ class PreviewAdViewModelTest {
 
         assertEquals(1, postAdvertRequests, "OLX has no idempotency key - a second POST is a second live listing")
         assertEquals(1, effects.filterIsInstance<PreviewAdEffect.PublishSuccess>().size)
+        assertEquals(
+            1,
+            harness.reviewPromptStore.publishCount(),
+            "the store-review gate counts live listings, so a deduplicated double-tap must count once",
+        )
     }
     @Test
     fun `publish refuses to POST while the category's attributes have not loaded`() = runTest(testDispatcher) {
@@ -320,6 +327,11 @@ class PreviewAdViewModelTest {
         assertEquals("validation:params.state", failed.second["reason"])
         assertEquals(1, failed.second["account_index"])
         assertTrue(effects.any { it is PreviewAdEffect.PublishFailure })
+        assertTrue(
+            harness.reviewPromptCoordinator.hadPublishErrorThisSession,
+            "a seller shown a publish error is not asked to rate the app later in the same session",
+        )
+        assertEquals(0, harness.reviewPromptStore.publishCount())
     }
 
     @Test
@@ -507,6 +519,7 @@ class PreviewAdViewModelTest {
             ),
             adGenerationLogRepository = NoOpAdGenerationLogRepository,
             advertOutcomeStore = AdvertOutcomeStore(InMemoryOlxKeyValueStore(), testJson),
+            reviewPromptCoordinator = harness.reviewPromptCoordinator,
         )
     }
 
@@ -568,7 +581,18 @@ class PreviewAdViewModelTest {
             scope = CoroutineScope(Dispatchers.Default),
             countryStore = countryStore,
         )
-        return TestHarness(repository, olxApiClient, authRepository, countryStore, categoriesRepository, locationRepository, analytics)
+        val reviewPromptStore = ReviewPromptStore(InMemoryOlxKeyValueStore())
+        return TestHarness(
+            repository,
+            olxApiClient,
+            authRepository,
+            countryStore,
+            categoriesRepository,
+            locationRepository,
+            analytics,
+            reviewPromptStore,
+            ReviewPromptCoordinator(store = reviewPromptStore, analytics = analytics),
+        )
     }
 
     private data class TestHarness(
@@ -579,6 +603,8 @@ class PreviewAdViewModelTest {
         val categoriesRepository: CategoriesRepository,
         val locationRepository: LocationRepository,
         val analytics: FakeAnalytics,
+        val reviewPromptStore: ReviewPromptStore,
+        val reviewPromptCoordinator: ReviewPromptCoordinator,
     )
 
     private class TestCredentialsProvider : OlxCredentialsProvider {
