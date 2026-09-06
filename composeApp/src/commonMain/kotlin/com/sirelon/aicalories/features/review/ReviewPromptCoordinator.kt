@@ -2,7 +2,6 @@ package com.sirelon.sellsnap.features.review
 
 import com.sirelon.sellsnap.analytics.Analytics
 import com.sirelon.sellsnap.analytics.AnalyticsEvents
-import com.sirelon.sellsnap.features.seller.ad.publish_success.AdvertStatus
 import kotlin.time.Clock
 
 /**
@@ -61,7 +60,7 @@ class ReviewPromptCoordinator(
      * would let the next publish spend another one of Apple's three yearly slots for the same
      * moment. Writing first can at worst cost one unmade request.
      */
-    suspend fun requestIfEligible(status: AdvertStatus): Boolean {
+    suspend fun requestIfEligible(): Boolean {
         if (reviewPromptAlwaysRequest) return true
 
         // DataStore throws on a corrupt or unreadable file and this runs inside a LaunchedEffect,
@@ -73,7 +72,6 @@ class ReviewPromptCoordinator(
         val now = nowEpochSeconds()
         val decision = reviewPromptDecision(
             publishCount = publishCount,
-            status = status,
             isReturningSession = isReturningSession,
             hadPublishErrorThisSession = hadPublishErrorThisSession,
             whatsNewShownThisSession = whatsNewShownThisSession,

@@ -8,7 +8,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import com.sirelon.sellsnap.features.seller.ad.publish_success.AdvertStatus
 import kotlinx.coroutines.delay
 import org.koin.compose.koinInject
 
@@ -34,17 +33,17 @@ private const val ReviewPromptDelayMillis = 2_000L
  * would be asked about on a screen the seller is only re-entering.
  */
 @Composable
-fun StoreReviewPromptEffect(status: AdvertStatus) {
+fun StoreReviewPromptEffect() {
     val coordinator: ReviewPromptCoordinator = koinInject()
     val requestReview = rememberStoreReviewRequester()
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     var decided by rememberSaveable { mutableStateOf(false) }
-    LaunchedEffect(status) {
+    LaunchedEffect(Unit) {
         if (decided) return@LaunchedEffect
         delay(ReviewPromptDelayMillis)
         if (!lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) return@LaunchedEffect
         decided = true
-        if (coordinator.requestIfEligible(status)) {
+        if (coordinator.requestIfEligible()) {
             requestReview()
         }
     }

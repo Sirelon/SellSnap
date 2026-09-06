@@ -1,6 +1,5 @@
 package com.sirelon.sellsnap.features.review
 
-import com.sirelon.sellsnap.features.seller.ad.publish_success.AdvertStatus
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -8,14 +7,12 @@ private const val Now = 1_800_000_000L
 
 private fun decide(
     publishCount: Int = 2,
-    status: AdvertStatus = AdvertStatus.New,
     isReturningSession: Boolean = true,
     hadPublishErrorThisSession: Boolean = false,
     whatsNewShownThisSession: Boolean = false,
     lastPromptEpochSeconds: Long? = null,
 ) = reviewPromptDecision(
     publishCount = publishCount,
-    status = status,
     isReturningSession = isReturningSession,
     hadPublishErrorThisSession = hadPublishErrorThisSession,
     whatsNewShownThisSession = whatsNewShownThisSession,
@@ -56,26 +53,6 @@ class ReviewPromptGateTest {
     }
 
     @Test
-    fun `only new and active adverts are worth celebrating`() {
-        assertEquals(ReviewPromptDecision.Request, decide(status = AdvertStatus.New))
-        assertEquals(ReviewPromptDecision.Request, decide(status = AdvertStatus.Active))
-        listOf(
-            AdvertStatus.Limited,
-            AdvertStatus.Unpaid,
-            AdvertStatus.Unconfirmed,
-            AdvertStatus.Moderated,
-            AdvertStatus.Blocked,
-            AdvertStatus.Disabled,
-            AdvertStatus.RemovedByModerator,
-            AdvertStatus.RemovedByUser,
-            AdvertStatus.Outdated,
-            AdvertStatus.Unknown,
-        ).forEach { status ->
-            assertSkip(ReviewPromptSkipReason.BadStatus, decide(status = status))
-        }
-    }
-
-    @Test
     fun `an earlier failure in the same session suppresses the ask`() {
         assertSkip(
             ReviewPromptSkipReason.RecentError,
@@ -113,17 +90,16 @@ class ReviewPromptGateTest {
             ReviewPromptSkipReason.TooFewPublishes,
             decide(
                 publishCount = 1,
-                status = AdvertStatus.Blocked,
                 hadPublishErrorThisSession = true,
                 lastPromptEpochSeconds = Now - 1,
             ),
         )
         assertSkip(
-            ReviewPromptSkipReason.BadStatus,
+            ReviewPromptSkipReason.RecentError,
             decide(
-                status = AdvertStatus.Blocked,
                 hadPublishErrorThisSession = true,
                 whatsNewShownThisSession = true,
+                lastPromptEpochSeconds = Now - 1,
             ),
         )
     }

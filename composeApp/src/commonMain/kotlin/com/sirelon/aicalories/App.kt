@@ -606,7 +606,7 @@ fun App() {
                         }
 
                         entry<AppKey.SellerPublishSuccess> { destination ->
-                            StoreReviewPromptEffect(destination.data.status)
+                            StoreReviewPromptEffect()
                             PublishSuccessScreen(
                                 data = destination.data,
                                 onViewOnOlx = {

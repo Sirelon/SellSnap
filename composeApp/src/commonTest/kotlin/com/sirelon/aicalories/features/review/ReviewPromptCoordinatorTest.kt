@@ -4,7 +4,6 @@ import com.sirelon.sellsnap.analytics.Analytics
 import com.sirelon.sellsnap.analytics.AnalyticsEvents
 import com.sirelon.sellsnap.datastore.KeyValueStore
 import com.sirelon.sellsnap.features.auth.data.InMemoryOlxKeyValueStore
-import com.sirelon.sellsnap.features.seller.ad.publish_success.AdvertStatus
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -48,7 +47,7 @@ class ReviewPromptCoordinatorTest {
         store.incrementPublishCount()
         store.incrementPublishCount()
 
-        assertTrue(subject.requestIfEligible(AdvertStatus.New))
+        assertTrue(subject.requestIfEligible())
 
         // Written before the platform call returns, because the platform call reports nothing: an
         // unwritten timestamp would let the next publish spend another of Apple's three slots.
@@ -64,7 +63,7 @@ class ReviewPromptCoordinatorTest {
         val analytics = RecordingAnalytics()
         val subject = coordinator(storage, analytics).apply { isReturningSession = true }
 
-        assertFalse(subject.requestIfEligible(AdvertStatus.New))
+        assertFalse(subject.requestIfEligible())
 
         val skipped = analytics.events.single { it.first == AnalyticsEvents.REVIEW_PROMPT_SKIPPED }
         assertEquals(
@@ -84,7 +83,7 @@ class ReviewPromptCoordinatorTest {
         assertEquals(2, ReviewPromptStore(storage).publishCount())
 
         subject.onPublishFailed()
-        assertFalse(subject.requestIfEligible(AdvertStatus.New))
+        assertFalse(subject.requestIfEligible())
     }
 
     @Test
@@ -94,7 +93,7 @@ class ReviewPromptCoordinatorTest {
 
         // Runs inside a LaunchedEffect: an escaping exception here would take the process down two
         // seconds after telling the seller their advert is live.
-        assertFalse(subject.requestIfEligible(AdvertStatus.New))
+        assertFalse(subject.requestIfEligible())
         assertTrue(analytics.events.isEmpty())
     }
 
@@ -105,7 +104,7 @@ class ReviewPromptCoordinatorTest {
         val subject = coordinator(storage, analytics)
         reviewPromptAlwaysRequest = true
         try {
-            assertTrue(subject.requestIfEligible(AdvertStatus.Blocked))
+            assertTrue(subject.requestIfEligible())
         } finally {
             reviewPromptAlwaysRequest = false
         }
