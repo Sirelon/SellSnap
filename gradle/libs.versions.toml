@@ -52,7 +52,7 @@ playServicesLocation = "21.4.0"
 # https://developer.android.com/guide/playcore/in-app-review
 playReview = "2.0.2"
 # https://github.com/GitLiveApp/firebase-kotlin-sdk/releases
-gitliveFirebase = "2.6.0"
+gitliveFirebase = "2.7.0"
 googleServices = "4.5.0"
 crashlyticsPlugin = "3.0.7"
 firebaseBom = "34.17.0"
