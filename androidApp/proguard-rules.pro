@@ -27,3 +27,8 @@
 -dontwarn org.conscrypt.**
 -dontwarn org.bouncycastle.**
 -dontwarn org.openjsse.**
+
+# play-review-ktx's OnSuccessListener SAM adapter references this Play Services internal
+# annotation, which isn't present in play-services-basement at our resolved version. It's
+# annotation-only (CLASS retention) and unused at runtime, per R8's own generated suggestion.
+-dontwarn com.google.android.gms.common.annotation.NoNullnessRewrite

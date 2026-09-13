@@ -2,7 +2,7 @@
 
 Copy-paste text for every listing field. The app ships 8 in-app languages, but this doc
 only has 7 sections — russian shares Ukrainian's in-app UI and has no separate store
-listing (see the "No russian store listing" note below). Written for SellSnap 3.2 (build 14).
+listing (see the "No russian store listing" note below). Written for SellSnap 3.3 (build 15).
 
 The per-language **What's New** blocks below match what's pushed to the stores automatically from `.claude/tmp/release-metadata/` (gitignored, regenerated fresh each release): Android reads `android/<locale>/changelogs/<version_code>.txt`, iOS reads `ios/<locale>/release_notes.txt` (App Store) and the same file feeds TestFlight's localized build info. The `sellsnap-release` skill regenerates both those files and this section on every release.
 
@@ -73,15 +73,13 @@ From snap to live on OLX in about a minute. Download SellSnap and turn your clut
 SellSnap is an independent app and is not affiliated with or endorsed by OLX. Publishing requires an OLX account.
 ```
 
-**What's New (v3.2):**
+**What's New (v3.3):**
 
 ```
-SellSnap 3.2 — manage your listings after they go live
+SellSnap 3.3 — clearer guidance when a photo won't work
 
-• Edit, take down, put back up, extend or delete a listing — all from My ads
-• See exactly where each listing stands: under review, needs payment or rejected
-• Tell SellSnap what an item sold for, so it prices your next one better
-• Fixed adverts being rejected when a category's details hadn't loaded
+• Blurry, dark, or unclear photos, or photos of different items, now get a specific message telling you what to fix
+• Ad generation no longer falls back to placeholder text when it can't write a real listing — you get a clear retry instead
 ```
 
 ---
@@ -129,15 +127,13 @@ SellSnap підтримує OLX в Україні, Польщі, Румунії,
 SellSnap — незалежний застосунок, не афілійований з OLX. Для публікації потрібен акаунт OLX.
 ```
 
-**What's New (v3.2):**
+**What's New (v3.3):**
 
 ```
-SellSnap 3.2 — керуйте оголошеннями після публікації
+SellSnap 3.3 — чіткіші підказки, якщо фото не підходить
 
-• Редагуйте, знімайте з публікації, відновлюйте, продовжуйте або видаляйте оголошення — усе в «Моїх оголошеннях»
-• Бачте, що саме з кожним оголошенням: на модерації, очікує оплати чи відхилено
-• Скажіть SellSnap, за скільки продалася річ, — і наступну він оцінить краще
-• Виправлено відхилення оголошень, коли деталі категорії ще не завантажились
+• Розмиті, темні чи нерозпізнані фото, а також фото різних товарів — тепер із конкретним поясненням, що виправити
+• Генерація оголошення більше не підставляє текст-заглушку замість реального опису — ви одразу бачите чітку пропозицію спробувати ще раз
 ```
 
 ---
@@ -185,15 +181,13 @@ Od zdjęcia do ogłoszenia na OLX w około minutę. Pobierz SellSnap i zamień n
 SellSnap to niezależna aplikacja, niepowiązana z OLX. Do publikacji wymagane jest konto OLX.
 ```
 
-**What's New (v3.2):**
+**What's New (v3.3):**
 
 ```
-SellSnap 3.2 — zarządzaj ogłoszeniami po publikacji
+SellSnap 3.3 — jaśniejsze wskazówki, gdy zdjęcie nie działa
 
-• Edytuj, wstrzymaj, wznów, przedłuż lub usuń ogłoszenie — wszystko w Moich ogłoszeniach
-• Sprawdzaj, co się dzieje z każdym ogłoszeniem: weryfikacja, opłata czy odrzucenie
-• Powiedz SellSnap, za ile sprzedałeś rzecz, a lepiej wyceni następną
-• Ogłoszenia nie są już odrzucane, gdy szczegóły kategorii jeszcze się wczytują
+• Rozmazane, ciemne lub nierozpoznane zdjęcia, a także zdjęcia różnych przedmiotów, pokazują teraz dokładny komunikat, co poprawić
+• Generowanie ogłoszenia nie wstawia już tekstu zastępczego, gdy nie może napisać prawdziwej treści — zamiast tego od razu możesz spróbować ponownie
 ```
 
 ---
@@ -241,15 +235,13 @@ De la poză la anunț publicat pe OLX în aproximativ un minut. Descarcă SellSn
 SellSnap este o aplicație independentă, neafiliată cu OLX. Publicarea necesită un cont OLX.
 ```
 
-**What's New (v3.2):**
+**What's New (v3.3):**
 
 ```
-SellSnap 3.2 — gestionează anunțurile după publicare
+SellSnap 3.3 — indicații mai clare când o poză nu e potrivită
 
-• Editează, retrage, reactivează, prelungește sau șterge un anunț — din Anunțurile mele
-• Vezi exact cum stă fiecare anunț: în curs de revizuire, de plătit sau respins
-• Spune-i SellSnap cu cât s-a vândut, ca să stabilească un preț mai bun la următorul
-• Anunțurile nu mai sunt respinse când detaliile categoriei încă se încarcă
+• Pozele neclare, întunecate sau nerecunoscute, ori pozele cu articole diferite, arată acum un mesaj exact despre ce trebuie corectat
+• Generarea anunțului nu mai completează cu text de rezervă atunci când nu poate scrie un anunț real — primești în schimb o reîncercare clară
 ```
 
 ---
@@ -297,15 +289,13 @@ SellSnap поддържа OLX в България, Украйна, Полша, �
 SellSnap е независимо приложение и не е свързано с OLX. За публикуване е необходим акаунт в OLX.
 ```
 
-**What's New (v3.2):**
+**What's New (v3.3):**
 
 ```
-SellSnap 3.2 — управлявай обявите след публикуване
+SellSnap 3.3 — по-ясни насоки, когато снимката не върши работа
 
-• Редактирай, деактивирай, активирай отново, удължи или изтрий обява — от Моите обяви
-• Виждай какво става с всяка обява: при проверка, очаква плащане или отхвърлена
-• Кажи на SellSnap на колко се продаде вещта и следващата ще оцени по-добре
-• Обявите вече не се отхвърлят, когато детайлите на категорията още се зареждат
+• Размазани, тъмни или неразпознати снимки, както и снимки на различни артикули, вече показват точно съобщение какво да поправиш
+• Генерирането на обява вече не вмъква резервен текст, когато не може да напише истинска обява — вместо това получаваш ясна покана да опиташ отново
 ```
 
 ---
@@ -353,15 +343,13 @@ Da foto ao anúncio publicado no OLX em cerca de um minuto. Descarregue o SellSn
 O SellSnap é uma aplicação independente, sem qualquer afiliação com o OLX. Para publicar é necessária uma conta OLX.
 ```
 
-**What's New (v3.2):**
+**What's New (v3.3):**
 
 ```
-SellSnap 3.2 — gerir os anúncios depois de publicados
+SellSnap 3.3 — indicações mais claras quando uma foto não resulta
 
-• Edite, retire, reative, prolongue ou elimine um anúncio — tudo em Os meus anúncios
-• Veja em que ponto está cada anúncio: em revisão, por pagar ou rejeitado
-• Diga ao SellSnap por quanto vendeu, para sugerir um preço melhor no próximo
-• Os anúncios já não são rejeitados quando os detalhes da categoria ainda carregam
+• Fotos desfocadas, escuras ou não reconhecidas, ou fotos de artigos diferentes, mostram agora uma mensagem exata sobre o que corrigir
+• A geração do anúncio deixa de inserir texto de substituição quando não consegue escrever um anúncio real — em vez disso, é convidado a tentar de novo
 ```
 
 ---
@@ -407,13 +395,11 @@ OLX аккаунтыңыз жоқ па? Қонақ режимін пайдала
 SellSnap — OLX-пен байланысы жоқ тәуелсіз қосымша. Жариялау үшін OLX аккаунты қажет.
 ```
 
-**What's New (v3.2):**
+**What's New (v3.3):**
 
 ```
-SellSnap 3.2 — жарияланғаннан кейін хабарландыруларды басқарыңыз
+SellSnap 3.3 — фото сәтсіз болғанда нақтырақ түсініктеме
 
-• Хабарландыруды өңдеңіз, тоқтатыңыз, қайта қосыңыз, ұзартыңыз немесе жойыңыз
-• Әр хабарландырудың жағдайын көріңіз: қарастырылуда, төлем қажет, қабылданбады
-• SellSnap-қа зат қаншаға сатылғанын айтыңыз — келесісін дәлірек бағалайды
-• Санат сипаттамалары жүктелмей тұрғанда хабарландыру бұдан былай қабылданбай қалмайды
+• Бұлдыр, қараңғы немесе танылмаған суреттер, сондай-ақ әртүрлі заттардың суреттері енді нені түзету керектігі туралы нақты хабарлама көрсетеді
+• Хабарландыру жасау нақты мәтін жаза алмағанда енді орнына толтырғыш мәтін қоймайды — оның орнына қайта әрекет жасауға нақты ұсыныс аласыз
 ```

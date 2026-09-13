@@ -1,5 +1,46 @@
 [
   {
+    "version": "3.3",
+    "date": "2026-09-13",
+    "active": true,
+    "changes": [
+      {
+        "id": "photo-validation-errors",
+        "icon": "fix",
+        "title": {
+          "en": "Clearer errors when a photo won't work",
+          "uk": "Зрозуміліші помилки про непридатні фото",
+          "ru": "Зрозуміліші помилки про непридатні фото",
+          "bg": "По-ясни грешки за неподходящи снимки",
+          "kk": "Жарамсыз фото туралы түсініктірек қате",
+          "pl": "Jaśniejsze błędy przy nieodpowiednich zdjęciach",
+          "pt": "Erros mais claros para fotos problemáticas",
+          "ro": "Erori mai clare pentru fotografii nepotrivite"
+        },
+        "summary": {
+          "en": "SellSnap now tells you exactly why it couldn't generate a listing — unclear, blurry, or dark photos, or photos of different items — so you can fix it and retry.",
+          "uk": "SellSnap тепер точно пояснює, чому не вдалося згенерувати оголошення — нечіткі, розмиті чи темні фото, або фото різних товарів — тож ви можете це виправити й спробувати ще раз.",
+          "ru": "SellSnap тепер точно пояснює, чому не вдалося згенерувати оголошення — нечіткі, розмиті чи темні фото, або фото різних товарів — тож ви можете це виправити й спробувати ще раз.",
+          "bg": "SellSnap вече ти казва точно защо не успя да генерира обява — неясни, размазани или тъмни снимки, или снимки на различни артикули — за да ги оправиш и да опиташ пак.",
+          "kk": "Енді SellSnap хабарландыруды неге жасай алмағанын нақты айтады — түсініксіз, бұлдыр немесе қараңғы суреттер, немесе әртүрлі заттардың суреттері — сөйтіп түзетіп, қайта байқай аласың.",
+          "pl": "SellSnap teraz mówi dokładnie, dlaczego nie udało się wygenerować ogłoszenia — niewyraźne, rozmazane lub ciemne zdjęcia albo zdjęcia różnych przedmiotów — dzięki czemu możesz to poprawić i spróbować ponownie.",
+          "pt": "O SellSnap agora diz-lhe exatamente porque não conseguiu gerar um anúncio — fotos pouco nítidas, desfocadas ou escuras, ou fotos de artigos diferentes — para que possa corrigir isso e tentar novamente.",
+          "ro": "SellSnap îți spune acum exact de ce nu a putut genera un anunț — fotografii neclare, încețoșate sau întunecate, ori fotografii cu articole diferite — ca să poți remedia asta și să încerci din nou."
+        },
+        "detail": {
+          "en": "Previously a bad batch of photos could still produce a listing with placeholder text instead of a real title and description. Now you get a specific reason and a clean retry instead.",
+          "uk": "Раніше невдалий набір фото міг все одно перетворитися на оголошення з текстом-заглушкою замість справжніх заголовка й опису. Тепер ви одразу бачите конкретну причину й можете спокійно спробувати ще раз.",
+          "ru": "Раніше невдалий набір фото міг все одно перетворитися на оголошення з текстом-заглушкою замість справжніх заголовка й опису. Тепер ви одразу бачите конкретну причину й можете спокійно спробувати ще раз.",
+          "bg": "Преди неподходящ комплект снимки пак можеше да доведе до обява с шаблонен текст вместо истинско заглавие и описание. Сега получаваш конкретна причина и можеш спокойно да опиташ отново.",
+          "kk": "Бұрын сәтсіз сурет жиынтығы нақты тақырып пен сипаттаманың орнына үлгі мәтіні бар хабарландыру жасай беретін еді. Енді нақты себепті көресің және оңай қайта байқап көре аласың.",
+          "pl": "Wcześniej nieudany zestaw zdjęć mógł i tak stworzyć ogłoszenie z tekstem zastępczym zamiast prawdziwego tytułu i opisu. Teraz dostajesz konkretny powód i możesz po prostu spróbować ponownie.",
+          "pt": "Antes, um lote de fotos problemático ainda podia gerar um anúncio com texto genérico em vez de um título e descrição verdadeiros. Agora recebe um motivo específico e pode tentar novamente sem complicações.",
+          "ro": "Înainte, un set nereușit de fotografii tot putea genera un anunț cu text generic în loc de un titlu și o descriere reale. Acum primești un motiv concret și poți încerca din nou fără bătaie de cap."
+        }
+      }
+    ]
+  },
+  {
     "version": "3.2",
     "date": "2026-09-04",
     "active": true,
