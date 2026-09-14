@@ -39,7 +39,7 @@ navigation3Runtime = "1.2.0-alpha07"
 # https://developer.android.com/jetpack/androidx/releases/lifecycle
 lifecycleViewmodelNav3 = "2.11.0"
 # https://mvnrepository.com/artifact/org.jetbrains.androidx.navigation3/navigation3-ui
-navigation3Ui = "1.2.0-alpha02"
+navigation3Ui = "1.2.0-beta01"
 # https://github.com/MohamedRejeb/Calf/releases
 calf = "0.13.0"
 # https://github.com/supabase-community/supabase-kt/releases
