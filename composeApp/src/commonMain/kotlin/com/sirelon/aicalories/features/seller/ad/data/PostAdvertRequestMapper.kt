@@ -22,7 +22,7 @@ internal object PostAdvertRequestMapper {
         location: OlxLocation,
         images: List<String>,
         price: Float,
-        currency: OlxCurrency = OlxCurrency.Default,
+        currency: OlxCurrency,
         contactName: String,
         attributeItems: List<OlxAttributeState> = emptyList(),
         externalId: String? = null,
