@@ -133,9 +133,31 @@ no such rule, so this splits the two stores mid-run. Check the live version befo
 choosing the number, and bump `VERSION_NAME` if the current one is already public:
 
 ```bash
-bundle exec fastlane run app_store_build_number app_identifier:com.sirelon.sellsnap \
-  api_key_path:fastlane/AuthKey_G5TTXS7GV3.p8 live:true
+bundle exec ruby -r spaceship -e '
+Spaceship::ConnectAPI.token = Spaceship::ConnectAPI::Token.create(
+  key_id: "G5TTXS7GV3",
+  issuer_id: "8873b38c-775e-4a3e-baf5-4e2bada765a8",
+  filepath: File.expand_path("fastlane/AuthKey_G5TTXS7GV3.p8")
+)
+app = Spaceship::ConnectAPI::App.find("com.sirelon.sellsnap")
+puts "live:  #{app.get_live_app_store_version&.version_string}"
+edit = app.get_edit_app_store_version
+puts "edit:  #{edit&.version_string} #{edit&.app_store_state}"
+Spaceship::ConnectAPI.get_builds(filter: { app: app.id }, sort: "-uploadedDate",
+                                 limit: 5, includes: "preReleaseVersion").to_models.each do |b|
+  puts "build: #{b.pre_release_version&.version} (#{b.version})"
+end
+'
 ```
+
+`live:` is the number that forces the bump. `edit:` shows whether a version is already
+open for the next submission, and the build list shows which trains exist — all three in
+one call, because deciding the number needs all three.
+
+Use this rather than `fastlane run app_store_build_number ... api_key_path:`: that action's
+`api_key_path` wants fastlane's own JSON key-file format, so handing it the raw `.p8`
+fails with `JSON::ParserError: invalid number: '-----BEGIN'`. The key triple above is the
+same one `fastlane/Fastfile` already hardcodes.
 
 When this forces a bump, the notes change too: draft them against the last *public*
 version rather than the last build, since the skipped train's features are already in
