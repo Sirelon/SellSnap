@@ -8,7 +8,18 @@ object AnalyticsEvents {
     const val ONBOARDING_COMPLETED = "onboarding_completed"
 
     const val AD_GENERATION_STARTED = "ad_generation_started"
+
+    /**
+     * Carries `duration_ms` (whole attempt), `photo_count`, and, once their stage finished,
+     * `upload_ms`, `upload_bytes` (bytes actually sent, measured after any photo prep),
+     * `model_ms` and - logged-in flow only - `attributes_ms` (category suggestion + attribute
+     * fetch + fill). SIR-121: rebuilding "where does the time go" from event timestamps and
+     * storage metadata is what these params replace.
+     */
     const val AD_GENERATION_SUCCEEDED = "ad_generation_succeeded"
+
+    /** Same stage params as [AD_GENERATION_SUCCEEDED], plus `reason`. Only the stages that
+     * finished before the failure are present. */
     const val AD_GENERATION_FAILED = "ad_generation_failed"
 
     // The model read the photos and declined to write a listing. Deliberately not
@@ -22,7 +33,8 @@ object AnalyticsEvents {
      * was indistinguishable from an event that simply never arrived.
      *
      * `completed_steps` says how far it got (0 uploading, 1 uploaded, 2 model answered), and
-     * `duration_ms` how long the seller waited before giving up.
+     * `duration_ms` how long the seller waited before giving up. Carries the same stage params
+     * as [AD_GENERATION_SUCCEEDED] (SIR-121), limited to whichever stages finished.
      */
     const val AD_GENERATION_ABANDONED = "ad_generation_abandoned"
 
