@@ -47,7 +47,13 @@ class OlxAuthRepositoryTest {
 
         assertContains(request.url, "response_type=code")
         assertContains(request.url, "client_id=test-client-id")
-        assertContains(request.url, "scope=read+write+v2")
+        // Asserted per token, not as one string: OAuth scope is an order-independent space
+        // delimited list (RFC 6749 3.3), and OLX_SCOPE is a build secret whose fallback in
+        // shared/build.gradle.kts orders it differently again - so pinning the order made this
+        // test pass or fail on where it was checked out rather than on anything it tests.
+        listOf("v2", "read", "write").forEach { scope ->
+            assertContains(request.url.substringAfter("scope="), scope)
+        }
         assertContains(request.url, "redirect_uri=selolxai%3A%2F%2Folx-auth%2Fcallback")
         assertTrue(request.state.isNotBlank())
         assertEquals(savedSession?.state, request.state)
