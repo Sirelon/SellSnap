@@ -46,6 +46,7 @@ import com.sirelon.sellsnap.features.seller.categories.domain.AttributeValidatio
 import com.sirelon.sellsnap.features.seller.categories.domain.AttributeValidator
 import com.sirelon.sellsnap.features.seller.categories.domain.OlxCategory
 import com.sirelon.sellsnap.features.seller.currency.data.CurrencyRepository
+import com.sirelon.sellsnap.features.seller.currency.domain.OlxCurrency
 import com.sirelon.sellsnap.features.seller.location.data.LocationRepository
 import com.sirelon.sellsnap.features.seller.my_ads.data.AdvertOutcomeStore
 import com.sirelon.sellsnap.features.seller.openai.AD_GENERATION_MODEL_ID
@@ -269,6 +270,8 @@ class PreviewAdViewModel internal constructor(
         images = advertisement.images,
         location = restoredSavedState.location,
         currentAttemptId = filledAdvertisement.lastAttemptId,
+        // Guests never load OLX's currency list, and a publish can land before it arrives.
+        currency = OlxCurrency.fallbackFor(olxCountryStore.current),
     )
 
     override fun onEvent(event: PreviewAdEvent) {

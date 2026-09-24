@@ -644,6 +644,20 @@ class PreviewAdViewModelTest {
         )
     }
 
+    @Test
+    fun `price starts in the country's currency before OLX's currency list arrives`() = runTest(testDispatcher) {
+        val engine = buildEngine {
+            addHandler { respond(content = "", status = HttpStatusCode.InternalServerError) }
+        }
+        val harness = harness(engine, OlxAccountStore(InMemoryOlxKeyValueStore(), testJson))
+        harness.countryStore.save(OlxCountry.RO)
+
+        val viewModel = buildViewModel(harness)
+
+        // The AI priced this listing in RON; labelling it ₴ would post 450 lei as 450 hryvnias.
+        assertEquals("RON", viewModel.state.value.currency.code)
+    }
+
     // --- test harness -----------------------------------------------------------------------
 
     private fun buildEngine(block: MockEngineConfig.() -> Unit): MockEngine {
@@ -712,7 +726,7 @@ class PreviewAdViewModelTest {
             categoriesRepository = harness.categoriesRepository,
             locationRepository = harness.locationRepository,
             olxApiClient = harness.olxApiClient,
-            currencyRepository = CurrencyRepository(harness.olxApiClient),
+            currencyRepository = CurrencyRepository(harness.olxApiClient, harness.countryStore),
             attributeValidator = AttributeValidator(),
             authRepository = harness.authRepository,
             accountRepository = harness.repository,

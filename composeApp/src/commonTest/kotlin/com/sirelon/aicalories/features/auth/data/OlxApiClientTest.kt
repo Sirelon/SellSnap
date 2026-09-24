@@ -473,7 +473,7 @@ class OlxApiClientTest {
     }
 
     @Test
-    fun `currency repository falls back to UAH when currencies are unavailable`() = runBlocking {
+    fun `currency repository falls back to the country's currency when currencies are unavailable`() = runBlocking {
         val engine = MockEngine {
             respond(
                 content = "",
@@ -496,9 +496,9 @@ class OlxApiClientTest {
             errorParser = errorParser,
         )
 
-        val currency = CurrencyRepository(apiClient).getDefaultCurrency()
+        val currency = CurrencyRepository(apiClient, countryStore("ro")).getDefaultCurrency()
 
-        assertEquals(OlxCurrency.Default, currency)
+        assertEquals(OlxCurrency(code = "RON", label = "", isDefault = true), currency)
     }
 
     @Test
