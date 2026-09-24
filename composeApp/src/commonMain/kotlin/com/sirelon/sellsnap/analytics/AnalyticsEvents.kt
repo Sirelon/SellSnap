@@ -15,6 +15,17 @@ object AnalyticsEvents {
     // AD_GENERATION_FAILED: nothing broke, and the seller has a fix to hand.
     const val AD_GENERATION_PHOTOS_UNUSABLE = "ad_generation_photos_unusable"
 
+    /**
+     * A generation that ended without reaching any of the outcomes above - the seller left the
+     * screen, or the process went down, while it was still running. It exists so that every
+     * `ad_generation_started` has exactly one terminal event against it: before, an abandoned run
+     * was indistinguishable from an event that simply never arrived.
+     *
+     * `completed_steps` says how far it got (0 uploading, 1 uploaded, 2 model answered), and
+     * `duration_ms` how long the seller waited before giving up.
+     */
+    const val AD_GENERATION_ABANDONED = "ad_generation_abandoned"
+
     const val PHOTO_UPLOAD_FAILED = "photo_upload_failed"
 
     const val AD_PUBLISH_STARTED = "ad_publish_started"
