@@ -32,6 +32,8 @@ import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountRecord
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountState
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountsRecord
 import com.sirelon.sellsnap.features.seller.auth.data.OlxApiClient
+import com.sirelon.sellsnap.features.seller.auth.data.PostAdvertRequest
+import com.sirelon.sellsnap.features.seller.auth.data.PostAdvertResult
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAuthRepository
 import com.sirelon.sellsnap.features.seller.auth.data.OlxCountryStore
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxApiError
@@ -130,6 +132,7 @@ class PreviewAdViewModel internal constructor(
 
     private val selectedCategoryId = MutableStateFlow<Int?>(null)
     private val publishSuccessData = MutableStateFlow(restoredSavedState.publishSuccessData)
+    private var publishExternalId: String? = restoredSavedState.publishExternalId
     private var publishJob: Job? = null
     private var nonGuestSetupStarted = false
     private var currencyLoadStarted = false
@@ -457,6 +460,10 @@ class PreviewAdViewModel internal constructor(
                 postEffect(PreviewAdEffect.NavigateToProfile(getString(Res.string.error_publish_missing_contact_name)))
                 return
             }
+            // Non-null only if a POST for this listing already left the device - this session, or
+            // one that died before it could read the response.
+            val previousAttemptId = publishExternalId
+            val externalId = previousAttemptId ?: mintPublishExternalId()
             val request = PostAdvertRequestMapper.map(
                 title = title,
                 description = description,
@@ -467,8 +474,13 @@ class PreviewAdViewModel internal constructor(
                 currency = s.currency,
                 contactName = contactName,
                 attributeItems = validatedItems,
+                externalId = externalId,
             )
-            val data = olxApiClient.postAdvert(request)
+            val data = postAdvertIdempotently(
+                externalId = externalId,
+                request = request,
+                isRetry = previousAttemptId != null,
+            )
             val successData = PublishSuccessData(
                 url = data.url.orEmpty(),
                 title = title,
@@ -535,6 +547,96 @@ class PreviewAdViewModel internal constructor(
                 else -> postEffect(PreviewAdEffect.PublishFailure(getString(Res.string.error_publish_failed)))
             }
         }
+    }
+
+    /**
+     * `POST adverts`, but never twice for the same listing.
+     *
+     * OLX applies no duplicate detection of its own, so two POSTs for one listing produce two live
+     * adverts. Both checks here exist because the app cannot tell "the POST never landed" from "the
+     * POST landed and the answer was lost" without asking:
+     *
+     *  - [isRetry]: an earlier attempt already left the device, so ask before posting at all. This
+     *    is the path a process death mid-publish comes back through - the restored draft looks
+     *    untouched, and only the persisted `external_id` says otherwise.
+     *  - the catch: the POST itself failed in a way that can sit on top of a committed advert.
+     *    Observed on iOS 3.0 as five `NSURLError -1005` failures 14-46s into the request; OLX had
+     *    almost certainly taken those adverts, and the sellers republished.
+     *
+     * A lookup that cannot be answered leaves the original failure standing - reporting a failure
+     * the seller can retry is recoverable, silently claiming success is not.
+     */
+    private suspend fun postAdvertIdempotently(
+        externalId: String,
+        request: PostAdvertRequest,
+        isRetry: Boolean,
+    ): PostAdvertResult {
+        if (isRetry) {
+            olxApiClient.findAdvertByExternalId(externalId)?.let { alreadyLive ->
+                analytics.logEvent(AnalyticsEvents.AD_PUBLISH_RECONCILED, mapOf("stage" to "before_retry"))
+                return alreadyLive
+            }
+        }
+
+        return try {
+            olxApiClient.postAdvert(request)
+        } catch (cancellation: CancellationException) {
+            throw cancellation
+        } catch (error: Throwable) {
+            if (!mayHaveLanded(error)) throw error
+            val landed = runCatching { olxApiClient.findAdvertByExternalId(externalId) }.getOrNull()
+                ?: throw error
+            analytics.logEvent(AnalyticsEvents.AD_PUBLISH_RECONCILED, mapOf("stage" to "after_failure"))
+            landed
+        }
+    }
+
+    /**
+     * Whether [error] leaves open the possibility that OLX created the advert anyway.
+     *
+     * Only worth asking when the answer could be yes: a lookup costs a request against the
+     * 4500-per-IP-per-5-minutes budget, and OLX telling us it refused the advert is already a
+     * definitive answer.
+     */
+    private fun mayHaveLanded(error: Throwable): Boolean = when ((error as? OlxApiException)?.error) {
+        // OLX answered and refused. The advert was never created.
+        is OlxApiError.ValidationError,
+        is OlxApiError.InvalidGrant,
+        is OlxApiError.InvalidToken,
+        is OlxApiError.InvalidClient,
+        is OlxApiError.InsufficientScope,
+        is OlxApiError.MissingCode,
+        is OlxApiError.InvalidState,
+        is OlxApiError.RateLimited,
+        -> false
+
+        // No answer at all (raw engine exception, `null` here), a transport failure, or a response
+        // we could not classify - a 5xx from a proxy that had already handed the request on. Any of
+        // these can sit on top of an advert that is live.
+        is OlxApiError.NetworkFailure,
+        is OlxApiError.Unknown,
+        null,
+        -> true
+    }
+
+    /**
+     * Mints this listing's `external_id` and gets it onto disk before the POST it identifies.
+     *
+     * Written straight to [savedStateHandle] rather than left to the state-driven write in `init`:
+     * that one lands on the next dispatch, and the id is worthless unless it is already persisted
+     * when the process dies during the very POST it belongs to.
+     */
+    private fun mintPublishExternalId(): String {
+        val minted = Uuid.random().toString()
+        publishExternalId = minted
+        val snapshot = toSavedState(
+            state = currentState(),
+            title = titleState.text.toString(),
+            description = descriptionState.text.toString(),
+            successData = publishSuccessData.value,
+        )
+        savedStateHandle[PreviewAdSavedStateKey] = json.encodeToString(snapshot)
+        return minted
     }
 
     // Without this the event carries only `account_index`, so the cause of a publish failure is
@@ -713,6 +815,7 @@ class PreviewAdViewModel internal constructor(
             attributeValues = attributeValues,
             location = state.location,
             publishSuccessData = successData,
+            publishExternalId = publishExternalId,
         )
     }
 }

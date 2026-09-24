@@ -17,6 +17,13 @@ internal data class PostAdvertRequest(
     @SerialName("images") val images: List<AdvertImageRequest>,
     @SerialName("price") val price: AdvertPriceRequest?,
     @SerialName("attributes") val attributes: List<AdvertAttributeRequest>,
+    /**
+     * Our own id for this listing, echoed back by OLX and queryable via `GET adverts?external_id=`.
+     * OLX itself does not deduplicate on it - it is simply "advert's ID in origin system" - so it
+     * buys one thing only, and that is the ability to ask afterwards whether a POST whose response
+     * we never saw actually landed. See [OlxApiClient.findAdvertByExternalId].
+     */
+    @SerialName("external_id") val externalId: String? = null,
 )
 
 @Serializable

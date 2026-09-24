@@ -21,6 +21,15 @@ object AnalyticsEvents {
     const val AD_PUBLISH_SUCCEEDED = "ad_publish_succeeded"
     const val AD_PUBLISH_FAILED = "ad_publish_failed"
 
+    /**
+     * A POST whose advert was found already live on OLX under our `external_id`, so no second
+     * advert was created. `stage` says which check caught it: `before_retry` (the seller tapped
+     * Publish again after an earlier attempt left the device) or `after_failure` (the POST itself
+     * reported a transport failure). A rising count here is the duplicate-listing bug being
+     * prevented, not a regression.
+     */
+    const val AD_PUBLISH_RECONCILED = "ad_publish_reconciled"
+
     // Multi-account (SIR-83). No event may carry an email, OLX user id, account name, or token -
     // only localIndex/counts, per PRD §11.
     const val ACCOUNT_SWITCHED = "account_switched"
