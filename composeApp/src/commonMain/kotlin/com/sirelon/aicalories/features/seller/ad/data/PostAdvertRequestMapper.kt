@@ -25,6 +25,7 @@ internal object PostAdvertRequestMapper {
         currency: OlxCurrency = OlxCurrency.Default,
         contactName: String,
         attributeItems: List<OlxAttributeState> = emptyList(),
+        externalId: String? = null,
     ): PostAdvertRequest = PostAdvertRequest(
         title = title,
         description = description,
@@ -45,5 +46,6 @@ internal object PostAdvertRequestMapper {
                 }
                 AdvertAttributeRequest(code = item.attribute.code, values = values)
             },
+        externalId = externalId,
     )
 }

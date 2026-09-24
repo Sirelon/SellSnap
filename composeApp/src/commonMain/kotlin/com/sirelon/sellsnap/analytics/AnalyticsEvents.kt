@@ -15,11 +15,31 @@ object AnalyticsEvents {
     // AD_GENERATION_FAILED: nothing broke, and the seller has a fix to hand.
     const val AD_GENERATION_PHOTOS_UNUSABLE = "ad_generation_photos_unusable"
 
+    /**
+     * A generation that ended without reaching any of the outcomes above - the seller left the
+     * screen, or the process went down, while it was still running. It exists so that every
+     * `ad_generation_started` has exactly one terminal event against it: before, an abandoned run
+     * was indistinguishable from an event that simply never arrived.
+     *
+     * `completed_steps` says how far it got (0 uploading, 1 uploaded, 2 model answered), and
+     * `duration_ms` how long the seller waited before giving up.
+     */
+    const val AD_GENERATION_ABANDONED = "ad_generation_abandoned"
+
     const val PHOTO_UPLOAD_FAILED = "photo_upload_failed"
 
     const val AD_PUBLISH_STARTED = "ad_publish_started"
     const val AD_PUBLISH_SUCCEEDED = "ad_publish_succeeded"
     const val AD_PUBLISH_FAILED = "ad_publish_failed"
+
+    /**
+     * A POST whose advert was found already live on OLX under our `external_id`, so no second
+     * advert was created. `stage` says which check caught it: `before_retry` (the seller tapped
+     * Publish again after an earlier attempt left the device) or `after_failure` (the POST itself
+     * reported a transport failure). A rising count here is the duplicate-listing bug being
+     * prevented, not a regression.
+     */
+    const val AD_PUBLISH_RECONCILED = "ad_publish_reconciled"
 
     // Multi-account (SIR-83). No event may carry an email, OLX user id, account name, or token -
     // only localIndex/counts, per PRD §11.

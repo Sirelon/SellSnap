@@ -38,7 +38,10 @@ import com.sirelon.sellsnap.generated.resources.error_photo_different_items
 import com.sirelon.sellsnap.generated.resources.error_photo_unreadable
 import com.sirelon.sellsnap.generated.resources.error_selected_files_process_failed
 import com.sirelon.sellsnap.generated.resources.error_upload_file_failed
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.TimeSource
 import kotlin.uuid.Uuid
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
@@ -62,6 +65,21 @@ private const val GuestProcessingStepCount = 3
 private const val AuthenticatedProcessingStepCount = 5
 private const val GenerateAdSavedStateKey = "generate_ad_saved_state"
 private const val OpenAIRequestFailedPrefix = "OpenAI request failed:"
+
+/**
+ * How long the model gets to answer before the generation is called off.
+ *
+ * Measured p50 is ~16s and the worst observed run was 96s, so this is roughly a 25% margin over
+ * anything real. The alternative is the OpenAI client's own 5-minute request timeout, which in
+ * practice means a spinner the seller force-quits out of - and a force-quit leaves no event
+ * behind, so those runs were invisible in analytics too.
+ */
+private val AdGenerationTimeout = 2.minutes
+
+/** Thrown instead of letting `withTimeout` raise a [kotlinx.coroutines.CancellationException],
+ * which [kotlinx.coroutines.flow.catch] would pass straight through as a cancellation rather than
+ * a failure the seller can be told about and retry. */
+private class AdGenerationTimeoutException : Exception("Ad generation exceeded $AdGenerationTimeout")
 
 class GenerateAdViewModel(
     private val mediaUploadHelper: MediaUploadHelper,
@@ -162,6 +180,14 @@ class GenerateAdViewModel(
         val isGuest = authRepository.currentSession().mode == SellerSessionMode.Guest
         val generationSessionId = Uuid.random().toString()
         var generationAttemptId: String? = null
+        // Per-attempt, unlike AdFlowTimerStore, whose mark spans the whole ad flow and survives a
+        // retry - so it cannot answer "how long did this generation take?", which is the number
+        // the 96s outlier was only visible in by diffing event timestamps in BigQuery.
+        val startedAt = TimeSource.Monotonic.markNow()
+        // Every ad_generation_started needs exactly one terminal event against it. Without this
+        // latch, leaving the screen mid-generation ends the flow through onCompletion having
+        // logged nothing, and the attempt is indistinguishable from one that silently vanished.
+        var outcomeLogged = false
 
         flowOf(1)
             .onStart {
@@ -184,18 +210,22 @@ class GenerateAdViewModel(
             .onEach { setState { it.copy(completedSteps = 1) } }
 
             .map { images ->
-                images to openAi.analyzeThing(
-                    images = images,
-                    sellerPrompt = state.value.prompt,
-                    country = countryStore.current,
-                )
+                val analysis = withTimeoutOrNull(AdGenerationTimeout) {
+                    openAi.analyzeThing(
+                        images = images,
+                        sellerPrompt = state.value.prompt,
+                        country = countryStore.current,
+                    )
+                } ?: throw AdGenerationTimeoutException()
+                images to analysis
             }
 
             .flatMapLatest { (images, analysis) ->
                 if (analysis is AdAnalysis.Unusable) {
                     // The seller has something to fix, so the flow stops here rather than opening a
                     // preview of a listing the model never managed to write.
-                    logUnusablePhotos(analysis.reason, generationSessionId, images)
+                    logUnusablePhotos(analysis.reason, generationSessionId, images, startedAt.elapsedNow().inWholeMilliseconds)
+                    outcomeLogged = true
                     return@flatMapLatest emptyFlow()
                 }
 
@@ -260,7 +290,11 @@ class GenerateAdViewModel(
 
             .onEach { ad ->
                 adFlowTimerStore.markGenerationCompleted()
-                analytics.logEvent(AnalyticsEvents.AD_GENERATION_SUCCEEDED)
+                outcomeLogged = true
+                analytics.logEvent(
+                    AnalyticsEvents.AD_GENERATION_SUCCEEDED,
+                    mapOf("duration_ms" to startedAt.elapsedNow().inWholeMilliseconds),
+                )
                 clearDraft()
                 postEffect(GenerateAdContract.GenerateAdEffect.OpenAdPreview(ad = ad))
             }
@@ -272,12 +306,31 @@ class GenerateAdViewModel(
                         defaultMessage = getString(Res.string.error_generate_ad_failed),
                     )
                 }
+                outcomeLogged = true
                 analytics.recordException(error, AnalyticsEvents.AD_GENERATION_FAILED)
-                analytics.logEvent(AnalyticsEvents.AD_GENERATION_FAILED, mapOf("reason" to error.toFailureReason()))
+                analytics.logEvent(
+                    AnalyticsEvents.AD_GENERATION_FAILED,
+                    mapOf(
+                        "reason" to error.toFailureReason(),
+                        "duration_ms" to startedAt.elapsedNow().inWholeMilliseconds,
+                    ),
+                )
                 setState { it.copy(isLoading = false) }
                 showError(message)
             }
             .onCompletion {
+                if (!outcomeLogged) {
+                    // The seller left the screen, or the process is going down, while the
+                    // generation was still running. `completed_steps` says how far it got: 0 photos
+                    // still uploading, 1 uploading done, 2 model answered.
+                    analytics.logEvent(
+                        AnalyticsEvents.AD_GENERATION_ABANDONED,
+                        mapOf(
+                            "duration_ms" to startedAt.elapsedNow().inWholeMilliseconds,
+                            "completed_steps" to currentState().completedSteps,
+                        ),
+                    )
+                }
                 setState { it.copy(isLoading = false) }
             }
             .launchIn(viewModelScope)
@@ -427,6 +480,7 @@ class GenerateAdViewModel(
         reason: UnusablePhotoReason,
         generationSessionId: String,
         images: List<String>,
+        durationMs: Long,
     ) {
         adGenerationLogRepository.logAttempt(
             AdGenerationAttempt(
@@ -448,7 +502,7 @@ class GenerateAdViewModel(
         )
         analytics.logEvent(
             AnalyticsEvents.AD_GENERATION_PHOTOS_UNUSABLE,
-            mapOf("reason" to reason.code),
+            mapOf("reason" to reason.code, "duration_ms" to durationMs),
         )
         showError(getString(reason.messageRes))
     }
@@ -470,6 +524,7 @@ class GenerateAdViewModel(
     private fun Throwable.toFailureReason(): String = when {
         this is UnsupportedOlxCategoryException -> "unsupported_category"
         this is IncompleteGeneratedAdException -> "incomplete_ad"
+        this is AdGenerationTimeoutException -> "timeout"
         message?.startsWith(OpenAIRequestFailedPrefix) == true -> "openai_error"
         else -> "other"
     }

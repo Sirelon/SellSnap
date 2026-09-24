@@ -310,6 +310,11 @@ class OlxApiClient(
         return response.decodeBody<OlxLocationsRootResponse>("locations").data.orEmpty()
     }
 
+    /**
+     * `POST adverts`. Send a stable [PostAdvertRequest.externalId] so a retry of the same listing
+     * can be reconciled with [findAdvertByExternalId] instead of creating a duplicate - OLX applies
+     * no duplicate detection of its own.
+     */
     internal suspend fun postAdvert(request: PostAdvertRequest): PostAdvertResult {
         val response = httpClient.post("adverts") {
             contentType(ContentType.Application.Json)
@@ -320,6 +325,38 @@ class OlxApiClient(
         val body = response.decodeBody<PostAdvertRootResponse>("advert publish")
         val advert = body.data ?: throw missingResponseData("advert publish", "data")
         val advertId = advert.id ?: throw missingResponseData("advert publish", "data.id")
+
+        return PostAdvertResult(
+            id = advertId,
+            status = AdvertStatus.from(advert.status ?: ""),
+            url = advert.url,
+        )
+    }
+
+    /**
+     * Reads back the advert created under [externalId], or null if OLX holds none.
+     *
+     * This is the other half of publish idempotency: [postAdvert] sends `external_id`, and when
+     * its response never arrives - a dropped connection mid-POST, or the process dying before the
+     * response is read - the advert may still be live on OLX. Asking here is the only way to tell
+     * that apart from a POST that never landed, and the only thing standing between the seller and
+     * a second identical listing.
+     *
+     * A lookup failure is not swallowed: the caller decides whether an unanswerable question means
+     * "report the publish as failed" or something safer.
+     */
+    internal suspend fun findAdvertByExternalId(externalId: String): PostAdvertResult? {
+        val response = httpClient.get("adverts") {
+            parameter("external_id", externalId)
+        }
+        response.ensureSuccess()
+
+        val advert = response.decodeBody<OlxAdvertsRootResponse>("advert lookup by external id")
+            .data
+            .orEmpty()
+            .firstOrNull()
+            ?: return null
+        val advertId = advert.id ?: return null
 
         return PostAdvertResult(
             id = advertId,

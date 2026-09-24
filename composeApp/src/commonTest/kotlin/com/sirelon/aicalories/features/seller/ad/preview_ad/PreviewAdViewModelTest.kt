@@ -444,6 +444,206 @@ class PreviewAdViewModelTest {
         assertTrue(reconnect.actionLabel.contains("Seller One"))
     }
 
+    @Test
+    fun `a POST that dies in transport after OLX took the advert reports success, not failure`() = runTest(testDispatcher) {
+        val accountStore = OlxAccountStore(InMemoryOlxKeyValueStore(), testJson)
+        accountStore.write(
+            OlxAccountsRecord(
+                accounts = listOf(account(localIndex = 1, olxUserId = 100L, accessToken = "token-a")),
+                activeByCountry = mapOf("ua" to 1),
+                nextLocalIndex = 2,
+            ),
+        )
+        var postAdvertRequests = 0
+        var lookupExternalId: String? = null
+        val engine = buildEngine {
+            addHandler { request ->
+                val externalId = request.url.parameters["external_id"]
+                when {
+                    request.url.encodedPath.contains("users/me") ->
+                        respond(userJson(id = 100L, name = "Seller"), status = HttpStatusCode.OK, headers = jsonHeaders())
+
+                    externalId != null -> {
+                        lookupExternalId = externalId
+                        respond(advertsListJson(id = 7L), status = HttpStatusCode.OK, headers = jsonHeaders())
+                    }
+
+                    request.url.encodedPath.contains("adverts") && request.method == HttpMethod.Post -> {
+                        postAdvertRequests += 1
+                        // What five iOS 3.0 sellers hit: the connection dropped 14-46s into the
+                        // POST, long after OLX had the advert. Nothing comes back to read.
+                        throw IllegalStateException("NSURLErrorNetworkConnectionLost")
+                    }
+
+                    else -> respond("{}", status = HttpStatusCode.OK, headers = jsonHeaders())
+                }
+            }
+        }
+        val harness = harness(engine, accountStore)
+        val viewModel = buildViewModel(harness)
+        viewModel.setState { it.copy(selectedCategory = testCategory, location = testLocation, attributesLoadState = AttributesLoadState.Loaded) }
+        val effects = mutableListOf<PreviewAdEffect>()
+        backgroundScope.launch { viewModel.effects.collect { effects += it } }
+
+        viewModel.onEvent(PreviewAdEvent.Publish)
+        advanceUntilIdle()
+
+        assertEquals(1, postAdvertRequests)
+        assertTrue(lookupExternalId != null, "a lost response must be reconciled against OLX, not assumed to be a failure")
+        val success = effects.filterIsInstance<PreviewAdEffect.PublishSuccess>().singleOrNull()
+        assertTrue(success != null, "the advert is live on OLX, so telling the seller it failed is what makes them republish")
+        assertTrue(
+            effects.filterIsInstance<PreviewAdEffect.PublishFailure>().isEmpty(),
+            "one publish cannot be both a success and a failure",
+        )
+        assertTrue(
+            harness.analytics.events.any { it.first == AnalyticsEvents.AD_PUBLISH_RECONCILED },
+            "the recovery has to be countable - it is the only signal that the duplicate bug is being prevented",
+        )
+    }
+
+    @Test
+    fun `publishing again after an attempt whose outcome was never seen asks OLX before it posts`() = runTest(testDispatcher) {
+        val accountStore = OlxAccountStore(InMemoryOlxKeyValueStore(), testJson)
+        accountStore.write(
+            OlxAccountsRecord(
+                accounts = listOf(account(localIndex = 1, olxUserId = 100L, accessToken = "token-a")),
+                activeByCountry = mapOf("ua" to 1),
+                nextLocalIndex = 2,
+            ),
+        )
+        var postAdvertRequests = 0
+        val engine = buildEngine {
+            addHandler { request ->
+                when {
+                    request.url.encodedPath.contains("users/me") ->
+                        respond(userJson(id = 100L, name = "Seller"), status = HttpStatusCode.OK, headers = jsonHeaders())
+
+                    request.url.parameters["external_id"] == "attempt-that-was-cut-off" ->
+                        respond(advertsListJson(id = 7L), status = HttpStatusCode.OK, headers = jsonHeaders())
+
+                    request.url.encodedPath.contains("adverts") && request.method == HttpMethod.Post -> {
+                        postAdvertRequests += 1
+                        respond(postAdvertJson(id = 8L), status = HttpStatusCode.OK, headers = jsonHeaders())
+                    }
+
+                    else -> respond("{}", status = HttpStatusCode.OK, headers = jsonHeaders())
+                }
+            }
+        }
+        val harness = harness(engine, accountStore)
+        // The process died mid-publish. All that survives is the saved state the ViewModel wrote
+        // before the POST - the key is file-private to PreviewAdViewModel, so it is spelled out
+        // here. Without `publishExternalId` this draft is indistinguishable from an untouched one.
+        val restored = SavedStateHandle(
+            mapOf(
+                "preview_ad_saved_state" to
+                    """{"title":"A perfectly fine test title","publishExternalId":"attempt-that-was-cut-off"}""",
+            ),
+        )
+        val viewModel = buildViewModel(harness, restored)
+        viewModel.setState { it.copy(selectedCategory = testCategory, location = testLocation, attributesLoadState = AttributesLoadState.Loaded) }
+        val effects = mutableListOf<PreviewAdEffect>()
+        backgroundScope.launch { viewModel.effects.collect { effects += it } }
+
+        viewModel.onEvent(PreviewAdEvent.Publish)
+        advanceUntilIdle()
+
+        assertEquals(0, postAdvertRequests, "the advert from the cut-off attempt is already live - posting again lists it twice")
+        assertEquals(1, effects.filterIsInstance<PreviewAdEffect.PublishSuccess>().size)
+    }
+
+    @Test
+    fun `a publish OLX rejected is not second-guessed with a lookup`() = runTest(testDispatcher) {
+        val accountStore = OlxAccountStore(InMemoryOlxKeyValueStore(), testJson)
+        accountStore.write(
+            OlxAccountsRecord(
+                accounts = listOf(account(localIndex = 1, olxUserId = 100L, accessToken = "token-a")),
+                activeByCountry = mapOf("ua" to 1),
+                nextLocalIndex = 2,
+            ),
+        )
+        var lookups = 0
+        val engine = buildEngine {
+            addHandler { request ->
+                when {
+                    request.url.encodedPath.contains("users/me") ->
+                        respond(userJson(id = 100L, name = "Seller"), status = HttpStatusCode.OK, headers = jsonHeaders())
+
+                    request.url.parameters["external_id"] != null -> {
+                        lookups += 1
+                        respond(emptyAdvertsListJson(), status = HttpStatusCode.OK, headers = jsonHeaders())
+                    }
+
+                    request.url.encodedPath.contains("adverts") && request.method == HttpMethod.Post ->
+                        respond(
+                            """{"error":{"status":400,"validation":[{"field":"title","title":"Title is too short"}]}}""",
+                            status = HttpStatusCode.BadRequest,
+                            headers = jsonHeaders(),
+                        )
+
+                    else -> respond("{}", status = HttpStatusCode.OK, headers = jsonHeaders())
+                }
+            }
+        }
+        val harness = harness(engine, accountStore)
+        val viewModel = buildViewModel(harness)
+        viewModel.setState { it.copy(selectedCategory = testCategory, location = testLocation, attributesLoadState = AttributesLoadState.Loaded) }
+        val effects = mutableListOf<PreviewAdEffect>()
+        backgroundScope.launch { viewModel.effects.collect { effects += it } }
+
+        viewModel.onEvent(PreviewAdEvent.Publish)
+        advanceUntilIdle()
+
+        assertEquals(0, lookups, "OLX already answered that it refused the advert - asking again only burns the rate-limit budget")
+        assertEquals(1, effects.filterIsInstance<PreviewAdEffect.PublishFailure>().size)
+    }
+
+    @Test
+    fun `the POST carries the external_id the reconciliation later looks up`() = runTest(testDispatcher) {
+        val accountStore = OlxAccountStore(InMemoryOlxKeyValueStore(), testJson)
+        accountStore.write(
+            OlxAccountsRecord(
+                accounts = listOf(account(localIndex = 1, olxUserId = 100L, accessToken = "token-a")),
+                activeByCountry = mapOf("ua" to 1),
+                nextLocalIndex = 2,
+            ),
+        )
+        var postedBody: String? = null
+        val engine = buildEngine {
+            addHandler { request ->
+                when {
+                    request.url.encodedPath.contains("users/me") ->
+                        respond(userJson(id = 100L, name = "Seller"), status = HttpStatusCode.OK, headers = jsonHeaders())
+
+                    request.url.encodedPath.contains("adverts") && request.method == HttpMethod.Post -> {
+                        postedBody = (request.body as io.ktor.http.content.TextContent).text
+                        respond(postAdvertJson(id = 7L), status = HttpStatusCode.OK, headers = jsonHeaders())
+                    }
+
+                    else -> respond("{}", status = HttpStatusCode.OK, headers = jsonHeaders())
+                }
+            }
+        }
+        val harness = harness(engine, accountStore)
+        val savedStateHandle = SavedStateHandle()
+        val viewModel = buildViewModel(harness, savedStateHandle)
+        viewModel.setState { it.copy(selectedCategory = testCategory, location = testLocation, attributesLoadState = AttributesLoadState.Loaded) }
+
+        viewModel.onEvent(PreviewAdEvent.Publish)
+        advanceUntilIdle()
+
+        val body = postedBody
+        assertTrue(body != null && body.contains("external_id"), "without external_id on the POST there is nothing to reconcile against")
+        // Persisted before the POST rather than after it: an id that only reaches disk once a
+        // response comes back is exactly the id a mid-POST process death loses.
+        val persisted = savedStateHandle.get<String>("preview_ad_saved_state")
+        assertTrue(
+            persisted != null && persisted.contains("publishExternalId"),
+            "the id has to outlive the process for a restored draft to know a POST already went out",
+        )
+    }
+
     // --- test harness -----------------------------------------------------------------------
 
     private fun buildEngine(block: MockEngineConfig.() -> Unit): MockEngine {
@@ -457,6 +657,12 @@ class PreviewAdViewModelTest {
 
     private fun postAdvertJson(id: Long) =
         """{"data":{"id":$id,"status":"new","url":"https://www.olx.ua/d/obyavlenie/test-ID$id.html"}}"""
+
+    /** `GET adverts` returns a list under `data`, unlike `POST adverts`, which returns one object. */
+    private fun advertsListJson(id: Long) =
+        """{"data":[{"id":$id,"status":"active","url":"https://www.olx.ua/d/obyavlenie/test-ID$id.html"}]}"""
+
+    private fun emptyAdvertsListJson() = """{"data":[]}"""
 
     private fun jsonHeaders() = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
 
@@ -489,7 +695,10 @@ class PreviewAdViewModelTest {
         profile = profile,
     )
 
-    private fun buildViewModel(harness: TestHarness): PreviewAdViewModel {
+    private fun buildViewModel(
+        harness: TestHarness,
+        savedStateHandle: SavedStateHandle = SavedStateHandle(),
+    ): PreviewAdViewModel {
         val advertisement = Advertisement(
             title = "A perfectly fine test title",
             description = "A sufficiently long test description with more than thirty characters in it.",
@@ -509,7 +718,7 @@ class PreviewAdViewModelTest {
             accountRepository = harness.repository,
             olxCountryStore = harness.countryStore,
             adFlowTimerStore = AdFlowTimerStore(),
-            savedStateHandle = SavedStateHandle(),
+            savedStateHandle = savedStateHandle,
             json = testJson,
             analytics = harness.analytics,
             openAiClient = OpenAIClient(
