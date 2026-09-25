@@ -24,6 +24,11 @@ object OlxAuthCallbackBridge {
         .asSharedFlow()
         .onEach { mutex.withLock { callbackEvents.resetReplayCache() } }
 
+    /** How many distinct callbacks have been published; only ever grows (URLs are never
+     * un-seen outside tests). Android reads it to tell a finished login from a closed one - see
+     * `OlxAuthReturnTracker`. */
+    val publishedCount: Int get() = seenUrls.value.size
+
     fun onNewUri(url: String) {
         publishCallback(url)
     }
