@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.mohamedrejeb.calf.io.KmpFile
 import com.mohamedrejeb.calf.io.getName
+import com.mohamedrejeb.calf.io.readByteArray
 import com.sirelon.sellsnap.analytics.Analytics
 import com.sirelon.sellsnap.analytics.AnalyticsEvents
 import com.sirelon.sellsnap.features.common.presentation.BaseViewModel
@@ -212,9 +213,18 @@ class GenerateAdViewModel(
         var outcomeLogged = false
         cancelTrigger = null
 
+        // Per-stage timings for the outcome events (SIR-121). Left null when a stage never
+        // finished, so a failed/abandoned run only reports the stages it actually completed.
+        var photoCount = 0
+        var uploadMs: Long? = null
+        var uploadBytes: Long? = null
+        var modelMs: Long? = null
+        var attributesMs: Long? = null
+
         generationJob = flowOf(1)
             .onStart {
                 adFlowTimerStore.markFlowStartedIfNeeded()
+                photoCount = currentState().uploads.size
                 analytics.logEvent(
                     AnalyticsEvents.AD_GENERATION_STARTED,
                     mapOf("is_guest" to isGuest),
@@ -229,10 +239,16 @@ class GenerateAdViewModel(
                 }
             }
 
-            .map { uploadFilesAndGetPublicUrls() }
+            .map {
+                val result = uploadFilesAndGetPublicUrls()
+                uploadMs = result.uploadMs
+                uploadBytes = result.uploadedBytes
+                result.urls
+            }
             .onEach { setState { it.copy(completedSteps = 1) } }
 
             .map { images ->
+                val stageStartedAt = TimeSource.Monotonic.markNow()
                 val analysis = withTimeoutOrNull(AdGenerationTimeout) {
                     openAi.analyzeThing(
                         images = images,
@@ -240,6 +256,7 @@ class GenerateAdViewModel(
                         country = countryStore.current,
                     )
                 } ?: throw AdGenerationTimeoutException()
+                modelMs = stageStartedAt.elapsedNow().inWholeMilliseconds
                 images to analysis
             }
 
@@ -285,6 +302,7 @@ class GenerateAdViewModel(
                         setState { it.copy(completedSteps = GuestProcessingStepCount) }
                     }
                 } else {
+                    val attributesStageStartedAt = TimeSource.Monotonic.markNow()
                     categoriesRepository
                         .categorySuggestion(generatedAd.title)
                         .onEach { setState { it.copy(completedSteps = 3) } }
@@ -298,7 +316,10 @@ class GenerateAdViewModel(
                                 sellerPrompt = state.value.prompt
                             )
                         }
-                        .onEach { setState { it.copy(completedSteps = AuthenticatedProcessingStepCount) } }
+                        .onEach {
+                            attributesMs = attributesStageStartedAt.elapsedNow().inWholeMilliseconds
+                            setState { it.copy(completedSteps = AuthenticatedProcessingStepCount) }
+                        }
                         .map {
                             AdvertisementWithAttributes(
                                 advertisement = generatedAd,
@@ -316,7 +337,7 @@ class GenerateAdViewModel(
                 outcomeLogged = true
                 analytics.logEvent(
                     AnalyticsEvents.AD_GENERATION_SUCCEEDED,
-                    mapOf("duration_ms" to startedAt.elapsedNow().inWholeMilliseconds),
+                    buildGenerationStageParams(startedAt.elapsedNow().inWholeMilliseconds, photoCount, uploadMs, uploadBytes, modelMs, attributesMs),
                 )
                 clearDraft()
                 postEffect(GenerateAdContract.GenerateAdEffect.OpenAdPreview(ad = ad))
@@ -333,10 +354,8 @@ class GenerateAdViewModel(
                 analytics.recordException(error, AnalyticsEvents.AD_GENERATION_FAILED)
                 analytics.logEvent(
                     AnalyticsEvents.AD_GENERATION_FAILED,
-                    mapOf(
-                        "reason" to error.toFailureReason(),
-                        "duration_ms" to startedAt.elapsedNow().inWholeMilliseconds,
-                    ),
+                    buildGenerationStageParams(startedAt.elapsedNow().inWholeMilliseconds, photoCount, uploadMs, uploadBytes, modelMs, attributesMs) +
+                        mapOf("reason" to error.toFailureReason()),
                 )
                 setState { it.copy(isLoading = false) }
                 showError(message)
@@ -348,11 +367,11 @@ class GenerateAdViewModel(
                     // still uploading, 1 uploading done, 2 model answered.
                     analytics.logEvent(
                         AnalyticsEvents.AD_GENERATION_ABANDONED,
-                        mapOf(
-                            "duration_ms" to startedAt.elapsedNow().inWholeMilliseconds,
-                            "completed_steps" to currentState().completedSteps,
-                            "trigger" to (cancelTrigger ?: "left"),
-                        ),
+                        buildGenerationStageParams(startedAt.elapsedNow().inWholeMilliseconds, photoCount, uploadMs, uploadBytes, modelMs, attributesMs) +
+                            mapOf(
+                                "completed_steps" to currentState().completedSteps,
+                                "trigger" to (cancelTrigger ?: "left"),
+                            ),
                     )
                 }
                 // Cancelling mid-upload cancels the upload coroutines, but the photos they were
@@ -374,7 +393,9 @@ class GenerateAdViewModel(
             .launchIn(viewModelScope)
     }
 
-    private suspend fun uploadFilesAndGetPublicUrls(): List<String> {
+    private data class UploadResult(val urls: List<String>, val uploadedBytes: Long, val uploadMs: Long)
+
+    private suspend fun uploadFilesAndGetPublicUrls(): UploadResult {
         val uploads = currentState().uploads
         // Anything without an uploaded file goes up now, including a photo still flagged as
         // uploading: uploads only ever run inside a submit, and the isLoading guard allows one
@@ -387,6 +408,13 @@ class GenerateAdViewModel(
             .mapNotNull { (file, item) -> item.uploadedFile?.let { file to it } }
             .toMap()
 
+        // Read after any format conversion (prepareFiles/onFileResult already ran), so this is the
+        // byte count actually handed to the upload - not the original picked file's size. Read
+        // before the timer starts, so this pass doesn't inflate upload_ms - the actual network
+        // upload below reads each file again regardless.
+        val uploadedBytes = pendingFiles.sumOf { it.readByteArray().size.toLong() }
+
+        val stageStartedAt = TimeSource.Monotonic.markNow()
         val newlyUploadedByFile = if (pendingFiles.isEmpty()) {
             emptyMap()
         } else {
@@ -404,10 +432,12 @@ class GenerateAdViewModel(
                 .toList()
                 .toMap()
         }
+        val uploadMs = stageStartedAt.elapsedNow().inWholeMilliseconds
 
-        return uploads.keys.mapNotNull { file ->
+        val urls = uploads.keys.mapNotNull { file ->
             (newlyUploadedByFile[file] ?: uploadedByFile[file])?.toPublicUrl()
         }
+        return UploadResult(urls = urls, uploadedBytes = uploadedBytes, uploadMs = uploadMs)
     }
 
     private suspend fun UploadedFile.toPublicUrl(): String = mediaUploadHelper.publicUrl(path)
@@ -645,6 +675,28 @@ class GenerateAdViewModel(
         val path = draftMediaFileStore.stablePath(file) ?: return null
         return readSavedState().photos.firstOrNull { it.path == path }
     }
+}
+
+/**
+ * Per-stage timings for `ad_generation_succeeded`, `ad_generation_failed` and
+ * `ad_generation_abandoned` (SIR-121). `upload_ms`/`upload_bytes`, `model_ms` and `attributes_ms`
+ * are only present once their stage actually finished, so a failed or abandoned run reports
+ * exactly as far as it got rather than a zero or a guess.
+ */
+internal fun buildGenerationStageParams(
+    durationMs: Long,
+    photoCount: Int,
+    uploadMs: Long?,
+    uploadBytes: Long?,
+    modelMs: Long?,
+    attributesMs: Long?,
+): Map<String, Any> = buildMap {
+    put("duration_ms", durationMs)
+    put("photo_count", photoCount)
+    uploadMs?.let { put("upload_ms", it) }
+    uploadBytes?.let { put("upload_bytes", it) }
+    modelMs?.let { put("model_ms", it) }
+    attributesMs?.let { put("attributes_ms", it) }
 }
 
 /**
