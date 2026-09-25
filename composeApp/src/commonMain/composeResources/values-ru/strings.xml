@@ -19,6 +19,7 @@
     <string name="guest_mode_banner_message">Хочете опублікувати? Знадобиться акаунт OLX. А поки скопіюйте назву, опис і ціну нижче й вставте їх на OLX.</string>
     <string name="guest_connect_olx_cta">Підключити OLX і публікувати в один тап</string>
     <string name="guest_copy_hint">Натисніть кнопки копіювання поряд із назвою, описом і ціною — і вставте їх на OLX, коли будете готові.</string>
+    <string name="generate_ad_guest_connect_hint">Ви зараз у гостьовому режимі — підключіть OLX будь-коли в Профілі, щоб публікувати в один тап.</string>
     <string name="continue_with_olx">Продовжити з OLX</string>
     <string name="terms_privacy_prefix">Продовжуючи, ви приймаєте наші </string>
     <string name="terms_of_service">Умови обслуговування</string>

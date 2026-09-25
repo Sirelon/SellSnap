@@ -18,6 +18,7 @@
     <string name="guest_mode_banner_message">Искаш да публикуваш? Ще ти трябва OLX акаунт. Засега копирай заглавието, описанието и цената по-долу и ги постни в OLX.</string>
     <string name="guest_connect_olx_cta">Свържи OLX и публикувай с един допир</string>
     <string name="guest_copy_hint">Докосни бутоните за копиране до заглавието, описанието и цената — после ги постни в OLX, когато си готов.</string>
+    <string name="generate_ad_guest_connect_hint">Сега си в гостови режим — свържи OLX по всяко време в Профила, за да публикуваш с един допир.</string>
     <string name="continue_with_olx">Продължи с OLX</string>
     <string name="terms_privacy_prefix">С продължаването приемаш нашите </string>
     <string name="terms_of_service">Условия за ползване</string>
