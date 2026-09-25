@@ -15,6 +15,7 @@
     <string name="benefit_manage">Усі оголошення — в одному місці</string>
     <string name="continue_as_guest">Спробувати без акаунта</string>
     <string name="guest_description">Ви зможете створити оголошення й скопіювати текст — а вставити на OLX доведеться вручну.</string>
+    <string name="olx_login_closed_title">Продовжити без OLX?</string>
     <string name="guest_mode_banner_title">Гостьовий режим</string>
     <string name="guest_mode_banner_message">Хочете опублікувати? Знадобиться акаунт OLX. А поки скопіюйте назву, опис і ціну нижче й вставте їх на OLX.</string>
     <string name="guest_connect_olx_cta">Підключити OLX і публікувати в один тап</string>
