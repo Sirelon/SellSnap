@@ -215,6 +215,8 @@
     <string name="publish_confirm_subtitle">Хабарландырың 1–2 минут ішінде OLX-те пайда болады.</string>
     <string name="publish_confirm_yes">Иә, жариялау</string>
     <string name="publish_confirm_back">Күте тұр, өңдейін</string>
+    <string name="publish_confirm_photo_removed">Фото жойылды</string>
+    <string name="publish_confirm_undo_remove_photo">Болдырмау</string>
     <string name="preview_back_info_title">Бұл жобаны тастап кету керек пе?</string>
     <string name="preview_back_info_message">Бұл хабарландыру әлі жарияланбаған. Кетсең, жоба жойылады — генерация экранынан қайта бастайсың.</string>
     <string name="preview_back_info_stay">Өңдеуді жалғастыру</string>
@@ -248,6 +250,7 @@
     <string name="error_olx_auth_prepare_failed">OLX-ке кіруді бастау мүмкін болмады.</string>
     <string name="error_olx_auth_complete_failed">OLX-ке кіруді аяқтау мүмкін болмады.</string>
     <string name="error_selected_files_process_failed">Фотоларды жүктеу мүмкін болмады.</string>
+    <string name="photos_limit_kept_message">Алғашқы %1$d фото сақталды — бұл осы қадам үшін максимум.</string>
     <string name="error_upload_file_failed">Фотолардың бірін жүктеу мүмкін болмады.</string>
     <string name="error_publish_failed">Жариялау сәтсіз аяқталды. Қайталап көр.</string>
     <string name="error_generate_ad_failed">Хабарландыруды жасау мүмкін болмады. Қайталап көресің бе?</string>

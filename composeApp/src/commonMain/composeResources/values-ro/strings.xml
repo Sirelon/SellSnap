@@ -215,6 +215,8 @@
     <string name="publish_confirm_subtitle">Anunțul tău va apărea pe OLX în 1–2 minute.</string>
     <string name="publish_confirm_yes">Da, publică</string>
     <string name="publish_confirm_back">Stai, vreau să editez</string>
+    <string name="publish_confirm_photo_removed">Fotografie eliminată</string>
+    <string name="publish_confirm_undo_remove_photo">Anulare</string>
     <string name="preview_back_info_title">Renunți la acest ciornă?</string>
     <string name="preview_back_info_message">Anunțul nu a fost publicat încă. Dacă pleci acum, ciorna va fi ștearsă — vei începe de la zero pe ecranul de generare.</string>
     <string name="preview_back_info_stay">Continuă editarea</string>
@@ -248,6 +250,7 @@
     <string name="error_olx_auth_prepare_failed">Nu s-a putut iniția autentificarea OLX.</string>
     <string name="error_olx_auth_complete_failed">Nu s-a putut finaliza autentificarea în OLX.</string>
     <string name="error_selected_files_process_failed">Nu s-au putut încărca fotografiile respective.</string>
+    <string name="photos_limit_kept_message">Am păstrat primele %1$d fotografii — acesta e maximul pentru acest pas.</string>
     <string name="error_upload_file_failed">Nu s-a putut încărca una dintre fotografii.</string>
     <string name="error_publish_failed">Publicarea nu a reușit. Mai încearcă o dată.</string>
     <string name="error_generate_ad_failed">Nu s-a putut genera anunțul. Încerci din nou?</string>

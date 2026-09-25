@@ -219,6 +219,8 @@
     <string name="publish_confirm_subtitle">Ваше оголошення з'явиться на OLX за 1–2 хвилини.</string>
     <string name="publish_confirm_yes">Так, публікуємо</string>
     <string name="publish_confirm_back">Стоп, ще треба підправити</string>
+    <string name="publish_confirm_photo_removed">Фото видалено</string>
+    <string name="publish_confirm_undo_remove_photo">Скасувати</string>
     <string name="preview_back_info_title">Викинути цю чернетку?</string>
     <string name="preview_back_info_message">Оголошення ще не опубліковане. Якщо вийти зараз, чернетка зникне — і ви повернетеся на екран генерації, щоб почати спочатку.</string>
     <string name="preview_back_info_stay">Продовжити редагування</string>
@@ -251,6 +253,7 @@
     <string name="error_olx_auth_prepare_failed">Не вдалося розпочати вхід у OLX.</string>
     <string name="error_olx_auth_complete_failed">Не вдалося завершити вхід у OLX.</string>
     <string name="error_selected_files_process_failed">Не вдалося завантажити вибрані фото.</string>
+    <string name="photos_limit_kept_message">Залишили перші %1$d фото — це максимум для цього кроку.</string>
     <string name="error_upload_file_failed">Не вдалося завантажити одне з фото.</string>
     <string name="error_publish_failed">Не вдалося опублікувати. Спробуйте ще раз.</string>
     <string name="error_generate_ad_failed">Не вдалося згенерувати оголошення. Спробуєте ще раз?</string>
