@@ -22,7 +22,9 @@ object AnalyticsEvents {
      * was indistinguishable from an event that simply never arrived.
      *
      * `completed_steps` says how far it got (0 uploading, 1 uploaded, 2 model answered), and
-     * `duration_ms` how long the seller waited before giving up.
+     * `duration_ms` how long the seller waited before giving up. `trigger` is `cancel` (Cancel
+     * button or system Back on the processing screen) or `left` (navigated away, or the process
+     * went down).
      */
     const val AD_GENERATION_ABANDONED = "ad_generation_abandoned"
 

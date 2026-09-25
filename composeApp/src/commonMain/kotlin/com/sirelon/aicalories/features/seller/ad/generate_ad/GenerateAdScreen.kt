@@ -107,7 +107,7 @@ fun GenerateAdScreen(
     NavigationBackHandler(
         state = navigationEventState,
         isBackEnabled = state.isLoading,
-        onBackCompleted = {},
+        onBackCompleted = { viewModel.onEvent(GenerateAdContract.GenerateAdEvent.Cancel) },
     )
 
     val photoPicker = rememberPhotoPickerController(
@@ -134,6 +134,7 @@ fun GenerateAdScreen(
             AiProcessingScreen(
                 completedSteps = state.completedSteps,
                 isGuestMode = state.isGuestMode,
+                onCancelClick = { viewModel.onEvent(GenerateAdContract.GenerateAdEvent.Cancel) },
                 modifier = modifier,
             )
         } else {

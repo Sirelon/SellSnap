@@ -28,6 +28,8 @@ interface GenerateAdContract {
         data class RemovePhoto(val file: KmpFile) : GenerateAdEvent
 
         data object Submit : GenerateAdEvent
+
+        data object Cancel : GenerateAdEvent
     }
 
     sealed interface GenerateAdEffect {

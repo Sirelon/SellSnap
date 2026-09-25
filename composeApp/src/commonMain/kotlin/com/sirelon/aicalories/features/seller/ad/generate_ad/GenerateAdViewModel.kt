@@ -41,6 +41,7 @@ import com.sirelon.sellsnap.generated.resources.error_upload_file_failed
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.TimeSource
 import kotlin.uuid.Uuid
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -97,6 +98,13 @@ class GenerateAdViewModel(
 
     private val restoredSavedState = readSavedState()
 
+    /** The in-flight [submit] flow, so a [GenerateAdContract.GenerateAdEvent.Cancel] can stop it. */
+    private var generationJob: Job? = null
+
+    /** Set right before cancelling [generationJob] so `onCompletion` can tell a user cancel apart
+     * from leaving the screen mid-generation - both cancel the same job. Null means "left". */
+    private var cancelTrigger: String? = null
+
     init {
         state
             .drop(1)
@@ -152,12 +160,23 @@ class GenerateAdViewModel(
             }
 
             is GenerateAdContract.GenerateAdEvent.Submit -> {
+                // Synchronous, ahead of submit()'s first suspension point (currentSession()):
+                // a double-tap that lands before isLoading would otherwise flip true starts a
+                // second submit() that overwrites generationJob, orphaning the first one Cancel
+                // was meant to reach.
+                if (currentState().isLoading) return
+                setState { it.copy(isLoading = true) }
                 viewModelScope.launch {
                     submit()
                 }
             }
 
             is GenerateAdContract.GenerateAdEvent.UploadFilesResult -> onFileResult(event)
+
+            is GenerateAdContract.GenerateAdEvent.Cancel -> {
+                cancelTrigger = "cancel"
+                generationJob?.cancel()
+            }
 
             is GenerateAdContract.GenerateAdEvent.RemovePhoto -> {
                 val removedPhoto = photoForFile(event.file)
@@ -188,8 +207,9 @@ class GenerateAdViewModel(
         // latch, leaving the screen mid-generation ends the flow through onCompletion having
         // logged nothing, and the attempt is indistinguishable from one that silently vanished.
         var outcomeLogged = false
+        cancelTrigger = null
 
-        flowOf(1)
+        generationJob = flowOf(1)
             .onStart {
                 adFlowTimerStore.markFlowStartedIfNeeded()
                 analytics.logEvent(
@@ -328,6 +348,7 @@ class GenerateAdViewModel(
                         mapOf(
                             "duration_ms" to startedAt.elapsedNow().inWholeMilliseconds,
                             "completed_steps" to currentState().completedSteps,
+                            "trigger" to (cancelTrigger ?: "left"),
                         ),
                     )
                 }
