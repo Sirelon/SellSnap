@@ -1,5 +1,6 @@
 package com.sirelon.sellsnap.features.seller.profile.presentation
 
+import com.sirelon.sellsnap.features.seller.auth.domain.OlxCountry
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxUser
 import com.sirelon.sellsnap.features.seller.auth.domain.SellerSessionMode
 import com.sirelon.sellsnap.features.seller.location.OlxLocation
@@ -39,6 +40,8 @@ interface ProfileContract {
         // D9: which NeedsReconnect row currently has its inline "Reconnect <account>" action
         // revealed. Selecting such a row never switches the active account - it only toggles this.
         val expandedReconnectLocalIndex: Int? = null,
+        /** SIR-127: the OLX market a guest's listings are written and priced for; null until read. */
+        val country: OlxCountry? = null,
     ) {
         val isGuest: Boolean
             get() = sessionMode == SellerSessionMode.Guest
@@ -54,6 +57,7 @@ interface ProfileContract {
         data class SetActiveAccountClicked(val localIndex: Int) : ProfileEvent
         data class NeedsReconnectRowClicked(val localIndex: Int) : ProfileEvent
         data class ReconnectClicked(val localIndex: Int) : ProfileEvent
+        data class CountrySelected(val country: OlxCountry) : ProfileEvent
     }
 
     sealed interface ProfileEffect {

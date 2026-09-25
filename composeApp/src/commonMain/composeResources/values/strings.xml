@@ -93,6 +93,8 @@
     <string name="profile_guest_title">Guest profile</string>
     <string name="profile_guest_description">Hook up OLX to publish from SellSnap — your account details will land here too.</string>
     <string name="profile_olx_account">OLX account</string>
+    <string name="profile_country_title">Country</string>
+    <string name="profile_country_subtitle">Listings are written and priced for this OLX market.</string>
     <string name="profile_location_title">Selling location</string>
     <string name="profile_location_subtitle">We'll use this as the default spot for your next listings.</string>
     <string name="profile_theme_title">Theme</string>

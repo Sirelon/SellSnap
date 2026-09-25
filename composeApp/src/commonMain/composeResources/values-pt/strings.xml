@@ -91,6 +91,8 @@
     <string name="profile_guest_title">Perfil de convidado</string>
     <string name="profile_guest_description">Ligue o OLX para publicar a partir do SellSnap — os detalhes da sua conta também aparecerão aqui.</string>
     <string name="profile_olx_account">Conta OLX</string>
+    <string name="profile_country_title">País</string>
+    <string name="profile_country_subtitle">Os anúncios são escritos e avaliados para este mercado OLX.</string>
     <string name="profile_location_title">Localização de venda</string>
     <string name="profile_location_subtitle">Usaremos esta como localização predefinida para os seus próximos anúncios.</string>
     <string name="profile_theme_title">Tema</string>

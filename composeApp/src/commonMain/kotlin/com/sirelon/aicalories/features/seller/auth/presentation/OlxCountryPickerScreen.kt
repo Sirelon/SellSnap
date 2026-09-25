@@ -222,7 +222,7 @@ private fun OlxCountryPickerScreen(
 }
 
 @Composable
-private fun CountryRow(
+internal fun CountryRow(
     country: OlxCountry,
     isSelected: Boolean,
     isLast: Boolean,
