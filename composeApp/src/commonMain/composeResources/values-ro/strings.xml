@@ -14,6 +14,7 @@
     <string name="benefit_manage">Toate anunțurile într-un singur loc</string>
     <string name="continue_as_guest">Încearcă fără cont</string>
     <string name="guest_description">Poți crea anunțul și copia textul — va trebui doar să îl lipești singur în OLX.</string>
+    <string name="olx_login_closed_title">Continui fără OLX?</string>
     <string name="guest_mode_banner_title">Mod oaspete</string>
     <string name="guest_mode_banner_message">Vrei să publici? Ai nevoie de un cont OLX. Deocamdată, copiază titlul, descrierea și prețul de mai jos și lipește-le în OLX.</string>
     <string name="guest_connect_olx_cta">Conectează OLX pentru a posta dintr-o atingere</string>

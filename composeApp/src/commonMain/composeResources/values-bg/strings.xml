@@ -14,6 +14,7 @@
     <string name="benefit_manage">Всички обяви на едно място</string>
     <string name="continue_as_guest">Пробвай без акаунт</string>
     <string name="guest_description">Можеш да създадеш обявата и да копираш текста — просто ще трябва да го поставиш в OLX сам.</string>
+    <string name="olx_login_closed_title">Да продължиш без OLX?</string>
     <string name="guest_mode_banner_title">Гостови режим</string>
     <string name="guest_mode_banner_message">Искаш да публикуваш? Ще ти трябва OLX акаунт. Засега копирай заглавието, описанието и цената по-долу и ги постни в OLX.</string>
     <string name="guest_connect_olx_cta">Свържи OLX и публикувай с един допир</string>

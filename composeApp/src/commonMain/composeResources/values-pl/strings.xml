@@ -14,6 +14,7 @@
     <string name="benefit_manage">Wszystkie reklamy w jednym miejscu</string>
     <string name="continue_as_guest">Wypróbuj bez konta</string>
     <string name="guest_description">Możesz stworzyć ogłoszenie i skopiować tekst — wystarczy wkleić go samodzielnie na OLX.</string>
+    <string name="olx_login_closed_title">Kontynuować bez OLX?</string>
     <string name="guest_mode_banner_title">Tryb gościa</string>
     <string name="guest_mode_banner_message">Chcesz opublikować? Potrzebujesz konta OLX. Na razie skopiuj tytuł, opis i cenę poniżej i wklej je na OLX.</string>
     <string name="guest_connect_olx_cta">Połącz OLX, by publikować jednym kliknięciem</string>

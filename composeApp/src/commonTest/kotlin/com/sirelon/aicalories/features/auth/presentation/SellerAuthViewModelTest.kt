@@ -37,6 +37,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import kotlinx.serialization.json.Json
@@ -99,6 +100,16 @@ class SellerAuthViewModelTest {
         assertFalse(harness.viewModel.state.value.showLoginClosedSheet)
         assertEquals(SellerSessionMode.Unauthenticated, harness.authRepository.currentSession().mode)
         assertFalse(harness.authRepository.consumeGuestConnectHint())
+    }
+
+    @Test
+    fun `tapping a country stores it right away, before Continue`() = runTest(testDispatcher) {
+        val harness = harness(engine = MockEngine { error("No HTTP call expected.") })
+
+        harness.viewModel.onEvent(SellerAuthContract.SellerAuthEvent.CountrySelected(OlxCountry.PL))
+        advanceUntilIdle()
+
+        assertEquals(OlxCountry.PL, harness.countryStore.current)
     }
 
     @Test
@@ -172,13 +183,14 @@ class SellerAuthViewModelTest {
             analytics = analytics,
             olxCountryStore = countryStore,
         )
-        return TestHarness(viewModel, authRepository, analytics)
+        return TestHarness(viewModel, authRepository, analytics, countryStore)
     }
 
     private data class TestHarness(
         val viewModel: SellerAuthViewModel,
         val authRepository: OlxAuthRepository,
         val analytics: FakeAnalytics,
+        val countryStore: OlxCountryStore,
     )
 
     private class TestCredentialsProvider : OlxCredentialsProvider {

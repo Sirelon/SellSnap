@@ -92,6 +92,9 @@ fun OlxCountryPickerScreenRoute(
             preselected = _currentOlxCountry,
             onBack = onBack,
             errorMessage = state.errorMessage,
+            onSelect = { country ->
+                viewModel.onEvent(SellerAuthContract.SellerAuthEvent.CountrySelected(country))
+            },
             onConfirm = { country ->
                 viewModel.onEvent(SellerAuthContract.SellerAuthEvent.CountryConfirmed(country))
             },
@@ -115,6 +118,7 @@ private fun OlxCountryPickerScreen(
     preselected: OlxCountry,
     onBack: () -> Unit,
     errorMessage: String?,
+    onSelect: (OlxCountry) -> Unit,
     onConfirm: (OlxCountry) -> Unit,
 ) {
     var selected by remember(preselected) { mutableStateOf(preselected) }
@@ -181,7 +185,10 @@ private fun OlxCountryPickerScreen(
                         country = country,
                         isSelected = country == selected,
                         isLast = country == OlxCountry.all.last(),
-                        onClick = { selected = country },
+                        onClick = {
+                            selected = country
+                            onSelect(country)
+                        },
                         modifier = Modifier.testTag("country_row_${country.code}"),
                     )
                 }

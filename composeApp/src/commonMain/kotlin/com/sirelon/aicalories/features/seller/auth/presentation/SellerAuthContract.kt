@@ -26,6 +26,7 @@ interface SellerAuthContract {
         data object OlxAuthDismissed : SellerAuthEvent
         data object LoginClosedGuestChosen : SellerAuthEvent
         data object LoginClosedSheetDismissed : SellerAuthEvent
+        data class CountrySelected(val country: OlxCountry) : SellerAuthEvent
         data class CountryConfirmed(val country: OlxCountry) : SellerAuthEvent
     }
 
