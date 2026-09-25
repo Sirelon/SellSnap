@@ -29,6 +29,13 @@ object AnalyticsEvents {
     const val PHOTO_UPLOAD_FAILED = "photo_upload_failed"
 
     const val AD_PUBLISH_STARTED = "ad_publish_started"
+
+    /**
+     * SIR-118: also carries `status` - the freshly-published advert's `AdvertStatus` collapsed to
+     * `new` / `active` / `limited` / `other` (see `PreviewAdViewModel.publishStatusBucket`). A
+     * publish landing as `limited` (needs a paid OLX package) is otherwise indistinguishable here
+     * from one that landed clean.
+     */
     const val AD_PUBLISH_SUCCEEDED = "ad_publish_succeeded"
     const val AD_PUBLISH_FAILED = "ad_publish_failed"
 
@@ -40,6 +47,17 @@ object AnalyticsEvents {
      * prevented, not a regression.
      */
     const val AD_PUBLISH_RECONCILED = "ad_publish_reconciled"
+
+    /**
+     * SIR-118: logged once per preview, the first time a logged-in seller's category attributes
+     * reach `AttributesLoadState.Loaded` - earlier than that, an empty `attributeItems` list would
+     * undercount. Carries `error_count` (the same validation-error count `PreviewAdScreen` shows
+     * the seller) and `missing_required` (comma-joined codes of the required attributes still
+     * empty, truncated to Firebase's 100-character string-value limit). Codes only, never titles,
+     * prices or ids: the preview asking for a field the AI left empty is one of the three
+     * explanations for a seller who stops publishing without a single failed-publish event.
+     */
+    const val AD_PREVIEW_ATTRIBUTES_LOADED = "ad_preview_attributes_loaded"
 
     // Multi-account (SIR-83). No event may carry an email, OLX user id, account name, or token -
     // only localIndex/counts, per PRD §11.
