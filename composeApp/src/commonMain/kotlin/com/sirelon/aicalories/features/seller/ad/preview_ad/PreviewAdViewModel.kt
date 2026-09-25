@@ -271,7 +271,7 @@ class PreviewAdViewModel internal constructor(
         price = restoredSavedState.price ?: advertisement.suggestedPrice,
         minPrice = advertisement.minPrice.coerceAtMost(restoredSavedState.price ?: advertisement.suggestedPrice),
         maxPrice = advertisement.maxPrice.coerceAtLeast(restoredSavedState.price ?: advertisement.suggestedPrice),
-        images = advertisement.images,
+        images = restoredSavedState.images ?: advertisement.images,
         location = restoredSavedState.location,
         currentAttemptId = filledAdvertisement.lastAttemptId,
         // Guests never load OLX's currency list, and a publish can land before it arrives.
@@ -315,6 +315,8 @@ class PreviewAdViewModel internal constructor(
                 if (publishJob?.isActive == true) return
                 publishJob = viewModelScope.launch { publishAdvert() }
             }
+
+            is PreviewAdEvent.RemoveImage -> setState { it.copy(images = it.images - event.url) }
 
             is PreviewAdEvent.SwitchAccountRequested -> viewModelScope.launch {
                 accountRepository.setActiveAccount(
@@ -872,6 +874,7 @@ class PreviewAdViewModel internal constructor(
             location = state.location,
             publishSuccessData = successData,
             publishExternalId = publishExternalId,
+            images = state.images,
         )
     }
 }

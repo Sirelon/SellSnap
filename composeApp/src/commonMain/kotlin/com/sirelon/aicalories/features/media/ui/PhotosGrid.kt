@@ -49,7 +49,21 @@ import com.sirelon.sellsnap.generated.resources.add_photo_label
 import com.sirelon.sellsnap.generated.resources.remove_photo_cd
 import org.jetbrains.compose.resources.stringResource
 
-const val MAX_PHOTOS: Int = 5
+/**
+ * SellSnap's own cap on how many photos go into the AI-analysis / upload step - not a fetched
+ * OLX limit. OLX's real cap is per category (`photos_limit` on the `Category` schema,
+ * `developer.olx.ua/swagger/v2/partner_api.yaml` and the identical field on
+ * `developer.olx.pl`'s spec), and isn't knowable until a category is assigned, which happens
+ * after these photos are picked. 8 is the value on the large majority of leaf categories (2,433
+ * of 2,901 olx.pl leaf categories, 66 of 68 shoe categories, 1,300 of 1,954 olx.ua leaf
+ * categories - fetched 2026-09-25 from `GET /api/partner/categories`). Categories that allow
+ * 12-24 photos are handled by SIR-126, not here. Categories with a lower real limit - including
+ * `photos_limit: 0` (e.g. category 1755, an engineering-jobs category) - are why the
+ * publish-confirm sheet lets a seller remove photos before the POST
+ * ([com.sirelon.sellsnap.features.seller.ad.preview_ad.PreviewAdContract.PreviewAdEvent.RemoveImage]):
+ * this step's cap is a ceiling for AI analysis, not a promise that OLX will accept all 8.
+ */
+const val MAX_PHOTOS: Int = 8
 private const val GRID_COLUMNS: Int = 3
 
 @Composable
@@ -132,17 +146,23 @@ private fun PhotoThumbnailCell(
     }
 }
 
+/**
+ * Shared with [com.sirelon.sellsnap.features.seller.ad.preview_ad.ui.PublishConfirmSheet]'s
+ * per-photo remove button (SIR-122) - same look, different screen, so [testTag] is parameterized
+ * rather than shared, keeping each screen's own screenshot-flow signal distinct.
+ */
 @Composable
-private fun RemovePhotoButton(
+internal fun RemovePhotoButton(
     modifier: Modifier,
     enabled: Boolean,
     onClick: () -> Unit,
+    testTag: String = "generate_ad_photo_remove",
 ) {
     Surface(
         // One of these exists per loaded photo, so screenshot flows use it as a
         // locale-independent "all N photos are in the grid" signal (matched with an index).
         // generate_ad_photos_grid only proves the container exists, not that it has content.
-        modifier = modifier.padding(AppDimens.Spacing.s).testTag("generate_ad_photo_remove"),
+        modifier = modifier.padding(AppDimens.Spacing.s).testTag(testTag),
         onClick = onClick,
         enabled = enabled,
         shape = CircleShape,

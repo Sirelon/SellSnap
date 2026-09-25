@@ -14,6 +14,9 @@ data class PreviewAdSavedState(
     val attributeValues: Map<String, List<OlxAttributeValue>> = emptyMap(),
     val location: OlxLocation? = null,
     val publishSuccessData: PublishSuccessData? = null,
+    // SIR-122: null means "no removal happened yet, use advertisement.images" - distinct from an
+    // empty list, which is a seller who removed every photo (a valid state; see RemoveImage's KDoc).
+    val images: List<String>? = null,
     /**
      * The `external_id` sent with this listing's `POST adverts`, minted just before the first
      * attempt and kept for the life of the draft.
