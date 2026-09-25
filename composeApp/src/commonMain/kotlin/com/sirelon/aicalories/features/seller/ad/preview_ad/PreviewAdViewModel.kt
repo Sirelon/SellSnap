@@ -27,6 +27,7 @@ import com.sirelon.sellsnap.features.seller.ad.preview_ad.PreviewAdContract.Prev
 import com.sirelon.sellsnap.features.seller.ad.preview_ad.PreviewAdContract.PreviewAdEvent.RegenerateDescription
 import com.sirelon.sellsnap.features.seller.ad.preview_ad.PreviewAdContract.PreviewAdEvent.VoteGeneratedContent
 import com.sirelon.sellsnap.features.seller.ad.preview_ad.PreviewAdContract.PreviewAdState
+import com.sirelon.sellsnap.features.seller.ad.publish_success.AdvertStatus
 import com.sirelon.sellsnap.features.seller.ad.publish_success.PublishSuccessData
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountRecord
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountState
@@ -138,6 +139,7 @@ class PreviewAdViewModel internal constructor(
     private var nonGuestSetupStarted = false
     private var currencyLoadStarted = false
     private var skipRestoredTitleSuggestion = restoredSavedState.selectedCategoryId != null
+    private var attributesLoadedLogged = false
 
     init {
         combine(
@@ -231,18 +233,20 @@ class PreviewAdViewModel internal constructor(
                 categoriesRepository.getAttributes(categoryId)
             }
             .onEach { attributes ->
+                val attributeItems = attributes.map { attribute ->
+                    OlxAttributeState(
+                        attribute = attribute,
+                        selectedValues = restoredSavedState.attributeValues[attribute.code]
+                            ?: filledAdvertisement.filledAttributes[attribute.code].orEmpty(),
+                    )
+                }
                 setState {
                     it.copy(
-                        attributeItems = attributes.map { attribute ->
-                            OlxAttributeState(
-                                attribute = attribute,
-                                selectedValues = restoredSavedState.attributeValues[attribute.code]
-                                    ?: filledAdvertisement.filledAttributes[attribute.code].orEmpty(),
-                            )
-                        },
+                        attributeItems = attributeItems,
                         attributesLoadState = AttributesLoadState.Loaded,
                     )
                 }
+                logAttributesLoaded(attributeItems)
             }
             .catch {
                 setState { state ->
@@ -510,7 +514,10 @@ class PreviewAdViewModel internal constructor(
             // Same guard and same reason as recordPublished above: a DataStore write failing must
             // never be reported as a failed publish for an advert that is already live.
             runCatching { reviewPromptCoordinator.onPublishSucceeded() }
-            analytics.logEvent(AnalyticsEvents.AD_PUBLISH_SUCCEEDED, mapOf("account_index" to accountIndex))
+            analytics.logEvent(
+                AnalyticsEvents.AD_PUBLISH_SUCCEEDED,
+                mapOf("account_index" to accountIndex, "status" to publishStatusBucket(data.status)),
+            )
             s.currentAttemptId?.let { attemptId ->
                 adGenerationLogRepository.markPublished(
                     attemptId = attemptId,
@@ -661,6 +668,52 @@ class PreviewAdViewModel internal constructor(
         // Not every throwable reaching here is wrapped - a dropped connection surfaces as the raw
         // engine exception (observed: DarwinHttpRequestException, NSURLErrorNetworkConnectionLost).
         null -> error::class.simpleName ?: "unknown"
+    }
+
+    /**
+     * Collapses [PostAdvertResult.status] to the four buckets `ad_publish_succeeded.status` needs
+     * (SIR-118): fresh and awaiting OLX's own moderation, already visible to buyers, blocked on a
+     * paid OLX package, or anything else. Status definitions are OLX's own, from the
+     * `Advert statuses` section of the UA and PT partner-API specs - see the `AdvertStatus.state`
+     * KDoc in `my_ads/domain/AdvertState.kt` for the full eleven-value table; PL's spec omits them.
+     */
+    private fun publishStatusBucket(status: AdvertStatus): String = when (status) {
+        AdvertStatus.New -> "new"
+        AdvertStatus.Active -> "active"
+        AdvertStatus.Limited -> "limited"
+        else -> "other"
+    }
+
+    /**
+     * Logs [AnalyticsEvents.AD_PREVIEW_ATTRIBUTES_LOADED] once per preview (SIR-118), the first
+     * moment the validation state the seller is about to hit is fully known - before
+     * [AttributesLoadState.Loaded], `attributeItems` is empty and every required-attribute check
+     * would pass vacuously. Mirrors the `validationErrors` count `PreviewAdScreen` shows the
+     * seller, minus the parts that cannot yet apply here (a category is always selected by this
+     * point, and no attribute carries a per-item [OlxAttributeState.error] before the seller has
+     * touched it).
+     */
+    private fun logAttributesLoaded(attributeItems: List<OlxAttributeState>) {
+        if (attributesLoadedLogged) return
+        attributesLoadedLogged = true
+
+        val s = currentState()
+        val missingRequired = attributeItems
+            .filter { it.attribute.validationRules.required && it.selectedValues.isEmpty() }
+            .map { it.attribute.code }
+
+        var errorCount = missingRequired.size
+        if (titleState.text.length < TitleMinLength) errorCount++
+        if (descriptionState.text.length < DescriptionMinLength) errorCount++
+        if (s.location == null) errorCount++
+
+        analytics.logEvent(
+            AnalyticsEvents.AD_PREVIEW_ATTRIBUTES_LOADED,
+            mapOf(
+                "error_count" to errorCount,
+                "missing_required" to missingRequired.joinToString(",").take(100),
+            ),
+        )
     }
 
     private suspend fun displayAccountName(account: OlxAccountRecord?): String {

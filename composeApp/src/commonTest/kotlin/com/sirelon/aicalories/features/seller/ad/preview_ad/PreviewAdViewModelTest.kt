@@ -645,6 +645,129 @@ class PreviewAdViewModelTest {
     }
 
     @Test
+    fun `a landed publish carries the advert's status bucket`() = runTest(testDispatcher) {
+        val accountStore = OlxAccountStore(InMemoryOlxKeyValueStore(), testJson)
+        accountStore.write(
+            OlxAccountsRecord(
+                accounts = listOf(account(localIndex = 1, olxUserId = 100L, accessToken = "token-a")),
+                activeByCountry = mapOf("ua" to 1),
+                nextLocalIndex = 2,
+            ),
+        )
+        val engine = buildEngine {
+            addHandler { request ->
+                when {
+                    request.url.encodedPath.contains("users/me") ->
+                        respond(userJson(id = 100L, name = "Seller"), status = HttpStatusCode.OK, headers = jsonHeaders())
+
+                    request.url.encodedPath.contains("adverts") && request.method == HttpMethod.Post -> {
+                        // The advert this app's own eleven-status limit blocks buyers from seeing
+                        // (developer.olx.ua "Advert statuses") - the exact case SIR-118 exists to
+                        // tell apart from a clean publish.
+                        respond(
+                            """{"data":{"id":9,"status":"limited","url":"https://www.olx.ua/d/obyavlenie/test-ID9.html"}}""",
+                            status = HttpStatusCode.OK,
+                            headers = jsonHeaders(),
+                        )
+                    }
+
+                    else -> respond("{}", status = HttpStatusCode.OK, headers = jsonHeaders())
+                }
+            }
+        }
+        val harness = harness(engine, accountStore)
+        val viewModel = buildViewModel(harness)
+        viewModel.setState { it.copy(selectedCategory = testCategory, location = testLocation, attributesLoadState = AttributesLoadState.Loaded) }
+
+        viewModel.onEvent(PreviewAdEvent.Publish)
+        advanceUntilIdle()
+
+        val succeeded = harness.analytics.events.single { it.first == AnalyticsEvents.AD_PUBLISH_SUCCEEDED }
+        assertEquals("limited", succeeded.second["status"])
+    }
+
+    @Test
+    fun `attributes finishing load logs error_count and missing_required for a logged-in preview`() = runTest(testDispatcher) {
+        val accountStore = OlxAccountStore(InMemoryOlxKeyValueStore(), testJson)
+        accountStore.write(
+            OlxAccountsRecord(
+                accounts = listOf(account(localIndex = 1, olxUserId = 100L, accessToken = "token-a")),
+                activeByCountry = mapOf("ua" to 1),
+                nextLocalIndex = 2,
+            ),
+        )
+        val engine = buildEngine {
+            addHandler { request ->
+                when {
+                    request.url.encodedPath.contains("attributes") ->
+                        // One required attribute the seller (and the AI) left empty, one optional
+                        // one - the exact "the preview asks for a field the AI leaves empty" case
+                        // SIR-118 exists to surface.
+                        respond(
+                            """{"data":[
+                                {"code":"state","label":"Стан","unit":"","validation":{"type":"attribute","required":true,"numeric":false,"min":null,"max":null,"allow_multiple_values":false},"values":[{"code":"used","label":"Вживане"}]},
+                                {"code":"color","label":"Колір","unit":"","validation":{"type":"attribute","required":false,"numeric":false,"min":null,"max":null,"allow_multiple_values":false},"values":[]}
+                            ]}""",
+                            status = HttpStatusCode.OK,
+                            headers = jsonHeaders(),
+                        )
+
+                    else -> respond("{}", status = HttpStatusCode.OK, headers = jsonHeaders())
+                }
+            }
+        }
+        val harness = harness(engine, accountStore)
+        val viewModel = buildViewModel(harness)
+        viewModel.setState { it.copy(location = testLocation) }
+        advanceUntilIdle()
+
+        viewModel.onEvent(PreviewAdEvent.CategorySelected(testCategory))
+        advanceUntilIdle()
+
+        val event = harness.analytics.events.single { it.first == AnalyticsEvents.AD_PREVIEW_ATTRIBUTES_LOADED }
+        assertEquals(1, event.second["error_count"], "the required `state` attribute was never filled in")
+        assertEquals("state", event.second["missing_required"])
+    }
+
+    @Test
+    fun `attributes reloading after a category switch does not log the event a second time`() = runTest(testDispatcher) {
+        val accountStore = OlxAccountStore(InMemoryOlxKeyValueStore(), testJson)
+        accountStore.write(
+            OlxAccountsRecord(
+                accounts = listOf(account(localIndex = 1, olxUserId = 100L, accessToken = "token-a")),
+                activeByCountry = mapOf("ua" to 1),
+                nextLocalIndex = 2,
+            ),
+        )
+        val otherCategory = OlxCategory(id = 2, label = "Furniture", parentId = null, isLeaf = true)
+        val engine = buildEngine {
+            addHandler { request ->
+                when {
+                    request.url.encodedPath.contains("attributes") ->
+                        respond("""{"data":[]}""", status = HttpStatusCode.OK, headers = jsonHeaders())
+
+                    else -> respond("{}", status = HttpStatusCode.OK, headers = jsonHeaders())
+                }
+            }
+        }
+        val harness = harness(engine, accountStore)
+        val viewModel = buildViewModel(harness)
+        viewModel.setState { it.copy(location = testLocation) }
+        advanceUntilIdle()
+
+        viewModel.onEvent(PreviewAdEvent.CategorySelected(testCategory))
+        advanceUntilIdle()
+        viewModel.onEvent(PreviewAdEvent.CategorySelected(otherCategory))
+        advanceUntilIdle()
+
+        assertEquals(
+            1,
+            harness.analytics.events.count { it.first == AnalyticsEvents.AD_PREVIEW_ATTRIBUTES_LOADED },
+            "one preview screen is one seller, so switching categories must not double-count them",
+        )
+    }
+
+    @Test
     fun `price starts in the country's currency before OLX's currency list arrives`() = runTest(testDispatcher) {
         val engine = buildEngine {
             addHandler { respond(content = "", status = HttpStatusCode.InternalServerError) }
