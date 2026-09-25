@@ -31,6 +31,13 @@ class SellerAuthViewModel(
             SellerAuthContract.SellerAuthEvent.OlxAuthClicked ->
                 postEffect(SellerAuthContract.SellerAuthEffect.NavigateToCountryPicker)
 
+            // Stored on tap, not only on Continue: a seller who picks a country and then backs
+            // out, or closes the OLX login and picks "Not now", keeps the market they chose -
+            // guest listings are written and priced for it (owner, 2026-09-25).
+            is SellerAuthContract.SellerAuthEvent.CountrySelected -> {
+                viewModelScope.launch { olxCountryStore.save(event.country) }
+            }
+
             is SellerAuthContract.SellerAuthEvent.CountryConfirmed -> {
                 viewModelScope.launch {
                     olxCountryStore.save(event.country)
