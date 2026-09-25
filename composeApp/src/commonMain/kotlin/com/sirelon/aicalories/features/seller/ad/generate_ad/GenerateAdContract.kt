@@ -12,6 +12,7 @@ interface GenerateAdContract {
         val prompt: String = "",
         val isLoading: Boolean = false,
         val isGuestMode: Boolean = false,
+        val showGuestConnectHint: Boolean = false,
         val completedSteps: Int = 0,
         val errorMessage: String? = null,
         val uploads: Map<KmpFile, UploadingItem> = emptyMap(),
@@ -28,6 +29,8 @@ interface GenerateAdContract {
         data class RemovePhoto(val file: KmpFile) : GenerateAdEvent
 
         data object Submit : GenerateAdEvent
+
+        data object Cancel : GenerateAdEvent
     }
 
     sealed interface GenerateAdEffect {

@@ -9,10 +9,12 @@ import com.sirelon.sellsnap.analytics.Analytics
 import com.sirelon.sellsnap.analytics.AnalyticsEvents
 import com.sirelon.sellsnap.features.common.presentation.BaseViewModel
 import com.sirelon.sellsnap.features.media.SharedImagesBridge
+import com.sirelon.sellsnap.features.media.ui.MAX_PHOTOS
 import com.sirelon.sellsnap.features.media.upload.DraftMediaFileStore
 import com.sirelon.sellsnap.features.media.upload.DraftPhoto
 import com.sirelon.sellsnap.features.media.upload.MediaUploadHelper
 import com.sirelon.sellsnap.features.media.upload.MediaUploadUpdate
+import com.sirelon.sellsnap.features.media.upload.PersistedDraftPhoto
 import com.sirelon.sellsnap.features.media.upload.UploadedFile
 import com.sirelon.sellsnap.features.media.upload.UploadingItem
 import com.sirelon.sellsnap.features.seller.ad.AdFlowTimerStore
@@ -39,9 +41,11 @@ import com.sirelon.sellsnap.generated.resources.error_photo_different_items
 import com.sirelon.sellsnap.generated.resources.error_photo_unreadable
 import com.sirelon.sellsnap.generated.resources.error_selected_files_process_failed
 import com.sirelon.sellsnap.generated.resources.error_upload_file_failed
+import com.sirelon.sellsnap.generated.resources.photos_limit_kept_message
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.TimeSource
 import kotlin.uuid.Uuid
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -98,6 +102,13 @@ class GenerateAdViewModel(
 
     private val restoredSavedState = readSavedState()
 
+    /** The in-flight [submit] flow, so a [GenerateAdContract.GenerateAdEvent.Cancel] can stop it. */
+    private var generationJob: Job? = null
+
+    /** Set right before cancelling [generationJob] so `onCompletion` can tell a user cancel apart
+     * from leaving the screen mid-generation - both cancel the same job. Null means "left". */
+    private var cancelTrigger: String? = null
+
     init {
         state
             .drop(1)
@@ -153,12 +164,23 @@ class GenerateAdViewModel(
             }
 
             is GenerateAdContract.GenerateAdEvent.Submit -> {
+                // Synchronous, ahead of submit()'s first suspension point (currentSession()):
+                // a double-tap that lands before isLoading would otherwise flip true starts a
+                // second submit() that overwrites generationJob, orphaning the first one Cancel
+                // was meant to reach.
+                if (currentState().isLoading) return
+                setState { it.copy(isLoading = true) }
                 viewModelScope.launch {
                     submit()
                 }
             }
 
             is GenerateAdContract.GenerateAdEvent.UploadFilesResult -> onFileResult(event)
+
+            is GenerateAdContract.GenerateAdEvent.Cancel -> {
+                cancelTrigger = "cancel"
+                generationJob?.cancel()
+            }
 
             is GenerateAdContract.GenerateAdEvent.RemovePhoto -> {
                 val removedPhoto = photoForFile(event.file)
@@ -189,6 +211,7 @@ class GenerateAdViewModel(
         // latch, leaving the screen mid-generation ends the flow through onCompletion having
         // logged nothing, and the attempt is indistinguishable from one that silently vanished.
         var outcomeLogged = false
+        cancelTrigger = null
 
         // Per-stage timings for the outcome events (SIR-121). Left null when a stage never
         // finished, so a failed/abandoned run only reports the stages it actually completed.
@@ -198,7 +221,7 @@ class GenerateAdViewModel(
         var modelMs: Long? = null
         var attributesMs: Long? = null
 
-        flowOf(1)
+        generationJob = flowOf(1)
             .onStart {
                 adFlowTimerStore.markFlowStartedIfNeeded()
                 photoCount = currentState().uploads.size
@@ -345,7 +368,10 @@ class GenerateAdViewModel(
                     analytics.logEvent(
                         AnalyticsEvents.AD_GENERATION_ABANDONED,
                         buildGenerationStageParams(startedAt.elapsedNow().inWholeMilliseconds, photoCount, uploadMs, uploadBytes, modelMs, attributesMs) +
-                            mapOf("completed_steps" to currentState().completedSteps),
+                            mapOf(
+                                "completed_steps" to currentState().completedSteps,
+                                "trigger" to (cancelTrigger ?: "left"),
+                            ),
                     )
                 }
                 setState { it.copy(isLoading = false) }
@@ -398,6 +424,15 @@ class GenerateAdViewModel(
 
     private suspend fun UploadedFile.toPublicUrl(): String = mediaUploadHelper.publicUrl(path)
 
+    /**
+     * Caps the running total at [MAX_PHOTOS], not just this one batch.
+     *
+     * The gallery picker's own `maxItems` (see `GenerateAdScreen`) only bounds a single pick - it
+     * has no way to know how many photos are already on the grid, so a seller who already has
+     * photos and then picks a fresh batch could otherwise land above the cap. Files dropped here
+     * were already written to disk by [draftMediaFileStore], so they are deleted rather than left
+     * orphaned.
+     */
     private fun onFileResult(event: GenerateAdContract.GenerateAdEvent.UploadFilesResult) {
         viewModelScope.launch {
             mediaUploadHelper
@@ -408,15 +443,22 @@ class GenerateAdViewModel(
                 .prepareFiles(selectionResult = event.result, validateFormat = !screenshotMode)
                 .mapCatching { files -> files.mapNotNull { draftMediaFileStore.persist(it) } }
                 .onSuccess { persistedFiles ->
-                    if (persistedFiles.isNotEmpty() && currentState().uploads.isEmpty()) {
+                    val existingCount = currentState().uploads.size
+                    if (persistedFiles.isNotEmpty() && existingCount == 0) {
                         adFlowTimerStore.markFlowStartedIfNeeded()
                     }
+                    val newFiles = persistedFiles.filter { !currentState().uploads.containsKey(it.file) }
+                    val (kept, dropped) = splitAtPhotoLimit(newFiles, existingCount, MAX_PHOTOS)
                     setState { current ->
-                        val newEntries = persistedFiles
-                            .map { it.file }
-                            .filter { file -> !current.uploads.containsKey(file) }
-                            .associateWith { UploadingItem() }
-                        current.copy(uploads = current.uploads + newEntries)
+                        current.copy(uploads = current.uploads + kept.associate { it.file to UploadingItem() })
+                    }
+                    if (dropped.isNotEmpty()) {
+                        draftMediaFileStore.delete(dropped.map { it.photo })
+                        postEffect(
+                            GenerateAdContract.GenerateAdEffect.ShowMessage(
+                                getString(Res.string.photos_limit_kept_message, MAX_PHOTOS)
+                            )
+                        )
                     }
                 }
                 .onFailure { error ->
@@ -580,6 +622,7 @@ class GenerateAdViewModel(
         return GenerateAdContract.GenerateAdState(
             prompt = restoredSavedState.prompt,
             uploads = uploads,
+            showGuestConnectHint = authRepository.consumeGuestConnectHint(),
         )
     }
 
@@ -636,6 +679,20 @@ internal fun buildGenerationStageParams(
     uploadBytes?.let { put("upload_bytes", it) }
     modelMs?.let { put("model_ms", it) }
     attributesMs?.let { put("attributes_ms", it) }
+}
+
+/**
+ * Splits a freshly persisted batch into what still fits under [max] given [existingCount] photos
+ * already on the grid, and what has to be dropped. Pure so the running-total cap (see
+ * [GenerateAdViewModel.onFileResult]) is testable without the ViewModel's upload machinery.
+ */
+internal fun splitAtPhotoLimit(
+    newFiles: List<PersistedDraftPhoto>,
+    existingCount: Int,
+    max: Int,
+): Pair<List<PersistedDraftPhoto>, List<PersistedDraftPhoto>> {
+    val remainingSlots = (max - existingCount).coerceAtLeast(0)
+    return newFiles.take(remainingSlots) to newFiles.drop(remainingSlots)
 }
 
 /**

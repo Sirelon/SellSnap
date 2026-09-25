@@ -47,6 +47,8 @@ import androidx.navigationevent.compose.rememberNavigationEventState
 import com.mohamedrejeb.calf.io.KmpFile
 import com.mohamedrejeb.calf.permissions.Camera
 import com.mohamedrejeb.calf.permissions.Permission
+import com.mohamedrejeb.calf.picker.FilePickerSelectionMode
+import com.sirelon.sellsnap.designsystem.AppCard
 import com.sirelon.sellsnap.designsystem.AppDimens
 import com.sirelon.sellsnap.designsystem.AppTheme
 import com.sirelon.sellsnap.designsystem.IconWithBackground
@@ -68,6 +70,7 @@ import com.sirelon.sellsnap.generated.resources.Res
 import com.sirelon.sellsnap.generated.resources.add_photos_to_continue
 import com.sirelon.sellsnap.generated.resources.ai_hint_label
 import com.sirelon.sellsnap.generated.resources.ai_hint_placeholder
+import com.sirelon.sellsnap.generated.resources.generate_ad_guest_connect_hint
 import com.sirelon.sellsnap.generated.resources.generate_with_ai
 import com.sirelon.sellsnap.generated.resources.ic_check
 import com.sirelon.sellsnap.generated.resources.ic_snap_logo
@@ -107,11 +110,25 @@ fun GenerateAdScreen(
     NavigationBackHandler(
         state = navigationEventState,
         isBackEnabled = state.isLoading,
-        onBackCompleted = {},
+        onBackCompleted = { viewModel.onEvent(GenerateAdContract.GenerateAdEvent.Cancel) },
     )
 
     val photoPicker = rememberPhotoPickerController(
         permissionController = permissionController,
+        // Remaining slots, not a flat MAX_PHOTOS: Android/iOS enforce this in the native picker UI
+        // itself, so a seller who already has photos sees the real number they can still add,
+        // rather than picking a full batch of MAX_PHOTOS and having some silently dropped.
+        // coerceAtLeast(2): Android's PickMultipleVisualMedia contract throws on construction -
+        // not just on launch - for maxItems <= 1 (require(maxItems > 1)), and this value is built
+        // on every recomposition regardless of whether the add button is even visible, so 0 or 1
+        // remaining slots (7-8 existing photos) would otherwise crash the screen. The floor of 2
+        // means a seller with 7 photos can still over-pick by one; onFileResult's running-total cap
+        // (see its KDoc) is what actually enforces MAX_PHOTOS, this is only the UX nicety on top.
+        // Photos that skip this picker entirely (OS share sheet, screenshot-mode seeding - see
+        // GenerateAdViewModel.observeSharedImages/seedScreenshotPhotos) rely on that cap alone.
+        selectionMode = FilePickerSelectionMode.Multiple(
+            maxItems = (MAX_PHOTOS - state.uploads.size).coerceIn(2, MAX_PHOTOS),
+        ),
         onResult = { selectionResult ->
             viewModel.onEvent(GenerateAdContract.GenerateAdEvent.UploadFilesResult(result = selectionResult))
         },
@@ -134,6 +151,7 @@ fun GenerateAdScreen(
             AiProcessingScreen(
                 completedSteps = state.completedSteps,
                 isGuestMode = state.isGuestMode,
+                onCancelClick = { viewModel.onEvent(GenerateAdContract.GenerateAdEvent.Cancel) },
                 modifier = modifier,
             )
         } else {
@@ -214,6 +232,12 @@ private fun GenerateAdScreenContent(
                 PageTitle()
             }
 
+            if (state.showGuestConnectHint) {
+                item {
+                    GuestConnectHintCard()
+                }
+            }
+
             state.errorMessage?.let { errorMessage ->
                 item {
                     ErrorMessageCard(message = errorMessage)
@@ -252,6 +276,22 @@ private fun GenerateAdScreenContent(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun GuestConnectHintCard(modifier: Modifier = Modifier) {
+    AppCard(
+        modifier = modifier.fillMaxWidth(),
+        containerColor = AppTheme.colors.primary.copy(alpha = 0.12f),
+        contentColor = AppTheme.colors.primary,
+    ) {
+        Text(
+            text = stringResource(Res.string.generate_ad_guest_connect_hint),
+            modifier = Modifier.padding(AppDimens.Spacing.xl3),
+            style = AppTheme.typography.body,
+            color = AppTheme.colors.primary,
+        )
     }
 }
 

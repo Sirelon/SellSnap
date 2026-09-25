@@ -5,6 +5,17 @@ object AnalyticsEvents {
     const val AUTH_COMPLETED = "auth_completed"
     const val AUTH_FAILED = "auth_failed"
 
+    /**
+     * The seller cancelled the OLX login sheet - never fired for a real auth failure. For the
+     * first-connect flow this is the missing terminal event against `auth_started`: before, a
+     * cancelled attempt looked identical to one that never happened. Add-account/reconnect logs
+     * this too, but against its own `account_add_started` rather than `auth_started`, since that
+     * flow never logs the latter. Reliable on iOS today; Android's Custom Tabs launch has no
+     * cancel signal in this codebase (see OlxExternalAuthLauncher.android.kt), so it under-counts
+     * there.
+     */
+    const val AUTH_ABANDONED = "auth_abandoned"
+
     const val ONBOARDING_COMPLETED = "onboarding_completed"
 
     const val AD_GENERATION_STARTED = "ad_generation_started"
@@ -33,14 +44,23 @@ object AnalyticsEvents {
      * was indistinguishable from an event that simply never arrived.
      *
      * `completed_steps` says how far it got (0 uploading, 1 uploaded, 2 model answered), and
-     * `duration_ms` how long the seller waited before giving up. Carries the same stage params
-     * as [AD_GENERATION_SUCCEEDED] (SIR-121), limited to whichever stages finished.
+     * `duration_ms` how long the seller waited before giving up. `trigger` is `cancel` (Cancel
+     * button or system Back on the processing screen) or `left` (navigated away, or the process
+     * went down). Carries the same stage params as [AD_GENERATION_SUCCEEDED] (SIR-121), limited
+     * to whichever stages finished.
      */
     const val AD_GENERATION_ABANDONED = "ad_generation_abandoned"
 
     const val PHOTO_UPLOAD_FAILED = "photo_upload_failed"
 
     const val AD_PUBLISH_STARTED = "ad_publish_started"
+
+    /**
+     * SIR-118: also carries `status` - the freshly-published advert's `AdvertStatus` collapsed to
+     * `new` / `active` / `limited` / `other` (see `PreviewAdViewModel.publishStatusBucket`). A
+     * publish landing as `limited` (needs a paid OLX package) is otherwise indistinguishable here
+     * from one that landed clean.
+     */
     const val AD_PUBLISH_SUCCEEDED = "ad_publish_succeeded"
     const val AD_PUBLISH_FAILED = "ad_publish_failed"
 
@@ -52,6 +72,17 @@ object AnalyticsEvents {
      * prevented, not a regression.
      */
     const val AD_PUBLISH_RECONCILED = "ad_publish_reconciled"
+
+    /**
+     * SIR-118: logged once per preview, the first time a logged-in seller's category attributes
+     * reach `AttributesLoadState.Loaded` - earlier than that, an empty `attributeItems` list would
+     * undercount. Carries `error_count` (the same validation-error count `PreviewAdScreen` shows
+     * the seller) and `missing_required` (comma-joined codes of the required attributes still
+     * empty, truncated to Firebase's 100-character string-value limit). Codes only, never titles,
+     * prices or ids: the preview asking for a field the AI left empty is one of the three
+     * explanations for a seller who stops publishing without a single failed-publish event.
+     */
+    const val AD_PREVIEW_ATTRIBUTES_LOADED = "ad_preview_attributes_loaded"
 
     // Multi-account (SIR-83). No event may carry an email, OLX user id, account name, or token -
     // only localIndex/counts, per PRD §11.

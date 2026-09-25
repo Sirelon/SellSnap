@@ -645,6 +645,129 @@ class PreviewAdViewModelTest {
     }
 
     @Test
+    fun `a landed publish carries the advert's status bucket`() = runTest(testDispatcher) {
+        val accountStore = OlxAccountStore(InMemoryOlxKeyValueStore(), testJson)
+        accountStore.write(
+            OlxAccountsRecord(
+                accounts = listOf(account(localIndex = 1, olxUserId = 100L, accessToken = "token-a")),
+                activeByCountry = mapOf("ua" to 1),
+                nextLocalIndex = 2,
+            ),
+        )
+        val engine = buildEngine {
+            addHandler { request ->
+                when {
+                    request.url.encodedPath.contains("users/me") ->
+                        respond(userJson(id = 100L, name = "Seller"), status = HttpStatusCode.OK, headers = jsonHeaders())
+
+                    request.url.encodedPath.contains("adverts") && request.method == HttpMethod.Post -> {
+                        // The advert this app's own eleven-status limit blocks buyers from seeing
+                        // (developer.olx.ua "Advert statuses") - the exact case SIR-118 exists to
+                        // tell apart from a clean publish.
+                        respond(
+                            """{"data":{"id":9,"status":"limited","url":"https://www.olx.ua/d/obyavlenie/test-ID9.html"}}""",
+                            status = HttpStatusCode.OK,
+                            headers = jsonHeaders(),
+                        )
+                    }
+
+                    else -> respond("{}", status = HttpStatusCode.OK, headers = jsonHeaders())
+                }
+            }
+        }
+        val harness = harness(engine, accountStore)
+        val viewModel = buildViewModel(harness)
+        viewModel.setState { it.copy(selectedCategory = testCategory, location = testLocation, attributesLoadState = AttributesLoadState.Loaded) }
+
+        viewModel.onEvent(PreviewAdEvent.Publish)
+        advanceUntilIdle()
+
+        val succeeded = harness.analytics.events.single { it.first == AnalyticsEvents.AD_PUBLISH_SUCCEEDED }
+        assertEquals("limited", succeeded.second["status"])
+    }
+
+    @Test
+    fun `attributes finishing load logs error_count and missing_required for a logged-in preview`() = runTest(testDispatcher) {
+        val accountStore = OlxAccountStore(InMemoryOlxKeyValueStore(), testJson)
+        accountStore.write(
+            OlxAccountsRecord(
+                accounts = listOf(account(localIndex = 1, olxUserId = 100L, accessToken = "token-a")),
+                activeByCountry = mapOf("ua" to 1),
+                nextLocalIndex = 2,
+            ),
+        )
+        val engine = buildEngine {
+            addHandler { request ->
+                when {
+                    request.url.encodedPath.contains("attributes") ->
+                        // One required attribute the seller (and the AI) left empty, one optional
+                        // one - the exact "the preview asks for a field the AI leaves empty" case
+                        // SIR-118 exists to surface.
+                        respond(
+                            """{"data":[
+                                {"code":"state","label":"Стан","unit":"","validation":{"type":"attribute","required":true,"numeric":false,"min":null,"max":null,"allow_multiple_values":false},"values":[{"code":"used","label":"Вживане"}]},
+                                {"code":"color","label":"Колір","unit":"","validation":{"type":"attribute","required":false,"numeric":false,"min":null,"max":null,"allow_multiple_values":false},"values":[]}
+                            ]}""",
+                            status = HttpStatusCode.OK,
+                            headers = jsonHeaders(),
+                        )
+
+                    else -> respond("{}", status = HttpStatusCode.OK, headers = jsonHeaders())
+                }
+            }
+        }
+        val harness = harness(engine, accountStore)
+        val viewModel = buildViewModel(harness)
+        viewModel.setState { it.copy(location = testLocation) }
+        advanceUntilIdle()
+
+        viewModel.onEvent(PreviewAdEvent.CategorySelected(testCategory))
+        advanceUntilIdle()
+
+        val event = harness.analytics.events.single { it.first == AnalyticsEvents.AD_PREVIEW_ATTRIBUTES_LOADED }
+        assertEquals(1, event.second["error_count"], "the required `state` attribute was never filled in")
+        assertEquals("state", event.second["missing_required"])
+    }
+
+    @Test
+    fun `attributes reloading after a category switch does not log the event a second time`() = runTest(testDispatcher) {
+        val accountStore = OlxAccountStore(InMemoryOlxKeyValueStore(), testJson)
+        accountStore.write(
+            OlxAccountsRecord(
+                accounts = listOf(account(localIndex = 1, olxUserId = 100L, accessToken = "token-a")),
+                activeByCountry = mapOf("ua" to 1),
+                nextLocalIndex = 2,
+            ),
+        )
+        val otherCategory = OlxCategory(id = 2, label = "Furniture", parentId = null, isLeaf = true)
+        val engine = buildEngine {
+            addHandler { request ->
+                when {
+                    request.url.encodedPath.contains("attributes") ->
+                        respond("""{"data":[]}""", status = HttpStatusCode.OK, headers = jsonHeaders())
+
+                    else -> respond("{}", status = HttpStatusCode.OK, headers = jsonHeaders())
+                }
+            }
+        }
+        val harness = harness(engine, accountStore)
+        val viewModel = buildViewModel(harness)
+        viewModel.setState { it.copy(location = testLocation) }
+        advanceUntilIdle()
+
+        viewModel.onEvent(PreviewAdEvent.CategorySelected(testCategory))
+        advanceUntilIdle()
+        viewModel.onEvent(PreviewAdEvent.CategorySelected(otherCategory))
+        advanceUntilIdle()
+
+        assertEquals(
+            1,
+            harness.analytics.events.count { it.first == AnalyticsEvents.AD_PREVIEW_ATTRIBUTES_LOADED },
+            "one preview screen is one seller, so switching categories must not double-count them",
+        )
+    }
+
+    @Test
     fun `price starts in the country's currency before OLX's currency list arrives`() = runTest(testDispatcher) {
         val engine = buildEngine {
             addHandler { respond(content = "", status = HttpStatusCode.InternalServerError) }
@@ -656,6 +779,148 @@ class PreviewAdViewModelTest {
 
         // The AI priced this listing in RON; labelling it ₴ would post 450 lei as 450 hryvnias.
         assertEquals("RON", viewModel.state.value.currency.code)
+    }
+
+    @Test
+    fun `RemoveImage drops only that url, keeping the rest in order`() = runTest(testDispatcher) {
+        val engine = buildEngine {
+            addHandler { respond("{}", status = HttpStatusCode.OK, headers = jsonHeaders()) }
+        }
+        val harness = harness(engine, OlxAccountStore(InMemoryOlxKeyValueStore(), testJson))
+        val viewModel = buildViewModel(harness)
+        viewModel.setState { it.copy(images = listOf("a.jpg", "b.jpg", "c.jpg")) }
+
+        viewModel.onEvent(PreviewAdEvent.RemoveImage("b.jpg"))
+
+        assertEquals(listOf("a.jpg", "c.jpg"), viewModel.state.value.images)
+    }
+
+    @Test
+    fun `a publish after removing a photo does not send it to OLX`() = runTest(testDispatcher) {
+        val accountStore = OlxAccountStore(InMemoryOlxKeyValueStore(), testJson)
+        accountStore.write(
+            OlxAccountsRecord(
+                accounts = listOf(account(localIndex = 1, olxUserId = 100L, accessToken = "token-a")),
+                activeByCountry = mapOf("ua" to 1),
+                nextLocalIndex = 2,
+            ),
+        )
+        var postedBody: String? = null
+        val engine = buildEngine {
+            addHandler { request ->
+                when {
+                    request.url.encodedPath.contains("users/me") ->
+                        respond(userJson(id = 100L, name = "Seller"), status = HttpStatusCode.OK, headers = jsonHeaders())
+
+                    request.url.encodedPath.contains("adverts") && request.method == HttpMethod.Post -> {
+                        postedBody = (request.body as io.ktor.http.content.TextContent).text
+                        respond(postAdvertJson(id = 7L), status = HttpStatusCode.OK, headers = jsonHeaders())
+                    }
+
+                    else -> respond("{}", status = HttpStatusCode.OK, headers = jsonHeaders())
+                }
+            }
+        }
+        val harness = harness(engine, accountStore)
+        val viewModel = buildViewModel(harness)
+        viewModel.setState {
+            it.copy(
+                selectedCategory = testCategory,
+                location = testLocation,
+                attributesLoadState = AttributesLoadState.Loaded,
+                images = listOf("kept.jpg", "removed.jpg"),
+            )
+        }
+
+        viewModel.onEvent(PreviewAdEvent.RemoveImage("removed.jpg"))
+        viewModel.onEvent(PreviewAdEvent.Publish)
+        advanceUntilIdle()
+
+        val body = postedBody
+        assertTrue(body != null && body.contains("kept.jpg"), "the photo the seller kept must still reach OLX")
+        assertTrue(
+            body != null && !body.contains("removed.jpg"),
+            "OLX's per-category photos_limit is only knowable after a category is assigned - this removal is the seller's way under it",
+        )
+    }
+
+    /**
+     * The publish-confirm sheet hides the remove button on the last remaining photo (product
+     * decision, not an OLX rule - see [PreviewAdContract.PreviewAdEvent.RemoveImage]'s KDoc), so
+     * this state isn't reachable through the UI. The ViewModel itself still has to handle it
+     * correctly if it is ever reached some other way: `images` is absent from `POST /adverts`'s
+     * required list, and OLX's `Category` schema allows `photos_limit: 0` on real categories, so
+     * an empty image list is not something publish should choke on.
+     */
+    @Test
+    fun `removing every photo still allows a publish`() = runTest(testDispatcher) {
+        val accountStore = OlxAccountStore(InMemoryOlxKeyValueStore(), testJson)
+        accountStore.write(
+            OlxAccountsRecord(
+                accounts = listOf(account(localIndex = 1, olxUserId = 100L, accessToken = "token-a")),
+                activeByCountry = mapOf("ua" to 1),
+                nextLocalIndex = 2,
+            ),
+        )
+        var postAdvertRequests = 0
+        val engine = buildEngine {
+            addHandler { request ->
+                when {
+                    request.url.encodedPath.contains("users/me") ->
+                        respond(userJson(id = 100L, name = "Seller"), status = HttpStatusCode.OK, headers = jsonHeaders())
+
+                    request.url.encodedPath.contains("adverts") && request.method == HttpMethod.Post -> {
+                        postAdvertRequests += 1
+                        respond(postAdvertJson(id = 7L), status = HttpStatusCode.OK, headers = jsonHeaders())
+                    }
+
+                    else -> respond("{}", status = HttpStatusCode.OK, headers = jsonHeaders())
+                }
+            }
+        }
+        val harness = harness(engine, accountStore)
+        val viewModel = buildViewModel(harness)
+        viewModel.setState {
+            it.copy(
+                selectedCategory = testCategory,
+                location = testLocation,
+                attributesLoadState = AttributesLoadState.Loaded,
+                images = listOf("only.jpg"),
+            )
+        }
+        val effects = mutableListOf<PreviewAdEffect>()
+        backgroundScope.launch { viewModel.effects.collect { effects += it } }
+
+        viewModel.onEvent(PreviewAdEvent.RemoveImage("only.jpg"))
+        viewModel.onEvent(PreviewAdEvent.Publish)
+        advanceUntilIdle()
+
+        assertEquals(1, postAdvertRequests)
+        assertEquals(1, effects.filterIsInstance<PreviewAdEffect.PublishSuccess>().size)
+    }
+
+    @Test
+    fun `a removed photo survives the saved-state round trip`() = runTest(testDispatcher) {
+        val engine = buildEngine {
+            addHandler { respond("{}", status = HttpStatusCode.OK, headers = jsonHeaders()) }
+        }
+        val harness = harness(engine, OlxAccountStore(InMemoryOlxKeyValueStore(), testJson))
+        val savedStateHandle = SavedStateHandle()
+        val viewModel = buildViewModel(harness, savedStateHandle)
+        viewModel.setState { it.copy(images = listOf("a.jpg", "b.jpg")) }
+        // Lets the saved-state pipeline's collector actually start and persist this state, rather
+        // than both setState calls collapsing into one StateFlow-conflated snapshot below.
+        advanceUntilIdle()
+
+        viewModel.onEvent(PreviewAdEvent.RemoveImage("b.jpg"))
+        advanceUntilIdle()
+
+        val persisted = savedStateHandle.get<String>("preview_ad_saved_state")
+        assertTrue(persisted != null && persisted.contains("a.jpg"), "the photo that survived removal must be persisted")
+        assertTrue(
+            persisted != null && !persisted.contains("b.jpg"),
+            "a process death after removal must not resurrect the removed photo",
+        )
     }
 
     // --- test harness -----------------------------------------------------------------------

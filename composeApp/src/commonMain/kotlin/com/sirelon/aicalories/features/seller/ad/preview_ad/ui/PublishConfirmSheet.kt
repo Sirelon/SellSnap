@@ -1,6 +1,7 @@
 package com.sirelon.sellsnap.features.seller.ad.preview_ad.ui
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -13,6 +14,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
@@ -23,6 +25,7 @@ import com.sirelon.sellsnap.designsystem.AppDimens
 import com.sirelon.sellsnap.designsystem.AppTheme
 import com.sirelon.sellsnap.designsystem.buttons.AppButton
 import com.sirelon.sellsnap.designsystem.buttons.AppButtonDefaults
+import com.sirelon.sellsnap.features.media.ui.RemovePhotoButton
 import com.sirelon.sellsnap.generated.resources.Res
 import com.sirelon.sellsnap.generated.resources.publish_confirm_back
 import com.sirelon.sellsnap.generated.resources.publish_confirm_subtitle
@@ -38,6 +41,7 @@ fun PublishConfirmSheet(
     priceFormatted: String,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
+    onRemoveImage: (String) -> Unit = {},
 ) {
     Column(
         modifier = Modifier
@@ -55,12 +59,25 @@ fun PublishConfirmSheet(
                     imageUrls.chunked(3).forEach { row ->
                         Row(horizontalArrangement = Arrangement.spacedBy(gap)) {
                             row.forEach { url ->
-                                AppAsyncImage(
-                                    model = url,
-                                    modifier = Modifier
-                                        .size(cellSize)
-                                        .clip(RoundedCornerShape(AppDimens.BorderRadius.xl2)),
-                                )
+                                Box(modifier = Modifier.size(cellSize)) {
+                                    AppAsyncImage(
+                                        model = url,
+                                        modifier = Modifier
+                                            .size(cellSize)
+                                            .clip(RoundedCornerShape(AppDimens.BorderRadius.xl2)),
+                                    )
+                                    // The seller can trim down to one photo but not past it - no
+                                    // message, the button for the last remaining photo just isn't
+                                    // there to tap (owner's call, 2026-09-25).
+                                    if (imageUrls.size > 1) {
+                                        RemovePhotoButton(
+                                            modifier = Modifier.align(Alignment.TopEnd),
+                                            enabled = true,
+                                            onClick = { onRemoveImage(url) },
+                                            testTag = "preview_ad_publish_confirm_photo_remove",
+                                        )
+                                    }
+                                }
                             }
                         }
                     }

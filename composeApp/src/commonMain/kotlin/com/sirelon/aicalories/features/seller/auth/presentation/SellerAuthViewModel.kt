@@ -54,11 +54,19 @@ class SellerAuthViewModel(
             }
 
             SellerAuthContract.SellerAuthEvent.OlxAuthDismissed -> {
-                setState {
-                    it.copy(
-                        status = SellerAuthContract.SellerAuthStatus.Idle,
-                        errorMessage = null,
-                    )
+                viewModelScope.launch {
+                    analytics.logEvent(AnalyticsEvents.AUTH_ABANDONED)
+                    // First-connect only (this VM backs the landing/onboarding flow, never
+                    // Profile's add-account) - never relaunch login automatically, OLX bans
+                    // accounts after repeated failures.
+                    authRepository.enterGuestMode(showConnectLaterHint = true)
+                    setState {
+                        it.copy(
+                            status = SellerAuthContract.SellerAuthStatus.Idle,
+                            errorMessage = null,
+                        )
+                    }
+                    postEffect(SellerAuthContract.SellerAuthEffect.OpenHome)
                 }
             }
         }

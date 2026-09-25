@@ -18,6 +18,7 @@
     <string name="guest_mode_banner_message">Want to go live? You'll need an OLX account. For now, copy the title, description, and price below and paste them into OLX.</string>
     <string name="guest_connect_olx_cta">Connect OLX to post in one tap</string>
     <string name="guest_copy_hint">Tap the copy buttons next to the title, description, and price — then paste them into OLX when you're ready.</string>
+    <string name="generate_ad_guest_connect_hint">You're browsing as a guest — connect OLX anytime from Profile to publish in one tap.</string>
     <string name="continue_with_olx">Continue with OLX</string>
     <string name="terms_privacy_prefix">By continuing, you're cool with our </string>
     <string name="terms_of_service">Terms of Service</string>
@@ -249,6 +250,7 @@
     <string name="error_olx_auth_prepare_failed">Couldn't start OLX sign-in.</string>
     <string name="error_olx_auth_complete_failed">Couldn't finish signing in to OLX.</string>
     <string name="error_selected_files_process_failed">Couldn't load those photos.</string>
+    <string name="photos_limit_kept_message">Kept the first %1$d photos — that's the max for this step.</string>
     <string name="error_upload_file_failed">Couldn't upload one of the photos.</string>
     <string name="error_publish_failed">Publishing didn't go through. Give it another shot.</string>
     <string name="error_generate_ad_failed">Couldn't generate the ad. Try again?</string>

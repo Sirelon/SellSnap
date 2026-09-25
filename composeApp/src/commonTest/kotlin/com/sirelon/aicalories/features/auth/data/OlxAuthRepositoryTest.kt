@@ -165,6 +165,26 @@ class OlxAuthRepositoryTest {
         }
 
     @Test
+    fun `enterGuestMode without a hint leaves consumeGuestConnectHint false`() = runBlocking {
+        val repository = createRepository(engine = MockEngine { error("No HTTP call expected.") })
+
+        repository.enterGuestMode()
+
+        assertEquals(SellerSessionMode.Guest, repository.currentSession().mode)
+        assertEquals(false, repository.consumeGuestConnectHint())
+    }
+
+    @Test
+    fun `enterGuestMode with showConnectLaterHint sets a one-shot hint that consumeGuestConnectHint clears`() = runBlocking {
+        val repository = createRepository(engine = MockEngine { error("No HTTP call expected.") })
+
+        repository.enterGuestMode(showConnectLaterHint = true)
+
+        assertEquals(true, repository.consumeGuestConnectHint())
+        assertEquals(false, repository.consumeGuestConnectHint())
+    }
+
+    @Test
     fun `currentSession reports Unauthenticated when no account is on file for the active country`() = runBlocking {
         val countryStore = OlxCountryStore(InMemoryOlxKeyValueStore(), FakeAnalytics()).apply { save(OlxCountry.UA) }
         val accountStore = OlxAccountStore(InMemoryOlxKeyValueStore(), testJson)
