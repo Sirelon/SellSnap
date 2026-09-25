@@ -106,6 +106,21 @@ interface PreviewAdContract {
          * switches the active account; the draft is not touched (D2). */
         data class SwitchAccountRequested(val localIndex: Int) : PreviewAdEvent
 
+        /**
+         * SIR-122: the seller trims a photo in the publish-confirm sheet, the last screen before
+         * `Publish` fires.
+         *
+         * OLX's photo cap is per category (`photos_limit` on the `Category` schema,
+         * `developer.olx.ua/swagger/v2/partner_api.yaml`, `components.schemas.Category`) and isn't
+         * knowable until a category is assigned, which happens after photos are picked. This is the
+         * seller's manual way to get under a category's real limit before OLX's own
+         * `Image error: Image limit exceeded` (400, same spec, Adverts / Create advert section)
+         * rejects the whole publish. Not a hard floor at zero: `photos_limit: 0` exists on real
+         * categories (e.g. category 1755, an engineering-jobs category), so an empty [PreviewAdState.images]
+         * is a valid, publishable state, not one this app should block.
+         */
+        data class RemoveImage(val url: String) : PreviewAdEvent
+
         data class VoteGeneratedContent(val vote: GeneratedContentVote) : PreviewAdEvent
     }
 

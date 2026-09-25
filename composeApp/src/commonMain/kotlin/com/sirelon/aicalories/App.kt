@@ -479,6 +479,9 @@ fun App() {
                                         navVm.popDestination()
                                     }
                                 },
+                                onRemoveImage = { url ->
+                                    sharedViewModel.onEvent(PreviewAdEvent.RemoveImage(url))
+                                },
                             )
                         }
 
