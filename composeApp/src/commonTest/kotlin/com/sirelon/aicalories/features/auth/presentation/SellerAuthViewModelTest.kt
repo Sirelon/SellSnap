@@ -63,18 +63,43 @@ class SellerAuthViewModelTest {
     }
 
     @Test
-    fun `dismissing the OLX login sheet logs auth_abandoned, enters guest mode with a connect-later hint, and opens home`() =
+    fun `closing the OLX login logs auth_abandoned and offers guest mode without entering it`() =
         runTest(testDispatcher) {
             val harness = harness(engine = MockEngine { error("No HTTP call expected.") })
 
             harness.viewModel.onEvent(SellerAuthContract.SellerAuthEvent.OlxAuthDismissed)
-            harness.viewModel.effects.awaitEffect<SellerAuthContract.SellerAuthEffect.OpenHome>()
 
             assertTrue(harness.analytics.events.any { it.first == AnalyticsEvents.AUTH_ABANDONED })
+            assertTrue(harness.viewModel.state.value.showLoginClosedSheet)
+            assertEquals(SellerAuthContract.SellerAuthStatus.Idle, harness.viewModel.state.value.status)
+            assertEquals(SellerSessionMode.Unauthenticated, harness.authRepository.currentSession().mode)
+        }
+
+    @Test
+    fun `choosing guest mode on the login-closed sheet enters it with a connect-later hint and opens home`() =
+        runTest(testDispatcher) {
+            val harness = harness(engine = MockEngine { error("No HTTP call expected.") })
+
+            harness.viewModel.onEvent(SellerAuthContract.SellerAuthEvent.OlxAuthDismissed)
+            harness.viewModel.onEvent(SellerAuthContract.SellerAuthEvent.LoginClosedGuestChosen)
+            harness.viewModel.effects.awaitEffect<SellerAuthContract.SellerAuthEffect.OpenHome>()
+
+            assertFalse(harness.viewModel.state.value.showLoginClosedSheet)
             assertEquals(SellerSessionMode.Guest, harness.authRepository.currentSession().mode)
             assertTrue(harness.authRepository.consumeGuestConnectHint())
-            assertEquals(SellerAuthContract.SellerAuthStatus.Idle, harness.viewModel.state.value.status)
         }
+
+    @Test
+    fun `dismissing the login-closed sheet stays put, not in guest mode`() = runTest(testDispatcher) {
+        val harness = harness(engine = MockEngine { error("No HTTP call expected.") })
+
+        harness.viewModel.onEvent(SellerAuthContract.SellerAuthEvent.OlxAuthDismissed)
+        harness.viewModel.onEvent(SellerAuthContract.SellerAuthEvent.LoginClosedSheetDismissed)
+
+        assertFalse(harness.viewModel.state.value.showLoginClosedSheet)
+        assertEquals(SellerSessionMode.Unauthenticated, harness.authRepository.currentSession().mode)
+        assertFalse(harness.authRepository.consumeGuestConnectHint())
+    }
 
     @Test
     fun `continuing as guest does not set the connect-later hint`() = runTest(testDispatcher) {

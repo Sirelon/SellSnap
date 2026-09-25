@@ -54,20 +54,30 @@ class SellerAuthViewModel(
             }
 
             SellerAuthContract.SellerAuthEvent.OlxAuthDismissed -> {
+                analytics.logEvent(AnalyticsEvents.AUTH_ABANDONED)
+                // First-connect only (this VM backs the landing/onboarding flow, never Profile's
+                // add-account). Guest mode is offered, not entered: switching the moment the login
+                // closed read as the app deciding for the seller (owner, 2026-09-25). Never
+                // relaunch login automatically - OLX bans accounts after repeated failures.
+                setState {
+                    it.copy(
+                        status = SellerAuthContract.SellerAuthStatus.Idle,
+                        errorMessage = null,
+                        showLoginClosedSheet = true,
+                    )
+                }
+            }
+
+            SellerAuthContract.SellerAuthEvent.LoginClosedGuestChosen -> {
+                setState { it.copy(showLoginClosedSheet = false) }
                 viewModelScope.launch {
-                    analytics.logEvent(AnalyticsEvents.AUTH_ABANDONED)
-                    // First-connect only (this VM backs the landing/onboarding flow, never
-                    // Profile's add-account) - never relaunch login automatically, OLX bans
-                    // accounts after repeated failures.
                     authRepository.enterGuestMode(showConnectLaterHint = true)
-                    setState {
-                        it.copy(
-                            status = SellerAuthContract.SellerAuthStatus.Idle,
-                            errorMessage = null,
-                        )
-                    }
                     postEffect(SellerAuthContract.SellerAuthEffect.OpenHome)
                 }
+            }
+
+            SellerAuthContract.SellerAuthEvent.LoginClosedSheetDismissed -> {
+                setState { it.copy(showLoginClosedSheet = false) }
             }
         }
     }

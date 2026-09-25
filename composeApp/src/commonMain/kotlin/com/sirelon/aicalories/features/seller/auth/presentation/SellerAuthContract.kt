@@ -7,6 +7,8 @@ interface SellerAuthContract {
     data class SellerAuthState(
         val status: SellerAuthStatus = SellerAuthStatus.Idle,
         val errorMessage: String? = null,
+        /** The seller closed the OLX login: offer guest mode instead of switching to it silently. */
+        val showLoginClosedSheet: Boolean = false,
     )
 
     enum class SellerAuthStatus {
@@ -22,6 +24,8 @@ interface SellerAuthContract {
         data object OnTermsClicked : SellerAuthEvent
         data object OnPrivacyClicked : SellerAuthEvent
         data object OlxAuthDismissed : SellerAuthEvent
+        data object LoginClosedGuestChosen : SellerAuthEvent
+        data object LoginClosedSheetDismissed : SellerAuthEvent
         data class CountryConfirmed(val country: OlxCountry) : SellerAuthEvent
     }
 

@@ -10,9 +10,9 @@ object AnalyticsEvents {
      * first-connect flow this is the missing terminal event against `auth_started`: before, a
      * cancelled attempt looked identical to one that never happened. Add-account/reconnect logs
      * this too, but against its own `account_add_started` rather than `auth_started`, since that
-     * flow never logs the latter. Reliable on iOS today; Android's Custom Tabs launch has no
-     * cancel signal in this codebase (see OlxExternalAuthLauncher.android.kt), so it under-counts
-     * there.
+     * flow never logs the latter. iOS gets a cancel from `ASWebAuthenticationSession`; Android
+     * infers it from the app resuming after the login tab with no OLX callback (see
+     * OlxAuthReturnTracker).
      */
     const val AUTH_ABANDONED = "auth_abandoned"
 

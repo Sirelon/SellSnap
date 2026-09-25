@@ -97,6 +97,17 @@ fun OlxCountryPickerScreenRoute(
             },
         )
     }
+
+    if (state.showLoginClosedSheet) {
+        OlxLoginClosedSheet(
+            onContinueAsGuest = {
+                viewModel.onEvent(SellerAuthContract.SellerAuthEvent.LoginClosedGuestChosen)
+            },
+            onDismiss = {
+                viewModel.onEvent(SellerAuthContract.SellerAuthEvent.LoginClosedSheetDismissed)
+            },
+        )
+    }
 }
 
 @Composable
