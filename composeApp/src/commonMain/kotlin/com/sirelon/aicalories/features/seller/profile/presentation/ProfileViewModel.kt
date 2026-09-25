@@ -4,6 +4,7 @@ import androidx.lifecycle.viewModelScope
 import com.sirelon.sellsnap.features.common.presentation.BaseViewModel
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountRecord
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountState
+import com.sirelon.sellsnap.features.seller.auth.data.OlxCountryStore
 import com.sirelon.sellsnap.features.seller.auth.data._currentOlxCountry
 import com.sirelon.sellsnap.features.seller.profile.data.AddAccountOutcome
 import com.sirelon.sellsnap.features.seller.profile.data.SellerAccountRepository
@@ -24,9 +25,12 @@ import org.jetbrains.compose.resources.getString
 
 class ProfileViewModel(
     private val accountRepository: SellerAccountRepository,
+    private val olxCountryStore: OlxCountryStore,
 ) : BaseViewModel<ProfileState, ProfileEvent, ProfileEffect>() {
 
     init {
+        setState { it.copy(country = olxCountryStore.current) }
+
         accountRepository
             .user
             .onEach { user ->
@@ -82,6 +86,10 @@ class ProfileViewModel(
             is ProfileEvent.SetActiveAccountClicked -> setActiveAccount(event.localIndex)
             is ProfileEvent.NeedsReconnectRowClicked -> toggleReconnectRow(event.localIndex)
             is ProfileEvent.ReconnectClicked -> reconnect(event.localIndex)
+            is ProfileEvent.CountrySelected -> viewModelScope.launch {
+                olxCountryStore.save(event.country)
+                setState { it.copy(country = event.country) }
+            }
         }
     }
 

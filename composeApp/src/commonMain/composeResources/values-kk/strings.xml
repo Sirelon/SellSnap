@@ -91,6 +91,8 @@
     <string name="profile_guest_title">Қонақ профилі</string>
     <string name="profile_guest_description">SellSnap арқылы жариялау үшін OLX-ті қос — аккаунт деректерің де осында пайда болады.</string>
     <string name="profile_olx_account">OLX аккаунты</string>
+    <string name="profile_country_title">Ел</string>
+    <string name="profile_country_subtitle">Хабарландырулар осы OLX нарығы үшін жазылады және бағаланады.</string>
     <string name="profile_location_title">Сату орны</string>
     <string name="profile_location_subtitle">Келесі хабарландыруларың үшін үнсіз келісім бойынша қолданылады.</string>
     <string name="profile_theme_title">Тақырып</string>

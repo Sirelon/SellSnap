@@ -91,6 +91,8 @@
     <string name="profile_guest_title">Гостови профил</string>
     <string name="profile_guest_description">Свържи OLX, за да публикуваш от SellSnap — данните за акаунта ти ще се появят тук.</string>
     <string name="profile_olx_account">OLX акаунт</string>
+    <string name="profile_country_title">Държава</string>
+    <string name="profile_country_subtitle">Обявите се пишат и се оценяват за този пазар на OLX.</string>
     <string name="profile_location_title">Местоположение за продажба</string>
     <string name="profile_location_subtitle">Ще го използваме като местоположение по подразбиране за следващите ти обяви.</string>
     <string name="profile_theme_title">Тема</string>

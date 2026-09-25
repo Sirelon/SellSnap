@@ -281,6 +281,12 @@ private fun ProfileScreen(
 
             if (state.user == null && state.accounts.isEmpty()) {
                 GuestCard(onLogin = { onEvent(ProfileEvent.LoginClicked) })
+                state.country?.let { country ->
+                    CountryCard(
+                        country = country,
+                        onCountrySelected = { onEvent(ProfileEvent.CountrySelected(it)) },
+                    )
+                }
             } else {
                 AccountsSection(
                     accounts = state.accounts,

@@ -91,6 +91,8 @@
     <string name="profile_guest_title">Profil oaspete</string>
     <string name="profile_guest_description">Conectează OLX pentru a publica din SellSnap — detaliile contului tău vor apărea și ele aici.</string>
     <string name="profile_olx_account">Cont OLX</string>
+    <string name="profile_country_title">Țară</string>
+    <string name="profile_country_subtitle">Anunțurile sunt scrise și evaluate pentru această piață OLX.</string>
     <string name="profile_location_title">Locație de vânzare</string>
     <string name="profile_location_subtitle">O vom folosi ca locație implicită pentru următoarele anunțuri.</string>
     <string name="profile_theme_title">Temă</string>
