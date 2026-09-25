@@ -249,6 +249,7 @@
     <string name="error_olx_auth_prepare_failed">Couldn't start OLX sign-in.</string>
     <string name="error_olx_auth_complete_failed">Couldn't finish signing in to OLX.</string>
     <string name="error_selected_files_process_failed">Couldn't load those photos.</string>
+    <string name="photos_limit_kept_message">Kept the first %1$d photos — that's the max for this step.</string>
     <string name="error_upload_file_failed">Couldn't upload one of the photos.</string>
     <string name="error_publish_failed">Publishing didn't go through. Give it another shot.</string>
     <string name="error_generate_ad_failed">Couldn't generate the ad. Try again?</string>

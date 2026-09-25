@@ -8,10 +8,12 @@ import com.sirelon.sellsnap.analytics.Analytics
 import com.sirelon.sellsnap.analytics.AnalyticsEvents
 import com.sirelon.sellsnap.features.common.presentation.BaseViewModel
 import com.sirelon.sellsnap.features.media.SharedImagesBridge
+import com.sirelon.sellsnap.features.media.ui.MAX_PHOTOS
 import com.sirelon.sellsnap.features.media.upload.DraftMediaFileStore
 import com.sirelon.sellsnap.features.media.upload.DraftPhoto
 import com.sirelon.sellsnap.features.media.upload.MediaUploadHelper
 import com.sirelon.sellsnap.features.media.upload.MediaUploadUpdate
+import com.sirelon.sellsnap.features.media.upload.PersistedDraftPhoto
 import com.sirelon.sellsnap.features.media.upload.UploadedFile
 import com.sirelon.sellsnap.features.media.upload.UploadingItem
 import com.sirelon.sellsnap.features.seller.ad.AdFlowTimerStore
@@ -38,6 +40,7 @@ import com.sirelon.sellsnap.generated.resources.error_photo_different_items
 import com.sirelon.sellsnap.generated.resources.error_photo_unreadable
 import com.sirelon.sellsnap.generated.resources.error_selected_files_process_failed
 import com.sirelon.sellsnap.generated.resources.error_upload_file_failed
+import com.sirelon.sellsnap.generated.resources.photos_limit_kept_message
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.TimeSource
 import kotlin.uuid.Uuid
@@ -370,6 +373,15 @@ class GenerateAdViewModel(
 
     private suspend fun UploadedFile.toPublicUrl(): String = mediaUploadHelper.publicUrl(path)
 
+    /**
+     * Caps the running total at [MAX_PHOTOS], not just this one batch.
+     *
+     * The gallery picker's own `maxItems` (see `GenerateAdScreen`) only bounds a single pick - it
+     * has no way to know how many photos are already on the grid, so a seller who already has
+     * photos and then picks a fresh batch could otherwise land above the cap. Files dropped here
+     * were already written to disk by [draftMediaFileStore], so they are deleted rather than left
+     * orphaned.
+     */
     private fun onFileResult(event: GenerateAdContract.GenerateAdEvent.UploadFilesResult) {
         viewModelScope.launch {
             mediaUploadHelper
@@ -380,15 +392,22 @@ class GenerateAdViewModel(
                 .prepareFiles(selectionResult = event.result, validateFormat = !screenshotMode)
                 .mapCatching { files -> files.mapNotNull { draftMediaFileStore.persist(it) } }
                 .onSuccess { persistedFiles ->
-                    if (persistedFiles.isNotEmpty() && currentState().uploads.isEmpty()) {
+                    val existingCount = currentState().uploads.size
+                    if (persistedFiles.isNotEmpty() && existingCount == 0) {
                         adFlowTimerStore.markFlowStartedIfNeeded()
                     }
+                    val newFiles = persistedFiles.filter { !currentState().uploads.containsKey(it.file) }
+                    val (kept, dropped) = splitAtPhotoLimit(newFiles, existingCount, MAX_PHOTOS)
                     setState { current ->
-                        val newEntries = persistedFiles
-                            .map { it.file }
-                            .filter { file -> !current.uploads.containsKey(file) }
-                            .associateWith { UploadingItem() }
-                        current.copy(uploads = current.uploads + newEntries)
+                        current.copy(uploads = current.uploads + kept.associate { it.file to UploadingItem() })
+                    }
+                    if (dropped.isNotEmpty()) {
+                        draftMediaFileStore.delete(dropped.map { it.photo })
+                        postEffect(
+                            GenerateAdContract.GenerateAdEffect.ShowMessage(
+                                getString(Res.string.photos_limit_kept_message, MAX_PHOTOS)
+                            )
+                        )
                     }
                 }
                 .onFailure { error ->
@@ -586,6 +605,20 @@ class GenerateAdViewModel(
         val path = draftMediaFileStore.stablePath(file) ?: return null
         return readSavedState().photos.firstOrNull { it.path == path }
     }
+}
+
+/**
+ * Splits a freshly persisted batch into what still fits under [max] given [existingCount] photos
+ * already on the grid, and what has to be dropped. Pure so the running-total cap (see
+ * [GenerateAdViewModel.onFileResult]) is testable without the ViewModel's upload machinery.
+ */
+internal fun splitAtPhotoLimit(
+    newFiles: List<PersistedDraftPhoto>,
+    existingCount: Int,
+    max: Int,
+): Pair<List<PersistedDraftPhoto>, List<PersistedDraftPhoto>> {
+    val remainingSlots = (max - existingCount).coerceAtLeast(0)
+    return newFiles.take(remainingSlots) to newFiles.drop(remainingSlots)
 }
 
 /**
