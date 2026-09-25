@@ -95,6 +95,10 @@ private const val TitleMinLength = 10
 private const val DescriptionMinLength = 30
 private const val PreviewAdSavedStateKey = "preview_ad_saved_state"
 
+/** SIR-122: one entry in [PreviewAdViewModel.removedImages] - [index] is where [url] sat in
+ * [PreviewAdContract.PreviewAdState.images] before it was removed. */
+private data class RemovedImage(val url: String, val index: Int)
+
 class PreviewAdViewModel internal constructor(
     private val filledAdvertisement: AdvertisementWithAttributes,
     private val categoriesRepository: CategoriesRepository,
@@ -140,6 +144,11 @@ class PreviewAdViewModel internal constructor(
     private var currencyLoadStarted = false
     private var skipRestoredTitleSuggestion = restoredSavedState.selectedCategoryId != null
     private var attributesLoadedLogged = false
+
+    // SIR-122: a small undo stack for RemoveImage, most-recent removal last. Not part of the
+    // saved state - dropped along with the rest of the ViewModel once the flow moves on, which is
+    // fine since undo only needs to survive this sheet being open.
+    private val removedImages = mutableListOf<RemovedImage>()
 
     init {
         combine(
@@ -316,7 +325,29 @@ class PreviewAdViewModel internal constructor(
                 publishJob = viewModelScope.launch { publishAdvert() }
             }
 
-            is PreviewAdEvent.RemoveImage -> setState { it.copy(images = it.images - event.url) }
+            is PreviewAdEvent.RemoveImage -> {
+                // The push onto removedImages happens here, outside the setState lambda: State-
+                // Flow.update() may re-invoke its lambda on a concurrent write, and a push inside
+                // it would double up the undo stack for one logical removal.
+                val index = currentState().images.indexOf(event.url)
+                if (index != -1) {
+                    removedImages.add(RemovedImage(url = event.url, index = index))
+                    setState { it.copy(images = it.images - event.url, canUndoRemoveImage = true) }
+                }
+            }
+
+            PreviewAdEvent.UndoRemoveImage -> {
+                val restored = removedImages.removeLastOrNull()
+                if (restored != null) {
+                    val canUndoMore = removedImages.isNotEmpty()
+                    setState {
+                        val images = it.images.toMutableList().apply {
+                            add(restored.index.coerceIn(0, size), restored.url)
+                        }
+                        it.copy(images = images, canUndoRemoveImage = canUndoMore)
+                    }
+                }
+            }
 
             is PreviewAdEvent.SwitchAccountRequested -> viewModelScope.launch {
                 accountRepository.setActiveAccount(

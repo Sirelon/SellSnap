@@ -28,8 +28,10 @@ import com.sirelon.sellsnap.designsystem.buttons.AppButtonDefaults
 import com.sirelon.sellsnap.features.media.ui.RemovePhotoButton
 import com.sirelon.sellsnap.generated.resources.Res
 import com.sirelon.sellsnap.generated.resources.publish_confirm_back
+import com.sirelon.sellsnap.generated.resources.publish_confirm_photo_removed
 import com.sirelon.sellsnap.generated.resources.publish_confirm_subtitle
 import com.sirelon.sellsnap.generated.resources.publish_confirm_title
+import com.sirelon.sellsnap.generated.resources.publish_confirm_undo_remove_photo
 import com.sirelon.sellsnap.generated.resources.publish_confirm_yes
 import org.jetbrains.compose.resources.stringResource
 
@@ -42,6 +44,8 @@ fun PublishConfirmSheet(
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
     onRemoveImage: (String) -> Unit = {},
+    canUndoRemoveImage: Boolean = false,
+    onUndoRemoveImage: () -> Unit = {},
 ) {
     Column(
         modifier = Modifier
@@ -82,6 +86,26 @@ fun PublishConfirmSheet(
                         }
                     }
                 }
+            }
+        }
+
+        if (canUndoRemoveImage) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = stringResource(Res.string.publish_confirm_photo_removed),
+                    style = AppTheme.typography.body,
+                    color = AppTheme.colors.onSurfaceMuted,
+                )
+                AppButton(
+                    modifier = Modifier.testTag("preview_ad_publish_confirm_undo_remove_photo"),
+                    style = AppButtonDefaults.ghost(),
+                    text = stringResource(Res.string.publish_confirm_undo_remove_photo),
+                    onClick = onUndoRemoveImage,
+                )
             }
         }
 
