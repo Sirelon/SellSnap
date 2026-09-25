@@ -117,7 +117,7 @@ object AnalyticsEvents {
     // Ad lifecycle (SIR-106). Buckets and enums only: no prices in absolute terms, no advert
     // ids, no titles. Account identity is the localIndex convention, never anything identifying.
 
-    /** `action` (deactivate | activate | finish | delete | extend | edit), `from_status`,
+    /** `action` (deactivate | activate | delete | extend | edit), `from_status`,
      * `result` (success | rejected | failed | partial). `rejected` is OLX refusing the action for
      * this advert's state and is the health signal for the status-to-action mapping in
      * `availableActions` - a pattern of it against one status means a seller is being offered a
