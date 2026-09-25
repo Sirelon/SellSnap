@@ -115,10 +115,20 @@ fun GenerateAdScreen(
 
     val photoPicker = rememberPhotoPickerController(
         permissionController = permissionController,
-        // Android/iOS enforce this in the native picker UI itself; other platforms truncate the
-        // result to maxItems, which onFileResult also caps against the running total (see its
-        // KDoc) since a batch pick doesn't know how many photos are already on the grid.
-        selectionMode = FilePickerSelectionMode.Multiple(maxItems = MAX_PHOTOS),
+        // Remaining slots, not a flat MAX_PHOTOS: Android/iOS enforce this in the native picker UI
+        // itself, so a seller who already has photos sees the real number they can still add,
+        // rather than picking a full batch of MAX_PHOTOS and having some silently dropped.
+        // coerceAtLeast(2): Android's PickMultipleVisualMedia contract throws on construction -
+        // not just on launch - for maxItems <= 1 (require(maxItems > 1)), and this value is built
+        // on every recomposition regardless of whether the add button is even visible, so 0 or 1
+        // remaining slots (7-8 existing photos) would otherwise crash the screen. The floor of 2
+        // means a seller with 7 photos can still over-pick by one; onFileResult's running-total cap
+        // (see its KDoc) is what actually enforces MAX_PHOTOS, this is only the UX nicety on top.
+        // Photos that skip this picker entirely (OS share sheet, screenshot-mode seeding - see
+        // GenerateAdViewModel.observeSharedImages/seedScreenshotPhotos) rely on that cap alone.
+        selectionMode = FilePickerSelectionMode.Multiple(
+            maxItems = (MAX_PHOTOS - state.uploads.size).coerceIn(2, MAX_PHOTOS),
+        ),
         onResult = { selectionResult ->
             viewModel.onEvent(GenerateAdContract.GenerateAdEvent.UploadFilesResult(result = selectionResult))
         },
