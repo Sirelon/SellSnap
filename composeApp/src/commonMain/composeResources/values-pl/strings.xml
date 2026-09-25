@@ -18,6 +18,7 @@
     <string name="guest_mode_banner_message">Chcesz opublikować? Potrzebujesz konta OLX. Na razie skopiuj tytuł, opis i cenę poniżej i wklej je na OLX.</string>
     <string name="guest_connect_olx_cta">Połącz OLX, by publikować jednym kliknięciem</string>
     <string name="guest_copy_hint">Kliknij przyciski kopiowania przy tytule, opisie i cenie — potem wklej je na OLX, kiedy będziesz gotowy.</string>
+    <string name="generate_ad_guest_connect_hint">Teraz jesteś w trybie gościa — połącz OLX w dowolnym momencie w Profilu, by publikować jednym kliknięciem.</string>
     <string name="continue_with_olx">Kontynuuj z OLX</string>
     <string name="terms_privacy_prefix">Kontynuując, akceptujesz nasze </string>
     <string name="terms_of_service">Warunki korzystania</string>

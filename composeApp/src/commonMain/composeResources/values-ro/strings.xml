@@ -18,6 +18,7 @@
     <string name="guest_mode_banner_message">Vrei să publici? Ai nevoie de un cont OLX. Deocamdată, copiază titlul, descrierea și prețul de mai jos și lipește-le în OLX.</string>
     <string name="guest_connect_olx_cta">Conectează OLX pentru a posta dintr-o atingere</string>
     <string name="guest_copy_hint">Atinge butoanele de copiere de lângă titlu, descriere și preț — apoi lipește-le în OLX când ești gata.</string>
+    <string name="generate_ad_guest_connect_hint">Acum ești în modul oaspete — conectează OLX oricând din Profil, ca să publici dintr-o atingere.</string>
     <string name="continue_with_olx">Continuă cu OLX</string>
     <string name="terms_privacy_prefix">Continuând, ești de acord cu </string>
     <string name="terms_of_service">Termenii de serviciu</string>

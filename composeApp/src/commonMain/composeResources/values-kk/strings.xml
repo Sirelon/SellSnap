@@ -18,6 +18,7 @@
     <string name="guest_mode_banner_message">Жариялағың келе ме? OLX аккаунты қажет. Әзірге төмендегі тақырыпты, сипаттаманы және бағаны көшіріп, OLX-ке қой.</string>
     <string name="guest_connect_olx_cta">Бір түртіп жариялау үшін OLX-ті қос</string>
     <string name="guest_copy_hint">Тақырып, сипаттама және баға жанындағы көшіру түймелерін түрт — содан кейін дайын болғанда OLX-ке қой.</string>
+    <string name="generate_ad_guest_connect_hint">Қазір қонақ режиміндесің — бір түртіп жариялау үшін кез келген уақытта Профильде OLX-ті қос.</string>
     <string name="continue_with_olx">OLX арқылы кіру</string>
     <string name="terms_privacy_prefix">Жалғастыру арқылы сен біздің </string>
     <string name="terms_of_service">Қызмет шарттарымен</string>
