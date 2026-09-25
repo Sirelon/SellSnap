@@ -11,12 +11,14 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -159,14 +161,54 @@ private fun AiProcessingContent(
     val steps = processingSteps(isGuestMode = isGuestMode)
     val tips = processingTips(isGuestMode = isGuestMode)
 
+    // The steps and tips scroll; Cancel stays pinned below them, so it is always one tap away on a
+    // short screen or with large text instead of scrolling off the bottom.
     Column(
         modifier = modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
+            .navigationBarsPadding()
             .padding(horizontal = AppDimens.Spacing.xl6),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
     ) {
+        BoxWithConstraints(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth(),
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    // After verticalScroll, so the content itself is at least one screen tall and
+                    // Arrangement.Center still centres it when it fits.
+                    .verticalScroll(rememberScrollState())
+                    .heightIn(min = maxHeight),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+            ) {
+                AiProcessingDetails(steps = steps, tips = tips, completedSteps = completedSteps)
+            }
+        }
+
+        AppButton(
+            text = stringResource(Res.string.cancel),
+            onClick = onCancelClick,
+            style = AppButtonDefaults.ghostDestructive(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .widthIn(max = AppDimens.Size.xl24)
+                .padding(vertical = AppDimens.Spacing.xl3)
+                .testTag("ai_processing_cancel_button"),
+        )
+    }
+}
+
+@Composable
+private fun AiProcessingDetails(
+    steps: List<String>,
+    tips: List<String>,
+    completedSteps: Int,
+) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Box(contentAlignment = Alignment.Center) {
             PulsingCircles {
                 SpinningIcon()
@@ -202,19 +244,6 @@ private fun AiProcessingContent(
             modifier = Modifier
                 .fillMaxWidth()
                 .widthIn(max = AppDimens.Size.xl24),
-        )
-
-        Spacer(modifier = Modifier.height(AppDimens.Spacing.xl6))
-
-        AppButton(
-            text = stringResource(Res.string.cancel),
-            onClick = onCancelClick,
-            style = AppButtonDefaults.outline(),
-            modifier = Modifier
-                .fillMaxWidth()
-                .widthIn(max = AppDimens.Size.xl24)
-                .navigationBarsPadding()
-                .testTag("ai_processing_cancel_button"),
         )
     }
 }
