@@ -552,6 +552,7 @@ class GenerateAdViewModel(
         return GenerateAdContract.GenerateAdState(
             prompt = restoredSavedState.prompt,
             uploads = uploads,
+            showGuestConnectHint = authRepository.consumeGuestConnectHint(),
         )
     }
 

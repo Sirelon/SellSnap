@@ -47,6 +47,7 @@ import androidx.navigationevent.compose.rememberNavigationEventState
 import com.mohamedrejeb.calf.io.KmpFile
 import com.mohamedrejeb.calf.permissions.Camera
 import com.mohamedrejeb.calf.permissions.Permission
+import com.sirelon.sellsnap.designsystem.AppCard
 import com.sirelon.sellsnap.designsystem.AppDimens
 import com.sirelon.sellsnap.designsystem.AppTheme
 import com.sirelon.sellsnap.designsystem.IconWithBackground
@@ -68,6 +69,7 @@ import com.sirelon.sellsnap.generated.resources.Res
 import com.sirelon.sellsnap.generated.resources.add_photos_to_continue
 import com.sirelon.sellsnap.generated.resources.ai_hint_label
 import com.sirelon.sellsnap.generated.resources.ai_hint_placeholder
+import com.sirelon.sellsnap.generated.resources.generate_ad_guest_connect_hint
 import com.sirelon.sellsnap.generated.resources.generate_with_ai
 import com.sirelon.sellsnap.generated.resources.ic_check
 import com.sirelon.sellsnap.generated.resources.ic_snap_logo
@@ -214,6 +216,12 @@ private fun GenerateAdScreenContent(
                 PageTitle()
             }
 
+            if (state.showGuestConnectHint) {
+                item {
+                    GuestConnectHintCard()
+                }
+            }
+
             state.errorMessage?.let { errorMessage ->
                 item {
                     ErrorMessageCard(message = errorMessage)
@@ -252,6 +260,22 @@ private fun GenerateAdScreenContent(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun GuestConnectHintCard(modifier: Modifier = Modifier) {
+    AppCard(
+        modifier = modifier.fillMaxWidth(),
+        containerColor = AppTheme.colors.primary.copy(alpha = 0.12f),
+        contentColor = AppTheme.colors.primary,
+    ) {
+        Text(
+            text = stringResource(Res.string.generate_ad_guest_connect_hint),
+            modifier = Modifier.padding(AppDimens.Spacing.xl3),
+            style = AppTheme.typography.body,
+            color = AppTheme.colors.primary,
+        )
     }
 }
 
