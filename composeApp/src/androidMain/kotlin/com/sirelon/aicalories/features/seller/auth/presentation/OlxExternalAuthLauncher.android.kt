@@ -20,8 +20,11 @@ import androidx.compose.ui.platform.LocalContext
  * SellerAccountRepository.addAccount's dedupe now handles that gracefully (a precise "already
  * connected as X" message, never a duplicate entry).
  */
+// onDismissed is never invoked here: CustomTabsIntent.launchUrl starts an external Activity and
+// returns immediately, with no callback for the tab being closed. Detecting it would need a bound
+// CustomTabsClient/CustomTabsServiceConnection, which this codebase doesn't set up - see SIR-123.
 @Composable
-actual fun rememberOlxAuthLauncher(forceReauth: Boolean): (String) -> Unit {
+actual fun rememberOlxAuthLauncher(forceReauth: Boolean, onDismissed: () -> Unit): (String) -> Unit {
     val context = LocalContext.current
     return remember(context, forceReauth) {
         { url: String ->

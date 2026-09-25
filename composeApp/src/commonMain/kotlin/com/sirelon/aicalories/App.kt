@@ -145,7 +145,10 @@ fun App() {
             // launcher is independent of the one the Profile entry threads into ProfileScreenRoute
             // for its own inline Reconnect action - both are stateless wrappers around the same
             // platform mechanism, so having two instances is harmless (see OlxExternalAuthLauncher).
-            val addAccountAuthLauncher = rememberOlxAuthLauncher(forceReauth = true)
+            val addAccountAuthLauncher = rememberOlxAuthLauncher(
+                forceReauth = true,
+                onDismissed = { analytics.logEvent(AnalyticsEvents.AUTH_ABANDONED) },
+            )
             fun startAddOrReconnectAuthorization() {
                 coroutineScope.launch {
                     runCatching { accountRepository.createAuthorizationRequest(forceReauth = true) }
@@ -161,11 +164,16 @@ fun App() {
             var pendingCategory by remember { mutableStateOf<OlxCategory?>(null) }
             var isGeneratingAd by remember { mutableStateOf(false) }
             var isPreviewPublishing by remember { mutableStateOf(false) }
-            val authLauncher = rememberOlxAuthLauncher()
+            val authLauncher = rememberOlxAuthLauncher(
+                onDismissed = { analytics.logEvent(AnalyticsEvents.AUTH_ABANDONED) },
+            )
             // SIR-83 (D5): a second launcher that forces a fresh OLX login, used only for
             // add-account and reconnect so the seller isn't silently bounced back into an account
             // they already have.
-            val authLauncherForceReauth = rememberOlxAuthLauncher(forceReauth = true)
+            val authLauncherForceReauth = rememberOlxAuthLauncher(
+                forceReauth = true,
+                onDismissed = { analytics.logEvent(AnalyticsEvents.AUTH_ABANDONED) },
+            )
             val connectOlxReason = stringResource(Res.string.guest_connect_olx_cta)
 
             fun leaveSellerFlowToLanding() {

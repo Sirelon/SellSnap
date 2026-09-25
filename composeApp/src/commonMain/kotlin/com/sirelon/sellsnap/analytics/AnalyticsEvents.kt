@@ -5,6 +5,17 @@ object AnalyticsEvents {
     const val AUTH_COMPLETED = "auth_completed"
     const val AUTH_FAILED = "auth_failed"
 
+    /**
+     * The seller cancelled the OLX login sheet - never fired for a real auth failure. For the
+     * first-connect flow this is the missing terminal event against `auth_started`: before, a
+     * cancelled attempt looked identical to one that never happened. Add-account/reconnect logs
+     * this too, but against its own `account_add_started` rather than `auth_started`, since that
+     * flow never logs the latter. Reliable on iOS today; Android's Custom Tabs launch has no
+     * cancel signal in this codebase (see OlxExternalAuthLauncher.android.kt), so it under-counts
+     * there.
+     */
+    const val AUTH_ABANDONED = "auth_abandoned"
+
     const val ONBOARDING_COMPLETED = "onboarding_completed"
 
     const val AD_GENERATION_STARTED = "ad_generation_started"
