@@ -115,9 +115,14 @@ interface PreviewAdContract {
          * knowable until a category is assigned, which happens after photos are picked. This is the
          * seller's manual way to get under a category's real limit before OLX's own
          * `Image error: Image limit exceeded` (400, same spec, Adverts / Create advert section)
-         * rejects the whole publish. Not a hard floor at zero: `photos_limit: 0` exists on real
-         * categories (e.g. category 1755, an engineering-jobs category), so an empty [PreviewAdState.images]
-         * is a valid, publishable state, not one this app should block.
+         * rejects the whole publish.
+         *
+         * This handler itself does not stop [PreviewAdState.images] from reaching empty - OLX
+         * would accept it (`images` isn't in `POST /adverts`'s required list, and `photos_limit: 0`
+         * exists on real categories, e.g. category 1755, an engineering-jobs category). The floor
+         * of one photo is a product decision (owner, 2026-09-25), enforced by
+         * [com.sirelon.sellsnap.features.seller.ad.preview_ad.ui.PublishConfirmSheet] hiding the
+         * remove button on the last remaining photo rather than by refusing the event here.
          */
         data class RemoveImage(val url: String) : PreviewAdEvent
 

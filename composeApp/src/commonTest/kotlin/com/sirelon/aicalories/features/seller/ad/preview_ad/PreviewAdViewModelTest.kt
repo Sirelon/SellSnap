@@ -845,10 +845,12 @@ class PreviewAdViewModelTest {
     }
 
     /**
-     * OLX's `Category` schema allows `photos_limit: 0` on real categories (developer.olx.ua,
-     * `components.schemas.Category`), and `images` is absent from `POST /adverts`'s own required
-     * list - so a seller who removes every photo has to still be able to publish. See
-     * [PreviewAdContract.PreviewAdEvent.RemoveImage]'s KDoc for why this isn't blocked client-side.
+     * The publish-confirm sheet hides the remove button on the last remaining photo (product
+     * decision, not an OLX rule - see [PreviewAdContract.PreviewAdEvent.RemoveImage]'s KDoc), so
+     * this state isn't reachable through the UI. The ViewModel itself still has to handle it
+     * correctly if it is ever reached some other way: `images` is absent from `POST /adverts`'s
+     * required list, and OLX's `Category` schema allows `photos_limit: 0` on real categories, so
+     * an empty image list is not something publish should choke on.
      */
     @Test
     fun `removing every photo still allows a publish`() = runTest(testDispatcher) {

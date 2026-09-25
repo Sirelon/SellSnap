@@ -66,12 +66,17 @@ fun PublishConfirmSheet(
                                             .size(cellSize)
                                             .clip(RoundedCornerShape(AppDimens.BorderRadius.xl2)),
                                     )
-                                    RemovePhotoButton(
-                                        modifier = Modifier.align(Alignment.TopEnd),
-                                        enabled = true,
-                                        onClick = { onRemoveImage(url) },
-                                        testTag = "preview_ad_publish_confirm_photo_remove",
-                                    )
+                                    // The seller can trim down to one photo but not past it - no
+                                    // message, the button for the last remaining photo just isn't
+                                    // there to tap (owner's call, 2026-09-25).
+                                    if (imageUrls.size > 1) {
+                                        RemovePhotoButton(
+                                            modifier = Modifier.align(Alignment.TopEnd),
+                                            enabled = true,
+                                            onClick = { onRemoveImage(url) },
+                                            testTag = "preview_ad_publish_confirm_photo_remove",
+                                        )
+                                    }
                                 }
                             }
                         }
