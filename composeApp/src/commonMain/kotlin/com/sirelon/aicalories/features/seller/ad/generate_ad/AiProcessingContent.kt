@@ -166,7 +166,6 @@ private fun AiProcessingContent(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .navigationBarsPadding()
             .padding(horizontal = AppDimens.Spacing.xl6),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -197,6 +196,9 @@ private fun AiProcessingContent(
                 .fillMaxWidth()
                 .widthIn(max = AppDimens.Size.xl24)
                 .padding(vertical = AppDimens.Spacing.xl3)
+                // On the control, not the screen (.claude/rules/edge-to-edge.md), so the steps
+                // above still scroll edge to edge.
+                .navigationBarsPadding()
                 .testTag("ai_processing_cancel_button"),
         )
     }
