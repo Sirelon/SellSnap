@@ -82,6 +82,9 @@ interface PreviewAdContract {
         val regenerationCount: Int = 0,
         val selectedVote: GeneratedContentVote? = null,
         val currentAttemptId: String? = null,
+        // SIR-122: whether a removed photo can still be put back at its original position -
+        // see PreviewAdEvent.UndoRemoveImage.
+        val canUndoRemoveImage: Boolean = false,
     )
 
     sealed interface PreviewAdEvent {
@@ -125,6 +128,12 @@ interface PreviewAdContract {
          * remove button on the last remaining photo rather than by refusing the event here.
          */
         data class RemoveImage(val url: String) : PreviewAdEvent
+
+        /**
+         * SIR-122: the seller takes back their most recent [RemoveImage], one at a time - each
+         * call restores the next-most-recently-removed photo to the index it was removed from.
+         */
+        data object UndoRemoveImage : PreviewAdEvent
 
         data class VoteGeneratedContent(val vote: GeneratedContentVote) : PreviewAdEvent
     }

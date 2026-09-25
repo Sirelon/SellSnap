@@ -482,6 +482,10 @@ fun App() {
                                 onRemoveImage = { url ->
                                     sharedViewModel.onEvent(PreviewAdEvent.RemoveImage(url))
                                 },
+                                canUndoRemoveImage = state.canUndoRemoveImage,
+                                onUndoRemoveImage = {
+                                    sharedViewModel.onEvent(PreviewAdEvent.UndoRemoveImage)
+                                },
                             )
                         }
 

@@ -796,6 +796,47 @@ class PreviewAdViewModelTest {
     }
 
     @Test
+    fun `undo restores a removed photo to its original position`() = runTest(testDispatcher) {
+        val engine = buildEngine {
+            addHandler { respond("{}", status = HttpStatusCode.OK, headers = jsonHeaders()) }
+        }
+        val harness = harness(engine, OlxAccountStore(InMemoryOlxKeyValueStore(), testJson))
+        val viewModel = buildViewModel(harness)
+        viewModel.setState { it.copy(images = listOf("a.jpg", "b.jpg", "c.jpg")) }
+
+        viewModel.onEvent(PreviewAdEvent.RemoveImage("b.jpg"))
+        assertEquals(listOf("a.jpg", "c.jpg"), viewModel.state.value.images)
+        assertTrue(viewModel.state.value.canUndoRemoveImage)
+
+        viewModel.onEvent(PreviewAdEvent.UndoRemoveImage)
+
+        assertEquals(listOf("a.jpg", "b.jpg", "c.jpg"), viewModel.state.value.images)
+        assertFalse(viewModel.state.value.canUndoRemoveImage, "the stack is empty once its only entry is restored")
+    }
+
+    @Test
+    fun `two removes in a row undo one at a time, most recent first`() = runTest(testDispatcher) {
+        val engine = buildEngine {
+            addHandler { respond("{}", status = HttpStatusCode.OK, headers = jsonHeaders()) }
+        }
+        val harness = harness(engine, OlxAccountStore(InMemoryOlxKeyValueStore(), testJson))
+        val viewModel = buildViewModel(harness)
+        viewModel.setState { it.copy(images = listOf("a.jpg", "b.jpg", "c.jpg", "d.jpg")) }
+
+        viewModel.onEvent(PreviewAdEvent.RemoveImage("b.jpg"))
+        viewModel.onEvent(PreviewAdEvent.RemoveImage("d.jpg"))
+        assertEquals(listOf("a.jpg", "c.jpg"), viewModel.state.value.images)
+
+        viewModel.onEvent(PreviewAdEvent.UndoRemoveImage)
+        assertEquals(listOf("a.jpg", "c.jpg", "d.jpg"), viewModel.state.value.images)
+        assertTrue(viewModel.state.value.canUndoRemoveImage, "one more removal is still on the stack")
+
+        viewModel.onEvent(PreviewAdEvent.UndoRemoveImage)
+        assertEquals(listOf("a.jpg", "b.jpg", "c.jpg", "d.jpg"), viewModel.state.value.images)
+        assertFalse(viewModel.state.value.canUndoRemoveImage)
+    }
+
+    @Test
     fun `a publish after removing a photo does not send it to OLX`() = runTest(testDispatcher) {
         val accountStore = OlxAccountStore(InMemoryOlxKeyValueStore(), testJson)
         accountStore.write(
