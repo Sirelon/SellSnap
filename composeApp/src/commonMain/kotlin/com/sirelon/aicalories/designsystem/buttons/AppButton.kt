@@ -291,6 +291,21 @@ data object AppButtonDefaults {
     }
 
     /**
+     * Transparent button with red text - [ghost] in the error colour. For stopping something that
+     * is in progress, such as cancelling an ad generation, where the solid [destructive] fill would
+     * overstate it: nothing the seller made is lost.
+     */
+    @Composable
+    @ReadOnlyComposable
+    fun ghostDestructive(): AppButtonStyle {
+        return AppButtonStyle(
+            backgroundColor = Color.Transparent,
+            contentColor = AppTheme.colors.error,
+            elevation = AppDimens.Spacing.xs4,
+        )
+    }
+
+    /**
      * Success action — solid flat green. Used for confirm/publish states.
      */
     @Composable

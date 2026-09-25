@@ -136,9 +136,49 @@ class GenerateAdViewModelTest {
             assertEquals(1, harness.analytics.events.count { it.first == AnalyticsEvents.AD_GENERATION_ABANDONED })
         }
 
+    @Test
+    fun `cancel during upload leaves the photo ready to upload again, and the retry uploads it`() =
+        runTest(testDispatcher) {
+            val harness = buildHarness(uploader = HangingPhotoUploader(), initialUpload = UploadingItem())
+
+            harness.viewModel.onEvent(GenerateAdContract.GenerateAdEvent.Submit)
+            runCurrent()
+            assertTrue(
+                harness.viewModel.state.value.uploads.values.single().isUploading,
+                "the pending photo must be uploading before cancel can be tested",
+            )
+
+            harness.viewModel.onEvent(GenerateAdContract.GenerateAdEvent.Cancel)
+            advanceUntilIdle()
+
+            val afterCancel = harness.viewModel.state.value.uploads.values.single()
+            assertFalse(afterCancel.isUploading, "a cancelled upload must not keep its spinner")
+            assertTrue(afterCancel.isPending, "the photo is simply not uploaded yet")
+
+            // Before the fix, the leftover isUploading flag made the retry skip this photo, so the
+            // model got an empty image list and OpenAIClient's require() failed in ~10 ms.
+            harness.viewModel.onEvent(GenerateAdContract.GenerateAdEvent.Submit)
+            runCurrent()
+            assertTrue(
+                harness.viewModel.state.value.uploads.values.single().isUploading,
+                "the retry must upload the photo again, not skip it",
+            )
+            assertEquals(0, harness.viewModel.state.value.completedSteps)
+            assertTrue(harness.analytics.events.none { it.first == AnalyticsEvents.AD_GENERATION_FAILED })
+
+            harness.viewModel.onEvent(GenerateAdContract.GenerateAdEvent.Cancel)
+            advanceUntilIdle()
+        }
+
     // --- test harness -----------------------------------------------------------------------
 
-    private suspend fun buildHarness(): Harness {
+    private suspend fun buildHarness(
+        uploader: PhotoUploader = AlreadyUploadedPhotoUploader(),
+        initialUpload: UploadingItem = UploadingItem(
+            progress = 100.0,
+            uploadedFile = UploadedFile(id = "1", path = "drafts/photo1.jpg"),
+        ),
+    ): Harness {
         val analytics = FakeAnalytics()
         val engine = MockEngine(
             MockEngineConfig().apply {
@@ -176,7 +216,7 @@ class GenerateAdViewModelTest {
         )
         val mediaUploadHelper = MediaUploadHelper(
             imageFormatConverter = PassthroughImageFormatConverter(),
-            repository = MediaUploadRepository(uploader = FakePhotoUploader()),
+            repository = MediaUploadRepository(uploader = uploader),
         )
 
         val viewModel = GenerateAdViewModel(
@@ -202,12 +242,7 @@ class GenerateAdViewModelTest {
         viewModel.setState {
             it.copy(
                 prompt = "Nike Air Max 90, worn twice",
-                uploads = mapOf(
-                    photoFile to UploadingItem(
-                        progress = 100.0,
-                        uploadedFile = UploadedFile(id = "1", path = "drafts/photo1.jpg"),
-                    ),
-                ),
+                uploads = mapOf(photoFile to initialUpload),
             )
         }
 
@@ -260,9 +295,16 @@ class GenerateAdViewModelTest {
         override suspend fun deleteAll() {}
     }
 
-    private class FakePhotoUploader : PhotoUploader {
+    private class AlreadyUploadedPhotoUploader : PhotoUploader {
         override suspend fun publicUrl(path: String): String = "https://example.test/$path"
         override fun uploadFile(path: String, byteArray: ByteArray): Flow<PhotoUploadStatus> =
             flow { error("the test photo is already uploaded - uploadFile must not be called") }
+    }
+
+    /** An upload that never finishes, so a test can cancel while it is in flight. */
+    private class HangingPhotoUploader : PhotoUploader {
+        override suspend fun publicUrl(path: String): String = "https://example.test/$path"
+        override fun uploadFile(path: String, byteArray: ByteArray): Flow<PhotoUploadStatus> =
+            flow { awaitCancellation() }
     }
 }

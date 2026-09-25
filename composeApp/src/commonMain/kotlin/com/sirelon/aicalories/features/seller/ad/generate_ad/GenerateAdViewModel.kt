@@ -355,15 +355,33 @@ class GenerateAdViewModel(
                         ),
                     )
                 }
-                setState { it.copy(isLoading = false) }
+                // Cancelling mid-upload cancels the upload coroutines, but the photos they were
+                // uploading still carry isUploading = true, so they sat on the grid with a spinner
+                // forever and the next submit skipped them. Those photos are just not uploaded yet.
+                setState { current ->
+                    current.copy(
+                        isLoading = false,
+                        uploads = current.uploads.mapValues { (_, item) ->
+                            if (item.isUploading && item.uploadedFile == null) {
+                                item.copy(isUploading = false, progress = 0.0)
+                            } else {
+                                item
+                            }
+                        },
+                    )
+                }
             }
             .launchIn(viewModelScope)
     }
 
     private suspend fun uploadFilesAndGetPublicUrls(): List<String> {
         val uploads = currentState().uploads
+        // Anything without an uploaded file goes up now, including a photo still flagged as
+        // uploading: uploads only ever run inside a submit, and the isLoading guard allows one
+        // submit at a time, so such a flag can only be left over from a cancelled attempt. Skipping
+        // those photos sent the model an empty image list, and the generation failed in ~10 ms.
         val pendingFiles = uploads
-            .filter { (_, item) -> item.isPending }
+            .filter { (_, item) -> item.uploadedFile == null && item.error == null }
             .keys.toList()
         val uploadedByFile = uploads
             .mapNotNull { (file, item) -> item.uploadedFile?.let { file to it } }
