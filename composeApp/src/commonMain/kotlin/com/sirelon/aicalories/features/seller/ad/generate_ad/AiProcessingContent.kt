@@ -17,11 +17,14 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FlashOn
 import androidx.compose.material3.CircularProgressIndicator
@@ -47,6 +50,8 @@ import com.sirelon.sellsnap.designsystem.AppCard
 import com.sirelon.sellsnap.designsystem.AppDimens
 import com.sirelon.sellsnap.designsystem.AppTheme
 import com.sirelon.sellsnap.designsystem.PulsingCircles
+import com.sirelon.sellsnap.designsystem.buttons.AppButton
+import com.sirelon.sellsnap.designsystem.buttons.AppButtonDefaults
 import com.sirelon.sellsnap.designsystem.performStepFeedback
 import com.sirelon.sellsnap.designsystem.performSuccessFeedback
 import com.sirelon.sellsnap.designsystem.templates.TitleWithSubtitle
@@ -73,6 +78,7 @@ import com.sirelon.sellsnap.generated.resources.ai_step_generating_title
 import com.sirelon.sellsnap.generated.resources.ai_step_preparing_guest_ad
 import com.sirelon.sellsnap.generated.resources.ai_step_uploading_photos
 import com.sirelon.sellsnap.generated.resources.ai_step_writing_description
+import com.sirelon.sellsnap.generated.resources.cancel
 import com.sirelon.sellsnap.generated.resources.ic_check
 import com.sirelon.sellsnap.generated.resources.ic_sparkles
 import kotlinx.coroutines.delay
@@ -126,6 +132,7 @@ private fun processingTips(isGuestMode: Boolean) = buildList {
 fun AiProcessingScreen(
     completedSteps: Int,
     isGuestMode: Boolean,
+    onCancelClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Box(
@@ -137,6 +144,7 @@ fun AiProcessingScreen(
         AiProcessingContent(
             completedSteps = completedSteps,
             isGuestMode = isGuestMode,
+            onCancelClick = onCancelClick,
         )
     }
 }
@@ -145,6 +153,7 @@ fun AiProcessingScreen(
 private fun AiProcessingContent(
     completedSteps: Int,
     isGuestMode: Boolean,
+    onCancelClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val steps = processingSteps(isGuestMode = isGuestMode)
@@ -153,6 +162,7 @@ private fun AiProcessingContent(
     Column(
         modifier = modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(horizontal = AppDimens.Spacing.xl6),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
@@ -192,6 +202,19 @@ private fun AiProcessingContent(
             modifier = Modifier
                 .fillMaxWidth()
                 .widthIn(max = AppDimens.Size.xl24),
+        )
+
+        Spacer(modifier = Modifier.height(AppDimens.Spacing.xl6))
+
+        AppButton(
+            text = stringResource(Res.string.cancel),
+            onClick = onCancelClick,
+            style = AppButtonDefaults.outline(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .widthIn(max = AppDimens.Size.xl24)
+                .navigationBarsPadding()
+                .testTag("ai_processing_cancel_button"),
         )
     }
 }
@@ -478,6 +501,7 @@ private fun AiProcessingContentPreview(
         AiProcessingScreen(
             completedSteps = completedSteps,
             isGuestMode = isGuestMode,
+            onCancelClick = {},
         )
     }
 }
