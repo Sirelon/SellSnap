@@ -66,7 +66,9 @@ fun OlxCountryPickerScreenRoute(
     val viewModel: SellerAuthViewModel = koinViewModel()
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
-    val authLauncher = rememberOlxAuthLauncher()
+    val authLauncher = rememberOlxAuthLauncher(
+        onDismissed = { viewModel.onEvent(SellerAuthContract.SellerAuthEvent.OlxAuthDismissed) },
+    )
 
     LaunchedEffect(viewModel) {
         OlxAuthCallbackBridge.callbacks.collect { callbackUrl ->

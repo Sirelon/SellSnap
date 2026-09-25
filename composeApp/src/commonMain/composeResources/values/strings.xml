@@ -18,6 +18,7 @@
     <string name="guest_mode_banner_message">Want to go live? You'll need an OLX account. For now, copy the title, description, and price below and paste them into OLX.</string>
     <string name="guest_connect_olx_cta">Connect OLX to post in one tap</string>
     <string name="guest_copy_hint">Tap the copy buttons next to the title, description, and price — then paste them into OLX when you're ready.</string>
+    <string name="generate_ad_guest_connect_hint">You're browsing as a guest — connect OLX anytime from Profile to publish in one tap.</string>
     <string name="continue_with_olx">Continue with OLX</string>
     <string name="terms_privacy_prefix">By continuing, you're cool with our </string>
     <string name="terms_of_service">Terms of Service</string>

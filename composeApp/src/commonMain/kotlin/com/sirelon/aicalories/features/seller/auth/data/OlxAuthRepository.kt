@@ -48,6 +48,12 @@ class OlxAuthRepository internal constructor(
     private val _sessionModeUpdates = MutableSharedFlow<SellerSessionMode>(replay = 0)
     val sessionModeFlow: Flow<SellerSessionMode> = _sessionModeUpdates.asSharedFlow()
 
+    // SIR-123: one-shot, in-memory only - true only for the guest session created right after the
+    // seller closed the OLX login sheet without finishing it, so the new-listing screen can
+    // explain why they landed there. A "Try without an account" guest already got that
+    // explanation on the landing screen and doesn't need it repeated.
+    private var pendingGuestConnectHint = false
+
     suspend fun createAuthorizationRequest(forceReauth: Boolean = false): OlxAuthorizationRequest {
         val state = Uuid.random().toString()
         val redirectUri = redirectHandler.buildRedirectUri()
@@ -124,10 +130,17 @@ class OlxAuthRepository internal constructor(
         _sessionModeUpdates.emit(SellerSessionMode.Unauthenticated)
     }
 
-    suspend fun enterGuestMode() {
+    suspend fun enterGuestMode(showConnectLaterHint: Boolean = false) {
         guestModeStore.setGuest(true)
+        // Unconditional, not just "set true on request": keeps the one-shot flag self-correcting
+        // even if a caller enters guest mode again before an earlier hint was ever consumed.
+        pendingGuestConnectHint = showConnectLaterHint
         _sessionModeUpdates.emit(SellerSessionMode.Guest)
     }
+
+    /** Consumes and clears [pendingGuestConnectHint] - call at most once per guest session start. */
+    fun consumeGuestConnectHint(): Boolean =
+        pendingGuestConnectHint.also { pendingGuestConnectHint = false }
 
     suspend fun exitGuestMode() {
         guestModeStore.setGuest(false)
