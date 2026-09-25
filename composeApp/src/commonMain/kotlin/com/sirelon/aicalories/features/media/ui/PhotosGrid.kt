@@ -49,7 +49,17 @@ import com.sirelon.sellsnap.generated.resources.add_photo_label
 import com.sirelon.sellsnap.generated.resources.remove_photo_cd
 import org.jetbrains.compose.resources.stringResource
 
-const val MAX_PHOTOS: Int = 5
+/**
+ * SellSnap's own cap on how many photos go into the AI-analysis / upload step - not a fetched
+ * OLX limit. OLX's real cap is per category (`photos_limit` on the `Category` schema,
+ * `developer.olx.ua/swagger/v2/partner_api.yaml` and the identical field on
+ * `developer.olx.pl`'s spec), and isn't knowable until a category is assigned, which happens
+ * after these photos are picked. 8 is the value on the large majority of leaf categories (2,433
+ * of 2,901 olx.pl leaf categories, 66 of 68 shoe categories, 1,300 of 1,954 olx.ua leaf
+ * categories - fetched 2026-09-25 from `GET /api/partner/categories`). Categories that allow
+ * 12-24 photos are handled by SIR-126, not here.
+ */
+const val MAX_PHOTOS: Int = 8
 private const val GRID_COLUMNS: Int = 3
 
 @Composable

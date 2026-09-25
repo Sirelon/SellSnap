@@ -35,7 +35,7 @@ fun PhotosSection(
     onTakePhotoClick: () -> Unit,
     onUploadClick: () -> Unit,
     modifier: Modifier = Modifier,
-    maxPhotos: Int = 5
+    maxPhotos: Int = MAX_PHOTOS
 ) {
     val photoCount = files.size
 

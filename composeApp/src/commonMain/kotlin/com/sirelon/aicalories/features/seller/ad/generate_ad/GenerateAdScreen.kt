@@ -47,6 +47,7 @@ import androidx.navigationevent.compose.rememberNavigationEventState
 import com.mohamedrejeb.calf.io.KmpFile
 import com.mohamedrejeb.calf.permissions.Camera
 import com.mohamedrejeb.calf.permissions.Permission
+import com.mohamedrejeb.calf.picker.FilePickerSelectionMode
 import com.sirelon.sellsnap.designsystem.AppDimens
 import com.sirelon.sellsnap.designsystem.AppTheme
 import com.sirelon.sellsnap.designsystem.IconWithBackground
@@ -112,6 +113,10 @@ fun GenerateAdScreen(
 
     val photoPicker = rememberPhotoPickerController(
         permissionController = permissionController,
+        // Android/iOS enforce this in the native picker UI itself; other platforms truncate the
+        // result to maxItems, which onFileResult also caps against the running total (see its
+        // KDoc) since a batch pick doesn't know how many photos are already on the grid.
+        selectionMode = FilePickerSelectionMode.Multiple(maxItems = MAX_PHOTOS),
         onResult = { selectionResult ->
             viewModel.onEvent(GenerateAdContract.GenerateAdEvent.UploadFilesResult(result = selectionResult))
         },
