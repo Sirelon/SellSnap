@@ -200,8 +200,9 @@ class OpenAIClient(
                 instructions = adGenerationInstructions(country).trimIndent(),
                 // Higher temperature gives the description a natural seller voice instead of a catalogue tone.
                 temperature = 0.7,
-                // Enough headroom for a real localized description plus three prices without truncation.
-                maxOutputTokens = 600,
+                // Polish and Ukrainian tokenize at roughly twice the English rate, so a six-sentence
+                // description plus title and three prices needs this much headroom; a 600 cap was hit in production.
+                maxOutputTokens = 1000,
                 // Stored so the follow-up attribute-fill call can chain on this response id.
                 store = true,
                 input = ResponseInput(
