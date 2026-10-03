@@ -36,6 +36,7 @@ import com.sirelon.sellsnap.features.whatsnew.presentation.WhatsNewViewModel
 import com.sirelon.sellsnap.generated.resources.Res
 import com.sirelon.sellsnap.generated.resources.back
 import com.sirelon.sellsnap.generated.resources.ic_circle_check_big
+import com.sirelon.sellsnap.generated.resources.ic_sparkles
 import com.sirelon.sellsnap.generated.resources.whats_new_empty_description
 import com.sirelon.sellsnap.generated.resources.whats_new_empty_title
 import com.sirelon.sellsnap.generated.resources.whats_new_installed_badge
@@ -72,6 +73,7 @@ fun AllReleasesScreenRoute(
                     title = stringResource(Res.string.whats_new_empty_title),
                     description = stringResource(Res.string.whats_new_empty_description),
                     actionLabel = null,
+                    icon = Res.drawable.ic_sparkles,
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(padding)

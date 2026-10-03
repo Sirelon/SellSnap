@@ -64,6 +64,7 @@
     <string name="validation_errors_more">…және тағы %1$d</string>
     <string name="min_characters">Кемінде %1$d таңба болуы керек</string>
     <string name="character_count_range">%1$d/%2$d</string>
+    <string name="images_carousel_counter">%1$d/%2$d</string>
     <string name="change_button">Өзгерту</string>
 
     <!-- Analyze Screen -->
