@@ -41,6 +41,7 @@ import com.sirelon.sellsnap.features.seller.auth.data.OlxCountryStore
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxApiError
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxApiException
 import com.sirelon.sellsnap.features.seller.auth.domain.SellerSessionMode
+import com.sirelon.sellsnap.features.seller.auth.domain.analyticsReason
 import com.sirelon.sellsnap.features.seller.categories.data.CategoriesRepository
 import com.sirelon.sellsnap.features.seller.categories.data.UnsupportedOlxCategoryException
 import com.sirelon.sellsnap.features.seller.categories.domain.AttributeInputType
@@ -711,20 +712,14 @@ class PreviewAdViewModel internal constructor(
     // field because that is what distinguishes "seller typed something wrong" from "OLX enforces
     // an attribute its own categories API reports as optional".
     private fun publishFailureReason(error: Throwable, olxError: OlxApiError?): String = when (olxError) {
+        // Carries the field, which the shared map does not.
         is OlxApiError.ValidationError -> "validation:${olxError.field}"
-        is OlxApiError.InvalidGrant -> "invalid_grant"
-        is OlxApiError.InvalidToken -> "invalid_token"
-        is OlxApiError.InvalidClient -> "invalid_client"
-        is OlxApiError.InsufficientScope -> "insufficient_scope"
-        is OlxApiError.RateLimited -> "rate_limited"
+        // Shipped as `network` here; the shared map says `network_failure`.
         is OlxApiError.NetworkFailure -> "network"
-        is OlxApiError.MissingCode -> "missing_code"
-        is OlxApiError.InvalidState -> "invalid_state"
-        is OlxApiError.Unknown -> "unknown"
-        is OlxApiError.AuthorizationError -> "authorization_error"
         // Not every throwable reaching here is wrapped - a dropped connection surfaces as the raw
         // engine exception (observed: DarwinHttpRequestException, NSURLErrorNetworkConnectionLost).
         null -> error::class.simpleName ?: "unknown"
+        else -> olxError.analyticsReason
     }
 
     /**

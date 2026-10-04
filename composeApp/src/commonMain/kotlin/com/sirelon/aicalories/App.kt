@@ -139,14 +139,17 @@ fun App() {
             val navVm: AppNavigationViewModel = koinViewModel()
             val accountRepository: SellerAccountRepository = koinInject()
             val analytics: Analytics = koinInject()
-            // Add-account/reconnect never logs auth_started, so there is no duration here - see AUTH_ABANDONED.
+            val coroutineScope = rememberCoroutineScope()
+            // Add-account/reconnect never logs auth_started, so there is no duration here - see
+            // AUTH_ABANDONED. The pending session is marked so the next start does not report the
+            // same login again.
             val logAuthAbandoned: (OlxAuthDismissReason) -> Unit = { reason ->
                 analytics.logEvent(
                     AnalyticsEvents.AUTH_ABANDONED,
                     mapOf("reason" to reason.analyticsValue, "country" to _currentOlxCountry.code),
                 )
+                coroutineScope.launch { accountRepository.abandonPendingAuthorization() }
             }
-            val coroutineScope = rememberCoroutineScope()
             var isDeletingAccountData by remember { mutableStateOf(false) }
             var isDisconnectingAccount by remember { mutableStateOf(false) }
             val uriHandler = LocalUriHandler.current

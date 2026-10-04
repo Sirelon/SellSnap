@@ -72,6 +72,7 @@ class SellerAuthViewModel(
                     AnalyticsEvents.AUTH_ABANDONED,
                     authParams(reason = event.reason.analyticsValue) + abandonDuration(),
                 )
+                viewModelScope.launch { authRepository.abandonPendingAuthorization() }
                 // First-connect only (this VM backs the landing/onboarding flow, never Profile's
                 // add-account). Guest mode is offered, not entered: switching the moment the login
                 // closed read as the app deciding for the seller (owner, 2026-09-25). Never

@@ -21,9 +21,10 @@ object AnalyticsEvents {
      * `reason` is `user_cancelled` (iOS: `ASWebAuthenticationSession` reports
      * `ASWebAuthenticationSessionErrorCodeCanceledLogin`; Android: the app resumed after the login
      * tab with no OLX callback, see OlxAuthReturnTracker) or `system_cancelled` (iOS: any other
-     * `ASWebAuthenticationSession` error; Android has no equivalent signal). `country` is the OLX
-     * market the seller chose. `duration_ms` is the time since `auth_started` and is present only
-     * in the first-connect flow.
+     * `ASWebAuthenticationSession` error; either platform: the process was killed with the login
+     * open, reported on the next start). `country` is the OLX market the seller chose.
+     * `duration_ms` is present in the first-connect flow (time since `auth_started`) and for a
+     * login reported on the next start (wall-clock from the authorization request, whole seconds).
      */
     const val AUTH_ABANDONED = "auth_abandoned"
 
@@ -102,7 +103,10 @@ object AnalyticsEvents {
     const val AD_PREVIEW_ATTRIBUTES_LOADED = "ad_preview_attributes_loaded"
 
     // Multi-account (SIR-83). No event may carry an email, OLX user id, account name, or token -
-    // only localIndex/counts, per PRD §11.
+    // only localIndex/counts, per PRD §11. First-connect lands through the same addAccount path as
+    // add-account/reconnect, so a seller's first login fires account_add_started/completed/failed
+    // (with existing_account_count = 0) alongside auth_started/completed/failed. Count a login
+    // funnel in one family; summing both double-counts first-connect.
     const val ACCOUNT_SWITCHED = "account_switched"
     const val ACCOUNT_ADD_STARTED = "account_add_started"
     const val ACCOUNT_ADD_COMPLETED = "account_add_completed"

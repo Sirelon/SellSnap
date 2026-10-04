@@ -91,6 +91,8 @@ class SellerAuthViewModelTest {
             assertEquals("user_cancelled", params["reason"])
             assertEquals("ua", params["country"])
             assertTrue(assertIs<Long>(params["duration_ms"]) >= 0L)
+            advanceUntilIdle()
+            assertEquals(true, harness.sessionStore.read()?.abandoned)
         }
 
     @Test
@@ -186,12 +188,13 @@ class SellerAuthViewModelTest {
         )
         val olxApiClient = OlxApiClient(httpClient = authorizedHttpClient, json = testJson, errorParser = errorParser)
         val unauthenticatedOlxApiClient = OlxApiClient(httpClient = unauthenticatedHttpClient, json = testJson, errorParser = errorParser)
+        val sessionStore = OlxAuthSessionStore(InMemoryOlxKeyValueStore(), testJson)
         val authRepository = OlxAuthRepository(
             httpClient = unauthenticatedHttpClient,
             credentialsProvider = TestCredentialsProvider(),
             accountStore = accountStore,
             countryStore = countryStore,
-            authSessionStore = OlxAuthSessionStore(InMemoryOlxKeyValueStore(), testJson),
+            authSessionStore = sessionStore,
             redirectHandler = TestRedirectHandler(),
             guestModeStore = GuestModeStore(InMemoryOlxKeyValueStore()),
             errorParser = errorParser,
@@ -229,7 +232,7 @@ class SellerAuthViewModelTest {
             analytics = analytics,
             olxCountryStore = countryStore,
         )
-        return TestHarness(viewModel, authRepository, analytics, countryStore)
+        return TestHarness(viewModel, authRepository, analytics, countryStore, sessionStore)
     }
 
     private data class TestHarness(
@@ -237,6 +240,7 @@ class SellerAuthViewModelTest {
         val authRepository: OlxAuthRepository,
         val analytics: FakeAnalytics,
         val countryStore: OlxCountryStore,
+        val sessionStore: OlxAuthSessionStore,
     )
 
     private class TestCredentialsProvider : OlxCredentialsProvider {

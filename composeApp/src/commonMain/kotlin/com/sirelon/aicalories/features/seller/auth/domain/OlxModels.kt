@@ -39,6 +39,11 @@ data class OlxPendingAuthSession(
     val state: String,
     val redirectUri: String,
     val createdAtEpochSeconds: Long,
+    /**
+     * Reported as `auth_abandoned` already - the login closed, or a previous process died with it
+     * open. The session itself stays valid: a callback that still arrives is exchanged normally.
+     */
+    val abandoned: Boolean = false,
 )
 
 enum class SellerSessionMode {
