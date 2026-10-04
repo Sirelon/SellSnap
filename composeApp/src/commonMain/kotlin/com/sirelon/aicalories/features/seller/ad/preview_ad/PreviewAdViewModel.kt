@@ -658,6 +658,7 @@ class PreviewAdViewModel internal constructor(
         // these can sit on top of an advert that is live.
         is OlxApiError.NetworkFailure,
         is OlxApiError.Unknown,
+        is OlxApiError.AuthorizationError,
         null,
         -> true
     }
@@ -698,6 +699,7 @@ class PreviewAdViewModel internal constructor(
         is OlxApiError.MissingCode -> "missing_code"
         is OlxApiError.InvalidState -> "invalid_state"
         is OlxApiError.Unknown -> "unknown"
+        is OlxApiError.AuthorizationError -> "authorization_error"
         // Not every throwable reaching here is wrapped - a dropped connection surfaces as the raw
         // engine exception (observed: DarwinHttpRequestException, NSURLErrorNetworkConnectionLost).
         null -> error::class.simpleName ?: "unknown"

@@ -22,6 +22,7 @@ import com.sirelon.sellsnap.features.seller.auth.data.createOlxHttpClient
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxAuthCallback
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxCountry
 import com.sirelon.sellsnap.features.seller.auth.domain.SellerSessionMode
+import com.sirelon.sellsnap.features.seller.auth.presentation.OlxAuthDismissReason
 import com.sirelon.sellsnap.features.seller.auth.presentation.SellerAuthContract
 import com.sirelon.sellsnap.features.seller.auth.presentation.SellerAuthViewModel
 import com.sirelon.sellsnap.features.seller.location.DeviceLocation
@@ -46,6 +47,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
 class SellerAuthViewModelTest {
@@ -68,7 +70,7 @@ class SellerAuthViewModelTest {
         runTest(testDispatcher) {
             val harness = harness(engine = MockEngine { error("No HTTP call expected.") })
 
-            harness.viewModel.onEvent(SellerAuthContract.SellerAuthEvent.OlxAuthDismissed)
+            harness.viewModel.onEvent(SellerAuthContract.SellerAuthEvent.OlxAuthDismissed(OlxAuthDismissReason.UserCancelled))
 
             assertTrue(harness.analytics.events.any { it.first == AnalyticsEvents.AUTH_ABANDONED })
             assertTrue(harness.viewModel.state.value.showLoginClosedSheet)
@@ -77,11 +79,55 @@ class SellerAuthViewModelTest {
         }
 
     @Test
+    fun `closing the OLX login carries reason, country and time since auth_started`() =
+        runTest(testDispatcher) {
+            val harness = harness(engine = MockEngine { error("No HTTP call expected.") })
+
+            harness.viewModel.onEvent(SellerAuthContract.SellerAuthEvent.CountryConfirmed(OlxCountry.UA))
+            harness.viewModel.effects.awaitEffect<SellerAuthContract.SellerAuthEffect.LaunchOlxAuthFlow>()
+            harness.viewModel.onEvent(SellerAuthContract.SellerAuthEvent.OlxAuthDismissed(OlxAuthDismissReason.UserCancelled))
+
+            val params = harness.analytics.events.single { it.first == AnalyticsEvents.AUTH_ABANDONED }.second
+            assertEquals("user_cancelled", params["reason"])
+            assertEquals("ua", params["country"])
+            assertTrue(assertIs<Long>(params["duration_ms"]) >= 0L)
+        }
+
+    @Test
+    fun `closing the OLX login before it was ever started carries no duration`() =
+        runTest(testDispatcher) {
+            val harness = harness(engine = MockEngine { error("No HTTP call expected.") })
+
+            harness.viewModel.onEvent(SellerAuthContract.SellerAuthEvent.OlxAuthDismissed(OlxAuthDismissReason.SystemCancelled))
+
+            val params = harness.analytics.events.single { it.first == AnalyticsEvents.AUTH_ABANDONED }.second
+            assertEquals("system_cancelled", params["reason"])
+            assertEquals("ua", params["country"])
+            assertFalse(params.containsKey("duration_ms"))
+        }
+
+    @Test
+    fun `an OLX authorization error is logged as auth_failed with its code`() = runTest(testDispatcher) {
+        val harness = harness(engine = MockEngine { error("No HTTP call expected.") })
+
+        harness.viewModel.onEvent(SellerAuthContract.SellerAuthEvent.CountryConfirmed(OlxCountry.UA))
+        harness.viewModel.effects.awaitEffect<SellerAuthContract.SellerAuthEffect.LaunchOlxAuthFlow>()
+        harness.viewModel.onCallbackReceived(
+            "selolxai://olx-auth/callback?error=access_denied&error_description=denied&state=x",
+        )
+        harness.viewModel.effects.awaitEffect<SellerAuthContract.SellerAuthEffect.ShowMessage>()
+
+        val params = harness.analytics.events.single { it.first == AnalyticsEvents.AUTH_FAILED }.second
+        assertEquals("access_denied", params["reason"])
+        assertEquals("ua", params["country"])
+    }
+
+    @Test
     fun `choosing guest mode on the login-closed sheet enters it with a connect-later hint and opens home`() =
         runTest(testDispatcher) {
             val harness = harness(engine = MockEngine { error("No HTTP call expected.") })
 
-            harness.viewModel.onEvent(SellerAuthContract.SellerAuthEvent.OlxAuthDismissed)
+            harness.viewModel.onEvent(SellerAuthContract.SellerAuthEvent.OlxAuthDismissed(OlxAuthDismissReason.UserCancelled))
             harness.viewModel.onEvent(SellerAuthContract.SellerAuthEvent.LoginClosedGuestChosen)
             harness.viewModel.effects.awaitEffect<SellerAuthContract.SellerAuthEffect.OpenHome>()
 
@@ -94,7 +140,7 @@ class SellerAuthViewModelTest {
     fun `dismissing the login-closed sheet stays put, not in guest mode`() = runTest(testDispatcher) {
         val harness = harness(engine = MockEngine { error("No HTTP call expected.") })
 
-        harness.viewModel.onEvent(SellerAuthContract.SellerAuthEvent.OlxAuthDismissed)
+        harness.viewModel.onEvent(SellerAuthContract.SellerAuthEvent.OlxAuthDismissed(OlxAuthDismissReason.UserCancelled))
         harness.viewModel.onEvent(SellerAuthContract.SellerAuthEvent.LoginClosedSheetDismissed)
 
         assertFalse(harness.viewModel.state.value.showLoginClosedSheet)
