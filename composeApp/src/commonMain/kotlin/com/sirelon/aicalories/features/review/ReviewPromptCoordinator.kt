@@ -29,8 +29,8 @@ class ReviewPromptCoordinator(
 ) {
     /**
      * False until the app has been opened at least once before. Set from
-     * `AppNavigationViewModel.resolveStartupDestination`, which already reads the onboarding
-     * marker to decide where to send the seller - the same read answers this question.
+     * `AppNavigationViewModel.resolveStartupDestination` from `AppStartupStore.recordLaunch`,
+     * which is true when the `has_opened_app` marker is set or the seller finished onboarding.
      */
     var isReturningSession: Boolean = false
 

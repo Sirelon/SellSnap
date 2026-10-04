@@ -105,6 +105,7 @@ class AppNavigationViewModel(
 
     fun onOnboardingCompleted() {
         viewModelScope.launch {
+            startupStore.markOnboardingSeen()
             val next = if (analyticsConsentRepository.currentConsent() == AnalyticsConsent.Undecided) {
                 AppKey.ConsentPrompt
             } else {
@@ -139,16 +140,16 @@ class AppNavigationViewModel(
 
     private suspend fun resolveStartupDestination() {
         val hasSeenOnboarding = startupStore.hasSeenOnboarding()
-        // Read before the marker is written below, which makes it the answer to "has this app ever
-        // been opened before?" - the store-review gate's strongest signal, for free and without a
-        // second stored key. See ReviewPromptGate.
-        reviewPromptCoordinator.isReturningSession = hasSeenOnboarding
+        // The answer to "has this app ever been opened before?" - the store-review gate's
+        // strongest signal. Recording the launch happens in the same call, so it is true from the
+        // second resolution on. See ReviewPromptGate.
+        val openedBefore = startupStore.recordLaunch()
+        reviewPromptCoordinator.isReturningSession = openedBefore
         val initial: AppKey = when {
             !hasSeenOnboarding -> {
-                startupStore.markOnboardingSeen()
                 // A fresh install has nothing to catch up on — seed the marker so the
                 // What's New prompt never fires for this, the user's very first session.
-                whatsNewStore.markVersionSeen(AppConfig.appVersionName)
+                if (!openedBefore) whatsNewStore.markVersionSeen(AppConfig.appVersionName)
                 AppKey.SellerOnboarding
             }
 
