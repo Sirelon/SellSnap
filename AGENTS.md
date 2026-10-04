@@ -358,6 +358,9 @@ picked through the OS picker. Full workflow: the user-level `sellsnap-screenshot
 - Change AI ad generation pipeline:
   - `features/seller/ad/generate_ad/GenerateAdViewModel.kt`
   - `features/seller/openai/OpenAIClient.kt`
+- Change the Recent listings section on the generate screen (what is kept, how many, the rows):
+  - `features/seller/ad/recent/RecentListingsStore.kt` (`MAX_RECENT_LISTINGS`; written once per generation)
+  - `features/seller/ad/generate_ad/RecentListingsSection.kt`
 - Change which OLX top-level categories are user-facing:
   - `features/seller/categories/data/CategoriesRepository.kt` (`notSupportedParentIds`)
 - Change attribute validation rules:

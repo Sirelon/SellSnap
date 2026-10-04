@@ -17,6 +17,7 @@ import com.sirelon.sellsnap.features.seller.ad.generation_log.NoOpAdGenerationLo
 import com.sirelon.sellsnap.features.seller.ad.preview_ad.PreviewAdContract.AttributesLoadState
 import com.sirelon.sellsnap.features.seller.ad.preview_ad.PreviewAdContract.PreviewAdEffect
 import com.sirelon.sellsnap.features.seller.ad.preview_ad.PreviewAdContract.PreviewAdEvent
+import com.sirelon.sellsnap.features.seller.ad.recent.RecentListingsStore
 import com.sirelon.sellsnap.features.seller.auth.data.GuestModeStore
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountRecord
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountState
@@ -1100,6 +1101,7 @@ class PreviewAdViewModelTest {
             olxCountryStore = countryStore,
             draftMediaFileStore = FakeDraftMediaFileStore,
             advertOutcomeStore = AdvertOutcomeStore(InMemoryOlxKeyValueStore(), testJson),
+            recentListingsStore = RecentListingsStore(InMemoryOlxKeyValueStore(), testJson),
             analyticsConsentRepository = analyticsConsentRepository,
             errorParser = errorParser,
             analytics = analytics,

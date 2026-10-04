@@ -164,6 +164,7 @@
     <string name="add_photos_to_continue">Pop in a photo first</string>
     <string name="new_listing">New listing</string>
     <string name="new_listing_subtitle">Drop in 1–8 photos. We'll handle the rest.</string>
+    <string name="recent_listings_section_title">Recent listings</string>
     <string name="generic_error_retry">Something went wrong. Try again.</string>
     <string name="ai_hint_label">Give the AI a hint (optional)</string>
     <string name="ai_hint_placeholder">e.g. Nike Air Max 90, size 42, worn for 2 months</string>

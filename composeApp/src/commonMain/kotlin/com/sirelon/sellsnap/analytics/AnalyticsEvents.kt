@@ -109,6 +109,14 @@ object AnalyticsEvents {
     // by hand - this is the only success signal the funnel has.
     const val AD_CONTENT_COPIED = "ad_content_copied"
 
+    // Recent listings (SIR-133). `field` is title | description | price, never the text itself -
+    // same rule as AD_CONTENT_COPIED. Kept separate from that event so copies that skipped a
+    // regeneration can be counted against ad_generation_started.
+    const val RECENT_LISTING_COPIED = "recent_listing_copied"
+
+    /** A Recent row was tapped and the preview reopened for it. No params. */
+    const val RECENT_LISTING_OPENED = "recent_listing_opened"
+
     // Which button the seller pressed on the "leave and lose your draft?" sheet, as `choice`
     // (stay | leave). The sheet's own screen_view only says it was shown; without this, a seller
     // who backs out and keeps editing is indistinguishable from one who abandons the draft.

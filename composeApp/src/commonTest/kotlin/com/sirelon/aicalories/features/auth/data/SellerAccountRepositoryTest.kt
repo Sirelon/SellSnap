@@ -6,6 +6,9 @@ import com.sirelon.sellsnap.analytics.AnalyticsEvents
 import com.sirelon.sellsnap.features.media.upload.DraftMediaFileStore
 import com.sirelon.sellsnap.features.media.upload.DraftPhoto
 import com.sirelon.sellsnap.features.media.upload.PersistedDraftPhoto
+import com.sirelon.sellsnap.features.seller.ad.Advertisement
+import com.sirelon.sellsnap.features.seller.ad.AdvertisementWithAttributes
+import com.sirelon.sellsnap.features.seller.ad.recent.RecentListingsStore
 import com.sirelon.sellsnap.features.seller.auth.data.GuestModeStore
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountRecord
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountState
@@ -42,6 +45,7 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import kotlin.test.Test
@@ -53,6 +57,37 @@ import kotlin.time.Clock
 class SellerAccountRepositoryTest {
 
     private val testJson = Json { ignoreUnknownKeys = true; isLenient = true; explicitNulls = false }
+
+    @Test
+    fun `deleteSellSnapAccountData also drops the recent listings`() = runBlocking {
+        val accountStore = OlxAccountStore(InMemoryOlxKeyValueStore(), testJson)
+        val engine = MockEngine { respond("{}", status = HttpStatusCode.OK, headers = jsonHeaders()) }
+        val harness = harness(engine, accountStore)
+        harness.recentListingsStore.add(
+            listing = AdvertisementWithAttributes(
+                advertisement = Advertisement(
+                    title = "Nike Air Max 90",
+                    description = "Worn twice",
+                    images = listOf("https://x/air-max.jpg"),
+                    suggestedPrice = 1500f,
+                    minPrice = 1200f,
+                    maxPrice = 1800f,
+                ),
+                filledAttributes = emptyMap(),
+            ),
+            countryCode = "ua",
+        )
+
+        try {
+            harness.repository.deleteSellSnapAccountData()
+
+            assertTrue(harness.recentListingsStore.listings.first().isEmpty())
+        } finally {
+            // deleteSellSnapAccountData resets the process-global country to the device default,
+            // which other tests in this JVM read.
+            harness.countryStore.save(OlxCountry.UA)
+        }
+    }
 
     @Test
     fun `setActiveAccount clears the bearer cache so the next request uses the new active account`() = runBlocking {
@@ -502,6 +537,7 @@ class SellerAccountRepositoryTest {
             olxApiClient = olxApiClient,
             locationStore = LocationStore(InMemoryOlxKeyValueStore(), testJson),
         )
+        val recentListingsStore = RecentListingsStore(InMemoryOlxKeyValueStore(), testJson)
         val repository = SellerAccountRepository(
             authRepository = authRepository,
             olxApiClient = olxApiClient,
@@ -513,11 +549,19 @@ class SellerAccountRepositoryTest {
             olxCountryStore = countryStore,
             draftMediaFileStore = FakeDraftMediaFileStore,
             advertOutcomeStore = AdvertOutcomeStore(InMemoryOlxKeyValueStore(), testJson),
+            recentListingsStore = recentListingsStore,
             analyticsConsentRepository = analyticsConsentRepository,
             errorParser = errorParser,
             analytics = analytics,
         )
-        return TestHarness(repository, accountStore, olxApiClient, analytics)
+        return TestHarness(
+            repository = repository,
+            accountStore = accountStore,
+            olxApiClient = olxApiClient,
+            analytics = analytics,
+            recentListingsStore = recentListingsStore,
+            countryStore = countryStore,
+        )
     }
 
     private data class TestHarness(
@@ -525,6 +569,8 @@ class SellerAccountRepositoryTest {
         val accountStore: OlxAccountStore,
         val olxApiClient: OlxApiClient,
         val analytics: FakeAnalytics,
+        val recentListingsStore: RecentListingsStore,
+        val countryStore: OlxCountryStore,
     )
 
     private class TestCredentialsProvider : OlxCredentialsProvider {

@@ -66,6 +66,7 @@ import com.sirelon.sellsnap.features.media.ui.CameraGalleryPicker
 import com.sirelon.sellsnap.features.media.ui.MAX_PHOTOS
 import com.sirelon.sellsnap.features.media.ui.PhotosGrid
 import com.sirelon.sellsnap.features.seller.ad.AdvertisementWithAttributes
+import com.sirelon.sellsnap.features.seller.ad.recent.RecentListing
 import com.sirelon.sellsnap.generated.resources.Res
 import com.sirelon.sellsnap.generated.resources.add_photos_to_continue
 import com.sirelon.sellsnap.generated.resources.ai_hint_label
@@ -170,6 +171,9 @@ fun GenerateAdScreen(
                     hapticFeedback.performStepFeedback()
                     viewModel.onEvent(GenerateAdContract.GenerateAdEvent.Submit)
                 },
+                onOpenRecentListing = {
+                    viewModel.onEvent(GenerateAdContract.GenerateAdEvent.OpenRecentListing(it))
+                },
                 modifier = modifier,
             )
         }
@@ -189,6 +193,7 @@ private fun GenerateAdScreenContent(
     onUploadClick: () -> Unit,
     onRemovePhoto: (KmpFile) -> Unit,
     onSubmitClick: () -> Unit,
+    onOpenRecentListing: (RecentListing) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val dismissKeyboard = rememberKeyboardDismissAction()
@@ -261,6 +266,16 @@ private fun GenerateAdScreenContent(
                             enabled = !state.isLoading,
                         )
                     }
+                }
+            }
+
+            if (state.recentListings.isNotEmpty()) {
+                item {
+                    RecentListingsSection(
+                        listings = state.recentListings,
+                        currency = state.recentListingsCurrency,
+                        onOpen = onOpenRecentListing,
+                    )
                 }
             }
 
@@ -566,6 +581,7 @@ private fun GenerateAdScreenEmptyPreview() {
             onUploadClick = {},
             onRemovePhoto = {},
             onSubmitClick = {},
+            onOpenRecentListing = {},
         )
     }
 }
@@ -584,6 +600,7 @@ private fun GenerateAdScreenWithPromptPreview() {
             onUploadClick = {},
             onRemovePhoto = {},
             onSubmitClick = {},
+            onOpenRecentListing = {},
         )
     }
 }

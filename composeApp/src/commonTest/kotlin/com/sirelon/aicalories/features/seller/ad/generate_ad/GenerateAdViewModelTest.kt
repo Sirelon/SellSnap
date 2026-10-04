@@ -8,6 +8,7 @@ import com.mohamedrejeb.calf.io.KmpFile
 import com.sirelon.sellsnap.analytics.Analytics
 import com.sirelon.sellsnap.analytics.AnalyticsEvents
 import com.sirelon.sellsnap.features.auth.data.InMemoryOlxKeyValueStore
+import com.sirelon.sellsnap.features.common.presentation.awaitEffect
 import com.sirelon.sellsnap.features.media.PassthroughImageFormatConverter
 import com.sirelon.sellsnap.features.media.upload.DraftMediaFileStore
 import com.sirelon.sellsnap.features.media.upload.DraftPhoto
@@ -19,8 +20,11 @@ import com.sirelon.sellsnap.features.media.upload.PhotoUploader
 import com.sirelon.sellsnap.features.media.upload.UploadedFile
 import com.sirelon.sellsnap.features.media.upload.UploadingItem
 import com.sirelon.sellsnap.features.seller.ad.AdFlowTimerStore
+import com.sirelon.sellsnap.features.seller.ad.Advertisement
+import com.sirelon.sellsnap.features.seller.ad.AdvertisementWithAttributes
 import com.sirelon.sellsnap.features.seller.ad.generation_log.NoOpAdGenerationLogRepository
 import com.sirelon.sellsnap.features.seller.ad.loadScreenshotPhotos
+import com.sirelon.sellsnap.features.seller.ad.recent.RecentListingsStore
 import com.sirelon.sellsnap.features.seller.auth.data.GuestModeStore
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountStore
 import com.sirelon.sellsnap.features.seller.auth.data.OlxApiClient
@@ -42,6 +46,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -236,7 +241,60 @@ class GenerateAdViewModelTest {
             advanceUntilIdle()
         }
 
+    @Test
+    fun `opening a recent listing reopens the preview for it and logs recent_listing_opened`() =
+        runTest(testDispatcher) {
+            val harness = buildHarness()
+            val saved = recentListing("Nike Air Max 90")
+            harness.recentListingsStore.add(saved, countryCode = "ua")
+            val row = harness.viewModel.state.first { it.recentListings.isNotEmpty() }.recentListings.single()
+
+            harness.viewModel.onEvent(GenerateAdContract.GenerateAdEvent.OpenRecentListing(row))
+
+            val effect = harness.viewModel.effects.awaitEffect<GenerateAdContract.GenerateAdEffect.OpenAdPreview>()
+            assertEquals(saved, effect.ad)
+            assertEquals(1, harness.analytics.events.count { it.first == AnalyticsEvents.RECENT_LISTING_OPENED })
+        }
+
+    @Test
+    fun `recent listings follow the current country`() =
+        runTest(testDispatcher) {
+            val harness = buildHarness()
+            harness.recentListingsStore.add(recentListing("Polish listing"), countryCode = "pl")
+            harness.recentListingsStore.add(recentListing("Ukrainian listing"), countryCode = "ua")
+
+            try {
+                val inUkraine = harness.viewModel.state.first { it.recentListings.isNotEmpty() }
+                assertEquals(
+                    listOf("Ukrainian listing"),
+                    inUkraine.recentListings.map { it.listing.advertisement.title },
+                )
+
+                harness.countryStore.save(OlxCountry.PL)
+
+                val inPoland = harness.viewModel.state.first { state ->
+                    state.recentListings.map { it.listing.advertisement.title } == listOf("Polish listing")
+                }
+                assertEquals("PLN", inPoland.recentListingsCurrency.code)
+            } finally {
+                // save() writes the process-global current country, which other tests read.
+                harness.countryStore.save(OlxCountry.UA)
+            }
+        }
+
     // --- test harness -----------------------------------------------------------------------
+
+    private fun recentListing(title: String) = AdvertisementWithAttributes(
+        advertisement = Advertisement(
+            title = title,
+            description = "Description of $title",
+            images = listOf("https://x/$title.jpg"),
+            suggestedPrice = 100f,
+            minPrice = 90f,
+            maxPrice = 110f,
+        ),
+        filledAttributes = emptyMap(),
+    )
 
     private suspend fun buildHarness(
         uploader: PhotoUploader = AlreadyUploadedPhotoUploader(),
@@ -285,6 +343,7 @@ class GenerateAdViewModelTest {
             repository = MediaUploadRepository(uploader = uploader),
         )
 
+        val recentListingsStore = RecentListingsStore(InMemoryOlxKeyValueStore(), testJson)
         val viewModel = GenerateAdViewModel(
             mediaUploadHelper = mediaUploadHelper,
             draftMediaFileStore = FakeDraftMediaFileStore,
@@ -297,6 +356,7 @@ class GenerateAdViewModelTest {
             json = testJson,
             analytics = analytics,
             adGenerationLogRepository = NoOpAdGenerationLogRepository,
+            recentListingsStore = recentListingsStore,
         )
 
         authRepository.enterGuestMode()
@@ -312,12 +372,19 @@ class GenerateAdViewModelTest {
             )
         }
 
-        return Harness(viewModel, analytics)
+        return Harness(
+            viewModel = viewModel,
+            analytics = analytics,
+            recentListingsStore = recentListingsStore,
+            countryStore = countryStore,
+        )
     }
 
     private data class Harness(
         val viewModel: GenerateAdViewModel,
         val analytics: FakeAnalytics,
+        val recentListingsStore: RecentListingsStore,
+        val countryStore: OlxCountryStore,
     )
 
     private class TestCredentialsProvider : OlxCredentialsProvider {

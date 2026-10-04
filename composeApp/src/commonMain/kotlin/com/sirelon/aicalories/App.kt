@@ -56,6 +56,7 @@ import com.sirelon.sellsnap.di.appModule
 import com.sirelon.sellsnap.di.networkModule
 import com.sirelon.sellsnap.features.consent.ConsentScreen
 import com.sirelon.sellsnap.features.review.StoreReviewPromptEffect
+import com.sirelon.sellsnap.features.seller.ad.AdvertisementWithAttributes
 import com.sirelon.sellsnap.features.seller.ad.generate_ad.GenerateAdScreen
 import com.sirelon.sellsnap.features.seller.ad.preview_ad.PreviewAdContentRoute
 import com.sirelon.sellsnap.features.seller.ad.preview_ad.PreviewAdContract
@@ -337,7 +338,13 @@ fun App() {
 
                         entry<AppKey.GenerateAd>(metadata = topLevelMetadata) {
                             GenerateAdScreen(
-                                openAdPreview = { navVm.backStack.add(AppKey.PreviewAd(it)) },
+                                openAdPreview = {
+                                    // A Recent row can be double-tapped; the second tap must not
+                                    // stack a second PreviewAd on top of the first.
+                                    if (navVm.backStack.lastOrNull() !is AppKey.PreviewAd) {
+                                        navVm.backStack.add(AppKey.PreviewAd(it))
+                                    }
+                                },
                                 onLoadingChanged = { isGeneratingAd = it },
                             )
                         }
@@ -358,11 +365,16 @@ fun App() {
                             )
                         }
 
+                        // Every PreviewAd shares PREVIEW_AD_FLOW_KEY, and that store is only cleared
+                        // once a popped entry leaves composition, after the pop transition. A Recent
+                        // row can open a second preview inside that window, and an unkeyed
+                        // koinViewModel would hand back the previous listing's ViewModel.
                         entry<AppKey.PreviewAd>(
                             clazzContentKey = { PREVIEW_AD_FLOW_KEY },
                         ) { key ->
-                            val previewViewModel: PreviewAdViewModel =
-                                koinViewModel { parametersOf(key.advertisement) }
+                            val previewViewModel: PreviewAdViewModel = koinViewModel(
+                                key = key.advertisement.previewViewModelKey,
+                            ) { parametersOf(key.advertisement) }
                             val previewState by previewViewModel.state.collectAsStateWithLifecycle()
                             val snackbarHostState = remember { SnackbarHostState() }
 
@@ -452,7 +464,14 @@ fun App() {
                             metadata = BottomSheetSceneStrategy.bottomSheet() +
                                 SharedViewModelStoreNavEntryDecorator.parent(PREVIEW_AD_FLOW_KEY),
                         ) {
+                            // Remembered: the sheet keeps composing through its dismiss animation, after
+                            // the PreviewAd may already be gone from the stack.
+                            val previewViewModelKey = remember {
+                                navVm.backStack.filterIsInstance<AppKey.PreviewAd>().lastOrNull()
+                                    ?.advertisement?.previewViewModelKey ?: PREVIEW_AD_FLOW_KEY
+                            }
                             val sharedViewModel = koinViewModel<PreviewAdViewModel>(
+                                key = previewViewModelKey,
                                 viewModelStoreOwner = LocalSharedViewModelStoreOwner.current,
                             )
                             val state by sharedViewModel.state.collectAsStateWithLifecycle()
@@ -493,7 +512,14 @@ fun App() {
                             metadata = BottomSheetSceneStrategy.bottomSheet() +
                                 SharedViewModelStoreNavEntryDecorator.parent(PREVIEW_AD_FLOW_KEY),
                         ) {
+                            // Remembered: the sheet keeps composing through its dismiss animation, after
+                            // the PreviewAd may already be gone from the stack.
+                            val previewViewModelKey = remember {
+                                navVm.backStack.filterIsInstance<AppKey.PreviewAd>().lastOrNull()
+                                    ?.advertisement?.previewViewModelKey ?: PREVIEW_AD_FLOW_KEY
+                            }
                             val sharedViewModel = koinViewModel<PreviewAdViewModel>(
+                                key = previewViewModelKey,
                                 viewModelStoreOwner = LocalSharedViewModelStoreOwner.current,
                             )
                             val state by sharedViewModel.state.collectAsStateWithLifecycle()
@@ -756,6 +782,11 @@ fun App() {
 }
 
 private const val PREVIEW_AD_FLOW_KEY = "PreviewAdFlow"
+
+/** Keys PreviewAdViewModel per listing inside the shared PreviewAdFlow store - see the PreviewAd
+ * entry. Falls back to the flow key for a listing with no session id. */
+private val AdvertisementWithAttributes.previewViewModelKey: String
+    get() = generationSessionId ?: PREVIEW_AD_FLOW_KEY
 
 private object TopLevelTransitionKey : NavMetadataKey<Boolean>
 private val topLevelMetadata = metadata { put(TopLevelTransitionKey, true) }
