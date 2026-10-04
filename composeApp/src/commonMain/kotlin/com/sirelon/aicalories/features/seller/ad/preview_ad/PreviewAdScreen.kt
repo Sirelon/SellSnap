@@ -648,11 +648,13 @@ private fun PreviewAdContent(
         AdTitleCard(
             titleState = titleState,
             isInvalid = isTitleInvalid,
+            onEvent = onEvent,
         )
 
         AdDescriptionCard(
             descriptionState = descriptionState,
             isInvalid = isDescriptionInvalid,
+            onEvent = onEvent,
         )
 
         // FlowRow, not Row: the three labels together run ~310dp in ru and the row has 328dp
@@ -805,6 +807,7 @@ private fun PreviewSectionInputCard(
 private fun AdTitleCard(
     titleState: TextFieldState,
     isInvalid: Boolean,
+    onEvent: (PreviewAdEvent) -> Unit,
 ) {
     PreviewSectionInputCard(
         label = stringResource(Res.string.ad_title_label),
@@ -815,7 +818,12 @@ private fun AdTitleCard(
             if (isInvalid) {
                 ErrorPill()
             }
-            CopyPill(value = titleState.text.toString(), field = "title")
+            CopyPill(
+                value = titleState.text.toString(),
+                field = "title",
+                onCopied = { onEvent(PreviewAdEvent.ListingCopied) },
+                onFeedbackFinished = { onEvent(PreviewAdEvent.CopyFeedbackFinished) },
+            )
             AiGeneratedBadge()
         },
     )
@@ -825,6 +833,7 @@ private fun AdTitleCard(
 private fun AdDescriptionCard(
     descriptionState: TextFieldState,
     isInvalid: Boolean,
+    onEvent: (PreviewAdEvent) -> Unit,
 ) {
     PreviewSectionInputCard(
         label = stringResource(Res.string.ad_description_label),
@@ -835,7 +844,12 @@ private fun AdDescriptionCard(
             if (isInvalid) {
                 ErrorPill()
             }
-            CopyPill(value = descriptionState.text.toString(), field = "description")
+            CopyPill(
+                value = descriptionState.text.toString(),
+                field = "description",
+                onCopied = { onEvent(PreviewAdEvent.ListingCopied) },
+                onFeedbackFinished = { onEvent(PreviewAdEvent.CopyFeedbackFinished) },
+            )
             AiGeneratedBadge()
         },
     )
@@ -1158,6 +1172,8 @@ fun CopyPill(
     value: String,
     field: String,
     modifier: Modifier = Modifier,
+    onCopied: () -> Unit = {},
+    onFeedbackFinished: () -> Unit = {},
 ) {
     val clipboard = LocalClipboardManager.current
     val analytics: Analytics = koinInject()
@@ -1178,6 +1194,7 @@ fun CopyPill(
             scope.launch {
                 clipboard.setText(AnnotatedString(value))
                 copied = true
+                onCopied()
                 analytics.logEvent(
                     AnalyticsEvents.AD_CONTENT_COPIED,
                     mapOf("field" to field),
@@ -1193,6 +1210,7 @@ fun CopyPill(
         LaunchedEffect(Unit) {
             delay(1400L.milliseconds)
             copied = false
+            onFeedbackFinished()
         }
     }
 }
@@ -1341,10 +1359,12 @@ private fun PreviewAdEditableSectionsPreview(
                 AdTitleCard(
                     titleState = rememberTextFieldState(title),
                     isInvalid = title.trim().length < TitleMinLength,
+                    onEvent = {},
                 )
                 AdDescriptionCard(
                     descriptionState = rememberTextFieldState(description),
                     isInvalid = description.trim().length < DescriptionMinLength,
+                    onEvent = {},
                 )
             }
         }

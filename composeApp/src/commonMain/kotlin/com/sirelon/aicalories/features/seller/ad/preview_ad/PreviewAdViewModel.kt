@@ -9,6 +9,7 @@ import com.sirelon.sellsnap.analytics.Analytics
 import com.sirelon.sellsnap.analytics.AnalyticsEvents
 import com.sirelon.sellsnap.features.common.presentation.BaseViewModel
 import com.sirelon.sellsnap.features.review.ReviewPromptCoordinator
+import com.sirelon.sellsnap.features.review.ReviewPromptTrigger
 import com.sirelon.sellsnap.features.seller.ad.AdFlowTimerStore
 import com.sirelon.sellsnap.features.seller.ad.AdvertisementWithAttributes
 import com.sirelon.sellsnap.features.seller.ad.ScreenshotPlaceholderAccount
@@ -149,6 +150,12 @@ class PreviewAdViewModel internal constructor(
     // saved state - dropped along with the rest of the ViewModel once the flow moves on, which is
     // fine since undo only needs to survive this sheet being open.
     private val removedImages = mutableListOf<RemovedImage>()
+
+    // One preview is one listing: the review gate counts it once and decides once, however many
+    // times the copy pills are tapped. Not saved - a ViewModel recreated after process death is
+    // allowed to count the same listing again, which can only make the ask slightly earlier.
+    private var listingCopyCounted = false
+    private var copyReviewDecided = false
 
     init {
         combine(
@@ -345,6 +352,21 @@ class PreviewAdViewModel internal constructor(
                             add(restored.index.coerceIn(0, size), restored.url)
                         }
                         it.copy(images = images, canUndoRemoveImage = canUndoMore)
+                    }
+                }
+            }
+
+            PreviewAdEvent.ListingCopied -> if (!listingCopyCounted) {
+                listingCopyCounted = true
+                // A DataStore failure must not surface from a copy tap.
+                viewModelScope.launch { runCatching { reviewPromptCoordinator.onListingCopied() } }
+            }
+
+            PreviewAdEvent.CopyFeedbackFinished -> if (listingCopyCounted && !copyReviewDecided) {
+                copyReviewDecided = true
+                viewModelScope.launch {
+                    if (reviewPromptCoordinator.requestIfEligible(ReviewPromptTrigger.CopiedListing)) {
+                        postEffect(PreviewAdEffect.RequestStoreReview)
                     }
                 }
             }

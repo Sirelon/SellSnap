@@ -56,6 +56,7 @@ import com.sirelon.sellsnap.di.appModule
 import com.sirelon.sellsnap.di.networkModule
 import com.sirelon.sellsnap.features.consent.ConsentScreen
 import com.sirelon.sellsnap.features.review.StoreReviewPromptEffect
+import com.sirelon.sellsnap.features.review.rememberStoreReviewRequester
 import com.sirelon.sellsnap.features.seller.ad.generate_ad.GenerateAdScreen
 import com.sirelon.sellsnap.features.seller.ad.preview_ad.PreviewAdContentRoute
 import com.sirelon.sellsnap.features.seller.ad.preview_ad.PreviewAdContract
@@ -365,6 +366,7 @@ fun App() {
                                 koinViewModel { parametersOf(key.advertisement) }
                             val previewState by previewViewModel.state.collectAsStateWithLifecycle()
                             val snackbarHostState = remember { SnackbarHostState() }
+                            val requestReview = rememberStoreReviewRequester()
 
                             LaunchedEffect(previewState.isPublishing) {
                                 isPreviewPublishing = previewState.isPublishing
@@ -391,6 +393,9 @@ fun App() {
 
                                     is PreviewAdContract.PreviewAdEffect.NavigateToProfile ->
                                         navVm.backStack.add(AppKey.Profile(effect.reason))
+
+                                    PreviewAdContract.PreviewAdEffect.RequestStoreReview ->
+                                        requestReview()
 
                                     is PreviewAdContract.PreviewAdEffect.PublishAccountMismatch ->
                                         snackbarHostState.showSnackbar(effect.message)

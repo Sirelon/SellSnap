@@ -152,9 +152,16 @@ object AnalyticsEvents {
     // the skip `reason` histogram is the only way to tell a gate that is working from one that has
     // silently starved. Cross-check the actual counts in App Store Connect / Play Console.
 
-    /** Carries `publish_count` and `returning_session`. */
+    /**
+     * Carries `trigger` (`publish` | `copied_listing`), `returning_session`, and the Int count the
+     * trigger was judged on: `publish_count` for `publish`, `copied_listing_count` for `copied_listing`.
+     */
     const val REVIEW_PROMPT_REQUESTED = "review_prompt_requested"
 
-    /** Carries `reason` - see ReviewPromptSkipReason. */
+    /**
+     * Carries `trigger` (`publish` | `copied_listing`) and `reason` - see ReviewPromptSkipReason:
+     * `too_few_publishes` and `install_session` for `publish`, `too_few_copied_listings` for
+     * `copied_listing`, and `recent_error`, `whats_new`, `cooldown` for either.
+     */
     const val REVIEW_PROMPT_SKIPPED = "review_prompt_skipped"
 }
