@@ -26,11 +26,17 @@ object AnalyticsEvents {
      * `model_ms` and - logged-in flow only - `attributes_ms` (category suggestion + attribute
      * fetch + fill). SIR-121: rebuilding "where does the time go" from event timestamps and
      * storage metadata is what these params replace.
+     *
+     * Also `retry_count` (Int, 0 or 1): 1 when the model call was repeated once after a timeout,
+     * a lost connection or an empty answer. A run that succeeded with `retry_count` 1 is a seller
+     * the retry saved.
      */
     const val AD_GENERATION_SUCCEEDED = "ad_generation_succeeded"
 
-    /** Same stage params as [AD_GENERATION_SUCCEEDED], plus `reason`. Only the stages that
-     * finished before the failure are present. */
+    /** Same stage params as [AD_GENERATION_SUCCEEDED] (including `retry_count`), plus `reason`.
+     * Only the stages that finished before the failure are present. `reason` is one of
+     * `unsupported_category`, `empty_output` (no title or price, after the retry), `incomplete_ad`
+     * (no description), `timeout`, `openai_error` or `other`. */
     const val AD_GENERATION_FAILED = "ad_generation_failed"
 
     // The model read the photos and declined to write a listing. Deliberately not

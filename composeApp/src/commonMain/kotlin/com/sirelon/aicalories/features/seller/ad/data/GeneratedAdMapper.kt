@@ -11,13 +11,19 @@ import kotlin.math.floor
  * for the crash report; the seller sees the ordinary generate-failed message and can try again.
  */
 internal class IncompleteGeneratedAdException(val missing: List<String>) :
-    IllegalStateException("Generated ad is missing: " + missing.joinToString())
+    IllegalStateException("Generated ad is missing: " + missing.joinToString()) {
+
+    /** No title or no price: the model answered with nothing worth showing, as opposed to a listing
+     * that merely lacks a description. Logged as `empty_output` in `ad_generation_failed`. */
+    val isEmptyOutput: Boolean get() = "title" in missing || "suggestedPrice" in missing
+}
 
 internal class GeneratedAdMapper {
 
     /**
      * @throws IncompleteGeneratedAdException when the model left out the title, the description or
-     * the price. Standing a placeholder in for any of them is worse than failing: it reads as a
+     * the price, or answered a price of zero or less (a 2026-09-25 generation came back with an
+     * empty title and price 0 and was shown as a success). Standing a placeholder in for any of them is worse than failing: it reads as a
      * real listing, it is written in one fixed language whatever market the seller is in, and it
      * publishes to OLX under the seller's name. A failure the seller can retry beats that.
      */
@@ -28,7 +34,7 @@ internal class GeneratedAdMapper {
         val missing = buildList {
             if (title.isBlank()) add("title")
             if (description.isBlank()) add("description")
-            if (generatedAd.suggestedPrice == null) add("suggestedPrice")
+            if (generatedAd.suggestedPrice == null || generatedAd.suggestedPrice <= 0f) add("suggestedPrice")
         }
         if (missing.isNotEmpty()) throw IncompleteGeneratedAdException(missing)
 

@@ -38,6 +38,12 @@ import com.sirelon.sellsnap.features.seller.categories.domain.CategoriesMapper
 import com.sirelon.sellsnap.features.seller.openai.OpenAIClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.MockEngineConfig
+import io.ktor.client.engine.mock.MockRequestHandler
+import io.ktor.client.engine.mock.respond
+import io.ktor.http.HttpHeaders
+import io.ktor.http.content.TextContent
+import io.ktor.http.headersOf
+import com.sirelon.sellsnap.features.common.presentation.awaitEffect
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.awaitCancellation
@@ -49,6 +55,7 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.Json
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -236,6 +243,62 @@ class GenerateAdViewModelTest {
             advanceUntilIdle()
         }
 
+    @Test
+    fun `an empty answer is retried once with the same photo urls and the second answer succeeds`() =
+        runTest(testDispatcher) {
+            val requestBodies = mutableListOf<String>()
+            val harness = buildHarness(handler = { request ->
+                requestBodies += (request.body as TextContent).text
+                respondWithListing(if (requestBodies.size == 1) EMPTY_LISTING else VALID_LISTING)
+            })
+
+            harness.viewModel.onEvent(GenerateAdContract.GenerateAdEvent.Submit)
+            val effect = harness.viewModel.effects.awaitEffect<GenerateAdContract.GenerateAdEffect.OpenAdPreview>()
+
+            assertEquals(2, requestBodies.size)
+            assertEquals(requestBodies[0], requestBodies[1], "the retry sends the same photo urls, nothing re-uploaded")
+            assertEquals("Nike Air Max 90", effect.ad.advertisement.title)
+            val succeeded = harness.analytics.events.single { it.first == AnalyticsEvents.AD_GENERATION_SUCCEEDED }
+            assertEquals(1, succeeded.second["retry_count"])
+            assertTrue(harness.analytics.events.none { it.first == AnalyticsEvents.AD_GENERATION_FAILED })
+        }
+
+    @Test
+    fun `an answer that is fine first time logs retry_count 0`() = runTest(testDispatcher) {
+        val harness = buildHarness(handler = { respondWithListing(VALID_LISTING) })
+
+        harness.viewModel.onEvent(GenerateAdContract.GenerateAdEvent.Submit)
+        harness.viewModel.effects.awaitEffect<GenerateAdContract.GenerateAdEffect.OpenAdPreview>()
+
+        val succeeded = harness.analytics.events.single { it.first == AnalyticsEvents.AD_GENERATION_SUCCEEDED }
+        assertEquals(0, succeeded.second["retry_count"])
+    }
+
+    @Test
+    fun `two empty answers fail with reason empty_output after exactly one retry`() =
+        runTest(testDispatcher) {
+            var requests = 0
+            val harness = buildHarness(handler = {
+                requests++
+                respondWithListing(EMPTY_LISTING)
+            })
+
+            harness.viewModel.onEvent(GenerateAdContract.GenerateAdEvent.Submit)
+            harness.viewModel.effects.awaitEffect<GenerateAdContract.GenerateAdEffect.ShowMessage>()
+
+            assertEquals(2, requests, "one try plus exactly one retry")
+            val failed = harness.analytics.events.single { it.first == AnalyticsEvents.AD_GENERATION_FAILED }
+            assertEquals("empty_output", failed.second["reason"])
+            assertEquals(1, failed.second["retry_count"])
+            assertTrue(harness.analytics.events.none { it.first == AnalyticsEvents.AD_GENERATION_SUCCEEDED })
+            assertFalse(harness.viewModel.state.value.isLoading)
+        }
+
+    private fun io.ktor.client.engine.mock.MockRequestHandleScope.respondWithListing(listing: String) = respond(
+        content = """{"id":"resp_1","status":"completed","output":[{"id":"msg_1","type":"message","role":"assistant","content":[{"type":"output_text","text":${Json.encodeToString(String.serializer(), listing)}}]}]}""",
+        headers = headersOf(HttpHeaders.ContentType, "application/json"),
+    )
+
     // --- test harness -----------------------------------------------------------------------
 
     private suspend fun buildHarness(
@@ -244,11 +307,12 @@ class GenerateAdViewModelTest {
             progress = 100.0,
             uploadedFile = UploadedFile(id = "1", path = "drafts/photo1.jpg"),
         ),
+        handler: MockRequestHandler = { awaitCancellation() },
     ): Harness {
         val analytics = FakeAnalytics()
         val engine = MockEngine(
             MockEngineConfig().apply {
-                addHandler { awaitCancellation() }
+                addHandler(handler)
                 dispatcher = testDispatcher
             },
         )
@@ -313,6 +377,12 @@ class GenerateAdViewModelTest {
         }
 
         return Harness(viewModel, analytics)
+    }
+
+    private companion object {
+        const val EMPTY_LISTING = """{"title":"","description":"","suggestedPrice":0,"minPrice":0,"maxPrice":0}"""
+        const val VALID_LISTING =
+            """{"title":"Nike Air Max 90","description":"Worn twice, clean sole.","suggestedPrice":1500,"minPrice":1200,"maxPrice":1800}"""
     }
 
     private data class Harness(

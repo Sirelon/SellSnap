@@ -2,6 +2,7 @@ package com.sirelon.sellsnap.features.seller.ad.generate_ad
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
+import com.aallam.openai.api.exception.OpenAITimeoutException
 import com.mohamedrejeb.calf.io.KmpFile
 import com.mohamedrejeb.calf.io.getName
 import com.mohamedrejeb.calf.io.readByteArray
@@ -84,7 +85,7 @@ private val AdGenerationTimeout = 2.minutes
 /** Thrown instead of letting `withTimeout` raise a [kotlinx.coroutines.CancellationException],
  * which [kotlinx.coroutines.flow.catch] would pass straight through as a cancellation rather than
  * a failure the seller can be told about and retry. */
-private class AdGenerationTimeoutException : Exception("Ad generation exceeded $AdGenerationTimeout")
+internal class AdGenerationTimeoutException : Exception("Ad generation exceeded $AdGenerationTimeout")
 
 class GenerateAdViewModel(
     private val mediaUploadHelper: MediaUploadHelper,
@@ -220,6 +221,8 @@ class GenerateAdViewModel(
         var uploadBytes: Long? = null
         var modelMs: Long? = null
         var attributesMs: Long? = null
+        // 0 or 1: whether the model call was retried (see retryModelCallOnce).
+        var retryCount = 0
 
         generationJob = flowOf(1)
             .onStart {
@@ -249,13 +252,16 @@ class GenerateAdViewModel(
 
             .map { images ->
                 val stageStartedAt = TimeSource.Monotonic.markNow()
-                val analysis = withTimeoutOrNull(AdGenerationTimeout) {
-                    openAi.analyzeThing(
-                        images = images,
-                        sellerPrompt = state.value.prompt,
-                        country = countryStore.current,
-                    )
-                } ?: throw AdGenerationTimeoutException()
+                // The photos are already uploaded, so a retry sends the same URLs again.
+                val analysis = retryModelCallOnce(onRetry = { retryCount = 1 }) {
+                    withTimeoutOrNull(AdGenerationTimeout) {
+                        openAi.analyzeThing(
+                            images = images,
+                            sellerPrompt = state.value.prompt,
+                            country = countryStore.current,
+                        )
+                    } ?: throw AdGenerationTimeoutException()
+                }
                 modelMs = stageStartedAt.elapsedNow().inWholeMilliseconds
                 images to analysis
             }
@@ -337,7 +343,8 @@ class GenerateAdViewModel(
                 outcomeLogged = true
                 analytics.logEvent(
                     AnalyticsEvents.AD_GENERATION_SUCCEEDED,
-                    buildGenerationStageParams(startedAt.elapsedNow().inWholeMilliseconds, photoCount, uploadMs, uploadBytes, modelMs, attributesMs),
+                    buildGenerationStageParams(startedAt.elapsedNow().inWholeMilliseconds, photoCount, uploadMs, uploadBytes, modelMs, attributesMs) +
+                        mapOf("retry_count" to retryCount),
                 )
                 clearDraft()
                 postEffect(GenerateAdContract.GenerateAdEffect.OpenAdPreview(ad = ad))
@@ -355,7 +362,7 @@ class GenerateAdViewModel(
                 analytics.logEvent(
                     AnalyticsEvents.AD_GENERATION_FAILED,
                     buildGenerationStageParams(startedAt.elapsedNow().inWholeMilliseconds, photoCount, uploadMs, uploadBytes, modelMs, attributesMs) +
-                        mapOf("reason" to error.toFailureReason()),
+                        mapOf("reason" to error.toFailureReason(), "retry_count" to retryCount),
                 )
                 setState { it.copy(isLoading = false) }
                 showError(message)
@@ -611,8 +618,8 @@ class GenerateAdViewModel(
 
     private fun Throwable.toFailureReason(): String = when {
         this is UnsupportedOlxCategoryException -> "unsupported_category"
-        this is IncompleteGeneratedAdException -> "incomplete_ad"
-        this is AdGenerationTimeoutException -> "timeout"
+        this is IncompleteGeneratedAdException -> if (isEmptyOutput) "empty_output" else "incomplete_ad"
+        this is AdGenerationTimeoutException || this is OpenAITimeoutException -> "timeout"
         message?.startsWith(OpenAIRequestFailedPrefix) == true -> "openai_error"
         else -> "other"
     }
