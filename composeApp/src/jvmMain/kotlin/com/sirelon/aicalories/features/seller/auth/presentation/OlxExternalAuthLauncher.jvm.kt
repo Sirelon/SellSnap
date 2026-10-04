@@ -8,7 +8,10 @@ import androidx.compose.ui.platform.LocalUriHandler
 // behavior (no in-app session to force-clear). onDismissed is never invoked: opening the system
 // browser returns control immediately, with no signal for the tab being closed (SIR-123).
 @Composable
-actual fun rememberOlxAuthLauncher(forceReauth: Boolean, onDismissed: () -> Unit): (String) -> Unit {
+actual fun rememberOlxAuthLauncher(
+    forceReauth: Boolean,
+    onDismissed: (OlxAuthDismissReason) -> Unit,
+): (String) -> Unit {
     val uriHandler = LocalUriHandler.current
     return remember(uriHandler) { { url: String -> uriHandler.openUri(url) } }
 }

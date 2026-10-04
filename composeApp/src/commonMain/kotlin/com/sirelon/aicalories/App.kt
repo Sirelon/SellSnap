@@ -68,6 +68,7 @@ import com.sirelon.sellsnap.features.seller.ad.preview_ad.ui.PublishingScreen
 import com.sirelon.sellsnap.features.seller.ad.publish_success.PublishSuccessScreen
 import com.sirelon.sellsnap.features.seller.ad.screenshotMode
 import com.sirelon.sellsnap.features.seller.auth.data._currentOlxCountry
+import com.sirelon.sellsnap.features.seller.auth.presentation.OlxAuthDismissReason
 import com.sirelon.sellsnap.features.seller.auth.presentation.OlxCountryPickerScreenRoute
 import com.sirelon.sellsnap.features.seller.auth.presentation.SellerLandingScreenRoute
 import com.sirelon.sellsnap.features.seller.auth.presentation.rememberOlxAuthLauncher
@@ -137,6 +138,13 @@ fun App() {
             val navVm: AppNavigationViewModel = koinViewModel()
             val accountRepository: SellerAccountRepository = koinInject()
             val analytics: Analytics = koinInject()
+            // Add-account/reconnect never logs auth_started, so there is no duration here - see AUTH_ABANDONED.
+            val logAuthAbandoned: (OlxAuthDismissReason) -> Unit = { reason ->
+                analytics.logEvent(
+                    AnalyticsEvents.AUTH_ABANDONED,
+                    mapOf("reason" to reason.analyticsValue, "country" to _currentOlxCountry.code),
+                )
+            }
             val coroutineScope = rememberCoroutineScope()
             var isDeletingAccountData by remember { mutableStateOf(false) }
             var isDisconnectingAccount by remember { mutableStateOf(false) }
@@ -147,7 +155,7 @@ fun App() {
             // platform mechanism, so having two instances is harmless (see OlxExternalAuthLauncher).
             val addAccountAuthLauncher = rememberOlxAuthLauncher(
                 forceReauth = true,
-                onDismissed = { analytics.logEvent(AnalyticsEvents.AUTH_ABANDONED) },
+                onDismissed = logAuthAbandoned,
             )
             fun startAddOrReconnectAuthorization() {
                 coroutineScope.launch {
@@ -165,14 +173,14 @@ fun App() {
             var isGeneratingAd by remember { mutableStateOf(false) }
             var isPreviewPublishing by remember { mutableStateOf(false) }
             val authLauncher = rememberOlxAuthLauncher(
-                onDismissed = { analytics.logEvent(AnalyticsEvents.AUTH_ABANDONED) },
+                onDismissed = logAuthAbandoned,
             )
             // SIR-83 (D5): a second launcher that forces a fresh OLX login, used only for
             // add-account and reconnect so the seller isn't silently bounced back into an account
             // they already have.
             val authLauncherForceReauth = rememberOlxAuthLauncher(
                 forceReauth = true,
-                onDismissed = { analytics.logEvent(AnalyticsEvents.AUTH_ABANDONED) },
+                onDismissed = logAuthAbandoned,
             )
             val connectOlxReason = stringResource(Res.string.guest_connect_olx_cta)
 

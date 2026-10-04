@@ -22,6 +22,7 @@ import com.sirelon.sellsnap.features.seller.auth.domain.OlxSessionState
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxTokens
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxUser
 import com.sirelon.sellsnap.features.seller.auth.domain.SellerSessionMode
+import com.sirelon.sellsnap.features.seller.auth.domain.analyticsReason
 import com.sirelon.sellsnap.features.seller.location.OlxLocation
 import com.sirelon.sellsnap.features.seller.location.data.LocationRepository
 import com.sirelon.sellsnap.features.seller.my_ads.data.AdvertOutcomeStore
@@ -447,18 +448,7 @@ sealed interface AddAccountFailureReason {
 private val AddAccountFailureReason.analyticsReason: String
     get() = when (this) {
         AddAccountFailureReason.AccountLimitReached -> "account_limit_reached"
-        is AddAccountFailureReason.Authorization -> when (error) {
-            is OlxApiError.MissingCode -> "missing_code"
-            is OlxApiError.InvalidState -> "invalid_state"
-            is OlxApiError.InvalidClient -> "invalid_client"
-            is OlxApiError.InvalidGrant -> "invalid_grant"
-            is OlxApiError.InvalidToken -> "invalid_token"
-            is OlxApiError.InsufficientScope -> "insufficient_scope"
-            is OlxApiError.NetworkFailure -> "network_failure"
-            is OlxApiError.RateLimited -> "rate_limited"
-            is OlxApiError.ValidationError -> "validation_error"
-            is OlxApiError.Unknown -> "unknown"
-        }
+        is AddAccountFailureReason.Authorization -> error.analyticsReason
     }
 
 private fun AddAccountFailureReason.toThrowable(): Throwable = when (this) {

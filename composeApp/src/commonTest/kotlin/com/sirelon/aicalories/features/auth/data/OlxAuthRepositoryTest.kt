@@ -76,6 +76,20 @@ class OlxAuthRepositoryTest {
     }
 
     @Test
+    fun `completeAuthorization surfaces an OAuth error from the redirect with its code`() = runBlocking {
+        val repository = createRepository(engine = MockEngine { error("No HTTP call expected.") })
+        val request = repository.createAuthorizationRequest()
+
+        val result = runCatching {
+            repository.exchangeAuthorizationCallback("${request.redirectUri}?error=access_denied&state=${request.state}")
+        }
+
+        val error = assertIs<OlxApiError.AuthorizationError>(assertIs<OlxApiException>(result.exceptionOrNull()).error)
+        assertEquals("access_denied", error.code)
+        Unit
+    }
+
+    @Test
     fun `completeAuthorization exchanges authorization code with expected payload`() = runBlocking {
         var requestBody = ""
         val repository = createRepository(
