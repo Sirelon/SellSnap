@@ -1,7 +1,10 @@
 package com.sirelon.sellsnap.features.seller.ad.data
 
 import com.sirelon.sellsnap.features.seller.ad.Advertisement
+import com.sirelon.sellsnap.features.seller.auth.domain.OlxCountry
 import com.sirelon.sellsnap.features.seller.openai.response.OpenAIGeneratedAd
+import kotlin.math.ceil
+import kotlin.math.floor
 
 /**
  * The model answered with something that is not a publishable listing. [missing] names the fields
@@ -58,4 +61,23 @@ internal class GeneratedAdMapper {
             images = images.distinct(),
         )
     }
+}
+
+/**
+ * Rounds the model's three prices to [country]'s natural step ([OlxCountry.priceRoundingStep]):
+ * the suggested price to the nearest step (half up), the minimum down and the maximum up, so the
+ * range only ever widens and min <= suggested <= max still holds. A positive price never rounds
+ * to zero, since a listing priced at nothing would go out free.
+ */
+internal fun Advertisement.roundedToMarketSteps(country: OlxCountry): Advertisement {
+    fun round(price: Float, toStep: (Float) -> Float): Float {
+        if (price <= 0f) return price
+        val step = country.priceRoundingStep(price).toFloat()
+        return (toStep(price / step) * step).coerceAtLeast(step)
+    }
+
+    val roundedMin = round(minPrice) { floor(it) }
+    val roundedMax = round(maxPrice) { ceil(it) }.coerceAtLeast(roundedMin)
+    val roundedSuggested = round(suggestedPrice) { floor(it + 0.5f) }.coerceIn(roundedMin, roundedMax)
+    return copy(suggestedPrice = roundedSuggested, minPrice = roundedMin, maxPrice = roundedMax)
 }
