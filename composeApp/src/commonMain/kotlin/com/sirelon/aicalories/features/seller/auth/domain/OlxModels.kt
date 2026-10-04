@@ -111,6 +111,15 @@ sealed interface OlxApiError {
         override val userMessage: String,
     ) : OlxApiError
 
+    /**
+     * OLX answered the authorize redirect with an OAuth `error` (RFC 6749 §4.1.2.1 -
+     * `access_denied`, `server_error`, ...) instead of a code. [code] is OLX's value, verbatim.
+     */
+    data class AuthorizationError(
+        val code: String,
+        override val userMessage: String,
+    ) : OlxApiError
+
     data class ValidationError(
         val field: String,
         val fieldDetail: String,
@@ -123,3 +132,19 @@ sealed interface OlxApiError {
 }
 
 class OlxApiException(val error: OlxApiError) : IllegalStateException(error.userMessage)
+
+/** Stable analytics `reason` for an auth/account failure. Enum-like strings only, never the message. */
+val OlxApiError.analyticsReason: String
+    get() = when (this) {
+        is OlxApiError.AuthorizationError -> code
+        is OlxApiError.MissingCode -> "missing_code"
+        is OlxApiError.InvalidState -> "invalid_state"
+        is OlxApiError.InvalidClient -> "invalid_client"
+        is OlxApiError.InvalidGrant -> "invalid_grant"
+        is OlxApiError.InvalidToken -> "invalid_token"
+        is OlxApiError.InsufficientScope -> "insufficient_scope"
+        is OlxApiError.NetworkFailure -> "network_failure"
+        is OlxApiError.RateLimited -> "rate_limited"
+        is OlxApiError.ValidationError -> "validation_error"
+        is OlxApiError.Unknown -> "unknown"
+    }

@@ -175,8 +175,9 @@ class OlxAuthRepository internal constructor(
     private fun validateCallback(callback: OlxAuthCallback, pendingSession: OlxPendingAuthSession) {
         if (callback.error != null) {
             throw OlxApiException(
-                OlxApiError.Unknown(
-                    callback.errorDescription ?: "OLX returned an authorization error: ${callback.error}.",
+                OlxApiError.AuthorizationError(
+                    code = callback.error,
+                    userMessage = callback.errorDescription ?: "OLX returned an authorization error: ${callback.error}.",
                 ),
             )
         }

@@ -3,16 +3,27 @@ package com.sirelon.sellsnap.analytics
 object AnalyticsEvents {
     const val AUTH_STARTED = "auth_started"
     const val AUTH_COMPLETED = "auth_completed"
+
+    /**
+     * `reason` is OLX's OAuth error code from the redirect when it sent one (`access_denied`,
+     * `server_error`, ...), otherwise the `OlxApiError` mapping (`missing_code`, `invalid_state`,
+     * `invalid_grant`, `network_failure`, ...), `prepare_failed` when building the authorization
+     * request threw, or `unknown`. `country` is the OLX market the seller chose.
+     */
     const val AUTH_FAILED = "auth_failed"
 
     /**
-     * The seller cancelled the OLX login sheet - never fired for a real auth failure. For the
-     * first-connect flow this is the missing terminal event against `auth_started`: before, a
-     * cancelled attempt looked identical to one that never happened. Add-account/reconnect logs
-     * this too, but against its own `account_add_started` rather than `auth_started`, since that
-     * flow never logs the latter. iOS gets a cancel from `ASWebAuthenticationSession`; Android
-     * infers it from the app resuming after the login tab with no OLX callback (see
-     * OlxAuthReturnTracker).
+     * The OLX login closed without a callback - never fired for a real auth failure. For the
+     * first-connect flow it is the terminal event against `auth_started`. Add-account/reconnect
+     * logs this too, but against its own `account_add_started` rather than `auth_started`, since
+     * that flow never logs the latter.
+     *
+     * `reason` is `user_cancelled` (iOS: `ASWebAuthenticationSession` reports
+     * `ASWebAuthenticationSessionErrorCodeCanceledLogin`; Android: the app resumed after the login
+     * tab with no OLX callback, see OlxAuthReturnTracker) or `system_cancelled` (iOS: any other
+     * `ASWebAuthenticationSession` error; Android has no equivalent signal). `country` is the OLX
+     * market the seller chose. `duration_ms` is the time since `auth_started` and is present only
+     * in the first-connect flow.
      */
     const val AUTH_ABANDONED = "auth_abandoned"
 
