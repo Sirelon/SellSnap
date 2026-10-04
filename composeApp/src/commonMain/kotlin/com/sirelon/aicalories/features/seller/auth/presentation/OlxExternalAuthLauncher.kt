@@ -9,7 +9,8 @@ enum class OlxAuthDismissReason(val analyticsValue: String) {
 
     /**
      * The system ended it: any other `ASWebAuthenticationSession` error (presentation context
-     * missing or invalid). Android has no equivalent signal.
+     * missing or invalid; Android has no equivalent signal), or the process was killed while the
+     * login was open, reported on the next start.
      */
     SystemCancelled("system_cancelled"),
 }
