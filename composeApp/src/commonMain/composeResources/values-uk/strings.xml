@@ -50,7 +50,6 @@
     <string name="tip_lighting">Гарне світло = кращий результат</string>
     <string name="tip_angles">Знімайте з кількох кутів</string>
     <string name="tip_defects">Не ховайте подряпини — покупці люблять чесність</string>
-    <string name="take_photo">Зробити фото</string>
 
     <!-- Preview Ad Screen -->
     <string name="publish_on_olx">Опублікувати на OLX</string>
@@ -66,6 +65,7 @@
     <string name="ad_price_ai_estimated_range">ШІ радить: %1$s – %2$s</string>
     <string name="min_characters">Хоча б %1$d символів, будь ласка</string>
     <string name="character_count_range">%1$d/%2$d</string>
+    <string name="images_carousel_counter">%1$d/%2$d</string>
     <string name="change_button">Змінити</string>
 
     <!-- Analyze Screen -->
@@ -145,7 +145,6 @@
     <string name="my_ads_status_unknown">Невідомо</string>
 
     <!-- Photos Section -->
-    <string name="photos_count_format">%1$d/%2$d фото</string>
     <string name="add_photo_cd">Додати фото</string>
     <string name="add_photo_label">Додати</string>
     <string name="remove_photo_cd">Видалити фото</string>
@@ -159,7 +158,6 @@
     <string name="retry">Повторити</string>
 
     <!-- Analyze Screen -->
-    <string name="add_photos_title">Додати фото</string>
 
     <!-- Generate Ad Screen -->
     <string name="generate_with_ai">Створити з ШІ</string>

@@ -18,15 +18,20 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import com.sirelon.sellsnap.designsystem.AppAsyncImage
 import com.sirelon.sellsnap.designsystem.AppDimens
 import com.sirelon.sellsnap.designsystem.AppTheme
+import com.sirelon.sellsnap.designsystem.Pill
 import com.sirelon.sellsnap.generated.resources.Res
+import com.sirelon.sellsnap.generated.resources.ic_camera
+import com.sirelon.sellsnap.generated.resources.images_carousel_counter
 import com.sirelon.sellsnap.generated.resources.img_seller_empty_photo
 import org.jetbrains.compose.resources.painterResource
+import org.jetbrains.compose.resources.stringResource
 
 private val PhotoCarouselShape = RoundedCornerShape(
     topStart = 0.dp,
@@ -71,6 +76,20 @@ fun ImagesCarousel(
         }
 
         if (images.size > 1) {
+            Pill(
+                text = stringResource(
+                    Res.string.images_carousel_counter,
+                    pagerState.currentPage + 1,
+                    images.size,
+                ),
+                iconResource = Res.drawable.ic_camera,
+                color = Color.White,
+                bgColor = Color.Black.copy(alpha = 0.45f),
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(AppDimens.Spacing.xl3),
+            )
+
             PageDots(
                 pageCount = images.size,
                 currentPage = pagerState.currentPage,
@@ -114,8 +133,6 @@ private fun EmptyPhotoCarousel(modifier: Modifier = Modifier) {
         )
     }
 }
-
-// FIXME: Make it interactable (count of images in some slider, i.e.)
 
 @PreviewLightDark
 @Composable

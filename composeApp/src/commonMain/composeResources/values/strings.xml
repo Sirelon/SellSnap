@@ -49,7 +49,6 @@
     <string name="tip_lighting">Good light = better results</string>
     <string name="tip_angles">Shoot from a few angles</string>
     <string name="tip_defects">Don't hide the scratches — buyers love honesty</string>
-    <string name="take_photo">Take Photo</string>
 
     <!-- Preview Ad Screen -->
     <string name="publish_on_olx">Publish on OLX</string>
@@ -64,6 +63,7 @@
     <string name="validation_errors_more">…and %1$d more</string>
     <string name="min_characters">At least %1$d characters, please</string>
     <string name="character_count_range">%1$d/%2$d</string>
+    <string name="images_carousel_counter">%1$d/%2$d</string>
     <string name="change_button">Change</string>
 
     <!-- Analyze Screen -->
@@ -72,7 +72,6 @@
     <!-- Team Screen -->
 
     <!-- Photos Section -->
-    <string name="photos_count_format">%1$d/%2$d photos</string>
     <string name="add_photo_cd">Add photo</string>
     <string name="add_photo_label">Add</string>
     <string name="remove_photo_cd">Remove photo</string>
@@ -157,7 +156,6 @@
     <string name="retry">Retry</string>
 
     <!-- Analyze Screen -->
-    <string name="add_photos_title">Add Photos</string>
 
     <!-- Generate Ad Screen -->
     <string name="generate_with_ai">Generate with AI</string>
