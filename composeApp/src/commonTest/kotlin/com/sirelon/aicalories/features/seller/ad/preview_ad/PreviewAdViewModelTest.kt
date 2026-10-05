@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModelStore
 import com.sirelon.sellsnap.analytics.Analytics
 import com.sirelon.sellsnap.analytics.AnalyticsEvents
 import com.sirelon.sellsnap.features.auth.data.InMemoryOlxKeyValueStore
+import com.sirelon.sellsnap.features.common.presentation.awaitEffect
 import com.sirelon.sellsnap.features.media.upload.DraftMediaFileStore
 import com.sirelon.sellsnap.features.media.upload.DraftPhoto
 import com.sirelon.sellsnap.features.media.upload.PersistedDraftPhoto
@@ -262,6 +263,31 @@ class PreviewAdViewModelTest {
             "the store-review gate counts live listings, so a deduplicated double-tap must count once",
         )
     }
+    @Test
+    fun `copying a listing counts once however often it is copied and asks only after the feedback`() =
+        runTest(testDispatcher) {
+            val accountStore = OlxAccountStore(InMemoryOlxKeyValueStore(), testJson)
+            val harness = harness(buildEngine { addHandler { respond("{}", HttpStatusCode.OK, jsonHeaders()) } }, accountStore)
+            repeat(4) { harness.reviewPromptStore.incrementCopiedListingCount() }
+            harness.reviewPromptCoordinator.isReturningSession = true
+            val viewModel = buildViewModel(harness)
+            viewModel.onEvent(PreviewAdEvent.ListingCopied)
+            viewModel.onEvent(PreviewAdEvent.ListingCopied)
+            advanceUntilIdle()
+            assertEquals(5, harness.reviewPromptStore.copiedListingCount())
+            assertTrue(harness.analytics.events.isEmpty(), "no ask at the tap")
+
+            viewModel.onEvent(PreviewAdEvent.CopyFeedbackFinished)
+            viewModel.onEvent(PreviewAdEvent.CopyFeedbackFinished)
+            advanceUntilIdle()
+            viewModel.effects.awaitEffect<PreviewAdEffect.RequestStoreReview>()
+            // The second finish is not decided again: a repeat would log a cooldown skip.
+            assertEquals(
+                listOf(AnalyticsEvents.REVIEW_PROMPT_REQUESTED),
+                harness.analytics.events.map { it.first },
+            )
+        }
+
     @Test
     fun `publish refuses to POST while the category's attributes have not loaded`() = runTest(testDispatcher) {
         val accountStore = OlxAccountStore(InMemoryOlxKeyValueStore(), testJson)

@@ -17,7 +17,10 @@ import platform.UIKit.UIWindow
 import platform.darwin.NSObject
 
 @Composable
-actual fun rememberOlxAuthLauncher(forceReauth: Boolean, onDismissed: () -> Unit): (String) -> Unit {
+actual fun rememberOlxAuthLauncher(
+    forceReauth: Boolean,
+    onDismissed: (OlxAuthDismissReason) -> Unit,
+): (String) -> Unit {
     val holder = remember { SessionHolder() }
     // onDismissed is a fresh lambda from the caller on every recomposition (App.kt closes over
     // `analytics`) - read it through a Composable-updated reference instead of a remember key, so
@@ -35,10 +38,12 @@ actual fun rememberOlxAuthLauncher(forceReauth: Boolean, onDismissed: () -> Unit
                     val resultUrl = callbackUrl?.absoluteString
                     when {
                         resultUrl != null -> OlxAuthCallbackBridge.publishCallback(resultUrl)
-                        // Only a genuine user cancel counts as abandoned - any other failure
-                        // (presentation context, network) is a real error, not left silently
-                        // unresolved by SIR-123's new dismiss handling.
-                        error?.code == ASWebAuthenticationSessionErrorCodeCanceledLogin -> currentOnDismissed()
+                        // Only a canceled login is a user cancel. Any other error means the session
+                        // ended without the seller finishing - logged as `system_cancelled`, never
+                        // as a user cancel.
+                        error?.code == ASWebAuthenticationSessionErrorCodeCanceledLogin ->
+                            currentOnDismissed(OlxAuthDismissReason.UserCancelled)
+                        error != null -> currentOnDismissed(OlxAuthDismissReason.SystemCancelled)
                         else -> Unit
                     }
                     holder.session = null

@@ -6,12 +6,16 @@ import com.sirelon.sellsnap.analytics.AnalyticsEvents
 import com.sirelon.sellsnap.features.common.presentation.BaseViewModel
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAuthRepository
 import com.sirelon.sellsnap.features.seller.auth.data.OlxCountryStore
+import com.sirelon.sellsnap.features.seller.auth.domain.OlxApiException
+import com.sirelon.sellsnap.features.seller.auth.domain.analyticsReason
 import com.sirelon.sellsnap.features.seller.profile.data.SellerAccountRepository
 import com.sirelon.sellsnap.generated.resources.Res
 import com.sirelon.sellsnap.generated.resources.error_olx_auth_complete_failed
 import com.sirelon.sellsnap.generated.resources.error_olx_auth_prepare_failed
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.getString
+import kotlin.time.TimeMark
+import kotlin.time.TimeSource
 
 class SellerAuthViewModel(
     private val authRepository: OlxAuthRepository,
@@ -22,6 +26,9 @@ class SellerAuthViewModel(
     private val analytics: Analytics,
     private val olxCountryStore: OlxCountryStore,
 ) : BaseViewModel<SellerAuthContract.SellerAuthState, SellerAuthContract.SellerAuthEvent, SellerAuthContract.SellerAuthEffect>() {
+
+    // Set when auth_started is logged; auth_abandoned reports the time since then.
+    private var authStartedAt: TimeMark? = null
 
     override fun initialState(): SellerAuthContract.SellerAuthState =
         SellerAuthContract.SellerAuthState()
@@ -60,8 +67,12 @@ class SellerAuthViewModel(
                 postEffect(SellerAuthContract.SellerAuthEffect.LaunchBrowser(TERMS_AND_CONDITIONS_URL))
             }
 
-            SellerAuthContract.SellerAuthEvent.OlxAuthDismissed -> {
-                analytics.logEvent(AnalyticsEvents.AUTH_ABANDONED)
+            is SellerAuthContract.SellerAuthEvent.OlxAuthDismissed -> {
+                analytics.logEvent(
+                    AnalyticsEvents.AUTH_ABANDONED,
+                    authParams(reason = event.reason.analyticsValue) + abandonDuration(),
+                )
+                viewModelScope.launch { authRepository.abandonPendingAuthorization() }
                 // First-connect only (this VM backs the landing/onboarding flow, never Profile's
                 // add-account). Guest mode is offered, not entered: switching the moment the login
                 // closed read as the app deciding for the seller (owner, 2026-09-25). Never
@@ -109,8 +120,8 @@ class SellerAuthViewModel(
                     }
                     postEffect(SellerAuthContract.SellerAuthEffect.OpenHome)
                 }
-                .onFailure {
-                    analytics.logEvent(AnalyticsEvents.AUTH_FAILED)
+                .onFailure { error ->
+                    analytics.logEvent(AnalyticsEvents.AUTH_FAILED, authParams(reason = error.authFailureReason()))
                     showError(getString(Res.string.error_olx_auth_complete_failed))
                 }
         }
@@ -118,6 +129,7 @@ class SellerAuthViewModel(
 
     private suspend fun startAuthorization() {
         analytics.logEvent(AnalyticsEvents.AUTH_STARTED)
+        authStartedAt = TimeSource.Monotonic.markNow()
         setState {
             it.copy(
                 status = SellerAuthContract.SellerAuthStatus.Processing,
@@ -135,10 +147,19 @@ class SellerAuthViewModel(
                 postEffect(SellerAuthContract.SellerAuthEffect.LaunchOlxAuthFlow(request.url))
             }
             .onFailure {
-                analytics.logEvent(AnalyticsEvents.AUTH_FAILED)
+                analytics.logEvent(AnalyticsEvents.AUTH_FAILED, authParams(reason = "prepare_failed"))
                 showError(getString(Res.string.error_olx_auth_prepare_failed))
             }
     }
+
+    private fun authParams(reason: String): Map<String, Any> =
+        mapOf("reason" to reason, "country" to olxCountryStore.current.code)
+
+    private fun abandonDuration(): Map<String, Any> =
+        authStartedAt?.let { mapOf("duration_ms" to it.elapsedNow().inWholeMilliseconds) }.orEmpty()
+
+    private fun Throwable.authFailureReason(): String =
+        (this as? OlxApiException)?.error?.analyticsReason ?: "unknown"
 
     private fun showError(message: String) {
         viewModelScope.launch {

@@ -9,6 +9,7 @@ import com.sirelon.sellsnap.analytics.Analytics
 import com.sirelon.sellsnap.analytics.AnalyticsEvents
 import com.sirelon.sellsnap.features.common.presentation.BaseViewModel
 import com.sirelon.sellsnap.features.review.ReviewPromptCoordinator
+import com.sirelon.sellsnap.features.review.ReviewPromptTrigger
 import com.sirelon.sellsnap.features.seller.ad.AdFlowTimerStore
 import com.sirelon.sellsnap.features.seller.ad.AdvertisementWithAttributes
 import com.sirelon.sellsnap.features.seller.ad.ScreenshotPlaceholderAccount
@@ -40,6 +41,7 @@ import com.sirelon.sellsnap.features.seller.auth.data.OlxCountryStore
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxApiError
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxApiException
 import com.sirelon.sellsnap.features.seller.auth.domain.SellerSessionMode
+import com.sirelon.sellsnap.features.seller.auth.domain.analyticsReason
 import com.sirelon.sellsnap.features.seller.categories.data.CategoriesRepository
 import com.sirelon.sellsnap.features.seller.categories.data.UnsupportedOlxCategoryException
 import com.sirelon.sellsnap.features.seller.categories.domain.AttributeInputType
@@ -196,6 +198,12 @@ class PreviewAdViewModel internal constructor(
     // saved state - dropped along with the rest of the ViewModel once the flow moves on, which is
     // fine since undo only needs to survive this sheet being open.
     private val removedImages = mutableListOf<RemovedImage>()
+
+    // One preview is one listing: the review gate counts it once and decides once, however many
+    // times the copy pills are tapped. Not saved - a ViewModel recreated after process death is
+    // allowed to count the same listing again, which can only make the ask slightly earlier.
+    private var listingCopyCounted = false
+    private var copyReviewDecided = false
 
     init {
         combine(
@@ -425,6 +433,21 @@ class PreviewAdViewModel internal constructor(
                             add(restored.index.coerceIn(0, size), restored.url)
                         }
                         it.copy(images = images, canUndoRemoveImage = canUndoMore)
+                    }
+                }
+            }
+
+            PreviewAdEvent.ListingCopied -> if (!listingCopyCounted) {
+                listingCopyCounted = true
+                // A DataStore failure must not surface from a copy tap.
+                viewModelScope.launch { runCatching { reviewPromptCoordinator.onListingCopied() } }
+            }
+
+            PreviewAdEvent.CopyFeedbackFinished -> if (listingCopyCounted && !copyReviewDecided) {
+                copyReviewDecided = true
+                viewModelScope.launch {
+                    if (reviewPromptCoordinator.requestIfEligible(ReviewPromptTrigger.CopiedListing)) {
+                        postEffect(PreviewAdEffect.RequestStoreReview)
                     }
                 }
             }
@@ -744,6 +767,7 @@ class PreviewAdViewModel internal constructor(
         // these can sit on top of an advert that is live.
         is OlxApiError.NetworkFailure,
         is OlxApiError.Unknown,
+        is OlxApiError.AuthorizationError,
         null,
         -> true
     }
@@ -781,19 +805,14 @@ class PreviewAdViewModel internal constructor(
     // field because that is what distinguishes "seller typed something wrong" from "OLX enforces
     // an attribute its own categories API reports as optional".
     private fun publishFailureReason(error: Throwable, olxError: OlxApiError?): String = when (olxError) {
+        // Carries the field, which the shared map does not.
         is OlxApiError.ValidationError -> "validation:${olxError.field}"
-        is OlxApiError.InvalidGrant -> "invalid_grant"
-        is OlxApiError.InvalidToken -> "invalid_token"
-        is OlxApiError.InvalidClient -> "invalid_client"
-        is OlxApiError.InsufficientScope -> "insufficient_scope"
-        is OlxApiError.RateLimited -> "rate_limited"
+        // Shipped as `network` here; the shared map says `network_failure`.
         is OlxApiError.NetworkFailure -> "network"
-        is OlxApiError.MissingCode -> "missing_code"
-        is OlxApiError.InvalidState -> "invalid_state"
-        is OlxApiError.Unknown -> "unknown"
         // Not every throwable reaching here is wrapped - a dropped connection surfaces as the raw
         // engine exception (observed: DarwinHttpRequestException, NSURLErrorNetworkConnectionLost).
         null -> error::class.simpleName ?: "unknown"
+        else -> olxError.analyticsReason
     }
 
     /**

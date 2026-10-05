@@ -18,6 +18,15 @@ class ReviewPromptStoreTest {
     }
 
     @Test
+    fun `copied listing count starts at zero and increments`() = runTest {
+        val store = ReviewPromptStore(InMemoryOlxKeyValueStore())
+        assertEquals(0, store.copiedListingCount())
+        store.incrementCopiedListingCount()
+        assertEquals(1, store.copiedListingCount())
+        assertEquals(0, store.publishCount())
+    }
+
+    @Test
     fun `prompt timestamp round-trips`() = runTest {
         val store = ReviewPromptStore(InMemoryOlxKeyValueStore())
         assertNull(store.lastPromptEpochSeconds())

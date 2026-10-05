@@ -3,16 +3,28 @@ package com.sirelon.sellsnap.analytics
 object AnalyticsEvents {
     const val AUTH_STARTED = "auth_started"
     const val AUTH_COMPLETED = "auth_completed"
+
+    /**
+     * `reason` is OLX's OAuth error code from the redirect when it sent one (`access_denied`,
+     * `server_error`, ...), otherwise the `OlxApiError` mapping (`missing_code`, `invalid_state`,
+     * `invalid_grant`, `network_failure`, ...), `prepare_failed` when building the authorization
+     * request threw, or `unknown`. `country` is the OLX market the seller chose.
+     */
     const val AUTH_FAILED = "auth_failed"
 
     /**
-     * The seller cancelled the OLX login sheet - never fired for a real auth failure. For the
-     * first-connect flow this is the missing terminal event against `auth_started`: before, a
-     * cancelled attempt looked identical to one that never happened. Add-account/reconnect logs
-     * this too, but against its own `account_add_started` rather than `auth_started`, since that
-     * flow never logs the latter. iOS gets a cancel from `ASWebAuthenticationSession`; Android
-     * infers it from the app resuming after the login tab with no OLX callback (see
-     * OlxAuthReturnTracker).
+     * The OLX login closed without a callback - never fired for a real auth failure. For the
+     * first-connect flow it is the terminal event against `auth_started`. Add-account/reconnect
+     * logs this too, but against its own `account_add_started` rather than `auth_started`, since
+     * that flow never logs the latter.
+     *
+     * `reason` is `user_cancelled` (iOS: `ASWebAuthenticationSession` reports
+     * `ASWebAuthenticationSessionErrorCodeCanceledLogin`; Android: the app resumed after the login
+     * tab with no OLX callback, see OlxAuthReturnTracker) or `system_cancelled` (iOS: any other
+     * `ASWebAuthenticationSession` error; either platform: the process was killed with the login
+     * open, reported on the next start). `country` is the OLX market the seller chose.
+     * `duration_ms` is present in the first-connect flow (time since `auth_started`) and for a
+     * login reported on the next start (wall-clock from the authorization request, whole seconds).
      */
     const val AUTH_ABANDONED = "auth_abandoned"
 
@@ -26,11 +38,17 @@ object AnalyticsEvents {
      * `model_ms` and - logged-in flow only - `attributes_ms` (category suggestion + attribute
      * fetch + fill). SIR-121: rebuilding "where does the time go" from event timestamps and
      * storage metadata is what these params replace.
+     *
+     * Also `retry_count` (Int, 0 or 1): 1 when the model call was repeated once after a timeout,
+     * a lost connection or an empty answer. A run that succeeded with `retry_count` 1 is a seller
+     * the retry saved.
      */
     const val AD_GENERATION_SUCCEEDED = "ad_generation_succeeded"
 
-    /** Same stage params as [AD_GENERATION_SUCCEEDED], plus `reason`. Only the stages that
-     * finished before the failure are present. */
+    /** Same stage params as [AD_GENERATION_SUCCEEDED] (including `retry_count`), plus `reason`.
+     * Only the stages that finished before the failure are present. `reason` is one of
+     * `unsupported_category`, `empty_output` (no title or price, after the retry), `incomplete_ad`
+     * (no description), `timeout`, `openai_error` or `other`. */
     const val AD_GENERATION_FAILED = "ad_generation_failed"
 
     // The model read the photos and declined to write a listing. Deliberately not
@@ -85,7 +103,10 @@ object AnalyticsEvents {
     const val AD_PREVIEW_ATTRIBUTES_LOADED = "ad_preview_attributes_loaded"
 
     // Multi-account (SIR-83). No event may carry an email, OLX user id, account name, or token -
-    // only localIndex/counts, per PRD §11.
+    // only localIndex/counts, per PRD §11. First-connect lands through the same addAccount path as
+    // add-account/reconnect, so a seller's first login fires account_add_started/completed/failed
+    // (with existing_account_count = 0) alongside auth_started/completed/failed. Count a login
+    // funnel in one family; summing both double-counts first-connect.
     const val ACCOUNT_SWITCHED = "account_switched"
     const val ACCOUNT_ADD_STARTED = "account_add_started"
     const val ACCOUNT_ADD_COMPLETED = "account_add_completed"
@@ -159,9 +180,16 @@ object AnalyticsEvents {
     // the skip `reason` histogram is the only way to tell a gate that is working from one that has
     // silently starved. Cross-check the actual counts in App Store Connect / Play Console.
 
-    /** Carries `publish_count` and `returning_session`. */
+    /**
+     * Carries `trigger` (`publish` | `copied_listing`), `returning_session`, and the Int count the
+     * trigger was judged on: `publish_count` for `publish`, `copied_listing_count` for `copied_listing`.
+     */
     const val REVIEW_PROMPT_REQUESTED = "review_prompt_requested"
 
-    /** Carries `reason` - see ReviewPromptSkipReason. */
+    /**
+     * Carries `trigger` (`publish` | `copied_listing`) and `reason` - see ReviewPromptSkipReason:
+     * `too_few_publishes` and `install_session` for `publish`, `too_few_copied_listings` for
+     * `copied_listing`, and `recent_error`, `whats_new`, `cooldown` for either.
+     */
     const val REVIEW_PROMPT_SKIPPED = "review_prompt_skipped"
 }

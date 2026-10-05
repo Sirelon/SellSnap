@@ -4,8 +4,9 @@ import com.sirelon.sellsnap.datastore.KeyValueStore
 import com.sirelon.sellsnap.datastore.createKeyValueStore
 
 /**
- * The two numbers the store-review gate needs across launches: how many adverts this seller has
- * published, and when the native review prompt was last asked for.
+ * The numbers the store-review gate needs across launches: how many adverts this seller has
+ * published, how many generated listings were copied from the preview, and when the native review
+ * prompt was last asked for.
  *
  * Neither platform reports whether the prompt was actually shown or whether a rating was left, so
  * "asked for" is the most that can ever be recorded here - see [ReviewPromptCoordinator].
@@ -21,6 +22,13 @@ class ReviewPromptStore internal constructor(
         storage.putString(KEY_PUBLISH_COUNT, (publishCount() + 1).toString())
     }
 
+    suspend fun copiedListingCount(): Int =
+        storage.getString(KEY_COPIED_LISTING_COUNT)?.toIntOrNull() ?: 0
+
+    suspend fun incrementCopiedListingCount() {
+        storage.putString(KEY_COPIED_LISTING_COUNT, (copiedListingCount() + 1).toString())
+    }
+
     suspend fun lastPromptEpochSeconds(): Long? =
         storage.getString(KEY_LAST_PROMPT_AT)?.toLongOrNull()
 
@@ -30,6 +38,7 @@ class ReviewPromptStore internal constructor(
 
     private companion object {
         const val KEY_PUBLISH_COUNT = "successful_publish_count"
+        const val KEY_COPIED_LISTING_COUNT = "copied_listing_count"
         const val KEY_LAST_PROMPT_AT = "last_prompt_epoch_seconds"
     }
 }

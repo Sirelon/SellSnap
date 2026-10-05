@@ -23,7 +23,7 @@ interface SellerAuthContract {
         data object ContinueAsGuestClicked : SellerAuthEvent
         data object OnTermsClicked : SellerAuthEvent
         data object OnPrivacyClicked : SellerAuthEvent
-        data object OlxAuthDismissed : SellerAuthEvent
+        data class OlxAuthDismissed(val reason: OlxAuthDismissReason) : SellerAuthEvent
         data object LoginClosedGuestChosen : SellerAuthEvent
         data object LoginClosedSheetDismissed : SellerAuthEvent
         data class CountrySelected(val country: OlxCountry) : SellerAuthEvent

@@ -15,12 +15,10 @@ import com.sirelon.sellsnap.features.seller.openai.OpenAIClient
 import com.sirelon.sellsnap.features.seller.profile.di.profileModule
 import com.sirelon.sellsnap.features.seller.settings.di.settingsModule
 import com.sirelon.sellsnap.features.whatsnew.di.whatsNewModule
-import com.sirelon.sellsnap.network.ApiTokenProvider
-import com.sirelon.sellsnap.network.createHttpClient
 import com.sirelon.sellsnap.network.createOpenAI
+import com.sirelon.sellsnap.network.openAIEndpointModule
 import com.sirelon.sellsnap.startup.appStartupModule
 import com.sirelon.sellsnap.supabase.SupabaseClient
-import com.sirelon.sellsnap.supabase.SupabaseConfig
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -55,11 +53,7 @@ val appModule = module {
 }
 
 val networkModule = module {
-    single {
-        ApiTokenProvider()
-            .apply { token = SupabaseConfig.OPENAI_KEY }
-    }
-    single { createHttpClient(get()) }
+    includes(openAIEndpointModule)
     single {
         Json {
             ignoreUnknownKeys = true
@@ -68,7 +62,7 @@ val networkModule = module {
             explicitNulls = false
         }
     }
-    single { createOpenAI(get()) }
+    single { createOpenAI(endpoint = get()) }
     single { OpenAIClient(openAI = get(), json = get(), compactJson = get()) }
     singleOf(::SupabaseClient)
 }

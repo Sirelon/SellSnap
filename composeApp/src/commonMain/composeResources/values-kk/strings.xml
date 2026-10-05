@@ -49,7 +49,6 @@
     <string name="tip_lighting">Жақсы жарық = жақсы нәтиже</string>
     <string name="tip_angles">Бірнеше бұрыштан түсір</string>
     <string name="tip_defects">Тырнақшаларды жасырма — сатып алушылар адалдықты бағалайды</string>
-    <string name="take_photo">Фото түсіру</string>
 
     <!-- Preview Ad Screen -->
     <string name="publish_on_olx">OLX-те жариялау</string>
@@ -64,13 +63,13 @@
     <string name="validation_errors_more">…және тағы %1$d</string>
     <string name="min_characters">Кемінде %1$d таңба болуы керек</string>
     <string name="character_count_range">%1$d/%2$d</string>
+    <string name="images_carousel_counter">%1$d/%2$d</string>
     <string name="change_button">Өзгерту</string>
 
     <!-- Analyze Screen -->
     <string name="bullet_item">• %1$s</string>
 
     <!-- Photos Section -->
-    <string name="photos_count_format">%1$d/%2$d фото</string>
     <string name="add_photo_cd">Фото қосу</string>
     <string name="add_photo_label">Қосу</string>
     <string name="remove_photo_cd">Фотоны жою</string>
@@ -156,7 +155,6 @@
     <string name="retry">Қайталап көру</string>
 
     <!-- Analyze Screen -->
-    <string name="add_photos_title">Фото қосу</string>
 
     <!-- Generate Ad Screen -->
     <string name="generate_with_ai">AI арқылы жасау</string>

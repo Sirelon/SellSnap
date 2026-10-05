@@ -29,13 +29,16 @@ import com.sirelon.sellsnap.features.seller.auth.data.OlxAuthCallbackBridge
  * app resuming with no new OLX callback (SIR-123).
  */
 @Composable
-actual fun rememberOlxAuthLauncher(forceReauth: Boolean, onDismissed: () -> Unit): (String) -> Unit {
+actual fun rememberOlxAuthLauncher(
+    forceReauth: Boolean,
+    onDismissed: (OlxAuthDismissReason) -> Unit,
+): (String) -> Unit {
     val context = LocalContext.current
     val tracker = remember { OlxAuthReturnTracker { OlxAuthCallbackBridge.publishedCount } }
     val currentOnDismissed by rememberUpdatedState(onDismissed)
 
     LifecycleResumeEffect(tracker) {
-        if (tracker.onResumed()) currentOnDismissed()
+        if (tracker.onResumed()) currentOnDismissed(OlxAuthDismissReason.UserCancelled)
         onPauseOrDispose { }
     }
 

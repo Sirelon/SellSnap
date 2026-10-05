@@ -57,6 +57,25 @@ class GeneratedAdMapperTest {
     }
 
     @Test
+    fun aPriceOfZeroFailsAndCountsAsEmptyOutput() {
+        val error = assertFailsWith<IncompleteGeneratedAdException> {
+            mapper.mapToDomain(ad(title = "", suggestedPrice = 0f), images)
+        }
+
+        assertEquals(listOf("title", "suggestedPrice"), error.missing)
+        assertTrue(error.isEmptyOutput)
+    }
+
+    @Test
+    fun aMissingDescriptionAloneIsNotEmptyOutput() {
+        val error = assertFailsWith<IncompleteGeneratedAdException> {
+            mapper.mapToDomain(ad(description = null), images)
+        }
+
+        assertEquals(false, error.isEmptyOutput)
+    }
+
+    @Test
     fun everyMissingFieldIsReportedTogether() {
         val error = assertFailsWith<IncompleteGeneratedAdException> {
             mapper.mapToDomain(ad(title = null, description = "", suggestedPrice = null), images)
