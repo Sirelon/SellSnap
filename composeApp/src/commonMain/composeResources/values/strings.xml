@@ -125,6 +125,10 @@
     <string name="whats_new_empty_title">Nothing here yet</string>
     <string name="whats_new_empty_description">Check back later for release notes.</string>
 
+    <!-- Announcements -->
+    <string name="announcement_ok">OK</string>
+    <string name="announcement_close">Close</string>
+
     <!-- My OLX Ads -->
     <string name="nav_my_ads">My ads</string>
     <string name="my_ads_screen_title">My OLX ads</string>

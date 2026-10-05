@@ -123,6 +123,10 @@
     <string name="whats_new_empty_title">Все още няма нищо</string>
     <string name="whats_new_empty_description">Проверете по-късно за бележки по изданието.</string>
 
+    <!-- Announcements -->
+    <string name="announcement_ok">ОК</string>
+    <string name="announcement_close">Затвори</string>
+
     <!-- My OLX Ads -->
     <string name="nav_my_ads">Моите обяви</string>
     <string name="my_ads_screen_title">Моите OLX обяви</string>

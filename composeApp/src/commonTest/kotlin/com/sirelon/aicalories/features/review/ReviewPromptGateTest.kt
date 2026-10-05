@@ -11,6 +11,7 @@ private fun decide(
     isReturningSession: Boolean = true,
     hadPublishErrorThisSession: Boolean = false,
     whatsNewShownThisSession: Boolean = false,
+    announcementShownThisSession: Boolean = false,
     lastPromptEpochSeconds: Long? = null,
 ) = reviewPromptDecision(
     trigger = trigger,
@@ -18,6 +19,7 @@ private fun decide(
     isReturningSession = isReturningSession,
     hadPublishErrorThisSession = hadPublishErrorThisSession,
     whatsNewShownThisSession = whatsNewShownThisSession,
+    announcementShownThisSession = announcementShownThisSession,
     lastPromptEpochSeconds = lastPromptEpochSeconds,
     nowEpochSeconds = Now,
 )
@@ -67,6 +69,14 @@ class ReviewPromptGateTest {
         assertSkip(
             ReviewPromptSkipReason.WhatsNew,
             decide(whatsNewShownThisSession = true),
+        )
+    }
+
+    @Test
+    fun `an announcement is the one interruption this session gets`() {
+        assertSkip(
+            ReviewPromptSkipReason.Announcement,
+            decide(announcementShownThisSession = true),
         )
     }
 

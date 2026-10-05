@@ -55,6 +55,9 @@ import com.sirelon.sellsnap.designsystem.screens.LoadingOverlay
 import com.sirelon.sellsnap.di.appModule
 import com.sirelon.sellsnap.di.networkModule
 import com.sirelon.sellsnap.features.consent.ConsentScreen
+import com.sirelon.sellsnap.features.announcements.presentation.AnnouncementViewModel
+import com.sirelon.sellsnap.features.announcements.ui.AnnouncementDialog
+import com.sirelon.sellsnap.features.review.ReviewPromptCoordinator
 import com.sirelon.sellsnap.features.review.StoreReviewPromptEffect
 import com.sirelon.sellsnap.features.review.rememberStoreReviewRequester
 import com.sirelon.sellsnap.features.seller.ad.AdvertisementWithAttributes
@@ -175,6 +178,8 @@ fun App() {
             // merge, since the entries that read them never had per-entry ViewModelStore scoping
             // either.
             val whatsNewViewModel: WhatsNewViewModel = koinViewModel()
+            val announcementViewModel: AnnouncementViewModel = koinViewModel()
+            val reviewPromptCoordinator: ReviewPromptCoordinator = koinInject()
             var pendingCategory by remember { mutableStateOf<OlxCategory?>(null) }
             var isGeneratingAd by remember { mutableStateOf(false) }
             var isPreviewPublishing by remember { mutableStateOf(false) }
@@ -210,10 +215,23 @@ fun App() {
             // doesn't change selectedRootTab - never re-fires this and re-adds a prompt the seller
             // just dismissed before its async "seen" write has landed.
             val isInSellerFlow = selectedRootTab != null
+            //
+            // One launch dialog per process: an announcement goes first, else What's New, and
+            // whichever is shown sets the coordinator flag so a later run of this effect (the flag
+            // flips false -> true on every full-screen push and pop) does nothing.
             LaunchedEffect(isInSellerFlow) {
-                if (isInSellerFlow && whatsNewViewModel.shouldShowDialog()) {
+                if (!isInSellerFlow || reviewPromptCoordinator.launchPromptShownThisSession) return@LaunchedEffect
+                if (announcementViewModel.shouldShow()) return@LaunchedEffect
+                if (whatsNewViewModel.shouldShowDialog()) {
                     navVm.backStack.add(AppKey.WhatsNewPrompt)
                 }
+            }
+            val announcementState by announcementViewModel.state.collectAsStateWithLifecycle()
+            announcementState.announcement?.let { announcement ->
+                AnnouncementDialog(
+                    announcement = announcement,
+                    onDismiss = announcementViewModel::dismiss,
+                )
             }
             fun switchRootTab(tab: SellerRootTab) {
                 if (selectedRootTab == tab) return
