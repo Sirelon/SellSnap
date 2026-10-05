@@ -226,6 +226,7 @@ Rules: `.claude/rules/edge-to-edge.md` — loads when you open a `ui/`, `*Screen
 - Camera launcher uses expect/actual style placement under `camera/`.
 - Image conversion is platform-specific under `features/media/ImageFormatConverter.*`.
 - Datastore abstraction lives under `datastore/KeyValueStore*`.
+- Drafts are stored with SQLDelight (schema in `composeApp/src/commonMain/sqldelight/`, generated `SellSnapDatabase`). The drivers per platform and `SqlDelightDraftsRepository` live under `features/seller/drafts/data/`; the repository is in `dataStoreMain`, where `Dispatchers.IO` is not visible, so it runs on `Dispatchers.Default`. The web targets use `InMemoryDraftsRepository`. Room is unavailable until a KSP release exists for the project's Kotlin version.
 - Platform checks are centralized in `shared/.../platform/PlatformTargets.kt`.
 
 ## Secrets And Config

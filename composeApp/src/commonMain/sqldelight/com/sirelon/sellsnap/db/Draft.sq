@@ -1,0 +1,23 @@
+CREATE TABLE draft (
+  id TEXT NOT NULL PRIMARY KEY,
+  country_code TEXT NOT NULL,
+  created_at_epoch_seconds INTEGER NOT NULL,
+  updated_at_epoch_seconds INTEGER NOT NULL,
+  listing_json TEXT NOT NULL
+);
+
+selectAll:
+SELECT * FROM draft ORDER BY updated_at_epoch_seconds DESC, created_at_epoch_seconds DESC;
+
+selectById:
+SELECT * FROM draft WHERE id = ?;
+
+upsert:
+INSERT OR REPLACE INTO draft(id, country_code, created_at_epoch_seconds, updated_at_epoch_seconds, listing_json)
+VALUES (?, ?, ?, ?, ?);
+
+deleteById:
+DELETE FROM draft WHERE id = ?;
+
+deleteAll:
+DELETE FROM draft;

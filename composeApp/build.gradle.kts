@@ -24,6 +24,15 @@ plugins {
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.composeHotReload)
     alias(libs.plugins.kotlinSerialization)
+    alias(libs.plugins.sqldelight)
+}
+
+sqldelight {
+    databases {
+        create("SellSnapDatabase") {
+            packageName.set("com.sirelon.sellsnap.db")
+        }
+    }
 }
 
 compose {
@@ -134,6 +143,7 @@ kotlin {
             implementation(libs.androidx.core.ktx)
             implementation(libs.androidx.exifinterface)
             implementation(libs.koin.android)
+            implementation(libs.sqldelight.android.driver)
             implementation(libs.ktor.client.okhttp)
             implementation(libs.kotlinx.coroutines.android)
             implementation(libs.play.services.location)
@@ -172,6 +182,8 @@ kotlin {
             implementation(libs.coil.network.ktor)
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.serialization.json)
+            implementation(libs.sqldelight.runtime)
+            implementation(libs.sqldelight.coroutines)
             implementation(libs.ktor.client.core)
             implementation(libs.ktor.client.auth)
             implementation(libs.ktor.client.contentNegotiation)
@@ -198,10 +210,12 @@ kotlin {
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.ktor.client.java)
+            implementation(libs.sqldelight.sqlite.driver)
             implementation(libs.kotlinx.coroutines.swing)
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)
+            implementation(libs.sqldelight.native.driver)
             implementation(libs.gitlive.firebase.analytics)
             implementation(libs.gitlive.firebase.crashlytics)
         }
