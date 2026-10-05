@@ -34,6 +34,7 @@ class MainActivity : ComponentActivity() {
             window.isNavigationBarContrastEnforced = false
         }
         super.onCreate(savedInstanceState)
+        installAppCheckProviderFactory()
         initAndroidKeyValueStore(filesDir.absolutePath)
         initAndroidDraftMediaFileStore(filesDir.absolutePath)
         initAndroidScreenshotPhotos(cacheDir.absolutePath)

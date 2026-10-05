@@ -1,4 +1,5 @@
 import ComposeApp
+import FirebaseAppCheck
 import FirebaseCore
 import SwiftUI
 import UserNotifications
@@ -28,12 +29,38 @@ private func publishPendingSharedImages() {
     }
 }
 
+// App Check proves to the OpenAI proxy (functions/src/index.ts) that a call comes from this app.
+// App Attest only works on a real device, so Debug builds use the debug provider instead: it
+// prints its token to the Xcode console on first launch, and that token must be registered under
+// Firebase console > App Check > Apps > SellSnap iOS > Manage debug tokens, or the proxy answers 401.
+private class AppAttestProviderFactory: NSObject, AppCheckProviderFactory {
+    func createProvider(with app: FirebaseApp) -> AppCheckProvider? {
+        AppAttestProvider(app: app)
+    }
+}
+
+// Kotlin cannot see FirebaseAppCheck, so the shared code asks for tokens through this bridge
+// (see OpenAIEndpointModule.ios.kt).
+private class FirebaseAppCheckTokenFetcher: NSObject, AppCheckTokenFetcher {
+    func fetch(onResult: @escaping (String?) -> Void) {
+        AppCheck.appCheck().token(forcingRefresh: false) { token, _ in
+            onResult(token?.token)
+        }
+    }
+}
+
 class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
     func application(
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
+        #if DEBUG
+        AppCheck.setAppCheckProviderFactory(AppCheckDebugProviderFactory())
+        #else
+        AppCheck.setAppCheckProviderFactory(AppAttestProviderFactory())
+        #endif
         FirebaseApp.configure()
+        AppCheckBridge.shared.fetcher = FirebaseAppCheckTokenFetcher()
         UNUserNotificationCenter.current().delegate = self
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { _, _ in }
         return true

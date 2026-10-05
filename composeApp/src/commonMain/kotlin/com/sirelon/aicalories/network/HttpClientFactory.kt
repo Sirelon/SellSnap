@@ -3,47 +3,13 @@ package com.sirelon.sellsnap.network
 import com.aallam.openai.api.http.Timeout
 import com.aallam.openai.client.OpenAI
 import com.aallam.openai.client.OpenAIConfig
+import com.aallam.openai.client.OpenAIHost
 import com.aallam.openai.client.RetryStrategy
 import io.ktor.client.HttpClient
-import io.ktor.client.plugins.DefaultRequest
-import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.client.plugins.logging.LogLevel
-import io.ktor.client.plugins.logging.Logging
+import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.plugins.websocket.WebSockets
-import io.ktor.client.request.header
-import io.ktor.http.ContentType
-import io.ktor.http.HttpHeaders
-import io.ktor.serialization.kotlinx.json.json
-import kotlinx.serialization.json.Json
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
-
-private const val API_BASE_URL = "https://api.openai.com/v1"
-
-class ApiTokenProvider {
-    var token: String? = null
-}
-
-fun createHttpClient(tokenProvider: ApiTokenProvider): HttpClient =
-    HttpClient {
-        install(ContentNegotiation) {
-            json(
-                Json {
-                    ignoreUnknownKeys = true
-                    isLenient = true
-                    explicitNulls = false
-                },
-            )
-        }
-        install(Logging) {
-            this.level = LogLevel.INFO
-        }
-        install(DefaultRequest) {
-            url(API_BASE_URL)
-            header(HttpHeaders.Accept, ContentType.Application.Json)
-            tokenProvider.token?.let { header(HttpHeaders.Authorization, "Bearer $it") }
-        }
-    }
 
 fun createRealtimeHttpClient(): HttpClient =
     HttpClient {
@@ -64,19 +30,27 @@ fun createRealtimeHttpClient(): HttpClient =
  * (default 60 s). Its HttpClient setup retries a 429 with `exponentialDelay`: `base^attempt`
  * seconds, capped at `maxDelay`, plus up to 1 s of jitter. The default 3 retries wait
  * 2 + 4 + 8 = 14 s and give up inside the 60 s window; 5 retries wait 2 + 4 + 8 + 16 + 32 = 62 s,
- * which outlasts it.
+ * which outlasts it. The proxy forwards OpenAI's status untouched, so a 429 still reaches this
+ * retry.
  *
  * Inferred: Ktor's retry plugin skips timeout exceptions, which is why the view model retries
  * those once itself.
+ *
+ * [engine] is only for tests; production uses the platform default.
  */
-fun createOpenAI(tokenProvider: ApiTokenProvider): OpenAI = OpenAI(
+fun createOpenAI(endpoint: OpenAIEndpoint, engine: HttpClientEngine? = null): OpenAI = OpenAI(
     config = OpenAIConfig(
-        token = tokenProvider.token!!,
+        token = endpoint.bearerToken,
+        host = OpenAIHost(baseUrl = endpoint.baseUrl),
         timeout = Timeout(
             request = 2.minutes,
             connect = 15.seconds,
             socket = 60.seconds,
         ),
         retry = RetryStrategy(maxRetries = 5, base = 2.0, maxDelay = 60.seconds),
+        engine = engine,
+        httpClientConfig = {
+            endpoint.appCheck?.let { install(appCheckHeaderPlugin(it)) }
+        },
     )
 )

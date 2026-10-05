@@ -41,6 +41,9 @@ mono_crash.*
 [Dd]ebug/
 [Dd]ebugPublic/
 [Rr]elease/
+# Android build-type source sets are sources, not build output
+!androidApp/src/debug/
+!androidApp/src/release/
 [Rr]eleases/
 x64/
 x86/
@@ -339,3 +342,8 @@ Design/StoreScreenshots/*.svg
 Design/AppStoreScreenshots/**/*.svg
 *.raw.png
 .claude/tmp/
+
+# Firebase CLI
+.firebase/
+firebase-debug.log
+firebase-debug.*.log

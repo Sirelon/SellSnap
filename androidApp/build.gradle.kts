@@ -93,4 +93,9 @@ dependencies {
     implementation(libs.compose.foundation)
     implementation(libs.compose.preview)
     debugImplementation(libs.compose.tooling)
+    // App Check provider factories live here, not in composeApp, so the debug provider never
+    // ships in a release build (see src/debug and src/release AppCheckProviders.kt).
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.appcheck.playintegrity)
+    debugImplementation(libs.firebase.appcheck.debug)
 }

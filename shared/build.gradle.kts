@@ -32,10 +32,6 @@ fun resolveSecret(vararg keys: String): String? =
             ?: localProperties.getProperty(key)
     }
 
-val openAIKey =
-    resolveSecret("OPENAI_KEY", "openai.key")
-        ?: "TODO"
-
 val supabaseUrl =
     resolveSecret("SUPABASE_URL", "supabase.url")
         ?: "https://example.supabase.co"
@@ -142,7 +138,6 @@ buildkonfig {
 
     defaultConfigs {
         buildConfigField(STRING, "SUPABASE_URL", supabaseUrl)
-        buildConfigField(STRING, "OPENAI_KEY", openAIKey)
         buildConfigField(STRING, "SUPABASE_KEY", supabaseKey)
         buildConfigField(STRING, "SUPABASE_DEFAULT_EMAIL", defaultEmail)
         buildConfigField(STRING, "SUPABASE_DEFAULT_PASSWORD", defaultPassword)

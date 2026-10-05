@@ -137,6 +137,9 @@ gitlive-firebase-storage = { module = "dev.gitlive:firebase-storage", version.re
 gitlive-firebase-installations = { module = "dev.gitlive:firebase-installations", version.ref = "gitliveFirebase" }
 gitlive-firebase-firestore = { module = "dev.gitlive:firebase-firestore", version.ref = "gitliveFirebase" }
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
+firebase-appcheck = { module = "com.google.firebase:firebase-appcheck" }
+firebase-appcheck-playintegrity = { module = "com.google.firebase:firebase-appcheck-playintegrity" }
+firebase-appcheck-debug = { module = "com.google.firebase:firebase-appcheck-debug" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
