@@ -155,6 +155,7 @@
 
     <!-- Navigation -->
     <string name="back">Back</string>
+    <string name="action_undo">Undo</string>
 
     <!-- Capacity Result Screen — status messages -->
     <string name="retry">Retry</string>
@@ -171,6 +172,14 @@
     <string name="ai_hint_placeholder">e.g. Nike Air Max 90, size 42, worn for 2 months</string>
     <string name="get_started">Let's go</string>
     <string name="next">Next</string>
+
+    <!-- Drafts -->
+    <string name="drafts_title">Drafts</string>
+    <string name="drafts_copy_hint">Tap Title, Description or Price to copy it.</string>
+    <string name="drafts_see_all">See all</string>
+    <string name="drafts_empty">No drafts yet.</string>
+    <string name="drafts_remove_cd">Remove draft</string>
+    <string name="drafts_removed">Draft removed</string>
 
     <!-- AI Processing -->
     <string name="ai_creating_ad_title">Cooking up your ad</string>
@@ -224,10 +233,10 @@
     <string name="publish_confirm_back">Wait, let me edit</string>
     <string name="publish_confirm_photo_removed">Photo removed</string>
     <string name="publish_confirm_undo_remove_photo">Undo</string>
-    <string name="preview_back_info_title">Discard this draft?</string>
-    <string name="preview_back_info_message">This ad isn't published yet. Leave now and we'll toss the draft — you'll start fresh on the generate screen.</string>
+    <string name="preview_back_info_title">Close this listing?</string>
+    <string name="preview_back_info_message">It stays in Drafts with your changes until you publish it.</string>
     <string name="preview_back_info_stay">Keep editing</string>
-    <string name="preview_back_info_leave">Discard draft</string>
+    <string name="preview_back_info_leave">Close</string>
     <string name="publishing">Going live…</string>
     <string name="copy_pill_default">Copy</string>
     <string name="copy_pill_copied">Copied ✓</string>

@@ -153,6 +153,7 @@
 
     <!-- Navigation -->
     <string name="back">Назад</string>
+    <string name="action_undo">Отмяна</string>
 
     <!-- Capacity Result Screen -->
     <string name="retry">Опитай отново</string>
@@ -169,6 +170,14 @@
     <string name="ai_hint_placeholder">напр. Nike Air Max 90, номер 42, носени 2 месеца</string>
     <string name="get_started">Да тръгваме</string>
     <string name="next">Напред</string>
+
+    <!-- Drafts -->
+    <string name="drafts_title">Чернови</string>
+    <string name="drafts_copy_hint">Докосни „Заглавие“, „Описание“ или „Цена“, за да копираш.</string>
+    <string name="drafts_see_all">Виж всички</string>
+    <string name="drafts_empty">Все още няма чернови.</string>
+    <string name="drafts_remove_cd">Премахни черновата</string>
+    <string name="drafts_removed">Черновата е премахната</string>
 
     <!-- AI Processing -->
     <string name="ai_creating_ad_title">Готвим обявата ти</string>
@@ -222,10 +231,10 @@
     <string name="publish_confirm_back">Чакай, ще редактирам</string>
     <string name="publish_confirm_photo_removed">Снимка премахната</string>
     <string name="publish_confirm_undo_remove_photo">Отмяна</string>
-    <string name="preview_back_info_title">Да изхвърлим черновата?</string>
-    <string name="preview_back_info_message">Тази обява все още не е публикувана. Ако излезеш сега, черновата ще се изтрие — ще започнеш отначало от екрана за генериране.</string>
+    <string name="preview_back_info_title">Да затворим тази обява?</string>
+    <string name="preview_back_info_message">Остава в Чернови с твоите промени, докато не я публикуваш.</string>
     <string name="preview_back_info_stay">Продължи редактирането</string>
-    <string name="preview_back_info_leave">Изхвърли черновата</string>
+    <string name="preview_back_info_leave">Затвори</string>
     <string name="publishing">Публикуваме…</string>
     <string name="copy_pill_default">Копирай</string>
     <string name="copy_pill_copied">Копирано ✓</string>

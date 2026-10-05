@@ -181,6 +181,7 @@ import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import kotlin.math.roundToInt
+import kotlin.math.roundToLong
 import kotlin.time.Duration.Companion.milliseconds
 
 private const val TitleMinLength = 10
@@ -345,10 +346,14 @@ internal fun PreviewAdContentRoute(
                 },
             )
 
-            ReadyBanner(
-                elapsedMs = state.generationElapsedMs,
-                modifier = Modifier.padding(horizontal = AppDimens.Spacing.xl3),
-            )
+            // 0 means no generation ran in this flow (reopened from Recent, or a process-death
+            // restore); formatFriendlyElapsedTime would floor it to "1 second".
+            if (state.generationElapsedMs > 0) {
+                ReadyBanner(
+                    elapsedMs = state.generationElapsedMs,
+                    modifier = Modifier.padding(horizontal = AppDimens.Spacing.xl3),
+                )
+            }
 
             // SIR-83 U6: this is a normal scrollable card, not pinned to the bottom bar - a
             // dynamically-shown row inside AppScaffold's bottomBar changes the bar's height
@@ -889,9 +894,10 @@ private fun AdPriceCard(
                     )
                 }
 
+                // A whole number, as the field shows it: OLX's price field has no use for "1500.0".
                 CopyPill(
                     modifier = Modifier.padding(horizontal = AppDimens.Spacing.xl3),
-                    value = price.toString(),
+                    value = price.roundToLong().toString(),
                     field = "price",
                 )
             }
@@ -1172,6 +1178,8 @@ fun CopyPill(
     value: String,
     field: String,
     modifier: Modifier = Modifier,
+    label: String = stringResource(Res.string.copy_pill_default),
+    eventName: String = AnalyticsEvents.AD_CONTENT_COPIED,
     onCopied: () -> Unit = {},
     onFeedbackFinished: () -> Unit = {},
 ) {
@@ -1196,12 +1204,12 @@ fun CopyPill(
                 copied = true
                 onCopied()
                 analytics.logEvent(
-                    AnalyticsEvents.AD_CONTENT_COPIED,
+                    eventName,
                     mapOf("field" to field),
                 )
             }
         },
-        text = stringResource(if (copied) Res.string.copy_pill_copied else Res.string.copy_pill_default),
+        text = if (copied) stringResource(Res.string.copy_pill_copied) else label,
         iconResource = if (copied) Res.drawable.ic_circle_check_big else Res.drawable.ic_copy,
         modifier = modifier
     )

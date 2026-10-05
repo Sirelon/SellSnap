@@ -153,6 +153,7 @@
 
     <!-- Navigation -->
     <string name="back">Voltar</string>
+    <string name="action_undo">Desfazer</string>
 
     <!-- Capacity Result Screen -->
     <string name="retry">Tentar novamente</string>
@@ -169,6 +170,14 @@
     <string name="ai_hint_placeholder">ex.: Nike Air Max 90, tamanho 42, usado 2 meses</string>
     <string name="get_started">Vamos lá</string>
     <string name="next">Seguinte</string>
+
+    <!-- Drafts -->
+    <string name="drafts_title">Rascunhos</string>
+    <string name="drafts_copy_hint">Toque em «Título», «Descrição» ou «Preço» para copiar.</string>
+    <string name="drafts_see_all">Ver todos</string>
+    <string name="drafts_empty">Ainda não há rascunhos.</string>
+    <string name="drafts_remove_cd">Remover rascunho</string>
+    <string name="drafts_removed">Rascunho removido</string>
 
     <!-- AI Processing -->
     <string name="ai_creating_ad_title">A preparar o seu anúncio</string>
@@ -222,10 +231,10 @@
     <string name="publish_confirm_back">Espere, quero editar</string>
     <string name="publish_confirm_photo_removed">Foto removida</string>
     <string name="publish_confirm_undo_remove_photo">Desfazer</string>
-    <string name="preview_back_info_title">Descartar este rascunho?</string>
-    <string name="preview_back_info_message">Este anúncio ainda não foi publicado. Se sair agora, o rascunho será eliminado — começará do zero no ecrã de geração.</string>
+    <string name="preview_back_info_title">Fechar este anúncio?</string>
+    <string name="preview_back_info_message">Fica nos Rascunhos com as suas alterações até o publicar.</string>
     <string name="preview_back_info_stay">Continuar a editar</string>
-    <string name="preview_back_info_leave">Descartar rascunho</string>
+    <string name="preview_back_info_leave">Fechar</string>
     <string name="publishing">A publicar…</string>
     <string name="copy_pill_default">Copiar</string>
     <string name="copy_pill_copied">Copiado ✓</string>
