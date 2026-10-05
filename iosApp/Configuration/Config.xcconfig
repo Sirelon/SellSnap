@@ -5,3 +5,10 @@ PRODUCT_BUNDLE_IDENTIFIER=com.sirelon.sellsnap
 
 CURRENT_PROJECT_VERSION=5
 MARKETING_VERSION=1.3
+
+// Fixed Firebase App Check debug token for Debug builds (see AGENTS.md, Secrets And Config).
+// The per-machine value lives in AppCheckDebugToken.local.xcconfig (gitignored); Release gets
+// an empty string so the token never ships.
+#include? "AppCheckDebugToken.local.xcconfig"
+APP_CHECK_DEBUG_TOKEN[config=Debug] = $(APP_CHECK_DEBUG_TOKEN_DEBUG)
+APP_CHECK_DEBUG_TOKEN[config=Release] =

@@ -31,8 +31,8 @@ ROOT = Path(__file__).resolve().parents[4]
 UUID_RE = re.compile(r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}")
 
 
-def sh(*cmd: str) -> str:
-    return subprocess.run(cmd, check=True, capture_output=True, text=True).stdout
+def sh(*cmd: str, timeout: int = 60) -> str:
+    return subprocess.run(cmd, check=True, capture_output=True, text=True, timeout=timeout).stdout
 
 
 def access_token() -> str:
@@ -109,7 +109,8 @@ def cmd_delete(args):
 def cmd_android_token(args):
     # Logged with Log.d under the provider's full class name as the tag, when MainActivity
     # installs the provider factory. A relaunch logs it again.
-    log = sh("adb", "-s", args.serial, "logcat", "-d")
+    # -t bounds the dump: an unbounded `logcat -d` on a busy emulator can take minutes.
+    log = sh("adb", "-s", args.serial, "logcat", "-d", "-t", "20000", timeout=45)
     lines = [l for l in log.splitlines() if "DebugAppCheckProvider" in l]
     found = UUID_RE.findall("\n".join(lines))
     if not found:

@@ -55,6 +55,12 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
         #if DEBUG
+        // A fixed token from AppCheckDebugToken.local.xcconfig (via Info.plist) survives
+        // simulator wipes and Maestro clearState; without one the SDK mints a random token.
+        if let token = Bundle.main.object(forInfoDictionaryKey: "AppCheckDebugToken") as? String,
+           !token.isEmpty {
+            setenv("FIRAAppCheckDebugToken", token, 1)
+        }
         AppCheck.setAppCheckProviderFactory(AppCheckDebugProviderFactory())
         #else
         AppCheck.setAppCheckProviderFactory(AppAttestProviderFactory())

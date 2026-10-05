@@ -347,3 +347,6 @@ Design/AppStoreScreenshots/**/*.svg
 .firebase/
 firebase-debug.log
 firebase-debug.*.log
+
+# Per-machine Xcode settings (App Check debug token)
+*.local.xcconfig

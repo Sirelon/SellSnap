@@ -5,9 +5,10 @@ import com.google.firebase.appcheck.debug.DebugAppCheckProviderFactory
 
 /**
  * Debug builds run on emulators, where Play Integrity cannot attest anything. The debug provider
- * prints `Enter this debug secret into the allow list in the Firebase Console for your project:
- * <token>` in logcat on first launch; register that token under Firebase console > App Check >
- * Apps > SellSnap Android > Manage debug tokens, or the OpenAI proxy answers 401.
+ * uses the fixed token from local.properties when one is configured (AppCheckDebugSecretRegistrar),
+ * otherwise it mints a random one and logs it under its class name on first launch. Either way
+ * the token must be registered in App Check (`appcheck-debug-token` skill) or the OpenAI proxy
+ * answers 401.
  */
 fun installAppCheckProviderFactory() {
     FirebaseAppCheck.getInstance()

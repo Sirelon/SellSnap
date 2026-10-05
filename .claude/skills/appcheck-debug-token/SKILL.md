@@ -24,6 +24,23 @@ Everything below goes through `scripts/appcheck_debug_token.py` (gcloud auth; ru
 anywhere). Never type the exchange URL into zsh by hand: `$APP_ID:exchangeDebugToken` is parsed
 as a modifier and silently 404s.
 
+## Fixed tokens (the normal case on a dev machine)
+
+Debug builds use a fixed token when one is configured, so wipes and `clearState` change
+nothing. Each machine registers its two tokens once:
+
+1. `uuidgen | tr 'A-Z' 'a-z'` twice, then `… register --app android --token <a> --name "Fixed
+   token: Android debug builds (<machine>)"` and the same with `--app ios`.
+2. Android: `APP_CHECK_DEBUG_TOKEN=<a>` in `local.properties` (read by `androidApp/build.gradle.kts`
+   into `BuildConfig`, fed to the provider by `AppCheckDebugSecretRegistrar`).
+3. iOS: `APP_CHECK_DEBUG_TOKEN_DEBUG = <b>` in `iosApp/Configuration/AppCheckDebugToken.local.xcconfig`
+   (gitignored; `Config.xcconfig` includes it and `iOSApp.swift` passes it to the SDK).
+4. Rebuild. `android-token` must print `<a>`; the Xcode console must print `<b>`.
+
+To rotate, register a new UUID, replace it in the two files, delete the old one. Both files are
+gitignored: the token is a key to the proxy. The per-install flow below is only for a device
+built without these files.
+
 ## Android
 
 1. Install and launch a debug build on the emulator:
@@ -42,6 +59,9 @@ as a modifier and silently 404s.
 3. `… register --app ios --token <uuid> --name "<simulator> (<machine>)"`.
 
 ## Housekeeping
+
+- A fixed token only applies to builds made after it was added to the local file; an older
+  install on the device keeps its random token until reinstalled.
 
 - `… list` shows what is registered; `… delete --app <android|ios> --name "<label>"` removes
   stale ones. Each token is a key to the proxy, so delete tokens for devices you no longer use.
