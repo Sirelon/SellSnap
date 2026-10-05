@@ -3,6 +3,7 @@ package com.sirelon.sellsnap.features.seller.ad.preview_ad
 import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.ViewModelStore
 import com.sirelon.sellsnap.analytics.Analytics
 import com.sirelon.sellsnap.analytics.AnalyticsEvents
 import com.sirelon.sellsnap.features.auth.data.InMemoryOlxKeyValueStore
@@ -1050,6 +1051,81 @@ class PreviewAdViewModelTest {
     }
 
     @Test
+    fun `closing the preview writes an edit younger than the debounce`() = runTest(testDispatcher) {
+        val engine = buildEngine {
+            addHandler { respond("{}", status = HttpStatusCode.OK, headers = jsonHeaders()) }
+        }
+        val harness = harness(engine, OlxAccountStore(InMemoryOlxKeyValueStore(), testJson))
+        val viewModel = buildViewModel(harness)
+        runCurrent()
+
+        viewModel.titleState.setTextAndPlaceCursorAtEnd("Edited right before leaving")
+        Snapshot.sendApplyNotifications()
+        // The edit reaches the sync stream but not yet the debounce: nothing is written.
+        runCurrent()
+        assertEquals("A perfectly fine test title", harness.draftsRepository.get(TestSessionId)?.listing?.advertisement?.title)
+
+        // What leaving the screen does to the ViewModel: cleared through its store, which cancels
+        // viewModelScope and calls onCleared.
+        ViewModelStore().apply { put("preview", viewModel) }.clear()
+        advanceUntilIdle()
+
+        assertEquals("Edited right before leaving", harness.draftsRepository.get(TestSessionId)?.listing?.advertisement?.title)
+    }
+
+    @Test
+    fun `a reopened draft publishes with the external id its earlier attempt sent`() = runTest(testDispatcher) {
+        // The earlier attempt's POST left the device and its answer was lost; the seller closed
+        // the preview and reopened the draft. Publish must look the id up before posting again -
+        // the same guard a process-death restore gets from the saved state.
+        val accountStore = OlxAccountStore(InMemoryOlxKeyValueStore(), testJson)
+        accountStore.write(
+            OlxAccountsRecord(
+                accounts = listOf(account(localIndex = 1, olxUserId = 100L, accessToken = "token-a")),
+                activeByCountry = mapOf("ua" to 1),
+                nextLocalIndex = 2,
+            ),
+        )
+        var lookedUp: String? = null
+        var postAdvertRequests = 0
+        val engine = buildEngine {
+            addHandler { request ->
+                when {
+                    request.url.encodedPath.contains("users/me") ->
+                        respond(userJson(id = 100L, name = "Seller"), status = HttpStatusCode.OK, headers = jsonHeaders())
+
+                    request.url.parameters["external_id"] != null -> {
+                        lookedUp = request.url.parameters["external_id"]
+                        respond(emptyAdvertsListJson(), status = HttpStatusCode.OK, headers = jsonHeaders())
+                    }
+
+                    request.url.encodedPath.contains("adverts") && request.method == HttpMethod.Post -> {
+                        postAdvertRequests += 1
+                        respond(postAdvertJson(id = 8L), status = HttpStatusCode.OK, headers = jsonHeaders())
+                    }
+
+                    else -> respond("{}", status = HttpStatusCode.OK, headers = jsonHeaders())
+                }
+            }
+        }
+        val harness = harness(engine, accountStore)
+        val viewModel = buildViewModel(
+            harness,
+            listing = testListing.copy(publishExternalId = "attempt-that-was-cut-off"),
+        )
+        viewModel.setState { it.copy(selectedCategory = testCategory, location = testLocation, attributesLoadState = AttributesLoadState.Loaded) }
+        val effects = mutableListOf<PreviewAdEffect>()
+        backgroundScope.launch { viewModel.effects.collect { effects += it } }
+
+        viewModel.onEvent(PreviewAdEvent.Publish)
+        advanceUntilIdle()
+
+        assertEquals("attempt-that-was-cut-off", lookedUp, "the reopened draft's attempt id must be looked up before any POST")
+        assertEquals(1, postAdvertRequests, "nothing live under that id, so the POST goes ahead")
+        assertEquals(1, effects.filterIsInstance<PreviewAdEffect.PublishSuccess>().size)
+    }
+
+    @Test
     fun `opening a draft without changing anything does not rewrite it`() = runTest(testDispatcher) {
         val engine = buildEngine {
             addHandler { respond("{}", status = HttpStatusCode.OK, headers = jsonHeaders()) }
@@ -1160,9 +1236,10 @@ class PreviewAdViewModelTest {
     private fun buildViewModel(
         harness: TestHarness,
         savedStateHandle: SavedStateHandle = SavedStateHandle(),
+        listing: AdvertisementWithAttributes = testListing,
     ): PreviewAdViewModel {
         return PreviewAdViewModel(
-            filledAdvertisement = testListing,
+            filledAdvertisement = listing,
             categoriesRepository = harness.categoriesRepository,
             locationRepository = harness.locationRepository,
             olxApiClient = harness.olxApiClient,
@@ -1184,6 +1261,8 @@ class PreviewAdViewModelTest {
             advertOutcomeStore = AdvertOutcomeStore(InMemoryOlxKeyValueStore(), testJson),
             reviewPromptCoordinator = harness.reviewPromptCoordinator,
             draftsRepository = harness.draftsRepository,
+            // Same scheduler as everything else, so advanceUntilIdle() runs an onCleared flush.
+            applicationScope = CoroutineScope(testDispatcher),
         )
     }
 

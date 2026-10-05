@@ -23,4 +23,10 @@ data class AdvertisementWithAttributes(
      * preview suggests one from the title on open, as it does for a fresh generation.
      */
     val selectedCategoryId: Int? = null,
+    /**
+     * The `external_id` a publish attempt for this listing already sent to OLX, if one left the
+     * device. A reopened draft carries it so the next Publish asks OLX before posting again - see
+     * `PreviewAdViewModel.postAdvertIdempotently`.
+     */
+    val publishExternalId: String? = null,
 )

@@ -150,6 +150,7 @@
 
     <!-- Navigation -->
     <string name="back">Înapoi</string>
+    <string name="action_undo">Anulare</string>
 
     <!-- Capacity Result Screen -->
     <string name="retry">Reîncearcă</string>
@@ -167,6 +168,14 @@
     <string name="ai_hint_placeholder">ex. Nike Air Max 90, mărimea 42, purtați 2 luni</string>
     <string name="get_started">Să mergem</string>
     <string name="next">Următorul</string>
+
+    <!-- Drafts -->
+    <string name="drafts_title">Ciorne</string>
+    <string name="drafts_copy_hint">Atinge „Titlu”, „Descriere” sau „Preț” ca să copiezi.</string>
+    <string name="drafts_see_all">Vezi toate</string>
+    <string name="drafts_empty">Nicio ciornă încă.</string>
+    <string name="drafts_remove_cd">Șterge ciorna</string>
+    <string name="drafts_removed">Ciornă ștearsă</string>
 
     <!-- AI Processing -->
     <string name="ai_creating_ad_title">Pregătim anunțul tău</string>
@@ -220,10 +229,10 @@
     <string name="publish_confirm_back">Stai, vreau să editez</string>
     <string name="publish_confirm_photo_removed">Fotografie eliminată</string>
     <string name="publish_confirm_undo_remove_photo">Anulare</string>
-    <string name="preview_back_info_title">Renunți la acest ciornă?</string>
-    <string name="preview_back_info_message">Anunțul nu a fost publicat încă. Dacă pleci acum, ciorna va fi ștearsă — vei începe de la zero pe ecranul de generare.</string>
+    <string name="preview_back_info_title">Închizi acest anunț?</string>
+    <string name="preview_back_info_message">Rămâne în Ciorne, cu modificările tale, până îl publici.</string>
     <string name="preview_back_info_stay">Continuă editarea</string>
-    <string name="preview_back_info_leave">Renunță la ciornă</string>
+    <string name="preview_back_info_leave">Închide</string>
     <string name="publishing">Se publică…</string>
     <string name="copy_pill_default">Copiază</string>
     <string name="copy_pill_copied">Copiat ✓</string>

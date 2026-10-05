@@ -73,6 +73,7 @@ import com.sirelon.sellsnap.generated.resources.error_regenerate_description_fai
 import com.sirelon.sellsnap.generated.resources.validation_error_desc_too_short
 import com.sirelon.sellsnap.generated.resources.validation_error_title_too_short
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -154,6 +155,9 @@ class PreviewAdViewModel internal constructor(
     // SIR-133: holds this listing's draft, keyed by `generationSessionId`. It follows the seller's
     // edits while the preview is open and is deleted once the listing is published.
     private val draftsRepository: DraftsRepository,
+    // SIR-133: outlives this ViewModel for the one draft write onCleared may still owe - see
+    // flushPendingDraftEdit. viewModelScope is already cancelled by then.
+    private val applicationScope: CoroutineScope,
 ) : BaseViewModel<PreviewAdState, PreviewAdEvent, PreviewAdEffect>() {
 
     private val advertisement = filledAdvertisement.advertisement
@@ -170,9 +174,16 @@ class PreviewAdViewModel internal constructor(
 
     private val selectedCategoryId = MutableStateFlow<Int?>(null)
     private val publishSuccessData = MutableStateFlow(restoredSavedState.publishSuccessData)
-    private var publishExternalId: String? = restoredSavedState.publishExternalId
+    // From the saved state, else from the draft: a reopened draft whose publish may have landed
+    // has to ask OLX before posting again, exactly like a process-death restore.
+    private var publishExternalId: String? =
+        restoredSavedState.publishExternalId ?: filledAdvertisement.publishExternalId
     private var publishJob: Job? = null
     private var draftSyncJob: Job? = null
+    // The newest edit the sync stream has seen, and the one the draft last received. They differ
+    // while an edit is younger than the debounce - the case flushPendingDraftEdit covers.
+    private var latestDraftEdit: DraftEdit? = null
+    private var persistedDraftEdit: DraftEdit? = null
     private var nonGuestSetupStarted = false
     private var currencyLoadStarted = false
     // A category the seller already has - from the saved state, else from the draft - is kept over
@@ -214,6 +225,7 @@ class PreviewAdViewModel internal constructor(
             }.distinctUntilChanged(),
             ::DraftEdit,
         )
+            .onEach { latestDraftEdit = it }
             .debounce(500L)
             .onEach { edit ->
                 runCatching { persistDraft(edit) }.onFailure { if (it is CancellationException) throw it }
@@ -327,7 +339,19 @@ class PreviewAdViewModel internal constructor(
 
     override fun onCleared() {
         adFlowTimerStore.clear()
+        flushPendingDraftEdit()
         super.onCleared()
+    }
+
+    /**
+     * Writes an edit the debounce has not delivered yet. Closing the preview cancels
+     * [draftSyncJob] with the edit still pending, so the write runs on [applicationScope]; a draft
+     * that publish already deleted is left alone by [persistDraft]'s own guard.
+     */
+    private fun flushPendingDraftEdit() {
+        val pending = latestDraftEdit ?: return
+        if (pending == persistedDraftEdit) return
+        applicationScope.launch { runCatching { persistDraft(pending) } }
     }
 
     override fun initialState() = PreviewAdState(
@@ -592,6 +616,7 @@ class PreviewAdViewModel internal constructor(
             // advert is already live, so a storage failure is not a failed publish.
             draftSyncJob?.cancelAndJoin()
             runCatching { draftsRepository.delete(generationSessionId) }
+            latestDraftEdit = null
             // Guarded at the call site: this is opportunistic data collection sitting inside the
             // publish try/catch, and a failure here must never be reported to the seller as a
             // failed publish for an advert that is already live on OLX.
@@ -730,7 +755,7 @@ class PreviewAdViewModel internal constructor(
      * that one lands on the next dispatch, and the id is worthless unless it is already persisted
      * when the process dies during the very POST it belongs to.
      */
-    private fun mintPublishExternalId(): String {
+    private suspend fun mintPublishExternalId(): String {
         val minted = Uuid.random().toString()
         publishExternalId = minted
         val snapshot = toSavedState(
@@ -740,6 +765,13 @@ class PreviewAdViewModel internal constructor(
             successData = publishSuccessData.value,
         )
         savedStateHandle[PreviewAdSavedStateKey] = json.encodeToString(snapshot)
+        // The draft too, for the same reason and before the same POST: a draft closed after a
+        // publish whose answer was lost must come back knowing an attempt already left.
+        runCatching {
+            draftsRepository.get(generationSessionId)?.let { stored ->
+                draftsRepository.upsert(stored.copy(listing = stored.listing.copy(publishExternalId = minted)))
+            }
+        }
         return minted
     }
 
@@ -968,7 +1000,11 @@ class PreviewAdViewModel internal constructor(
             sellerPrice = edit.state.price,
             selectedCategoryId = edit.state.selectedCategoryId ?: listing.selectedCategoryId,
             lastAttemptId = edit.state.attemptId ?: listing.lastAttemptId,
+            // This ViewModel's own record wins: a write that read the draft before
+            // mintPublishExternalId stored the id must not put the draft back without it.
+            publishExternalId = publishExternalId ?: listing.publishExternalId,
         )
+        persistedDraftEdit = edit
         if (rebuilt.forComparison() == listing.forComparison()) return
         draftsRepository.upsert(
             stored.copy(
