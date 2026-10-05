@@ -76,6 +76,8 @@ class SellerAccountRepository internal constructor(
     suspend fun createAuthorizationRequest(forceReauth: Boolean = false): OlxAuthorizationRequest =
         authRepository.createAuthorizationRequest(forceReauth)
 
+    suspend fun abandonPendingAuthorization() = authRepository.abandonPendingAuthorization()
+
     /** Pure UI gate for the "Add OLX account" button/action - at most [MAX_ACCOUNTS_PER_COUNTRY]
      * accounts per country. [addAccount] also re-checks this for a genuinely new account right
      * before persisting, so a stale UI state can't race past it into a 4th account. */

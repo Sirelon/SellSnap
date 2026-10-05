@@ -96,6 +96,17 @@ class OlxAuthRepository internal constructor(
     }
 
     /**
+     * Marks the pending authorization as abandoned and returns it, or null when there is none or it
+     * was already marked. The session stays on disk and valid: a callback that still arrives (the
+     * seller went back to the login tab after the app had given up on it) is exchanged normally.
+     */
+    suspend fun abandonPendingAuthorization(): OlxPendingAuthSession? {
+        val session = authSessionStore.read()?.takeIf { !it.abandoned } ?: return null
+        authSessionStore.write(session.copy(abandoned = true))
+        return session
+    }
+
+    /**
      * Validates the pending session/state and exchanges the authorization code for tokens.
      * Deliberately does NOT persist anything, or touch guest mode/session-mode: the caller
      * (`SellerAccountRepository.addAccount`) must confirm which OLX user the token belongs to

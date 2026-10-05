@@ -5,14 +5,18 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.serialization.saved
 import androidx.lifecycle.viewModelScope
 import androidx.navigation3.runtime.NavBackStack
+import com.sirelon.sellsnap.analytics.Analytics
+import com.sirelon.sellsnap.analytics.AnalyticsEvents
 import com.sirelon.sellsnap.config.AppConfig
 import com.sirelon.sellsnap.features.review.ReviewPromptCoordinator
 import com.sirelon.sellsnap.features.seller.ad.AdFlowTimerStore
 import com.sirelon.sellsnap.features.media.SharedImagesBridge
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountMigration
+import com.sirelon.sellsnap.features.seller.auth.data.OlxAuthCallbackBridge
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAuthRepository
 import com.sirelon.sellsnap.features.seller.auth.data.OlxCountryStore
 import com.sirelon.sellsnap.features.seller.auth.domain.SellerSessionMode
+import com.sirelon.sellsnap.features.seller.auth.presentation.OlxAuthDismissReason
 import com.sirelon.sellsnap.features.seller.profile.data.SellerAccountRepository
 import com.sirelon.sellsnap.features.whatsnew.data.WhatsNewStore
 import com.sirelon.sellsnap.navigation.AppKey
@@ -22,6 +26,7 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import kotlin.time.Clock
 
 class AppNavigationViewModel(
     savedStateHandle: SavedStateHandle,
@@ -34,6 +39,7 @@ class AppNavigationViewModel(
     private val sellerAccountRepository: SellerAccountRepository,
     private val whatsNewStore: WhatsNewStore,
     private val reviewPromptCoordinator: ReviewPromptCoordinator,
+    private val analytics: Analytics,
 ) : ViewModel() {
 
     // Owns the real back stack directly (persisted across process death via SavedStateHandle) -
@@ -46,6 +52,7 @@ class AppNavigationViewModel(
     init {
         viewModelScope.launch {
             olxCountryStore.loadFromStorage()
+            reportInterruptedAuthorization()
             olxAccountMigration.migrateIfNeeded()
             resolveStartupDestination()
             // Runs after routing so it never delays startup, but still in this same coroutine -
@@ -136,6 +143,28 @@ class AppNavigationViewModel(
                 add(sessionDestination())
             }
         }
+    }
+
+    /**
+     * A login the previous process left open: the pending authorization is still on disk and no OLX
+     * callback has reached this process. iOS loses its ASWebAuthenticationSession with the process;
+     * on Android the Custom Tab outlives it and a redirect may still arrive, which is why the session
+     * is marked rather than cleared. `duration_ms` is wall-clock from the session's creation, whole
+     * seconds.
+     */
+    private suspend fun reportInterruptedAuthorization() {
+        if (OlxAuthCallbackBridge.publishedCount > 0) return
+        val session = authRepository.abandonPendingAuthorization() ?: return
+        val durationMs = (Clock.System.now().toEpochMilliseconds() - session.createdAtEpochSeconds * 1000)
+            .coerceAtLeast(0L)
+        analytics.logEvent(
+            AnalyticsEvents.AUTH_ABANDONED,
+            mapOf(
+                "reason" to OlxAuthDismissReason.SystemCancelled.analyticsValue,
+                "country" to olxCountryStore.current.code,
+                "duration_ms" to durationMs,
+            ),
+        )
     }
 
     private suspend fun resolveStartupDestination() {
