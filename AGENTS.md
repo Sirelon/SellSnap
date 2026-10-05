@@ -149,6 +149,8 @@ anything above that does not apply.
   1. add destination to `AppDestination`
   2. update `AppNavigationViewModel`
   3. register the entry in `App.kt`
+  4. register the key in `navigation/AppNavigationSavedState.kt` — the back stack is persisted
+     through its explicit `subclass(...)` list, so `@Serializable` alone is not enough
 
 ## DI Rules
 - DI framework is Koin.
@@ -226,7 +228,7 @@ Rules: `.claude/rules/edge-to-edge.md` — loads when you open a `ui/`, `*Screen
 - Camera launcher uses expect/actual style placement under `camera/`.
 - Image conversion is platform-specific under `features/media/ImageFormatConverter.*`.
 - Datastore abstraction lives under `datastore/KeyValueStore*`.
-- Drafts are stored with SQLDelight (schema in `composeApp/src/commonMain/sqldelight/`, generated `SellSnapDatabase`). The drivers per platform and `SqlDelightDraftsRepository` live under `features/seller/drafts/data/`; the repository is in `dataStoreMain`, where `Dispatchers.IO` is not visible, so it runs on `Dispatchers.Default`. The web targets use `InMemoryDraftsRepository`. Room is unavailable until a KSP release exists for the project's Kotlin version.
+- Drafts are stored with SQLDelight (schema in `composeApp/src/commonMain/sqldelight/`, generated `SellSnapDatabase`). The drivers per platform and `SqlDelightDraftsRepository` live under `features/seller/drafts/data/`; the repository is in `dataStoreMain`, where `Dispatchers.IO` is not visible, so it runs on `Dispatchers.Default`. The web targets use `InMemoryDraftsRepository`. The iOS framework is static, so it carries no `-lsqlite3` of its own; the app links sqlite3 because the FirebaseAnalytics package declares it. Room is unavailable until a KSP release exists for the project's Kotlin version.
 - Platform checks are centralized in `shared/.../platform/PlatformTargets.kt`.
 
 ## Secrets And Config
@@ -359,9 +361,8 @@ picked through the OS picker. Full workflow: the user-level `sellsnap-screenshot
 - Change AI ad generation pipeline:
   - `features/seller/ad/generate_ad/GenerateAdViewModel.kt`
   - `features/seller/openai/OpenAIClient.kt`
-- Change the Recent listings section on the generate screen (what is kept, how many, the rows):
-  - `features/seller/ad/recent/RecentListingsStore.kt` (`MAX_RECENT_LISTINGS`; written once per generation)
-  - `features/seller/ad/generate_ad/RecentListingsSection.kt`
+- Change drafts (what is kept, the generate-screen section, the Drafts screen):
+  - `features/seller/drafts/`
 - Change which OLX top-level categories are user-facing:
   - `features/seller/categories/data/CategoriesRepository.kt` (`notSupportedParentIds`)
 - Change attribute validation rules:

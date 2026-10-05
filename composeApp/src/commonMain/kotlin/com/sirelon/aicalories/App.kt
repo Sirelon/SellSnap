@@ -74,6 +74,7 @@ import com.sirelon.sellsnap.features.seller.auth.presentation.SellerLandingScree
 import com.sirelon.sellsnap.features.seller.auth.presentation.rememberOlxAuthLauncher
 import com.sirelon.sellsnap.features.seller.categories.domain.OlxCategory
 import com.sirelon.sellsnap.features.seller.categories.presentation.CategoryPickerSheet
+import com.sirelon.sellsnap.features.seller.drafts.ui.DraftsScreenRoute
 import com.sirelon.sellsnap.features.seller.my_ads.ui.MyAdvertsScreenRoute
 import com.sirelon.sellsnap.features.seller.onboarding.OnboardingScreen
 import com.sirelon.sellsnap.features.seller.profile.data.SellerAccountRepository
@@ -188,7 +189,7 @@ fun App() {
             // (WhatsNewPrompt, DeleteAccountDataConfirm, ...) - search back past those specific
             // overlay entries only for the tab underneath, so the bar stays visible under a sheet
             // but still correctly disappears under a genuinely pushed full-screen destination
-            // (PreviewAd, ImagesPreview, AllReleases, SellerPublishSuccess, ...), where tapping a
+            // (PreviewAd, ImagesPreview, AllReleases, Drafts, SellerPublishSuccess, ...), where tapping a
             // tab would silently discard whatever's in progress there without its own confirm step.
             val selectedRootTab = navVm.backStack.lastOrNull { !it.isOverlayEntry() }.toSellerRootTab()
 
@@ -207,6 +208,14 @@ fun App() {
                 navVm.backStack.apply {
                     clear()
                     add(tab.destination)
+                }
+            }
+
+            // A draft row can be double-tapped; the second tap must not stack a second PreviewAd on
+            // top of the first.
+            fun openAdPreview(advertisement: AdvertisementWithAttributes) {
+                if (navVm.backStack.lastOrNull() !is AppKey.PreviewAd) {
+                    navVm.backStack.add(AppKey.PreviewAd(advertisement))
                 }
             }
 
@@ -338,11 +347,10 @@ fun App() {
 
                         entry<AppKey.GenerateAd>(metadata = topLevelMetadata) {
                             GenerateAdScreen(
-                                openAdPreview = {
-                                    // A Recent row can be double-tapped; the second tap must not
-                                    // stack a second PreviewAd on top of the first.
-                                    if (navVm.backStack.lastOrNull() !is AppKey.PreviewAd) {
-                                        navVm.backStack.add(AppKey.PreviewAd(it))
+                                openAdPreview = { openAdPreview(it) },
+                                openDrafts = {
+                                    if (navVm.backStack.lastOrNull() !is AppKey.Drafts) {
+                                        navVm.backStack.add(AppKey.Drafts)
                                     }
                                 },
                                 onLoadingChanged = { isGeneratingAd = it },
@@ -366,7 +374,7 @@ fun App() {
                         }
 
                         // Every PreviewAd shares PREVIEW_AD_FLOW_KEY, and that store is only cleared
-                        // once a popped entry leaves composition, after the pop transition. A Recent
+                        // once a popped entry leaves composition, after the pop transition. A draft
                         // row can open a second preview inside that window, and an unkeyed
                         // koinViewModel would hand back the previous listing's ViewModel.
                         entry<AppKey.PreviewAd>(
@@ -559,7 +567,8 @@ fun App() {
                                         AnalyticsEvents.AD_DRAFT_EXIT_CHOICE,
                                         mapOf("choice" to "leave"),
                                     )
-                                    // Pop the whole preview-ad flow, back to GenerateAd.
+                                    // Close the whole preview-ad flow, back to the screen it was opened from.
+                                    // The listing stays in Drafts.
                                     navVm.backStack.removeAll {
                                         it is AppKey.PreviewBackInfo || it is AppKey.PreviewAd
                                     }
@@ -635,6 +644,13 @@ fun App() {
                             AllReleasesScreenRoute(
                                 viewModel = whatsNewViewModel,
                                 onBack = { navVm.popDestination() },
+                            )
+                        }
+
+                        entry<AppKey.Drafts> {
+                            DraftsScreenRoute(
+                                onBack = { navVm.popDestination() },
+                                openPreview = { openAdPreview(it) },
                             )
                         }
 
@@ -818,7 +834,7 @@ private fun AppKey?.toSellerRootTab(): SellerRootTab? = when (this) {
 
 // Bottom-sheet/dialog entries only - i.e. every entry registered with
 // BottomSheetSceneStrategy.bottomSheet() metadata. Deliberately excludes full-screen pushed
-// destinations like PreviewAd/ImagesPreview/AllReleases/SellerPublishSuccess, which should hide
+// destinations like PreviewAd/ImagesPreview/AllReleases/Drafts/SellerPublishSuccess, which should hide
 // the tab bar rather than let it show through to whatever tab is underneath.
 private fun AppKey.isOverlayEntry(): Boolean = when (this) {
     AppKey.DeleteAccountDataConfirm,

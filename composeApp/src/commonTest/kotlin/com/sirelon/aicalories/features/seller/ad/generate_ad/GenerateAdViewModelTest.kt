@@ -24,7 +24,6 @@ import com.sirelon.sellsnap.features.seller.ad.Advertisement
 import com.sirelon.sellsnap.features.seller.ad.AdvertisementWithAttributes
 import com.sirelon.sellsnap.features.seller.ad.generation_log.NoOpAdGenerationLogRepository
 import com.sirelon.sellsnap.features.seller.ad.loadScreenshotPhotos
-import com.sirelon.sellsnap.features.seller.ad.recent.RecentListingsStore
 import com.sirelon.sellsnap.features.seller.auth.data.GuestModeStore
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountStore
 import com.sirelon.sellsnap.features.seller.auth.data.OlxApiClient
@@ -39,6 +38,8 @@ import com.sirelon.sellsnap.features.seller.auth.domain.OlxAuthCallback
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxCountry
 import com.sirelon.sellsnap.features.seller.categories.data.CategoriesRepository
 import com.sirelon.sellsnap.features.seller.categories.domain.CategoriesMapper
+import com.sirelon.sellsnap.features.seller.drafts.Draft
+import com.sirelon.sellsnap.features.seller.drafts.InMemoryDraftsRepository
 import com.sirelon.sellsnap.features.seller.openai.OpenAIClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.MockEngineConfig
@@ -242,49 +243,57 @@ class GenerateAdViewModelTest {
         }
 
     @Test
-    fun `opening a recent listing reopens the preview for it and logs recent_listing_opened`() =
+    fun `opening a draft reopens the preview for it and logs draft_opened`() =
         runTest(testDispatcher) {
             val harness = buildHarness()
-            val saved = recentListing("Nike Air Max 90")
-            harness.recentListingsStore.add(saved, countryCode = "ua")
-            val row = harness.viewModel.state.first { it.recentListings.isNotEmpty() }.recentListings.single()
+            val saved = listing("Nike Air Max 90")
+            harness.draftsRepository.upsert(draft(saved, countryCode = "ua", updatedAt = 1_000L))
+            val latest = harness.viewModel.state.first { it.latestDraft != null }.latestDraft!!
 
-            harness.viewModel.onEvent(GenerateAdContract.GenerateAdEvent.OpenRecentListing(row))
+            harness.viewModel.onEvent(GenerateAdContract.GenerateAdEvent.OpenDraft(latest))
 
             val effect = harness.viewModel.effects.awaitEffect<GenerateAdContract.GenerateAdEffect.OpenAdPreview>()
             assertEquals(saved, effect.ad)
-            assertEquals(1, harness.analytics.events.count { it.first == AnalyticsEvents.RECENT_LISTING_OPENED })
+            val opened = harness.analytics.events.single { it.first == AnalyticsEvents.DRAFT_OPENED }
+            assertEquals("generate", opened.second["source"])
         }
 
     @Test
-    fun `recent listings follow the current country`() =
+    fun `the drafts section shows the latest draft of the current country and follows a country change`() =
         runTest(testDispatcher) {
             val harness = buildHarness()
-            harness.recentListingsStore.add(recentListing("Polish listing"), countryCode = "pl")
-            harness.recentListingsStore.add(recentListing("Ukrainian listing"), countryCode = "ua")
+            harness.draftsRepository.upsert(draft(listing("Older Ukrainian listing"), countryCode = "ua", updatedAt = 1_000L))
+            harness.draftsRepository.upsert(draft(listing("Latest Ukrainian listing"), countryCode = "ua", updatedAt = 2_000L))
+            harness.draftsRepository.upsert(draft(listing("Polish listing"), countryCode = "pl", updatedAt = 3_000L))
 
             try {
-                val inUkraine = harness.viewModel.state.first { it.recentListings.isNotEmpty() }
-                assertEquals(
-                    listOf("Ukrainian listing"),
-                    inUkraine.recentListings.map { it.listing.advertisement.title },
-                )
+                val inUkraine = harness.viewModel.state.first { it.latestDraft != null }
+                assertEquals("Latest Ukrainian listing", inUkraine.latestDraft?.listing?.advertisement?.title)
 
                 harness.countryStore.save(OlxCountry.PL)
 
                 val inPoland = harness.viewModel.state.first { state ->
-                    state.recentListings.map { it.listing.advertisement.title } == listOf("Polish listing")
+                    state.latestDraft?.listing?.advertisement?.title == "Polish listing"
                 }
-                assertEquals("PLN", inPoland.recentListingsCurrency.code)
+                assertEquals("PLN", inPoland.draftsCurrency.code)
             } finally {
                 // save() writes the process-global current country, which other tests read.
                 harness.countryStore.save(OlxCountry.UA)
             }
         }
 
+    @Test
+    fun `see all asks the screen to open Drafts`() = runTest(testDispatcher) {
+        val harness = buildHarness()
+
+        harness.viewModel.onEvent(GenerateAdContract.GenerateAdEvent.OpenAllDrafts)
+
+        harness.viewModel.effects.awaitEffect<GenerateAdContract.GenerateAdEffect.OpenDrafts>()
+    }
+
     // --- test harness -----------------------------------------------------------------------
 
-    private fun recentListing(title: String) = AdvertisementWithAttributes(
+    private fun listing(title: String) = AdvertisementWithAttributes(
         advertisement = Advertisement(
             title = title,
             description = "Description of $title",
@@ -294,6 +303,15 @@ class GenerateAdViewModelTest {
             maxPrice = 110f,
         ),
         filledAttributes = emptyMap(),
+        generationSessionId = "session-$title",
+    )
+
+    private fun draft(listing: AdvertisementWithAttributes, countryCode: String, updatedAt: Long) = Draft(
+        id = checkNotNull(listing.generationSessionId),
+        countryCode = countryCode,
+        createdAtEpochSeconds = updatedAt,
+        updatedAtEpochSeconds = updatedAt,
+        listing = listing,
     )
 
     private suspend fun buildHarness(
@@ -343,7 +361,7 @@ class GenerateAdViewModelTest {
             repository = MediaUploadRepository(uploader = uploader),
         )
 
-        val recentListingsStore = RecentListingsStore(InMemoryOlxKeyValueStore(), testJson)
+        val draftsRepository = InMemoryDraftsRepository()
         val viewModel = GenerateAdViewModel(
             mediaUploadHelper = mediaUploadHelper,
             draftMediaFileStore = FakeDraftMediaFileStore,
@@ -356,7 +374,7 @@ class GenerateAdViewModelTest {
             json = testJson,
             analytics = analytics,
             adGenerationLogRepository = NoOpAdGenerationLogRepository,
-            recentListingsStore = recentListingsStore,
+            draftsRepository = draftsRepository,
         )
 
         authRepository.enterGuestMode()
@@ -375,7 +393,7 @@ class GenerateAdViewModelTest {
         return Harness(
             viewModel = viewModel,
             analytics = analytics,
-            recentListingsStore = recentListingsStore,
+            draftsRepository = draftsRepository,
             countryStore = countryStore,
         )
     }
@@ -383,7 +401,7 @@ class GenerateAdViewModelTest {
     private data class Harness(
         val viewModel: GenerateAdViewModel,
         val analytics: FakeAnalytics,
-        val recentListingsStore: RecentListingsStore,
+        val draftsRepository: InMemoryDraftsRepository,
         val countryStore: OlxCountryStore,
     )
 

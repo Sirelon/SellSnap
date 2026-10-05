@@ -3,7 +3,6 @@ package com.sirelon.sellsnap.features.seller.profile.data
 import com.sirelon.sellsnap.analytics.Analytics
 import com.sirelon.sellsnap.analytics.AnalyticsEvents
 import com.sirelon.sellsnap.features.media.upload.DraftMediaFileStore
-import com.sirelon.sellsnap.features.seller.ad.recent.RecentListingsStore
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountRecord
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountState
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountStore
@@ -23,6 +22,7 @@ import com.sirelon.sellsnap.features.seller.auth.domain.OlxSessionState
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxTokens
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxUser
 import com.sirelon.sellsnap.features.seller.auth.domain.SellerSessionMode
+import com.sirelon.sellsnap.features.seller.drafts.DraftsRepository
 import com.sirelon.sellsnap.features.seller.location.OlxLocation
 import com.sirelon.sellsnap.features.seller.location.data.LocationRepository
 import com.sirelon.sellsnap.features.seller.my_ads.data.AdvertOutcomeStore
@@ -54,7 +54,7 @@ class SellerAccountRepository internal constructor(
     private val olxCountryStore: OlxCountryStore,
     private val draftMediaFileStore: DraftMediaFileStore,
     private val advertOutcomeStore: AdvertOutcomeStore,
-    private val recentListingsStore: RecentListingsStore,
+    private val draftsRepository: DraftsRepository,
     private val analyticsConsentRepository: AnalyticsConsentRepository,
     private val errorParser: OlxRemoteErrorParser,
     private val analytics: Analytics,
@@ -323,7 +323,7 @@ class SellerAccountRepository internal constructor(
         locationRepository.clearSavedLocation()
         draftMediaFileStore.deleteAll()
         advertOutcomeStore.clearAll()
-        recentListingsStore.clearAll()
+        draftsRepository.deleteAll()
         olxCountryStore.clear()
         analyticsConsentRepository.resetConsent()
         analytics.setUserProperty(USER_PROPERTY_CONNECTED_ACCOUNT_COUNT, "0")

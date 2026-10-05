@@ -1,4 +1,4 @@
-package com.sirelon.sellsnap.features.seller.ad.generate_ad
+package com.sirelon.sellsnap.features.seller.drafts.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -12,9 +12,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -25,64 +25,46 @@ import com.sirelon.sellsnap.analytics.AnalyticsEvents
 import com.sirelon.sellsnap.designsystem.AppAsyncImage
 import com.sirelon.sellsnap.designsystem.AppCard
 import com.sirelon.sellsnap.designsystem.AppDimens
-import com.sirelon.sellsnap.designsystem.AppSectionHeader
 import com.sirelon.sellsnap.designsystem.AppTheme
 import com.sirelon.sellsnap.features.seller.ad.preview_ad.CopyPill
-import com.sirelon.sellsnap.features.seller.ad.recent.RecentListing
 import com.sirelon.sellsnap.features.seller.currency.domain.OlxCurrency
+import com.sirelon.sellsnap.features.seller.drafts.Draft
 import com.sirelon.sellsnap.generated.resources.Res
 import com.sirelon.sellsnap.generated.resources.ad_description_label
 import com.sirelon.sellsnap.generated.resources.ad_title_label
 import com.sirelon.sellsnap.generated.resources.advert_edit_price_label
+import com.sirelon.sellsnap.generated.resources.drafts_remove_cd
 import com.sirelon.sellsnap.generated.resources.ic_arrow_right
 import com.sirelon.sellsnap.generated.resources.ic_camera
-import com.sirelon.sellsnap.generated.resources.recent_listings_section_title
+import com.sirelon.sellsnap.generated.resources.ic_trash_2
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import kotlin.math.roundToLong
 
 /**
- * The listings generated before, newest first, each with copy pills for its title, description
- * and price. At most `MAX_RECENT_LISTINGS` rows, so a plain [Column] rather than a nested lazy
- * list inside the screen's `LazyColumn`. Not previewable with data: [CopyPill] resolves
- * `Analytics` through Koin, which a preview does not have.
+ * One draft: thumbnail, title, price and copy pills for the title, description and price. Tapping
+ * the card calls [onOpen]. A non-null [onRemove] replaces the trailing arrow with a remove button.
+ *
+ * The price is the seller's own when they set one in the preview, otherwise the model's suggestion.
+ * Call sites key the card by [Draft.id], so a draft arriving or leaving does not hand its
+ * remembered state (a pill's "Copied" flash, the thumbnail's load state) to a neighbour.
+ *
+ * Not previewable with data: [CopyPill] resolves `Analytics` through Koin, which a preview does
+ * not have.
  */
 @Composable
-internal fun RecentListingsSection(
-    listings: List<RecentListing>,
-    currency: OlxCurrency,
-    onOpen: (RecentListing) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Column(
-        modifier = modifier.testTag("recent_listings_section"),
-        verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.l),
-    ) {
-        AppSectionHeader(title = stringResource(Res.string.recent_listings_section_title))
-        listings.forEach { listing ->
-            // Keyed so a new generation prepending a row does not hand this row's remembered
-            // state (a pill's "Copied" flash, the thumbnail's load state) to its neighbour.
-            key(listing.id) {
-                RecentListingCard(
-                    listing = listing,
-                    currency = currency,
-                    onOpen = { onOpen(listing) },
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun RecentListingCard(
-    listing: RecentListing,
+internal fun DraftCard(
+    draft: Draft,
     currency: OlxCurrency,
     onOpen: () -> Unit,
+    modifier: Modifier = Modifier,
+    onRemove: (() -> Unit)? = null,
 ) {
-    val advertisement = listing.listing.advertisement
+    val advertisement = draft.listing.advertisement
+    val price = draft.listing.sellerPrice ?: advertisement.suggestedPrice
 
     AppCard(
-        modifier = Modifier.fillMaxWidth().testTag("recent_listing_row"),
+        modifier = modifier.fillMaxWidth().testTag("draft_row"),
         onClick = onOpen,
         containerColor = AppTheme.colors.surfaceHigh,
         shape = RoundedCornerShape(AppDimens.BorderRadius.xl7),
@@ -96,7 +78,7 @@ private fun RecentListingCard(
                 horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing.xl3),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                RecentListingThumbnail(imageUrl = advertisement.images.firstOrNull())
+                DraftThumbnail(imageUrl = advertisement.images.firstOrNull())
 
                 Column(
                     modifier = Modifier.weight(1f),
@@ -110,18 +92,29 @@ private fun RecentListingCard(
                         overflow = TextOverflow.Ellipsis,
                     )
                     Text(
-                        text = currency.format(advertisement.suggestedPrice),
+                        text = currency.format(price),
                         style = AppTheme.typography.caption,
                         color = AppTheme.colors.onSurfaceMuted,
                     )
                 }
 
-                Icon(
-                    painter = painterResource(Res.drawable.ic_arrow_right),
-                    contentDescription = null,
-                    tint = AppTheme.colors.onSurfaceSoft,
-                    modifier = Modifier.size(AppDimens.Size.xl5),
-                )
+                if (onRemove != null) {
+                    IconButton(onClick = onRemove, modifier = Modifier.testTag("draft_remove")) {
+                        Icon(
+                            painter = painterResource(Res.drawable.ic_trash_2),
+                            contentDescription = stringResource(Res.string.drafts_remove_cd),
+                            tint = AppTheme.colors.onSurfaceSoft,
+                            modifier = Modifier.size(AppDimens.Size.xl5),
+                        )
+                    }
+                } else {
+                    Icon(
+                        painter = painterResource(Res.drawable.ic_arrow_right),
+                        contentDescription = null,
+                        tint = AppTheme.colors.onSurfaceSoft,
+                        modifier = Modifier.size(AppDimens.Size.xl5),
+                    )
+                }
             }
 
             FlowRow(
@@ -132,19 +125,19 @@ private fun RecentListingCard(
                     value = advertisement.title,
                     field = "title",
                     label = stringResource(Res.string.ad_title_label),
-                    eventName = AnalyticsEvents.RECENT_LISTING_COPIED,
+                    eventName = AnalyticsEvents.DRAFT_COPIED,
                 )
                 CopyPill(
                     value = advertisement.description,
                     field = "description",
                     label = stringResource(Res.string.ad_description_label),
-                    eventName = AnalyticsEvents.RECENT_LISTING_COPIED,
+                    eventName = AnalyticsEvents.DRAFT_COPIED,
                 )
                 CopyPill(
-                    value = advertisement.suggestedPrice.roundToLong().toString(),
+                    value = price.roundToLong().toString(),
                     field = "price",
                     label = stringResource(Res.string.advert_edit_price_label),
-                    eventName = AnalyticsEvents.RECENT_LISTING_COPIED,
+                    eventName = AnalyticsEvents.DRAFT_COPIED,
                 )
             }
         }
@@ -152,7 +145,7 @@ private fun RecentListingCard(
 }
 
 @Composable
-private fun RecentListingThumbnail(imageUrl: String?) {
+private fun DraftThumbnail(imageUrl: String?) {
     Box(
         modifier = Modifier
             .size(AppDimens.Size.xl14)

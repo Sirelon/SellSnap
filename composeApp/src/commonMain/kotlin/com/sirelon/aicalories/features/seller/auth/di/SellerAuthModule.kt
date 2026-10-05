@@ -1,6 +1,5 @@
 package com.sirelon.sellsnap.features.seller.auth.di
 
-import com.sirelon.sellsnap.features.seller.ad.recent.RecentListingsStore
 import com.sirelon.sellsnap.features.seller.auth.data.BuildConfigOlxCredentialsProvider
 import com.sirelon.sellsnap.features.seller.auth.data.DefaultOlxRedirectHandler
 import com.sirelon.sellsnap.features.seller.auth.data.GuestModeStore
@@ -46,7 +45,6 @@ val sellerAuthModule = module {
     single { OlxTokenStore(get()) }
     single { OlxAccountStore(get()) }
     single { AdvertOutcomeStore(get()) }
-    single { RecentListingsStore(get()) }
     single { OlxAccountMigration(accountStore = get(), legacyTokenStore = get(), countryStore = get()) }
     single { OlxAuthSessionStore(get()) }
     single { GuestModeStore() }

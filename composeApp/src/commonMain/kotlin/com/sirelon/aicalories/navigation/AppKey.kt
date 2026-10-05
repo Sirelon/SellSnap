@@ -89,6 +89,11 @@ sealed interface AppKey : NavKey, AnalyticsScreen {
     }
 
     @Serializable
+    data object Drafts : AppKey {
+        override val screenName = "Drafts"
+    }
+
+    @Serializable
     data class SellerPublishSuccess(val data: PublishSuccessData) : AppKey {
         override val screenName = "SellerPublishSuccess"
     }

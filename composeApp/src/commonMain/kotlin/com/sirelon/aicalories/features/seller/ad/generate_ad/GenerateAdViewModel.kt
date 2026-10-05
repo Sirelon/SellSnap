@@ -26,11 +26,12 @@ import com.sirelon.sellsnap.features.seller.auth.data.OlxAuthRepository
 import com.sirelon.sellsnap.features.seller.auth.data.OlxCountryStore
 import com.sirelon.sellsnap.features.seller.auth.domain.SellerSessionMode
 import com.sirelon.sellsnap.features.seller.ad.loadScreenshotPhotos
-import com.sirelon.sellsnap.features.seller.ad.recent.RecentListingsStore
 import com.sirelon.sellsnap.features.seller.ad.screenshotMode
 import com.sirelon.sellsnap.features.seller.categories.data.CategoriesRepository
 import com.sirelon.sellsnap.features.seller.categories.data.UnsupportedOlxCategoryException
 import com.sirelon.sellsnap.features.seller.currency.domain.OlxCurrency
+import com.sirelon.sellsnap.features.seller.drafts.Draft
+import com.sirelon.sellsnap.features.seller.drafts.DraftsRepository
 import com.sirelon.sellsnap.features.seller.openai.AD_GENERATION_MODEL_ID
 import com.sirelon.sellsnap.features.seller.openai.AD_GENERATION_PROMPT_VERSION
 import com.sirelon.sellsnap.features.seller.openai.AdAnalysis
@@ -44,6 +45,7 @@ import com.sirelon.sellsnap.generated.resources.error_photo_unreadable
 import com.sirelon.sellsnap.generated.resources.error_selected_files_process_failed
 import com.sirelon.sellsnap.generated.resources.error_upload_file_failed
 import com.sirelon.sellsnap.generated.resources.photos_limit_kept_message
+import kotlin.time.Clock
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.TimeSource
 import kotlin.uuid.Uuid
@@ -101,7 +103,7 @@ class GenerateAdViewModel(
     private val json: Json,
     private val analytics: Analytics,
     private val adGenerationLogRepository: AdGenerationLogRepository,
-    private val recentListingsStore: RecentListingsStore,
+    private val draftsRepository: DraftsRepository,
 ) : BaseViewModel<GenerateAdContract.GenerateAdState, GenerateAdContract.GenerateAdEvent, GenerateAdContract.GenerateAdEffect>() {
 
     private val restoredSavedState = readSavedState()
@@ -124,11 +126,11 @@ class GenerateAdViewModel(
         if (screenshotMode) seedScreenshotPhotos()
         observeSharedImages()
 
-        combine(recentListingsStore.listings, countryStore.currentFlow) { all, country ->
+        combine(draftsRepository.drafts(), countryStore.currentFlow) { all, country ->
             all.filter { it.countryCode == country.code } to OlxCurrency.fallbackFor(country)
         }
-            .onEach { (listings, currency) ->
-                setState { it.copy(recentListings = listings, recentListingsCurrency = currency) }
+            .onEach { (drafts, currency) ->
+                setState { it.copy(latestDraft = drafts.firstOrNull(), draftsCurrency = currency) }
             }
             .launchIn(viewModelScope)
     }
@@ -194,17 +196,20 @@ class GenerateAdViewModel(
                 generationJob?.cancel()
             }
 
-            is GenerateAdContract.GenerateAdEvent.OpenRecentListing -> {
-                analytics.logEvent(AnalyticsEvents.RECENT_LISTING_OPENED)
+            is GenerateAdContract.GenerateAdEvent.OpenDraft -> {
+                analytics.logEvent(AnalyticsEvents.DRAFT_OPENED, mapOf("source" to "generate"))
                 // The success screen's "total time" reads AdFlowTimerStore. Restart it here so a
-                // reopened listing counts from the reopen, not from whenever the first photo of an
-                // unrelated draft on this screen was added (markFlowStartedIfNeeded alone would
-                // keep that older mark). The draft's own timer restarts on its next Submit, as it
+                // reopened draft counts from the reopen, not from whenever the first photo of an
+                // unrelated listing on this screen was added (markFlowStartedIfNeeded alone would
+                // keep that older mark). The listing's own timer restarts on its next Submit, as it
                 // already does after any preview visit.
                 adFlowTimerStore.clear()
                 adFlowTimerStore.markFlowStartedIfNeeded()
-                postEffect(GenerateAdContract.GenerateAdEffect.OpenAdPreview(ad = event.listing.listing))
+                postEffect(GenerateAdContract.GenerateAdEffect.OpenAdPreview(ad = event.draft.listing))
             }
+
+            GenerateAdContract.GenerateAdEvent.OpenAllDrafts ->
+                postEffect(GenerateAdContract.GenerateAdEffect.OpenDrafts)
 
             is GenerateAdContract.GenerateAdEvent.RemovePhoto -> {
                 val removedPhoto = photoForFile(event.file)
@@ -363,7 +368,16 @@ class GenerateAdViewModel(
                     AnalyticsEvents.AD_GENERATION_SUCCEEDED,
                     buildGenerationStageParams(startedAt.elapsedNow().inWholeMilliseconds, photoCount, uploadMs, uploadBytes, modelMs, attributesMs),
                 )
-                recentListingsStore.add(listing = ad, countryCode = countryStore.current.code)
+                val nowEpochSeconds = Clock.System.now().toEpochMilliseconds() / 1000
+                draftsRepository.upsert(
+                    Draft(
+                        id = generationSessionId,
+                        countryCode = countryStore.current.code,
+                        createdAtEpochSeconds = nowEpochSeconds,
+                        updatedAtEpochSeconds = nowEpochSeconds,
+                        listing = ad,
+                    ),
+                )
                 clearDraft()
                 postEffect(GenerateAdContract.GenerateAdEffect.OpenAdPreview(ad = ad))
             }
@@ -693,12 +707,12 @@ class GenerateAdViewModel(
     private fun clearDraft() {
         val photos = readSavedState().photos
         viewModelScope.launch { draftMediaFileStore.delete(photos) }
-        // The Recent section belongs to the store, not the draft: resetting it here would blank
-        // the section until the store emits again.
+        // The Drafts section belongs to the repository, not to the photos and prompt being
+        // cleared: resetting it here would blank the section until the repository emits again.
         setState {
             GenerateAdContract.GenerateAdState(
-                recentListings = it.recentListings,
-                recentListingsCurrency = it.recentListingsCurrency,
+                latestDraft = it.latestDraft,
+                draftsCurrency = it.draftsCurrency,
             )
         }
     }

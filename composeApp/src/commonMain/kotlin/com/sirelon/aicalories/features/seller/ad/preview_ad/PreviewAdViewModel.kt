@@ -45,9 +45,11 @@ import com.sirelon.sellsnap.features.seller.categories.data.UnsupportedOlxCatego
 import com.sirelon.sellsnap.features.seller.categories.domain.AttributeInputType
 import com.sirelon.sellsnap.features.seller.categories.domain.AttributeValidationResult
 import com.sirelon.sellsnap.features.seller.categories.domain.AttributeValidator
+import com.sirelon.sellsnap.features.seller.categories.domain.OlxAttributeValue
 import com.sirelon.sellsnap.features.seller.categories.domain.OlxCategory
 import com.sirelon.sellsnap.features.seller.currency.data.CurrencyRepository
 import com.sirelon.sellsnap.features.seller.currency.domain.OlxCurrency
+import com.sirelon.sellsnap.features.seller.drafts.DraftsRepository
 import com.sirelon.sellsnap.features.seller.location.data.LocationRepository
 import com.sirelon.sellsnap.features.seller.my_ads.data.AdvertOutcomeStore
 import com.sirelon.sellsnap.features.seller.openai.AD_GENERATION_MODEL_ID
@@ -72,6 +74,7 @@ import com.sirelon.sellsnap.generated.resources.validation_error_desc_too_short
 import com.sirelon.sellsnap.generated.resources.validation_error_title_too_short
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
@@ -82,9 +85,11 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlin.math.roundToLong
+import kotlin.time.Clock
 import kotlin.uuid.Uuid
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
@@ -98,6 +103,25 @@ private const val PreviewAdSavedStateKey = "preview_ad_saved_state"
 /** SIR-122: one entry in [PreviewAdViewModel.removedImages] - [index] is where [url] sat in
  * [PreviewAdContract.PreviewAdState.images] before it was removed. */
 private data class RemovedImage(val url: String, val index: Int)
+
+/** SIR-133: the seller's edits as they are written into the draft - see [PreviewAdViewModel.persistDraft]. */
+private data class DraftEdit(
+    val title: String,
+    val description: String,
+    val state: DraftStateEdit,
+)
+
+/**
+ * The parts of [PreviewAdContract.PreviewAdState] a draft keeps. Attributes are code and values
+ * only: an item's `error` changes on validation, and that is not an edit.
+ */
+private data class DraftStateEdit(
+    val price: Float,
+    val images: List<String>,
+    val attributeValues: List<Pair<String, List<OlxAttributeValue>>>,
+    val selectedCategoryId: Int?,
+    val attemptId: String?,
+)
 
 class PreviewAdViewModel internal constructor(
     private val filledAdvertisement: AdvertisementWithAttributes,
@@ -127,11 +151,19 @@ class PreviewAdViewModel internal constructor(
     // the store-review gate cannot get anywhere else, since this is the only place that knows a
     // POST landed. See ReviewPromptGate.
     private val reviewPromptCoordinator: ReviewPromptCoordinator,
+    // SIR-133: holds this listing's draft, keyed by `generationSessionId`. It follows the seller's
+    // edits while the preview is open and is deleted once the listing is published.
+    private val draftsRepository: DraftsRepository,
 ) : BaseViewModel<PreviewAdState, PreviewAdEvent, PreviewAdEffect>() {
 
     private val advertisement = filledAdvertisement.advertisement
     private val restoredSavedState = readSavedState()
     private val generationSessionId = filledAdvertisement.generationSessionId ?: Uuid.random().toString()
+
+    // What the seller last set, else the model's suggestion. `advertisement.suggestedPrice` itself
+    // stays the model's number: publish records it against the published price.
+    private val initialPrice =
+        restoredSavedState.price ?: filledAdvertisement.sellerPrice ?: advertisement.suggestedPrice
 
     val titleState = TextFieldState(restoredSavedState.title ?: advertisement.title)
     val descriptionState = TextFieldState(restoredSavedState.description ?: advertisement.description)
@@ -140,9 +172,13 @@ class PreviewAdViewModel internal constructor(
     private val publishSuccessData = MutableStateFlow(restoredSavedState.publishSuccessData)
     private var publishExternalId: String? = restoredSavedState.publishExternalId
     private var publishJob: Job? = null
+    private var draftSyncJob: Job? = null
     private var nonGuestSetupStarted = false
     private var currencyLoadStarted = false
-    private var skipRestoredTitleSuggestion = restoredSavedState.selectedCategoryId != null
+    // A category the seller already has - from the saved state, else from the draft - is kept over
+    // the suggestion the current title would produce on open.
+    private val initialCategoryId = restoredSavedState.selectedCategoryId ?: filledAdvertisement.selectedCategoryId
+    private var skipRestoredTitleSuggestion = initialCategoryId != null
     private var attributesLoadedLogged = false
 
     // SIR-122: a small undo stack for RemoveImage, most-recent removal last. Not part of the
@@ -164,8 +200,28 @@ class PreviewAdViewModel internal constructor(
             .onEach { savedStateHandle[PreviewAdSavedStateKey] = json.encodeToString(it) }
             .launchIn(viewModelScope)
 
+        draftSyncJob = combine(
+            snapshotFlow { titleState.text.toString() },
+            snapshotFlow { descriptionState.text.toString() },
+            state.map { snapshot ->
+                DraftStateEdit(
+                    price = snapshot.price,
+                    images = snapshot.images,
+                    attributeValues = snapshot.attributeItems.map { it.attribute.code to it.selectedValues },
+                    selectedCategoryId = snapshot.selectedCategory?.id,
+                    attemptId = snapshot.currentAttemptId,
+                )
+            }.distinctUntilChanged(),
+            ::DraftEdit,
+        )
+            .debounce(500L)
+            .onEach { edit ->
+                runCatching { persistDraft(edit) }.onFailure { if (it is CancellationException) throw it }
+            }
+            .launchIn(viewModelScope)
+
         viewModelScope.launch {
-            restoredSavedState.selectedCategoryId?.let { id ->
+            initialCategoryId?.let { id ->
                 categoriesRepository.getCategoryById(id)?.let { updateSelectedCategory(it) }
             }
 
@@ -277,9 +333,9 @@ class PreviewAdViewModel internal constructor(
     override fun initialState() = PreviewAdState(
         categoryLabel = "",
         generationElapsedMs = adFlowTimerStore.generationElapsedMs(),
-        price = restoredSavedState.price ?: advertisement.suggestedPrice,
-        minPrice = advertisement.minPrice.coerceAtMost(restoredSavedState.price ?: advertisement.suggestedPrice),
-        maxPrice = advertisement.maxPrice.coerceAtLeast(restoredSavedState.price ?: advertisement.suggestedPrice),
+        price = initialPrice,
+        minPrice = advertisement.minPrice.coerceAtMost(initialPrice),
+        maxPrice = advertisement.maxPrice.coerceAtLeast(initialPrice),
         images = restoredSavedState.images ?: advertisement.images,
         location = restoredSavedState.location,
         currentAttemptId = filledAdvertisement.lastAttemptId,
@@ -531,6 +587,11 @@ class PreviewAdViewModel internal constructor(
                 accountName = contactName,
             )
             publishSuccessData.value = successData
+            // Joined, not just cancelled: a draft write still in flight would land after the delete
+            // and bring the published listing back into Drafts. Guarded like the calls below - the
+            // advert is already live, so a storage failure is not a failed publish.
+            draftSyncJob?.cancelAndJoin()
+            runCatching { draftsRepository.delete(generationSessionId) }
             // Guarded at the call site: this is opportunistic data collection sitting inside the
             // publish try/catch, and a failure here must never be reported to the seller as a
             // failed publish for an advert that is already live on OLX.
@@ -881,6 +942,47 @@ class PreviewAdViewModel internal constructor(
         }
         selectedCategoryId.value = category.id
     }
+
+    /**
+     * Writes [edit] into this listing's draft. Skips the write when the draft already holds it, so
+     * opening a draft does not reorder Drafts, and does nothing when there is no draft: publish
+     * deletes it, and a write landing after that must not bring it back.
+     *
+     * `advertisement.suggestedPrice` is not touched; the seller's price goes into `sellerPrice`.
+     * Attributes are merged, not replaced: a category change loads another attribute list, and the
+     * values the model filled for the earlier category have to survive a reopen. The category and
+     * the generation attempt are written once the preview has them, so a reopened draft keeps the
+     * seller's category and credits a publish to the attempt whose text it carries.
+     */
+    private suspend fun persistDraft(edit: DraftEdit) {
+        val stored = draftsRepository.get(generationSessionId) ?: return
+        val listing = stored.listing
+        val rebuilt = listing.copy(
+            advertisement = listing.advertisement.copy(
+                title = edit.title,
+                description = edit.description,
+                images = edit.state.images,
+            ),
+            filledAttributes = (listing.filledAttributes + edit.state.attributeValues.toMap())
+                .filterValues { it.isNotEmpty() },
+            sellerPrice = edit.state.price,
+            selectedCategoryId = edit.state.selectedCategoryId ?: listing.selectedCategoryId,
+            lastAttemptId = edit.state.attemptId ?: listing.lastAttemptId,
+        )
+        if (rebuilt.forComparison() == listing.forComparison()) return
+        draftsRepository.upsert(
+            stored.copy(
+                listing = rebuilt,
+                updatedAtEpochSeconds = Clock.System.now().toEpochMilliseconds() / 1000,
+            ),
+        )
+    }
+
+    /** An unset seller price is the suggestion, and an attribute with no values is no attribute. */
+    private fun AdvertisementWithAttributes.forComparison() = copy(
+        sellerPrice = sellerPrice ?: advertisement.suggestedPrice,
+        filledAttributes = filledAttributes.filterValues { it.isNotEmpty() },
+    )
 
     private fun readSavedState(): PreviewAdSavedState =
         savedStateHandle.get<String>(PreviewAdSavedStateKey)

@@ -4,8 +4,8 @@ import androidx.compose.runtime.Immutable
 import com.mohamedrejeb.calf.io.KmpFile
 import com.sirelon.sellsnap.features.media.upload.UploadingItem
 import com.sirelon.sellsnap.features.seller.ad.AdvertisementWithAttributes
-import com.sirelon.sellsnap.features.seller.ad.recent.RecentListing
 import com.sirelon.sellsnap.features.seller.currency.domain.OlxCurrency
+import com.sirelon.sellsnap.features.seller.drafts.Draft
 
 interface GenerateAdContract {
 
@@ -18,8 +18,8 @@ interface GenerateAdContract {
         val completedSteps: Int = 0,
         val errorMessage: String? = null,
         val uploads: Map<KmpFile, UploadingItem> = emptyMap(),
-        val recentListings: List<RecentListing> = emptyList(),
-        val recentListingsCurrency: OlxCurrency = OlxCurrency.Default,
+        val latestDraft: Draft? = null,
+        val draftsCurrency: OlxCurrency = OlxCurrency.Default,
     ) {
         val canSubmit: Boolean
             get() = !isLoading && uploads.isNotEmpty()
@@ -36,7 +36,9 @@ interface GenerateAdContract {
 
         data object Cancel : GenerateAdEvent
 
-        data class OpenRecentListing(val listing: RecentListing) : GenerateAdEvent
+        data class OpenDraft(val draft: Draft) : GenerateAdEvent
+
+        data object OpenAllDrafts : GenerateAdEvent
     }
 
     sealed interface GenerateAdEffect {
@@ -45,5 +47,7 @@ interface GenerateAdContract {
         data class OpenAdPreview(
             val ad: AdvertisementWithAttributes,
         ) : GenerateAdEffect
+
+        data object OpenDrafts : GenerateAdEffect
     }
 }
