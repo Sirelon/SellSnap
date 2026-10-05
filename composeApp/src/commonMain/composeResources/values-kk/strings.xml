@@ -123,6 +123,10 @@
     <string name="whats_new_empty_title">Әзірге ештеңе жоқ</string>
     <string name="whats_new_empty_description">Шығарылым жазбалары үшін кейінірек қайта тексеріңіз.</string>
 
+    <!-- Announcements -->
+    <string name="announcement_ok">ОК</string>
+    <string name="announcement_close">Жабу</string>
+
     <!-- My OLX Ads -->
     <string name="nav_my_ads">Менің хабарландыруларым</string>
     <string name="my_ads_screen_title">Менің OLX хабарландыруларым</string>

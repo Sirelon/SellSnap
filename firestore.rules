@@ -6,6 +6,13 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // In-app announcements (AnnouncementsRepository). World-readable: never put personal data in
+    // an announcement's copy. Published from the console or REST by the owner, never by the app.
+    match /announcements/{document=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+
     // Ad-generation diagnostic logging (AdGenerationLogRepository). 3.2+ nests documents under
     // the Firebase installation ID rather than an OLX account, since guest-mode attempts never
     // have one: ad_generations/{installationId}/attempts/{document}. 3.1 and older - still active

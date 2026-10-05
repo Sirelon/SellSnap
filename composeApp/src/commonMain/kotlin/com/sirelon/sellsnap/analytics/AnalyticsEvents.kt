@@ -176,7 +176,7 @@ object AnalyticsEvents {
     /**
      * Carries `trigger` (`publish` | `copied_listing`) and `reason` - see ReviewPromptSkipReason:
      * `too_few_publishes` and `install_session` for `publish`, `too_few_copied_listings` for
-     * `copied_listing`, and `recent_error`, `whats_new`, `cooldown` for either.
+     * `copied_listing`, and `recent_error`, `whats_new`, `announcement`, `cooldown` for either.
      */
     const val REVIEW_PROMPT_SKIPPED = "review_prompt_skipped"
 }

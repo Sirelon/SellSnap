@@ -120,6 +120,10 @@
     <string name="whats_new_empty_title">Тут поки що нічого немає</string>
     <string name="whats_new_empty_description">Загляньте пізніше, щоб дізнатися про оновлення.</string>
 
+    <!-- Announcements -->
+    <string name="announcement_ok">ОК</string>
+    <string name="announcement_close">Закрити</string>
+
     <!-- My OLX Ads -->
     <string name="nav_my_ads">Мої оголошення</string>
     <string name="my_ads_screen_title">Мої оголошення OLX</string>

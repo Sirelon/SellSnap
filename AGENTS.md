@@ -187,6 +187,12 @@ Most features use some combination of:
   - Main subareas: `auth/`, `ad/`, `onboarding/`, `profile/`.
 - `features/media`
   - Upload, permission, picker, format conversion helpers used by seller ad photos.
+- `features/announcements`
+  - Launch dialog fed by the Firestore `announcements` collection (one doc = content + rules,
+    filtered on device; schema in `AnnouncementResponse`). Publish via Firestore REST as in the
+    `release-notes` skill. Host images in Firebase Storage: the Android emulator's DNS fails on
+    some third-party hosts (`fastly.picsum.photos` → `UnknownHostException`) while Google hosts
+    resolve, and the dialog silently drops an image that fails to load.
 
 ## Supabase Flow
 - Shared Supabase wrapper: `shared/.../supabase/SupabaseClient.kt`
