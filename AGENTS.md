@@ -244,7 +244,7 @@ Rules: `.claude/rules/edge-to-edge.md` — loads when you open a `ui/`, `*Screen
   - object: `SupabaseConfig`
 - Fallback defaults exist for local/dev builds; do not mistake them for production values.
 - The OpenAI key is not in any build. Android and iOS call the `openai` Cloud Function with a Firebase App Check token (`composeApp/.../network/OpenAIEndpoint.kt`, platform modules `OpenAIEndpointModule.*.kt`); the key lives in Secret Manager as `OPENAI_KEY`. Desktop calls OpenAI directly with `OPENAI_KEY` read from the environment at launch. Web has no App Check and cannot generate listings.
-- App Check providers: Play Integrity (Android release), App Attest (iOS release), debug providers in debug builds. Debug builds on emulators and simulators need their debug token registered under Firebase console > App Check > Apps > Manage debug tokens, or the proxy answers 401.
+- App Check providers: Play Integrity (Android release), App Attest (iOS release), debug providers in debug builds. Debug builds on emulators and simulators need their debug token registered in App Check, or the proxy answers 401; the `appcheck-debug-token` skill (`.claude/skills/`) does that.
 
 ## Important Build Notes
 - `./gradlew` and the Xcode bridge both depend on `gradle/wrapper/gradle-wrapper.jar`; if it disappears again, shell builds can fall back to local Gradle `9.4.1`, but Xcode sync/build needs the wrapper jar restored.
@@ -328,8 +328,8 @@ Flows live in `.maestro/`, runner scripts in `scripts/maestro-*.sh`. Three thing
 - **`screenshotMode` is committed as `false` and must never be committed `true`.** It bypasses
   the publish confirmation, and `scripts/ship.sh` refuses to release while it is enabled.
 - **A fresh emulator or simulator install cannot generate listings until its App Check debug
-  token is registered** (Firebase console > App Check > Apps > Manage debug tokens). The token is
-  printed once in logcat / the Xcode console on first launch; see Secrets And Config.
+  token is registered**, and every `clearState` mints a new token. Run the
+  `appcheck-debug-token` skill after a wipe, before any flow that generates a listing.
 
 Prefer `testTag` ids over visible text in selectors — flows run in 4+ locales. Photos are never
 picked through the OS picker. Full workflow: the user-level `sellsnap-screenshots` skill (`~/.claude/skills/`).
