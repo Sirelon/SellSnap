@@ -1,0 +1,21 @@
+{
+  "name": "sellsnap-functions",
+  "private": true,
+  "description": "Cloud Functions for SellSnap: the OpenAI proxy that keeps the API key off the phone",
+  "engines": {
+    "node": "22"
+  },
+  "main": "lib/index.js",
+  "scripts": {
+    "build": "tsc",
+    "deploy": "npx firebase-tools deploy --only functions --project sellsnap-6e85c"
+  },
+  "dependencies": {
+    "firebase-admin": "^14.5.0",
+    "firebase-functions": "^7.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.9.3"
+  }
+}
