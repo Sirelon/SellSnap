@@ -49,7 +49,6 @@
     <string name="tip_lighting">Lumină bună = rezultate mai bune</string>
     <string name="tip_angles">Fotografiază din mai multe unghiuri</string>
     <string name="tip_defects">Nu ascunde zgârieturile — cumpărătorii apreciază sinceritatea</string>
-    <string name="take_photo">Fotografiază</string>
 
     <!-- Preview Ad Screen -->
     <string name="publish_on_olx">Publică pe OLX</string>
@@ -71,7 +70,6 @@
     <string name="bullet_item">• %1$s</string>
 
     <!-- Photos Section -->
-    <string name="photos_count_format">%1$d/%2$d fotografii</string>
     <string name="add_photo_cd">Adaugă fotografie</string>
     <string name="add_photo_label">Adaugă</string>
     <string name="remove_photo_cd">Elimină fotografie</string>
@@ -156,7 +154,6 @@
     <string name="retry">Reîncearcă</string>
 
     <!-- Analyze Screen -->
-    <string name="add_photos_title">Adaugă fotografii</string>
 
     <!-- Generate Ad Screen -->
     <string name="generate_with_ai">Generează cu AI</string>

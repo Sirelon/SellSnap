@@ -49,7 +49,6 @@
     <string name="tip_lighting">Добра светлина = по-добри резултати</string>
     <string name="tip_angles">Снимай от няколко ъгъла</string>
     <string name="tip_defects">Не крий драскотините — купувачите ценят честността</string>
-    <string name="take_photo">Снимай</string>
 
     <!-- Preview Ad Screen -->
     <string name="publish_on_olx">Публикувай в OLX</string>
@@ -71,7 +70,6 @@
     <string name="bullet_item">• %1$s</string>
 
     <!-- Photos Section -->
-    <string name="photos_count_format">%1$d/%2$d снимки</string>
     <string name="add_photo_cd">Добави снимка</string>
     <string name="add_photo_label">Добави</string>
     <string name="remove_photo_cd">Премахни снимка</string>
@@ -156,7 +154,6 @@
     <string name="retry">Опитай отново</string>
 
     <!-- Analyze Screen -->
-    <string name="add_photos_title">Добави снимки</string>
 
     <!-- Generate Ad Screen -->
     <string name="generate_with_ai">Генерирай с AI</string>
