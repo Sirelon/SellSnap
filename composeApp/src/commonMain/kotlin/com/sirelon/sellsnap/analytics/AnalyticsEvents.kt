@@ -130,9 +130,22 @@ object AnalyticsEvents {
     // by hand - this is the only success signal the funnel has.
     const val AD_CONTENT_COPIED = "ad_content_copied"
 
-    // Which button the seller pressed on the "leave and lose your draft?" sheet, as `choice`
-    // (stay | leave). The sheet's own screen_view only says it was shown; without this, a seller
-    // who backs out and keeps editing is indistinguishable from one who abandons the draft.
+    // Drafts (SIR-133). `field` is title | description | price, never the text itself - same rule
+    // as AD_CONTENT_COPIED. Kept separate from that event so copies that skipped a regeneration
+    // can be counted against ad_generation_started.
+    const val DRAFT_COPIED = "draft_copied"
+
+    /** A draft was tapped and the preview reopened for it. `source` is generate | drafts: the
+     * generate screen's section or the Drafts screen. */
+    const val DRAFT_OPENED = "draft_opened"
+
+    /** A draft was removed on the Drafts screen. No params. */
+    const val DRAFT_REMOVED = "draft_removed"
+
+    // Which button the seller pressed on the "close this listing?" sheet, as `choice`
+    // (stay | leave). Leaving keeps the draft in Drafts. The sheet's own screen_view only says it
+    // was shown; without this, a seller who backs out and keeps editing is indistinguishable from
+    // one who closes the listing.
     const val AD_DRAFT_EXIT_CHOICE = "ad_draft_exit_choice"
 
     // Ad lifecycle (SIR-106). Buckets and enums only: no prices in absolute terms, no advert

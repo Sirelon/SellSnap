@@ -6,6 +6,8 @@ import com.sirelon.sellsnap.analytics.AnalyticsEvents
 import com.sirelon.sellsnap.features.media.upload.DraftMediaFileStore
 import com.sirelon.sellsnap.features.media.upload.DraftPhoto
 import com.sirelon.sellsnap.features.media.upload.PersistedDraftPhoto
+import com.sirelon.sellsnap.features.seller.ad.Advertisement
+import com.sirelon.sellsnap.features.seller.ad.AdvertisementWithAttributes
 import com.sirelon.sellsnap.features.seller.auth.data.GuestModeStore
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountRecord
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountState
@@ -24,6 +26,8 @@ import com.sirelon.sellsnap.features.seller.auth.data.createOlxHttpClient
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxAuthCallback
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxCountry
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxTokens
+import com.sirelon.sellsnap.features.seller.drafts.Draft
+import com.sirelon.sellsnap.features.seller.drafts.InMemoryDraftsRepository
 import com.sirelon.sellsnap.features.seller.location.LocationProvider
 import com.sirelon.sellsnap.features.seller.location.DeviceLocation
 import com.sirelon.sellsnap.features.seller.location.data.LocationRepository
@@ -42,6 +46,7 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import kotlin.test.Test
@@ -53,6 +58,44 @@ import kotlin.time.Clock
 class SellerAccountRepositoryTest {
 
     private val testJson = Json { ignoreUnknownKeys = true; isLenient = true; explicitNulls = false }
+
+    @Test
+    fun `deleteSellSnapAccountData also drops the drafts`() = runBlocking {
+        val accountStore = OlxAccountStore(InMemoryOlxKeyValueStore(), testJson)
+        val engine = MockEngine { respond("{}", status = HttpStatusCode.OK, headers = jsonHeaders()) }
+        val harness = harness(engine, accountStore)
+        harness.draftsRepository.upsert(
+            Draft(
+                id = "session-1",
+                countryCode = "ua",
+                createdAtEpochSeconds = 1_000L,
+                updatedAtEpochSeconds = 1_000L,
+                listing = AdvertisementWithAttributes(
+                    advertisement = Advertisement(
+                        title = "Nike Air Max 90",
+                        description = "Worn twice",
+                        images = listOf("https://x/air-max.jpg"),
+                        suggestedPrice = 1500f,
+                        minPrice = 1200f,
+                        maxPrice = 1800f,
+                    ),
+                    filledAttributes = emptyMap(),
+                    generationSessionId = "session-1",
+                ),
+            ),
+        )
+        assertEquals(1, harness.draftsRepository.drafts().first().size)
+
+        try {
+            harness.repository.deleteSellSnapAccountData()
+
+            assertTrue(harness.draftsRepository.drafts().first().isEmpty())
+        } finally {
+            // deleteSellSnapAccountData resets the process-global country to the device default,
+            // which other tests in this JVM read.
+            harness.countryStore.save(OlxCountry.UA)
+        }
+    }
 
     @Test
     fun `setActiveAccount clears the bearer cache so the next request uses the new active account`() = runBlocking {
@@ -502,6 +545,7 @@ class SellerAccountRepositoryTest {
             olxApiClient = olxApiClient,
             locationStore = LocationStore(InMemoryOlxKeyValueStore(), testJson),
         )
+        val draftsRepository = InMemoryDraftsRepository()
         val repository = SellerAccountRepository(
             authRepository = authRepository,
             olxApiClient = olxApiClient,
@@ -513,11 +557,19 @@ class SellerAccountRepositoryTest {
             olxCountryStore = countryStore,
             draftMediaFileStore = FakeDraftMediaFileStore,
             advertOutcomeStore = AdvertOutcomeStore(InMemoryOlxKeyValueStore(), testJson),
+            draftsRepository = draftsRepository,
             analyticsConsentRepository = analyticsConsentRepository,
             errorParser = errorParser,
             analytics = analytics,
         )
-        return TestHarness(repository, accountStore, olxApiClient, analytics)
+        return TestHarness(
+            repository = repository,
+            accountStore = accountStore,
+            olxApiClient = olxApiClient,
+            analytics = analytics,
+            draftsRepository = draftsRepository,
+            countryStore = countryStore,
+        )
     }
 
     private data class TestHarness(
@@ -525,6 +577,8 @@ class SellerAccountRepositoryTest {
         val accountStore: OlxAccountStore,
         val olxApiClient: OlxApiClient,
         val analytics: FakeAnalytics,
+        val draftsRepository: InMemoryDraftsRepository,
+        val countryStore: OlxCountryStore,
     )
 
     private class TestCredentialsProvider : OlxCredentialsProvider {

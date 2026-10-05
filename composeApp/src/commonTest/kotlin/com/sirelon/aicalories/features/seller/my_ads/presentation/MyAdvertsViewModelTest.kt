@@ -24,6 +24,7 @@ import com.sirelon.sellsnap.features.seller.auth.data.createOlxHttpClient
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxAuthCallback
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxCountry
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxTokens
+import com.sirelon.sellsnap.features.seller.drafts.InMemoryDraftsRepository
 import com.sirelon.sellsnap.features.seller.location.DeviceLocation
 import com.sirelon.sellsnap.features.seller.location.LocationProvider
 import com.sirelon.sellsnap.features.seller.location.data.LocationRepository
@@ -1786,6 +1787,7 @@ class MyAdvertsViewModelTest {
             olxCountryStore = countryStore,
             draftMediaFileStore = FakeDraftMediaFileStore,
             advertOutcomeStore = AdvertOutcomeStore(InMemoryOlxKeyValueStore(), testJson),
+            draftsRepository = InMemoryDraftsRepository(),
             analyticsConsentRepository = analyticsConsentRepository,
             errorParser = errorParser,
             analytics = analytics,

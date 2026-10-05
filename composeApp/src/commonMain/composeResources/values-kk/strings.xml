@@ -149,6 +149,7 @@
 
     <!-- Navigation -->
     <string name="back">Артқа</string>
+    <string name="action_undo">Болдырмау</string>
 
     <!-- Capacity Result Screen -->
     <string name="retry">Қайталап көру</string>
@@ -165,6 +166,14 @@
     <string name="ai_hint_placeholder">мысалы, Nike Air Max 90, 42 өлшем, 2 ай киілген</string>
     <string name="get_started">Бастайық</string>
     <string name="next">Келесі</string>
+
+    <!-- Drafts -->
+    <string name="drafts_title">Жобалар</string>
+    <string name="drafts_copy_hint">Көшіру үшін «Тақырып», «Сипаттама» немесе «Баға» дегенді бас.</string>
+    <string name="drafts_see_all">Барлығын көру</string>
+    <string name="drafts_empty">Әзірге жоба жоқ.</string>
+    <string name="drafts_remove_cd">Жобаны жою</string>
+    <string name="drafts_removed">Жоба жойылды</string>
 
     <!-- AI Processing -->
     <string name="ai_creating_ad_title">Хабарландыруың дайындалуда</string>
@@ -218,10 +227,10 @@
     <string name="publish_confirm_back">Күте тұр, өңдейін</string>
     <string name="publish_confirm_photo_removed">Фото жойылды</string>
     <string name="publish_confirm_undo_remove_photo">Болдырмау</string>
-    <string name="preview_back_info_title">Бұл жобаны тастап кету керек пе?</string>
-    <string name="preview_back_info_message">Бұл хабарландыру әлі жарияланбаған. Кетсең, жоба жойылады — генерация экранынан қайта бастайсың.</string>
+    <string name="preview_back_info_title">Бұл хабарландыруды жабу керек пе?</string>
+    <string name="preview_back_info_message">Жариялағанша ол өзгерістеріңмен бірге Жобаларда сақталады.</string>
     <string name="preview_back_info_stay">Өңдеуді жалғастыру</string>
-    <string name="preview_back_info_leave">Жобаны тастау</string>
+    <string name="preview_back_info_leave">Жабу</string>
     <string name="publishing">Жариялануда…</string>
     <string name="copy_pill_default">Көшіру</string>
     <string name="copy_pill_copied">Көшірілді ✓</string>

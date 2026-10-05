@@ -25,6 +25,7 @@ import com.sirelon.sellsnap.features.seller.ad.preview_ad.ui.PublishConfirmSheet
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAuthCallbackBridge
 import com.sirelon.sellsnap.features.seller.auth.presentation.SellerAuthContract
 import com.sirelon.sellsnap.features.seller.auth.presentation.SellerLandingScreen
+import com.sirelon.sellsnap.features.seller.drafts.data.initAndroidDatabase
 import com.sirelon.sellsnap.platform.initAndroidUrlOpener
 
 class MainActivity : ComponentActivity() {
@@ -36,6 +37,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         installAppCheckProviderFactory()
         initAndroidKeyValueStore(filesDir.absolutePath)
+        initAndroidDatabase(applicationContext)
         initAndroidDraftMediaFileStore(filesDir.absolutePath)
         initAndroidScreenshotPhotos(cacheDir.absolutePath)
         initAndroidUrlOpener(this)
