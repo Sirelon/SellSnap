@@ -263,7 +263,7 @@ FCM, shared code in `composeApp/.../features/notifications/`. Every launch repor
 - **Test sends go to `qa` or one device token, never `all*`.** Debug and release share one Firebase app, so an `all*` test reaches real users.
 - **`link` data key** sets the tap target: `store` opens the store page of the receiving platform, `https://…` opens as given, anything else just opens the app.
 - **Send, console:** Messaging → New campaign → Notifications → Target: Topic → Additional options → Custom data `link`.
-- **Send, FCM v1 REST** (`Inferred:` the gcloud token path is unverified):
+- **Send, FCM v1 REST** (works with the owner's `gcloud` login; the Firebase MCP `messaging_send_message` tool failed without a reason on 2026-10-07):
   `curl -X POST -H "Authorization: Bearer $(gcloud auth print-access-token)" -H "x-goog-user-project: sellsnap-6e85c" -H "Content-Type: application/json" https://fcm.googleapis.com/v1/projects/sellsnap-6e85c/messages:send -d '{"message":{"topic":"qa","notification":{"title":"…","body":"…"},"data":{"link":"store"}}}'`.
   Everyone except Ukrainian: replace `"topic":"qa"` with `"condition":"'all' in topics && !('all-uk' in topics)"`.
 - **Pair an update push with an `announcements` doc** (see `features/announcements`): users who declined notifications only see the announcement.
