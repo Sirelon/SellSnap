@@ -12,3 +12,6 @@ final key list, then post the Ukrainian back for his check.
 
 Do not hand-translate inline, do not run `localize` mid-task, and do not run it again for a
 rewording the owner has not seen. (If you are the localize agent, proceed with your instructions.)
+
+Write apostrophes plain (`We'll`), never Android-escaped (`We\'ll`): Compose resources do not
+unescape `\'`, so the backslash renders on screen.

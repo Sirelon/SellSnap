@@ -20,17 +20,26 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.mohamedrejeb.calf.permissions.Notification
+import com.mohamedrejeb.calf.permissions.Permission
+import com.mohamedrejeb.calf.permissions.PermissionStatus
+import com.mohamedrejeb.calf.permissions.rememberPermissionState
 import com.sirelon.sellsnap.designsystem.AppCard
 import com.sirelon.sellsnap.designsystem.AppDimens
 import com.sirelon.sellsnap.designsystem.AppScaffold
 import com.sirelon.sellsnap.designsystem.AppTheme
 import com.sirelon.sellsnap.designsystem.AppThemeMode
 import com.sirelon.sellsnap.designsystem.Cell
+import com.sirelon.sellsnap.designsystem.ObserveAsEvents
+import com.sirelon.sellsnap.features.seller.settings.presentation.SettingsContract.SettingsEffect
 import com.sirelon.sellsnap.features.seller.settings.presentation.SettingsContract.SettingsEvent
 import com.sirelon.sellsnap.features.seller.settings.presentation.SettingsContract.SettingsState
 import com.sirelon.sellsnap.features.seller.settings.presentation.SettingsViewModel
 import com.sirelon.sellsnap.legal.LegalLinks
+import com.sirelon.sellsnap.platform.PlatformTargets
 import com.sirelon.sellsnap.generated.resources.Res
 import com.sirelon.sellsnap.generated.resources.profile_analytics_consent_subtitle
 import com.sirelon.sellsnap.generated.resources.profile_analytics_consent_title
@@ -43,6 +52,9 @@ import com.sirelon.sellsnap.generated.resources.profile_theme_subtitle
 import com.sirelon.sellsnap.generated.resources.profile_theme_system
 import com.sirelon.sellsnap.generated.resources.profile_theme_title
 import com.sirelon.sellsnap.generated.resources.privacy_policy
+import com.sirelon.sellsnap.generated.resources.settings_notifications_off
+import com.sirelon.sellsnap.generated.resources.settings_notifications_on
+import com.sirelon.sellsnap.generated.resources.settings_notifications_title
 import com.sirelon.sellsnap.generated.resources.settings_screen_title
 import com.sirelon.sellsnap.generated.resources.settings_version_history
 import com.sirelon.sellsnap.generated.resources.terms_of_service
@@ -59,9 +71,35 @@ fun SettingsScreenRoute(
     val snackbarHostState = remember { SnackbarHostState() }
     val uriHandler = LocalUriHandler.current
 
+    // Desktop and web have no push channel, so the row and the permission state exist on mobile only.
+    val notificationsSupported = remember { PlatformTargets.isMobile() }
+    val permissionState = if (notificationsSupported) {
+        rememberPermissionState(Permission.Notification) {
+            viewModel.onEvent(SettingsEvent.RefreshNotifications)
+        }
+    } else {
+        null
+    }
+
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        if (notificationsSupported) viewModel.onEvent(SettingsEvent.RefreshNotifications)
+    }
+
+    ObserveAsEvents(viewModel.effects) { effect ->
+        when (effect) {
+            SettingsEffect.RequestNotificationPermission -> permissionState?.launchPermissionRequest()
+            SettingsEffect.OpenAppSettings -> permissionState?.openAppSettings()
+        }
+    }
+
     SettingsScreen(
         state = state,
         snackbarHostState = snackbarHostState,
+        notificationsSupported = notificationsSupported,
+        onNotificationsClick = {
+            val rationale = (permissionState?.status as? PermissionStatus.Denied)?.shouldShowRationale == true
+            viewModel.onEvent(SettingsEvent.NotificationsClicked(shouldShowRationale = rationale))
+        },
         onEvent = viewModel::onEvent,
         onOpenPrivacy = { uriHandler.openUri(LegalLinks.PRIVACY_URL) },
         onOpenTerms = { uriHandler.openUri(LegalLinks.TERMS_URL) },
@@ -75,6 +113,8 @@ fun SettingsScreenRoute(
 private fun SettingsScreen(
     state: SettingsState,
     snackbarHostState: SnackbarHostState,
+    notificationsSupported: Boolean,
+    onNotificationsClick: () -> Unit,
     onEvent: (SettingsEvent) -> Unit,
     onOpenPrivacy: () -> Unit,
     onOpenTerms: () -> Unit,
@@ -107,6 +147,13 @@ private fun SettingsScreen(
                 },
             )
 
+            if (notificationsSupported) {
+                NotificationsCard(
+                    enabled = state.notificationsEnabled,
+                    onClick = onNotificationsClick,
+                )
+            }
+
             AppCard(modifier = Modifier.fillMaxWidth()) {
                 Cell(
                     headline = {
@@ -133,6 +180,38 @@ private fun SettingsScreen(
                 onDeleteAccountData = onDeleteAccountData,
             )
         }
+    }
+}
+
+@Composable
+private fun NotificationsCard(
+    enabled: Boolean?,
+    onClick: () -> Unit,
+) {
+    AppCard(modifier = Modifier.fillMaxWidth()) {
+        Cell(
+            headline = {
+                Text(
+                    text = stringResource(Res.string.settings_notifications_title),
+                    style = AppTheme.typography.body,
+                    color = AppTheme.colors.onSurface,
+                )
+            },
+            supporting = enabled?.let {
+                {
+                    Text(
+                        text = stringResource(
+                            if (it) Res.string.settings_notifications_on else Res.string.settings_notifications_off,
+                        ),
+                        style = AppTheme.typography.caption,
+                        color = AppTheme.colors.onSurfaceMuted,
+                    )
+                }
+            },
+            modifier = Modifier.fillMaxWidth(),
+            transparent = true,
+            onClick = onClick,
+        )
     }
 }
 

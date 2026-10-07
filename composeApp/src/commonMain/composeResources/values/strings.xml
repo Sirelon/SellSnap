@@ -89,6 +89,9 @@
     <string name="profile_field_last_login_at">Last login</string>
     <string name="profile_screen_title">Profile</string>
     <string name="settings_screen_title">Settings</string>
+    <string name="settings_notifications_title">Notifications</string>
+    <string name="settings_notifications_on">On</string>
+    <string name="settings_notifications_off">Off. Tap to turn on.</string>
     <string name="profile_guest_title">Guest profile</string>
     <string name="profile_guest_description">Hook up OLX to publish from SellSnap — your account details will land here too.</string>
     <string name="profile_olx_account">OLX account</string>
@@ -109,7 +112,7 @@
     <string name="profile_delete_account_data_cancel">Cancel</string>
     <string name="profile_privacy_data_title">Privacy &amp; data</string>
     <string name="profile_analytics_consent_title">Share usage analytics</string>
-    <string name="profile_analytics_consent_subtitle">Anonymous usage data that helps us improve SellSnap. Off by default — change anytime.</string>
+    <string name="profile_analytics_consent_subtitle">Anonymous usage data that helps us improve SellSnap. Change it anytime.</string>
     <string name="profile_contact_data_request">Contact us about your data</string>
     <string name="profile_not_provided">Not set</string>
     <string name="profile_value_yes">Yes</string>
@@ -128,6 +131,12 @@
     <!-- Announcements -->
     <string name="announcement_ok">OK</string>
     <string name="announcement_close">Close</string>
+
+    <!-- Notifications -->
+    <string name="notifications_prompt_title">Get a heads-up from SellSnap</string>
+    <string name="notifications_prompt_message">We'll only message you when it matters, like when there's an update you need to install.</string>
+    <string name="notifications_prompt_enable">Turn on notifications</string>
+    <string name="notification_channel_updates">Updates from SellSnap</string>
 
     <!-- My OLX Ads -->
     <string name="nav_my_ads">My ads</string>
@@ -352,8 +361,8 @@
     <string name="my_ads_empty_description_account">No listings for %1$s yet.</string>
     <string name="my_ads_account_fallback_name">your account</string>
     <string name="my_ads_reconnect_title">Reconnect this account</string>
-    <string name="my_ads_reconnect_description">This account\'s OLX connection expired. Reconnect to see its listings.</string>
-    <string name="my_ads_load_failed_account">Couldn\'t load ads for %1$s.</string>
+    <string name="my_ads_reconnect_description">This account's OLX connection expired. Reconnect to see its listings.</string>
+    <string name="my_ads_load_failed_account">Couldn't load ads for %1$s.</string>
 
     <!-- Ad lifecycle -->
     <string name="advert_actions_open_on_olx">View on OLX</string>

@@ -19,6 +19,7 @@ private let log = OSLog(subsystem: "com.sirelon.sellsnap.ShareExtension", catego
 class ShareViewController: UIViewController {
 
     private var didStartHandling = false
+    private var didComplete = false
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -101,8 +102,30 @@ class ShareViewController: UIViewController {
             return
         }
         UserDefaults(suiteName: appGroupId)?.set(paths, forKey: pendingPathsDefaultsKey)
-        scheduleNotification()
-        complete()
+
+        // The share is the moment the hand-back notification is needed, so this is where an
+        // undecided user gets asked: the app does not ask at launch. A user who declines can
+        // still switch back manually - the app publishes the saved paths on scene activation
+        // (publishPendingSharedImages in iOSApp.swift) - so the permission is optional.
+        // If the system never answers the request, the time-box below still ends the share; it is
+        // long enough for a person to read and answer the prompt.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 30) { [weak self] in
+            self?.complete()
+        }
+        let center = UNUserNotificationCenter.current()
+        center.getNotificationSettings { [weak self] settings in
+            guard settings.authorizationStatus == .notDetermined else {
+                self?.scheduleNotification()
+                self?.complete()
+                return
+            }
+            center.requestAuthorization(options: [.alert, .sound]) { granted, _ in
+                if granted {
+                    self?.scheduleNotification()
+                }
+                self?.complete()
+            }
+        }
     }
 
     private func scheduleNotification() {
@@ -118,7 +141,13 @@ class ShareViewController: UIViewController {
         }
     }
 
+    // Callable from any queue and from several paths (settings callback, permission callback,
+    // time-box); the main-queue hop plus the flag make the request complete exactly once.
     private func complete() {
-        extensionContext?.completeRequest(returningItems: nil, completionHandler: nil)
+        DispatchQueue.main.async {
+            guard !self.didComplete else { return }
+            self.didComplete = true
+            self.extensionContext?.completeRequest(returningItems: nil, completionHandler: nil)
+        }
     }
 }

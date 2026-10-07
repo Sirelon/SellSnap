@@ -39,7 +39,7 @@
     <string name="onboarding_step2_title">AI пише вместо теб ✍️</string>
     <string name="onboarding_step2_subtitle">Заглавие, описание и честна цена — готови преди кафето да изстине.</string>
     <string name="onboarding_step3_title">Публикувай с един допир 🚀</string>
-    <string name="onboarding_step3_subtitle">Един допир и си на живо в OLX. Купувачи, посрещнете нещата му.</string>
+    <string name="onboarding_step3_subtitle">Един допир и си на живо в OLX. Купувачите вече виждат нещата ти.</string>
 
     <!-- Generate Ad Screen -->
     <string name="turn_stuff_into_olx_listings">Имаш какво да продадеш? Снимай го. Ние го публикуваме.</string>
@@ -87,6 +87,9 @@
     <string name="profile_field_last_login_at">Последно влизане</string>
     <string name="profile_screen_title">Профил</string>
     <string name="settings_screen_title">Настройки</string>
+    <string name="settings_notifications_title">Известия</string>
+    <string name="settings_notifications_on">Включени</string>
+    <string name="settings_notifications_off">Изключени. Докосни, за да включиш.</string>
     <string name="profile_guest_title">Гостови профил</string>
     <string name="profile_guest_description">Свържи OLX, за да публикуваш от SellSnap — данните за акаунта ти ще се появят тук.</string>
     <string name="profile_olx_account">OLX акаунт</string>
@@ -107,7 +110,7 @@
     <string name="profile_delete_account_data_cancel">Отказ</string>
     <string name="profile_privacy_data_title">Поверителност и данни</string>
     <string name="profile_analytics_consent_title">Сподели аналитика за използване</string>
-    <string name="profile_analytics_consent_subtitle">Анонимни данни за използване, които ни помагат да подобряваме SellSnap. Изключено по подразбиране — промени по всяко време.</string>
+    <string name="profile_analytics_consent_subtitle">Анонимни данни за използване, които ни помагат да подобряваме SellSnap. Можеш да го промениш по всяко време.</string>
     <string name="profile_contact_data_request">Свържи се с нас относно твоите данни</string>
     <string name="profile_not_provided">Не е зададено</string>
     <string name="profile_value_yes">Да</string>
@@ -121,11 +124,17 @@
     <string name="whats_new_view_all">Виж всички актуализации</string>
     <string name="whats_new_installed_badge">Инсталирана</string>
     <string name="whats_new_empty_title">Все още няма нищо</string>
-    <string name="whats_new_empty_description">Проверете по-късно за бележки по изданието.</string>
+    <string name="whats_new_empty_description">Провери по-късно за бележки по изданието.</string>
 
     <!-- Announcements -->
     <string name="announcement_ok">ОК</string>
     <string name="announcement_close">Затвори</string>
+
+    <!-- Notifications -->
+    <string name="notifications_prompt_title">Получавай важното от SellSnap</string>
+    <string name="notifications_prompt_message">Ще ти пишем само когато наистина има значение, например когато има обновление за инсталиране.</string>
+    <string name="notifications_prompt_enable">Включи известията</string>
+    <string name="notification_channel_updates">Обновления от SellSnap</string>
 
     <!-- My OLX Ads -->
     <string name="nav_my_ads">Моите обяви</string>
@@ -316,10 +325,10 @@
     <string name="account_business_badge">Бизнес</string>
     <string name="profile_account_set_active">Направи активен</string>
     <string name="profile_account_add_button">Добави OLX акаунт</string>
-    <string name="profile_account_cap_reached_message">Достигнахте максимума от 3 акаунта за този OLX сайт. Изключете един, за да добавите друг.</string>
+    <string name="profile_account_cap_reached_message">Достигна максимума от 3 акаунта за този OLX сайт. Изключи един, за да добавиш друг.</string>
     <string name="profile_active_account_details_title">Данни за активния акаунт</string>
     <string name="profile_add_account_confirm_title">Добавяне на OLX акаунт</string>
-    <string name="profile_add_account_confirm_subtitle">Ще добавите акаунт на %1$s. Другите ви акаунти остават свързани — не е нужно да излизате от тях.</string>
+    <string name="profile_add_account_confirm_subtitle">Ще добавиш акаунт на %1$s. Другите ти акаунти остават свързани — не е нужно да излизаш от тях.</string>
     <string name="profile_add_account_confirm_note">Влизането става на страницата на OLX — SellSnap никога не вижда паролата ти.</string>
     <string name="profile_add_account_confirm_continue">Продължи към OLX</string>
     <string name="profile_add_account_confirm_cancel">Отказ</string>
@@ -329,7 +338,7 @@
     <string name="profile_auth_failed_retry_countdown">Опитай отново след %1$d сек</string>
     <string name="profile_auth_failed_retry">Опитай отново</string>
     <string name="profile_auth_failed_dismiss">Не сега</string>
-    <string name="profile_auth_failed_recovery_title">Проверете достъпа си в OLX</string>
+    <string name="profile_auth_failed_recovery_title">Провери достъпа си в OLX</string>
     <string name="profile_auth_failed_recovery_message">Това са два последователни неуспешни опита. Нов опит носи риск от временно блокиране от OLX — възстанови достъпа си в самия OLX.</string>
     <string name="profile_auth_failed_recovery_action">Възстановяване на достъп в OLX</string>
     <string name="profile_disconnect_confirm_title">Изключване на %1$s?</string>

@@ -218,7 +218,8 @@ Most features use some combination of:
 - **English copy is approved before any locale is touched.** When a ticket adds or rewords
   user-facing strings, post the list — one line per key, `key → text` — and wait for the owner's
   answer. Then run the `localize` agent once, with the final key list. One `localize` run per
-  ticket is the budget; six runs on one milestone is what this rule exists to stop.
+  ticket is the budget; six runs on one milestone is what this rule exists to stop. Each batch of
+  follow-ups the owner orders inside the ticket gets one more run, which carries all of its keys.
 - **Then show the Ukrainian.** Ukrainian is the language the owner actually reads and the primary
   market, so after `localize` returns, post the `key → text` list for `values-uk` before calling
   the ticket done. The other locales follow from it and are not posted.
@@ -254,6 +255,22 @@ Rules: `.claude/rules/edge-to-edge.md` — loads when you open a `ui/`, `*Screen
 - Fallback defaults exist for local/dev builds; do not mistake them for production values.
 - The OpenAI key is not in any build. Android and iOS call the `openai` Cloud Function with a Firebase App Check token (`composeApp/.../network/OpenAIEndpoint.kt`, platform modules `OpenAIEndpointModule.*.kt`); the key lives in Secret Manager as `OPENAI_KEY`. Desktop calls OpenAI directly with `OPENAI_KEY` read from the environment at launch. Web has no App Check and cannot generate listings.
 - App Check providers: Play Integrity (Android release), App Attest (iOS release), debug providers in debug builds. A debug build's token must be registered in App Check or the proxy answers 401. Dev machines use fixed tokens: `APP_CHECK_DEBUG_TOKEN` in `local.properties` (Android) and `iosApp/Configuration/AppCheckDebugToken.local.xcconfig` (iOS), both gitignored; the `appcheck-debug-token` skill (`.claude/skills/`) registers them and handles the per-install fallback.
+
+## Push notifications
+
+FCM, shared code in `composeApp/.../features/notifications/`. Every launch reports the user property `notifications_enabled` and subscribes the device to its topics.
+
+- **Topics:** `all`, `all-<lang>` (en/uk/pl/pt/ro/bg/kk; `ru` → `uk`; anything else → `en`), and `qa` (debug builds only, subscribed natively).
+- **Test sends go to `qa` or one device token, never `all*`.** Debug and release share one Firebase app, so an `all*` test reaches real users.
+- **`link` data key** sets the tap target: `store` opens the store page of the receiving platform, `https://…` opens as given, anything else just opens the app.
+- **Send, console:** Messaging → New campaign → Notifications → Target: Topic → Additional options → Custom data `link`.
+- **Send, FCM v1 REST** (works with the owner's `gcloud` login; the Firebase MCP `messaging_send_message` tool failed without a reason on 2026-10-07):
+  `curl -X POST -H "Authorization: Bearer $(gcloud auth print-access-token)" -H "x-goog-user-project: sellsnap-6e85c" -H "Content-Type: application/json" https://fcm.googleapis.com/v1/projects/sellsnap-6e85c/messages:send -d '{"message":{"topic":"qa","notification":{"title":"…","body":"…"},"data":{"link":"store"}}}'`.
+  Everyone except Ukrainian: replace `"topic":"qa"` with `"condition":"'all' in topics && !('all-uk' in topics)"`.
+- **Pair an update push with an `announcements` doc** (see `features/announcements`): users who declined notifications only see the announcement.
+- **Android:** channel `updates`; the SDK displays background messages, `PushMessagingService` displays foreground ones.
+- **iOS:** the APNs key is uploaded in Firebase; `aps-environment` lives in the single `iosApp/iosApp/iosAppRelease.entitlements` (`development`; App Store export re-signs it to `production`, so the `com.sirelon.sellsnap AppStore` profile must include Push Notifications or the export fails). Without notification permission the device still gets the APNs token and topics. FCM refuses topic operations on each launch until the APNs token is set (error 505, no retry), so topic calls wait for `PushTokenBridge`, which the `MessagingDelegate` registration-token callback signals. Under SwiftUI, FCM's swizzled handler takes the APNs token and the app delegate's `didRegisterForRemoteNotificationsWithDeviceToken` is not called, so nothing may depend on it. The share extension asks for permission when it is undecided.
+- **Permission prompt:** a one-time bottom sheet at the start of a returning session in the seller flow, third in the launch-dialog order after the announcement and What's New (`NotificationsPromptViewModel`); once shown it is never offered again. Settings has a Notifications row (mobile only): it shows the OS prompt while the OS can still show it, otherwise it opens the app's system settings (`notificationsTapAction`).
 
 ## Important Build Notes
 - `./gradlew` and the Xcode bridge both depend on `gradle/wrapper/gradle-wrapper.jar`; if it disappears again, shell builds can fall back to local Gradle `9.4.1`, but Xcode sync/build needs the wrapper jar restored.
@@ -341,7 +358,7 @@ Flows live in `.maestro/`, runner scripts in `scripts/maestro-*.sh`. Three thing
   without them every `clearState` mints a new token and the `appcheck-debug-token` skill has
   to run again before any flow that generates a listing.
 
-Prefer `testTag` ids over visible text in selectors — flows run in 4+ locales. Photos are never
+Prefer `testTag` ids over visible text in selectors — flows run in 4+ locales. Two exceptions bite: a `ModalBottomSheet` or dialog is its own window, where `testTagsAsResourceId` does not reach, so select its content by text; and `launchApp` grants every runtime permission by default (`POST_NOTIFICATIONS` included), so a flow that needs a permission undecided must pass `permissions: { all: unset }` or launch with `adb shell monkey`. Photos are never
 picked through the OS picker. Full workflow: the user-level `sellsnap-screenshots` skill (`~/.claude/skills/`).
 
 ## Fast “Where Do I Edit?” Guide
@@ -397,6 +414,10 @@ picked through the OS picker. Full workflow: the user-level `sellsnap-screenshot
 - Change the sold / not-sold outcome data or the AI price-accuracy measurement:
   - `features/seller/my_ads/data/AdvertOutcomeStore.kt`
   - `features/seller/my_ads/domain/AdvertAnalyticsBuckets.kt`
+- Change push notifications (topics, permission, tap target, display):
+  - `features/notifications/`
+  - `androidApp/.../PushMessagingService.kt`, `PushNotifications.kt`
+  - `iosApp/iosApp/iOSApp.swift`
 - Change whether a market may extend listings:
   - `features/seller/auth/domain/OlxCountry.kt` (`supportsExtendCommand`)
 

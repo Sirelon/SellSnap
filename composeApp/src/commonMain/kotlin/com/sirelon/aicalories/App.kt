@@ -89,6 +89,8 @@ import com.sirelon.sellsnap.features.seller.profile.ui.DisconnectOlxAccountConfi
 import com.sirelon.sellsnap.features.seller.profile.ui.OlxAccountAuthFailedSheet
 import com.sirelon.sellsnap.features.seller.profile.ui.ProfileScreenRoute
 import com.sirelon.sellsnap.features.seller.settings.ui.SettingsScreenRoute
+import com.sirelon.sellsnap.features.notifications.presentation.NotificationsPromptViewModel
+import com.sirelon.sellsnap.features.notifications.ui.NotificationsPromptRoute
 import com.sirelon.sellsnap.features.whatsnew.presentation.WhatsNewViewModel
 import com.sirelon.sellsnap.features.whatsnew.ui.AllReleasesScreenRoute
 import com.sirelon.sellsnap.features.whatsnew.ui.WhatsNewPromptSheet
@@ -179,6 +181,7 @@ fun App() {
             // either.
             val whatsNewViewModel: WhatsNewViewModel = koinViewModel()
             val announcementViewModel: AnnouncementViewModel = koinViewModel()
+            val notificationsPromptViewModel: NotificationsPromptViewModel = koinViewModel()
             val reviewPromptCoordinator: ReviewPromptCoordinator = koinInject()
             var pendingCategory by remember { mutableStateOf<OlxCategory?>(null) }
             var isGeneratingAd by remember { mutableStateOf(false) }
@@ -216,14 +219,17 @@ fun App() {
             // just dismissed before its async "seen" write has landed.
             val isInSellerFlow = selectedRootTab != null
             //
-            // One launch dialog per process: an announcement goes first, else What's New, and
-            // whichever is shown sets the coordinator flag so a later run of this effect (the flag
-            // flips false -> true on every full-screen push and pop) does nothing.
+            // One launch dialog per process, in this order: an announcement, else What's New, else
+            // the one-time notifications prompt (second or later session only). Whichever is shown
+            // sets the coordinator flag so a later run of this effect (the flag flips
+            // false -> true on every full-screen push and pop) does nothing.
             LaunchedEffect(isInSellerFlow) {
                 if (!isInSellerFlow || reviewPromptCoordinator.launchPromptShownThisSession) return@LaunchedEffect
                 if (announcementViewModel.shouldShow()) return@LaunchedEffect
                 if (whatsNewViewModel.shouldShowDialog()) {
                     navVm.backStack.add(AppKey.WhatsNewPrompt)
+                } else if (notificationsPromptViewModel.shouldShowPrompt()) {
+                    navVm.backStack.add(AppKey.NotificationsPrompt)
                 }
             }
             val announcementState by announcementViewModel.state.collectAsStateWithLifecycle()
@@ -674,6 +680,16 @@ fun App() {
                             )
                         }
 
+                        entry<AppKey.NotificationsPrompt>(
+                            metadata = BottomSheetSceneStrategy.bottomSheet(),
+                        ) {
+                            NotificationsPromptRoute(
+                                viewModel = notificationsPromptViewModel,
+                                isOnBackStack = { AppKey.NotificationsPrompt in navVm.backStack },
+                                onClose = { navVm.popDestination() },
+                            )
+                        }
+
                         entry<AppKey.AllReleases> {
                             AllReleasesScreenRoute(
                                 viewModel = whatsNewViewModel,
@@ -877,6 +893,7 @@ private fun AppKey.isOverlayEntry(): Boolean = when (this) {
     is AppKey.DisconnectOlxAccountConfirm,
     AppKey.SelectCategory,
     AppKey.WhatsNewPrompt,
+    AppKey.NotificationsPrompt,
     AppKey.PreviewPublishConfirm,
     AppKey.PreviewAccountPicker,
     AppKey.PreviewBackInfo,

@@ -40,7 +40,20 @@ This applies to **in-app UI strings only**. Store listing copy (Play/App Store d
 - Adapt, don't transliterate: match the app's casual, friendly voice (English base: "Hey, welcome to SellSnap 👋", "Photo in, listing out — AI does the typing."). A stiff literal translation is a defect.
 - Domain is marketplace/classifieds (OLX). Before translating a term, grep the locale file for how similar existing strings translate it and stay consistent.
 - Brand and product names (SellSnap, OLX, TestFlight, …) stay in Latin script, untranslated.
+- **Kazakh:** "хабарландыру" is a listing ("Менің хабарландыруларым" = My ads); a push notification is "хабарлама".
 - **Ukrainian:** no broadcast/TV vocabulary. "Go live" / "live" means publishing a listing — use wording like "опублікувати", never "ефір" / "в ефірі".
+- **Register (formal vs informal "you") is fixed per locale.** Every string that addresses the user — imperatives, pronouns, possessives, verb forms — uses the locale's register below. Never mix registers inside a locale, including in new keys.
+
+  | Locale | Register | Example |
+  |---|---|---|
+  | uk (and ru shim) | formal (ви) | "Підключіть", "ваш" |
+  | bg | informal (ти) | "Свържи", "твоя" |
+  | ro | informal (tu) | "Conectează", "tău" |
+  | pt | formal (você, 3rd person) | "Ligue", "o seu" |
+  | kk | informal (сен) | "қос", "-ың" |
+  | pl | informal (ty) | "Połącz", "Twoje" |
+
+  Polish capitalises second-person pronouns and possessives mid-sentence (Ty, Ciebie, Ci, Twój, Twoje, Twojego).
 - Preserve placeholders exactly as in English (`%1$s`, `%1$d`, including position numbers). Keep emoji unless they read wrong in the target culture.
 - Match the existing files' XML conventions (these are Compose Multiplatform resources: apostrophes appear unescaped; `&`/`<` must be XML-escaped).
 

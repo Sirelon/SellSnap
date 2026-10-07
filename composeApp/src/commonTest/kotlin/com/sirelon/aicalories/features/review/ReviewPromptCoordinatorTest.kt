@@ -39,6 +39,32 @@ private fun coordinator(
 class ReviewPromptCoordinatorTest {
 
     @Test
+    fun `any launch dialog flag marks the launch prompt as shown`() {
+        val subject = coordinator()
+        assertFalse(subject.launchPromptShownThisSession)
+
+        subject.notificationPromptShownThisSession = true
+        assertTrue(subject.launchPromptShownThisSession)
+    }
+
+    @Test
+    fun `a notifications prompt this session blocks the review ask`() = runTest {
+        val storage = InMemoryOlxKeyValueStore()
+        val analytics = RecordingAnalytics()
+        val subject = coordinator(storage, analytics).apply {
+            isReturningSession = true
+            notificationPromptShownThisSession = true
+        }
+        val store = ReviewPromptStore(storage)
+        store.incrementPublishCount()
+        store.incrementPublishCount()
+
+        assertFalse(subject.requestIfEligible())
+        val skipped = analytics.events.single { it.first == AnalyticsEvents.REVIEW_PROMPT_SKIPPED }
+        assertEquals("notification_prompt", skipped.second["reason"])
+    }
+
+    @Test
     fun `an eligible publish records the cooldown before saying yes`() = runTest {
         val storage = InMemoryOlxKeyValueStore()
         val analytics = RecordingAnalytics()

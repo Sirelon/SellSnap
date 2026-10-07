@@ -15,6 +15,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.lifecycle.lifecycleScope
+import com.google.firebase.messaging.FirebaseMessaging
 import com.sirelon.sellsnap.datastore.initAndroidKeyValueStore
 import com.sirelon.sellsnap.designsystem.AppTheme
 import com.sirelon.sellsnap.features.media.initAndroidSharedImages
@@ -26,7 +28,11 @@ import com.sirelon.sellsnap.features.seller.auth.data.OlxAuthCallbackBridge
 import com.sirelon.sellsnap.features.seller.auth.presentation.SellerAuthContract
 import com.sirelon.sellsnap.features.seller.auth.presentation.SellerLandingScreen
 import com.sirelon.sellsnap.features.seller.drafts.data.initAndroidDatabase
+import com.sirelon.sellsnap.generated.resources.Res
+import com.sirelon.sellsnap.generated.resources.notification_channel_updates
 import com.sirelon.sellsnap.platform.initAndroidUrlOpener
+import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.getString
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -42,8 +48,15 @@ class MainActivity : ComponentActivity() {
         initAndroidScreenshotPhotos(cacheDir.absolutePath)
         initAndroidUrlOpener(this)
         initAndroidSharedImages(applicationContext)
+        lifecycleScope.launch {
+            createPushChannel(this@MainActivity, getString(Res.string.notification_channel_updates))
+        }
+        // Debug builds also join `qa`, so test pushes never have to target the `all*` broadcasts.
+        if (BuildConfig.DEBUG) FirebaseMessaging.getInstance().subscribeToTopic("qa")
         publishOlxCallback(intent)
         publishSharedImages(intent)
+        // A recreated activity (rotation, process restore) re-delivers the original launch intent.
+        if (savedInstanceState == null) openPushLink(intent)
 
         setContent {
             // Expose Compose testTags as Android resource-ids so Maestro can target them.
@@ -61,6 +74,16 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         publishOlxCallback(intent)
         publishSharedImages(intent)
+        openPushLink(intent)
+    }
+
+    private fun openPushLink(intent: Intent?) {
+        intent ?: return
+        if (intent.flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY != 0) return
+        val link = intent.getStringExtra(PUSH_LINK_KEY) ?: return
+        // Consume the extra so the same push is not opened again by a later re-delivery.
+        intent.removeExtra(PUSH_LINK_KEY)
+        resolvePushLink(link)?.let { url -> openPushUrl(this, url) }
     }
 
     private fun publishOlxCallback(intent: Intent?) {

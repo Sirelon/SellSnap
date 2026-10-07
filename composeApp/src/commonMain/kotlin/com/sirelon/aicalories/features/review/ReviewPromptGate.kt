@@ -38,6 +38,7 @@ enum class ReviewPromptSkipReason(val analyticsValue: String) {
     RecentError("recent_error"),
     WhatsNew("whats_new"),
     Announcement("announcement"),
+    NotificationPrompt("notification_prompt"),
     Cooldown("cooldown"),
 }
 
@@ -97,6 +98,7 @@ fun reviewPromptDecision(
     hadPublishErrorThisSession: Boolean,
     whatsNewShownThisSession: Boolean,
     announcementShownThisSession: Boolean,
+    notificationPromptShownThisSession: Boolean,
     lastPromptEpochSeconds: Long?,
     nowEpochSeconds: Long,
 ): ReviewPromptDecision {
@@ -127,6 +129,9 @@ fun reviewPromptDecision(
     }
     if (announcementShownThisSession) {
         return ReviewPromptDecision.Skip(ReviewPromptSkipReason.Announcement)
+    }
+    if (notificationPromptShownThisSession) {
+        return ReviewPromptDecision.Skip(ReviewPromptSkipReason.NotificationPrompt)
     }
     if (lastPromptEpochSeconds != null &&
         nowEpochSeconds - lastPromptEpochSeconds < ReviewPromptCooldownSeconds

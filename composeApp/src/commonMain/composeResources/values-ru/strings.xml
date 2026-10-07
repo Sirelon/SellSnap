@@ -84,6 +84,9 @@
     <string name="profile_field_last_login_at">Останній вхід</string>
     <string name="profile_screen_title">Профіль</string>
     <string name="settings_screen_title">Налаштування</string>
+    <string name="settings_notifications_title">Сповіщення</string>
+    <string name="settings_notifications_on">Увімкнено</string>
+    <string name="settings_notifications_off">Вимкнено. Торкніться, щоб увімкнути.</string>
     <string name="profile_guest_title">Гостьовий профіль</string>
     <string name="profile_guest_description">Підключіть OLX, щоб публікувати з SellSnap — дані акаунта з'являться тут.</string>
     <string name="profile_olx_account">Акаунт OLX</string>
@@ -104,7 +107,7 @@
     <string name="profile_delete_account_data_cancel">Скасувати</string>
     <string name="profile_privacy_data_title">Приватність і дані</string>
     <string name="profile_analytics_consent_title">Ділитися аналітикою використання</string>
-    <string name="profile_analytics_consent_subtitle">Анонімні дані використання, що допомагають покращувати SellSnap. Вимкнено за замовчуванням — змінюйте будь-коли.</string>
+    <string name="profile_analytics_consent_subtitle">Анонімні дані використання, що допомагають покращувати SellSnap. Змінити це можна будь-коли.</string>
     <string name="profile_contact_data_request">Зв'язатися щодо ваших даних</string>
     <string name="profile_not_provided">Не задано</string>
     <string name="profile_value_yes">Так</string>
@@ -123,6 +126,12 @@
     <!-- Announcements -->
     <string name="announcement_ok">ОК</string>
     <string name="announcement_close">Закрити</string>
+
+    <!-- Notifications -->
+    <string name="notifications_prompt_title">Дізнавайтеся про важливе від SellSnap</string>
+    <string name="notifications_prompt_message">Пишемо лише тоді, коли це справді важливо, наприклад, коли треба встановити оновлення.</string>
+    <string name="notifications_prompt_enable">Увімкнути сповіщення</string>
+    <string name="notification_channel_updates">Оновлення від SellSnap</string>
 
     <!-- My OLX Ads -->
     <string name="nav_my_ads">Мої оголошення</string>

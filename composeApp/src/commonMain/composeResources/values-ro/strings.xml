@@ -87,6 +87,9 @@
     <string name="profile_field_last_login_at">Ultima autentificare</string>
     <string name="profile_screen_title">Profil</string>
     <string name="settings_screen_title">Setări</string>
+    <string name="settings_notifications_title">Notificări</string>
+    <string name="settings_notifications_on">Activate</string>
+    <string name="settings_notifications_off">Dezactivate. Atinge pentru a activa.</string>
     <string name="profile_guest_title">Profil oaspete</string>
     <string name="profile_guest_description">Conectează OLX pentru a publica din SellSnap — detaliile contului tău vor apărea și ele aici.</string>
     <string name="profile_olx_account">Cont OLX</string>
@@ -107,7 +110,7 @@
     <string name="profile_delete_account_data_cancel">Anulează</string>
     <string name="profile_privacy_data_title">Confidențialitate și date</string>
     <string name="profile_analytics_consent_title">Distribuie date analitice de utilizare</string>
-    <string name="profile_analytics_consent_subtitle">Date anonime de utilizare care ne ajută să îmbunătățim SellSnap. Dezactivat implicit — schimbă oricând.</string>
+    <string name="profile_analytics_consent_subtitle">Date anonime de utilizare care ne ajută să îmbunătățim SellSnap. Poți schimba oricând.</string>
     <string name="profile_contact_data_request">Contactează-ne despre datele tale</string>
     <string name="profile_not_provided">Nesetat</string>
     <string name="profile_value_yes">Da</string>
@@ -121,11 +124,17 @@
     <string name="whats_new_view_all">Vezi toate actualizările</string>
     <string name="whats_new_installed_badge">Instalată</string>
     <string name="whats_new_empty_title">Nimic aici încă</string>
-    <string name="whats_new_empty_description">Reveniți mai târziu pentru notele de lansare.</string>
+    <string name="whats_new_empty_description">Revino mai târziu pentru notele de lansare.</string>
 
     <!-- Announcements -->
     <string name="announcement_ok">OK</string>
     <string name="announcement_close">Închide</string>
+
+    <!-- Notifications -->
+    <string name="notifications_prompt_title">Primește vești importante de la SellSnap</string>
+    <string name="notifications_prompt_message">Îți scriem doar când contează, de exemplu când e o actualizare de instalat.</string>
+    <string name="notifications_prompt_enable">Activează notificările</string>
+    <string name="notification_channel_updates">Actualizări de la SellSnap</string>
 
     <!-- My OLX Ads -->
     <string name="nav_my_ads">Anunțurile mele</string>
