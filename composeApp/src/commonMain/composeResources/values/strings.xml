@@ -131,7 +131,7 @@
 
     <!-- Notifications -->
     <string name="notifications_prompt_title">Get a heads-up from SellSnap</string>
-    <string name="notifications_prompt_message">We\'ll only message you when it matters, like when there\'s an update you need to install.</string>
+    <string name="notifications_prompt_message">We'll only message you when it matters, like when there's an update you need to install.</string>
     <string name="notifications_prompt_enable">Turn on notifications</string>
     <string name="notification_channel_updates">Updates from SellSnap</string>
 
