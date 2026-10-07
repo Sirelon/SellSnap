@@ -43,7 +43,7 @@ lifecycleViewmodelNav3 = "2.11.0"
 # https://mvnrepository.com/artifact/org.jetbrains.androidx.navigation3/navigation3-ui
 navigation3Ui = "1.2.0-beta01"
 # https://github.com/MohamedRejeb/Calf/releases
-calf = "0.13.0"
+calf = "0.14.0"
 # https://github.com/supabase-community/supabase-kt/releases
 supabase = "3.8.0"
 # https://github.com/yshrsmz/BuildKonfig/releases
