@@ -128,6 +128,7 @@ kotlin {
                 implementation(libs.gitlive.firebase.storage)
                 implementation(libs.gitlive.firebase.installations)
                 implementation(libs.gitlive.firebase.firestore)
+                implementation(libs.gitlive.firebase.messaging)
             }
         }
         val iosMain = create("iosMain") {

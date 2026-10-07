@@ -4,6 +4,7 @@ import com.sirelon.sellsnap.Greeting
 import com.sirelon.sellsnap.analytics.analyticsModule
 import com.sirelon.sellsnap.features.announcements.di.announcementsModule
 import com.sirelon.sellsnap.features.media.di.mediaModule
+import com.sirelon.sellsnap.features.notifications.di.notificationsModule
 import com.sirelon.sellsnap.features.review.di.reviewPromptModule
 import com.sirelon.sellsnap.features.seller.ad.generate_ad.di.generateAdModule
 import com.sirelon.sellsnap.features.seller.ad.generation_log.adGenerationLogModule
@@ -46,6 +47,7 @@ val appModule = module {
         draftsModule,
         whatsNewModule,
         announcementsModule,
+        notificationsModule,
         reviewPromptModule,
     )
     single { Greeting() }

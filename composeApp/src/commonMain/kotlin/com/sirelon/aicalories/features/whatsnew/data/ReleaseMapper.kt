@@ -3,6 +3,7 @@ package com.sirelon.sellsnap.features.whatsnew.data
 import com.sirelon.sellsnap.features.whatsnew.data.response.ReleaseChangeResponse
 import com.sirelon.sellsnap.features.whatsnew.data.response.ReleaseResponse
 import com.sirelon.sellsnap.features.whatsnew.model.Release
+import com.sirelon.sellsnap.platform.appLanguageCode
 
 internal const val FALLBACK_LANGUAGE_CODE = "en"
 
@@ -29,5 +30,5 @@ private fun ReleaseChangeResponse.toDomain(languageCode: String): Release.Change
 // Falls back to English when a translation is missing, rather than dropping the change —
 // content is hand-edited in Firestore and a locale won't always be filled in right away.
 private fun Map<String, String>?.resolve(languageCode: String): String? =
-    this?.get(languageCode)?.takeIf { it.isNotBlank() }
+    this?.get(appLanguageCode(languageCode))?.takeIf { it.isNotBlank() }
         ?: this?.get(FALLBACK_LANGUAGE_CODE)?.takeIf { it.isNotBlank() }

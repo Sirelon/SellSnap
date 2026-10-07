@@ -3,6 +3,7 @@ package com.sirelon.sellsnap.features.announcements.data
 import com.sirelon.sellsnap.features.announcements.data.response.AnnouncementResponse
 import com.sirelon.sellsnap.features.announcements.model.Announcement
 import com.sirelon.sellsnap.features.whatsnew.data.FALLBACK_LANGUAGE_CODE
+import com.sirelon.sellsnap.platform.appLanguageCode
 
 private const val SHOW_MODE_EVERY_LAUNCH = "everyLaunch"
 
@@ -39,15 +40,11 @@ internal fun AnnouncementResponse.toDomain(id: String, languageCode: String): An
     )
 }
 
-// The app renders Ukrainian for a Russian-locale device (values-ru is a copy of values-uk), so an
-// announcement is read in Ukrainian there too; otherwise it would fall through to English.
 // Falls back to English when a translation is missing rather than dropping the announcement -
 // content is hand-edited in Firestore and a locale won't always be filled in right away.
-private fun Map<String, String>?.resolve(languageCode: String): String? {
-    val code = if (languageCode == "ru") "uk" else languageCode
-    return this?.get(code)?.takeIf { it.isNotBlank() }
+private fun Map<String, String>?.resolve(languageCode: String): String? =
+    this?.get(appLanguageCode(languageCode))?.takeIf { it.isNotBlank() }
         ?: this?.get(FALLBACK_LANGUAGE_CODE)?.takeIf { it.isNotBlank() }
-}
 
 /** "3.10" -> [3, 10]. Null when any dot-separated segment is not a non-negative integer. */
 internal fun parseVersion(version: String): List<Int>? {

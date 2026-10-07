@@ -154,4 +154,17 @@ class ReleaseMapperTest {
 
         assertNull(release)
     }
+
+    @Test
+    fun `a russian device reads the ukrainian copy`() {
+        val release = ReleaseResponse(
+            version = "2.3",
+            date = "2026-08-25",
+            changes = listOf(
+                ReleaseChangeResponse(title = mapOf("en" to "Faster uploads", "uk" to "Швидші завантаження")),
+            ),
+        ).toDomain("ru")
+
+        assertEquals("Швидші завантаження", release?.changes?.get(0)?.title)
+    }
 }

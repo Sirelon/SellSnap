@@ -8,6 +8,7 @@ import androidx.navigation3.runtime.NavBackStack
 import com.sirelon.sellsnap.analytics.Analytics
 import com.sirelon.sellsnap.analytics.AnalyticsEvents
 import com.sirelon.sellsnap.config.AppConfig
+import com.sirelon.sellsnap.features.notifications.data.PushNotificationsRepository
 import com.sirelon.sellsnap.features.review.ReviewPromptCoordinator
 import com.sirelon.sellsnap.features.seller.ad.AdFlowTimerStore
 import com.sirelon.sellsnap.features.media.SharedImagesBridge
@@ -40,6 +41,7 @@ class AppNavigationViewModel(
     private val whatsNewStore: WhatsNewStore,
     private val reviewPromptCoordinator: ReviewPromptCoordinator,
     private val analytics: Analytics,
+    private val pushNotificationsRepository: PushNotificationsRepository,
 ) : ViewModel() {
 
     // Owns the real back stack directly (persisted across process death via SavedStateHandle) -
@@ -50,6 +52,10 @@ class AppNavigationViewModel(
     ) { NavBackStack(AppKey.Splash) }
 
     init {
+        // Its own coroutine: reporting the permission and subscribing topics must not wait on
+        // routing, and a failure there must not stop routing.
+        viewModelScope.launch { pushNotificationsRepository.onAppLaunch() }
+
         viewModelScope.launch {
             olxCountryStore.loadFromStorage()
             reportInterruptedAuthorization()
