@@ -85,19 +85,21 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         // Registering for remote notifications shows no prompt; the APNs token arrives whether or
         // not alerts are allowed, which keeps FCM topic subscriptions working for every user.
         application.registerForRemoteNotifications()
-        #if DEBUG
-        // Debug and release share one Firebase app, so test pushes target this topic, never `all`.
-        Messaging.messaging().subscribe(toTopic: "qa")
-        #endif
         return true
     }
 
-    // Firebase's docs require SwiftUI apps to hand the APNs token to FCM explicitly.
+    // Firebase's docs require SwiftUI apps to hand the APNs token to FCM explicitly. FCM refuses
+    // topic operations until this has happened on each launch, so topic calls start from here.
     func application(
         _ application: UIApplication,
         didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
     ) {
         Messaging.messaging().apnsToken = deviceToken
+        PushTokenBridge.shared.onApnsTokenSet()
+        #if DEBUG
+        // Debug and release share one Firebase app, so test pushes target this topic, never `all`.
+        Messaging.messaging().subscribe(toTopic: "qa")
+        #endif
     }
 
     func application(

@@ -64,8 +64,8 @@ class PushNotificationsRepository(
         analytics.setUserProperty(PROPERTY_NOTIFICATIONS_ENABLED, enabled.toString())
     }
 
-    // Subscribed every launch rather than once: the SDK queues a subscription until a token
-    // exists, and a failed first attempt would otherwise never be retried.
+    // Subscribed every launch rather than once: the SDK does not retry a failed subscription, so
+    // the next launch is the retry.
     private suspend fun syncTopics() {
         val language = deviceLanguage()
         val previous = safely(null) { store.languageTopic() }

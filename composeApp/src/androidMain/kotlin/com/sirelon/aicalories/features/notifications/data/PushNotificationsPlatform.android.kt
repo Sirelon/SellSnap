@@ -19,11 +19,11 @@ internal class AndroidPushNotificationsPlatform(
     // are on by default and there is nothing to ask.
     override suspend fun canShowSystemPrompt(): Boolean = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
 
-    override fun subscribeToTopic(topic: String) {
+    override suspend fun subscribeToTopic(topic: String) {
         Firebase.messaging.subscribeToTopic(topic)
     }
 
-    override fun unsubscribeFromTopic(topic: String) {
+    override suspend fun unsubscribeFromTopic(topic: String) {
         Firebase.messaging.unsubscribeFromTopic(topic)
     }
 }

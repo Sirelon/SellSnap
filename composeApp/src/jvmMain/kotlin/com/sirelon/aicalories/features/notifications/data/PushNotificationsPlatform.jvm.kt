@@ -9,9 +9,9 @@ internal class NoOpPushNotificationsPlatform : PushNotificationsPlatform {
 
     override suspend fun canShowSystemPrompt(): Boolean = false
 
-    override fun subscribeToTopic(topic: String) = Unit
+    override suspend fun subscribeToTopic(topic: String) = Unit
 
-    override fun unsubscribeFromTopic(topic: String) = Unit
+    override suspend fun unsubscribeFromTopic(topic: String) = Unit
 }
 
 actual val pushNotificationsPlatformModule: Module = module {

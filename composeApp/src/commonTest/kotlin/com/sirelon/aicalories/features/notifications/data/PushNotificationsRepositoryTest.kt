@@ -146,12 +146,12 @@ class PushNotificationsRepositoryTest {
 
         override suspend fun canShowSystemPrompt(): Boolean = if (fail) error("boom") else canPrompt
 
-        override fun subscribeToTopic(topic: String) {
+        override suspend fun subscribeToTopic(topic: String) {
             if (fail) error("boom")
             subscribed += topic
         }
 
-        override fun unsubscribeFromTopic(topic: String) {
+        override suspend fun unsubscribeFromTopic(topic: String) {
             if (fail) error("boom")
             unsubscribed += topic
         }

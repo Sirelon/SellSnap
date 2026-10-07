@@ -145,8 +145,8 @@ class NotificationsPromptViewModelTest {
     ) : PushNotificationsPlatform {
         override suspend fun notificationsEnabled(): Boolean = enabled
         override suspend fun canShowSystemPrompt(): Boolean = canPrompt
-        override fun subscribeToTopic(topic: String) {}
-        override fun unsubscribeFromTopic(topic: String) {}
+        override suspend fun subscribeToTopic(topic: String) {}
+        override suspend fun unsubscribeFromTopic(topic: String) {}
     }
 
     private class RecordingAnalytics : Analytics {

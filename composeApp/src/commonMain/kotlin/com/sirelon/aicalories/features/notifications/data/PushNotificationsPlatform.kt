@@ -12,9 +12,10 @@ interface PushNotificationsPlatform {
      */
     suspend fun canShowSystemPrompt(): Boolean
 
-    fun subscribeToTopic(topic: String)
+    /** Suspends until the platform can subscribe (iOS: until APNs has handed over the device token). */
+    suspend fun subscribeToTopic(topic: String)
 
-    fun unsubscribeFromTopic(topic: String)
+    suspend fun unsubscribeFromTopic(topic: String)
 }
 
 expect val pushNotificationsPlatformModule: Module
