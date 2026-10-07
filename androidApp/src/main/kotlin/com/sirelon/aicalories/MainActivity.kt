@@ -31,7 +31,6 @@ import com.sirelon.sellsnap.features.seller.drafts.data.initAndroidDatabase
 import com.sirelon.sellsnap.generated.resources.Res
 import com.sirelon.sellsnap.generated.resources.notification_channel_updates
 import com.sirelon.sellsnap.platform.initAndroidUrlOpener
-import com.sirelon.sellsnap.platform.openUrl
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.getString
 
@@ -84,7 +83,7 @@ class MainActivity : ComponentActivity() {
         val link = intent.getStringExtra(PUSH_LINK_KEY) ?: return
         // Consume the extra so the same push is not opened again by a later re-delivery.
         intent.removeExtra(PUSH_LINK_KEY)
-        resolvePushLink(link)?.let(::openUrl)
+        resolvePushLink(link)?.let { url -> openPushUrl(this, url) }
     }
 
     private fun publishOlxCallback(intent: Intent?) {
