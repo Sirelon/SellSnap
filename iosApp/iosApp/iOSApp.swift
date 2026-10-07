@@ -61,7 +61,7 @@ private class FirebaseAppCheckTokenFetcher: NSObject, AppCheckTokenFetcher {
     }
 }
 
-class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
+class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate, MessagingDelegate {
     func application(
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
@@ -85,17 +85,25 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         // Registering for remote notifications shows no prompt; the APNs token arrives whether or
         // not alerts are allowed, which keeps FCM topic subscriptions working for every user.
         application.registerForRemoteNotifications()
+        Messaging.messaging().delegate = self
         return true
     }
 
-    // Firebase's docs require SwiftUI apps to hand the APNs token to FCM explicitly. FCM refuses
-    // topic operations until this has happened on each launch, so topic calls start from here.
+    // Firebase's docs require SwiftUI apps to hand the APNs token to FCM explicitly. On a real
+    // iPhone FCM's own swizzled handler took the token and this method was not called, so it is a
+    // fallback only; topic calls start from the MessagingDelegate callback below.
     func application(
         _ application: UIApplication,
         didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
     ) {
         Messaging.messaging().apnsToken = deviceToken
-        PushTokenBridge.shared.onApnsTokenSet()
+    }
+
+    // FCM reports its registration token on every launch once the APNs token is in. It refuses
+    // topic operations before that (error 505) without retrying, so they start here.
+    func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
+        guard fcmToken != nil else { return }
+        PushTokenBridge.shared.onTokenReady()
         #if DEBUG
         // Debug and release share one Firebase app, so test pushes target this topic, never `all`.
         Messaging.messaging().subscribe(toTopic: "qa")

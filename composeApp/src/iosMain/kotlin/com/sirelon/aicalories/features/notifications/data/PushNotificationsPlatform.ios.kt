@@ -16,15 +16,15 @@ import platform.UserNotifications.UNUserNotificationCenter
 import kotlin.coroutines.resume
 
 /**
- * Swift (`iOSApp.swift`) calls [onApnsTokenSet] once it has handed the APNs device token to FCM.
- * FCM refuses a topic operation before that token exists on every launch (error 505, "No APNS
- * token specified") and does not retry it, so topic calls wait for this signal.
+ * Swift (`iOSApp.swift`) calls [onTokenReady] from `MessagingDelegate` once FCM has its
+ * registration token, which it reports on every launch. Before that, FCM refuses a topic operation
+ * (error 505, "No APNS token specified") and does not retry it, so topic calls wait for this signal.
  */
 object PushTokenBridge {
-    internal val apnsTokenSet = MutableStateFlow(false)
+    internal val tokenReady = MutableStateFlow(false)
 
-    fun onApnsTokenSet() {
-        apnsTokenSet.value = true
+    fun onTokenReady() {
+        tokenReady.value = true
     }
 }
 
@@ -42,12 +42,12 @@ internal class IosPushNotificationsPlatform : PushNotificationsPlatform {
         authorizationStatus() == UNAuthorizationStatusNotDetermined
 
     override suspend fun subscribeToTopic(topic: String) {
-        PushTokenBridge.apnsTokenSet.first { it }
+        PushTokenBridge.tokenReady.first { it }
         Firebase.messaging.subscribeToTopic(topic)
     }
 
     override suspend fun unsubscribeFromTopic(topic: String) {
-        PushTokenBridge.apnsTokenSet.first { it }
+        PushTokenBridge.tokenReady.first { it }
         Firebase.messaging.unsubscribeFromTopic(topic)
     }
 

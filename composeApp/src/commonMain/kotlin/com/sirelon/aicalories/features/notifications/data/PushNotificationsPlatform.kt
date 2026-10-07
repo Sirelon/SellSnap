@@ -12,7 +12,7 @@ interface PushNotificationsPlatform {
      */
     suspend fun canShowSystemPrompt(): Boolean
 
-    /** Suspends until the platform can subscribe (iOS: until APNs has handed over the device token). */
+    /** Suspends until the platform can subscribe (iOS: until FCM has its registration token). */
     suspend fun subscribeToTopic(topic: String)
 
     suspend fun unsubscribeFromTopic(topic: String)
