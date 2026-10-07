@@ -255,6 +255,22 @@ Rules: `.claude/rules/edge-to-edge.md` — loads when you open a `ui/`, `*Screen
 - The OpenAI key is not in any build. Android and iOS call the `openai` Cloud Function with a Firebase App Check token (`composeApp/.../network/OpenAIEndpoint.kt`, platform modules `OpenAIEndpointModule.*.kt`); the key lives in Secret Manager as `OPENAI_KEY`. Desktop calls OpenAI directly with `OPENAI_KEY` read from the environment at launch. Web has no App Check and cannot generate listings.
 - App Check providers: Play Integrity (Android release), App Attest (iOS release), debug providers in debug builds. A debug build's token must be registered in App Check or the proxy answers 401. Dev machines use fixed tokens: `APP_CHECK_DEBUG_TOKEN` in `local.properties` (Android) and `iosApp/Configuration/AppCheckDebugToken.local.xcconfig` (iOS), both gitignored; the `appcheck-debug-token` skill (`.claude/skills/`) registers them and handles the per-install fallback.
 
+## Push notifications
+
+FCM, shared code in `composeApp/.../features/notifications/`. Every launch reports the user property `notifications_enabled` and subscribes the device to its topics.
+
+- **Topics:** `all`, `all-<lang>` (en/uk/pl/pt/ro/bg/kk; `ru` → `uk`; anything else → `en`), and `qa` (debug builds only, subscribed natively).
+- **Test sends go to `qa` or one device token, never `all*`.** Debug and release share one Firebase app, so an `all*` test reaches real users.
+- **`link` data key** sets the tap target: `store` opens the store page of the receiving platform, `https://…` opens as given, anything else just opens the app.
+- **Send, console:** Messaging → New campaign → Notifications → Target: Topic → Additional options → Custom data `link`.
+- **Send, FCM v1 REST** (`Inferred:` the gcloud token path is unverified):
+  `curl -X POST -H "Authorization: Bearer $(gcloud auth print-access-token)" -H "x-goog-user-project: sellsnap-6e85c" -H "Content-Type: application/json" https://fcm.googleapis.com/v1/projects/sellsnap-6e85c/messages:send -d '{"message":{"topic":"qa","notification":{"title":"…","body":"…"},"data":{"link":"store"}}}'`.
+  Everyone except Ukrainian: replace `"topic":"qa"` with `"condition":"'all' in topics && !('all-uk' in topics)"`.
+- **Pair an update push with an `announcements` doc** (see `features/announcements`): users who declined notifications only see the announcement.
+- **Android:** channel `updates`; the SDK displays background messages, `PushMessagingService` displays foreground ones.
+- **iOS:** the APNs key is uploaded in Firebase; `aps-environment` lives in the single `iosApp/iosApp/iosAppRelease.entitlements` (`development`; App Store export re-signs it to `production`, so the `com.sirelon.sellsnap AppStore` profile must include Push Notifications or the export fails). Without notification permission the device still gets the APNs token and topics. The share extension asks for permission when it is undecided.
+- **Permission prompt:** a one-time in-app sheet; its trigger lives in `features/notifications/`.
+
 ## Important Build Notes
 - `./gradlew` and the Xcode bridge both depend on `gradle/wrapper/gradle-wrapper.jar`; if it disappears again, shell builds can fall back to local Gradle `9.4.1`, but Xcode sync/build needs the wrapper jar restored.
 - `:composeApp` is an Android KMP library target, not the app wrapper. It does not expose `assembleDebug`; use `:composeApp:assemble` for the library artifact or `:androidApp:assembleDebug` for the installable Android APK.
@@ -397,6 +413,10 @@ picked through the OS picker. Full workflow: the user-level `sellsnap-screenshot
 - Change the sold / not-sold outcome data or the AI price-accuracy measurement:
   - `features/seller/my_ads/data/AdvertOutcomeStore.kt`
   - `features/seller/my_ads/domain/AdvertAnalyticsBuckets.kt`
+- Change push notifications (topics, permission, tap target, display):
+  - `features/notifications/`
+  - `androidApp/.../PushMessagingService.kt`, `PushNotifications.kt`
+  - `iosApp/iosApp/iOSApp.swift`
 - Change whether a market may extend listings:
   - `features/seller/auth/domain/OlxCountry.kt` (`supportsExtendCommand`)
 

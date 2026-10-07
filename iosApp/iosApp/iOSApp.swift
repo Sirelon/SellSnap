@@ -1,6 +1,7 @@
 import ComposeApp
 import FirebaseAppCheck
 import FirebaseCore
+import FirebaseMessaging
 import SwiftUI
 import UserNotifications
 
@@ -27,6 +28,17 @@ private func publishPendingSharedImages() {
             SharedImagesBridge_iosKt.publishSharedImagePaths(paths: paths)
         }
     }
+}
+
+// A push carries an optional `link` data key: "store" opens this app's App Store page, an
+// https:// value opens as given, anything else (or nothing) just opens the app. No in-app routes.
+private let appStoreUrl = "https://apps.apple.com/app/id6776001373"
+
+private func pushLinkUrl(from userInfo: [AnyHashable: Any]) -> URL? {
+    guard let link = userInfo["link"] as? String else { return nil }
+    if link == "store" { return URL(string: appStoreUrl) }
+    if link.hasPrefix("https://") { return URL(string: link) }
+    return nil
 }
 
 // App Check proves to the OpenAI proxy (functions/src/index.ts) that a call comes from this app.
@@ -68,8 +80,40 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         FirebaseApp.configure()
         AppCheckBridge.shared.fetcher = FirebaseAppCheckTokenFetcher()
         UNUserNotificationCenter.current().delegate = self
-        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { _, _ in }
+        // The notification permission prompt does not live here: an in-app sheet asks for it, and
+        // so does the share extension when the share is the moment a notification is needed.
+        // Registering for remote notifications shows no prompt; the APNs token arrives whether or
+        // not alerts are allowed, which keeps FCM topic subscriptions working for every user.
+        application.registerForRemoteNotifications()
+        #if DEBUG
+        // Debug and release share one Firebase app, so test pushes target this topic, never `all`.
+        Messaging.messaging().subscribe(toTopic: "qa")
+        #endif
         return true
+    }
+
+    // Firebase's docs require SwiftUI apps to hand the APNs token to FCM explicitly.
+    func application(
+        _ application: UIApplication,
+        didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
+    ) {
+        Messaging.messaging().apnsToken = deviceToken
+    }
+
+    func application(
+        _ application: UIApplication,
+        didFailToRegisterForRemoteNotificationsWithError error: Error
+    ) {
+        print("Remote notification registration failed: \(error.localizedDescription)")
+    }
+
+    // Without this, iOS drops a push that arrives while the app is open.
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification,
+        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+    ) {
+        completionHandler([.banner, .list, .sound])
     }
 
     func userNotificationCenter(
@@ -79,6 +123,10 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
     ) {
         if response.notification.request.identifier == sharedImagesNotificationIdentifier {
             publishPendingSharedImages()
+        } else if let url = pushLinkUrl(from: response.notification.request.content.userInfo) {
+            DispatchQueue.main.async {
+                UIApplication.shared.open(url)
+            }
         }
         completionHandler()
     }
