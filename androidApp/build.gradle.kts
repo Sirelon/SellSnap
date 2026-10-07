@@ -113,6 +113,8 @@ dependencies {
     // ships in a release build (see src/debug and src/release AppCheckProviders.kt).
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.appcheck.playintegrity)
+    implementation(libs.firebase.messaging)
+    implementation(libs.androidx.core.ktx)
     debugImplementation(libs.firebase.appcheck.debug)
     debugImplementation(libs.firebase.components)
 }
