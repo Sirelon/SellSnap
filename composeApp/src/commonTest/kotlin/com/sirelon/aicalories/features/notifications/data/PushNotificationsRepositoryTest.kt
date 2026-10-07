@@ -79,6 +79,25 @@ class PushNotificationsRepositoryTest {
     }
 
     @Test
+    fun `refresh reports on the first read and then only when the value changed`() = runTest {
+        val setup = setup(enabled = true)
+
+        assertTrue(setup.repository.refreshPermission())
+        assertTrue(setup.repository.refreshPermission())
+        assertEquals(listOf("notifications_enabled" to "true"), setup.analytics.properties)
+    }
+
+    @Test
+    fun `the permission request is remembered`() = runTest {
+        val setup = setup()
+        assertFalse(setup.repository.wasPermissionRequested())
+
+        setup.repository.markPermissionRequested()
+
+        assertTrue(setup.repository.wasPermissionRequested())
+    }
+
+    @Test
     fun `platform failures do not escape`() = runTest {
         val setup = setup(fail = true)
 

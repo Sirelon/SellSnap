@@ -13,6 +13,8 @@ class PushNotificationsRepository(
     private val deviceLanguage: () -> String? = ::getDeviceLanguageCode,
 ) {
 
+    private var lastReported: Boolean? = null
+
     /** Reports the permission and brings the topic subscriptions in line with the device language. */
     suspend fun onAppLaunch() {
         reportPermission()
@@ -24,8 +26,27 @@ class PushNotificationsRepository(
      * off, so consent is enforced by the SDK switch, not here.
      */
     suspend fun reportPermission() {
+        report(safely(false) { platform.notificationsEnabled() })
+    }
+
+    /**
+     * Reads the current permission and reports it only when it differs from what was last
+     * reported this process. Returns the current value.
+     */
+    suspend fun refreshPermission(): Boolean {
         val enabled = safely(false) { platform.notificationsEnabled() }
-        analytics.setUserProperty(PROPERTY_NOTIFICATIONS_ENABLED, enabled.toString())
+        if (enabled != lastReported) report(enabled)
+        return enabled
+    }
+
+    /** True while the OS can still show its permission prompt: see [PushNotificationsPlatform.canShowSystemPrompt]. */
+    suspend fun canShowSystemPrompt(): Boolean = safely(false) { platform.canShowSystemPrompt() }
+
+    suspend fun wasPermissionRequested(): Boolean = safely(false) { store.wasPermissionRequested() }
+
+    /** Records that the OS permission prompt was launched; Android only re-prompts after a rationale. */
+    suspend fun markPermissionRequested() {
+        safely(Unit) { store.markPermissionRequested() }
     }
 
     /** True while the one-time prompt may still be offered: never shown, off, and the OS can ask. */
@@ -36,6 +57,11 @@ class PushNotificationsRepository(
 
     suspend fun markPromptShown() {
         store.markPromptShown()
+    }
+
+    private fun report(enabled: Boolean) {
+        lastReported = enabled
+        analytics.setUserProperty(PROPERTY_NOTIFICATIONS_ENABLED, enabled.toString())
     }
 
     // Subscribed every launch rather than once: the SDK queues a subscription until a token

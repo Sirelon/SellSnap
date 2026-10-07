@@ -34,6 +34,11 @@ class NotificationsPromptViewModel(
         return true
     }
 
+    /** Records that the OS prompt is about to launch, so a later denial is told from "never asked". */
+    fun onEnableClicked() {
+        viewModelScope.launch { repository.markPermissionRequested() }
+    }
+
     /**
      * Logs the answer and refreshes the `notifications_enabled` property. Only the first call per
      * showing counts, because a swipe-away also reports after an answer has been given.

@@ -48,7 +48,10 @@ fun NotificationsPromptRoute(
     }
 
     NotificationsPromptSheet(
-        onEnable = permissionState::launchPermissionRequest,
+        onEnable = {
+            viewModel.onEnableClicked()
+            permissionState.launchPermissionRequest()
+        },
         onNotNow = {
             viewModel.onAnswered(enabled = false, granted = false)
             onClose()
