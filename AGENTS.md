@@ -218,8 +218,8 @@ Most features use some combination of:
 - **English copy is approved before any locale is touched.** When a ticket adds or rewords
   user-facing strings, post the list — one line per key, `key → text` — and wait for the owner's
   answer. Then run the `localize` agent once, with the final key list. One `localize` run per
-  ticket is the budget; six runs on one milestone is what this rule exists to stop. Follow-ups
-  the owner orders inside the ticket get one more run, which carries all of their keys.
+  ticket is the budget; six runs on one milestone is what this rule exists to stop. Each batch of
+  follow-ups the owner orders inside the ticket gets one more run, which carries all of its keys.
 - **Then show the Ukrainian.** Ukrainian is the language the owner actually reads and the primary
   market, so after `localize` returns, post the `key → text` list for `values-uk` before calling
   the ticket done. The other locales follow from it and are not posted.

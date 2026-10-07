@@ -39,7 +39,7 @@
     <string name="onboarding_step2_title">AI пише вместо теб ✍️</string>
     <string name="onboarding_step2_subtitle">Заглавие, описание и честна цена — готови преди кафето да изстине.</string>
     <string name="onboarding_step3_title">Публикувай с един допир 🚀</string>
-    <string name="onboarding_step3_subtitle">Един допир и си на живо в OLX. Купувачи, посрещнете нещата му.</string>
+    <string name="onboarding_step3_subtitle">Един допир и си на живо в OLX. Купувачите вече виждат нещата ти.</string>
 
     <!-- Generate Ad Screen -->
     <string name="turn_stuff_into_olx_listings">Имаш какво да продадеш? Снимай го. Ние го публикуваме.</string>
@@ -110,7 +110,7 @@
     <string name="profile_delete_account_data_cancel">Отказ</string>
     <string name="profile_privacy_data_title">Поверителност и данни</string>
     <string name="profile_analytics_consent_title">Сподели аналитика за използване</string>
-    <string name="profile_analytics_consent_subtitle">Анонимни данни за използване, които ни помагат да подобряваме SellSnap. Изключено по подразбиране — промени по всяко време.</string>
+    <string name="profile_analytics_consent_subtitle">Анонимни данни за използване, които ни помагат да подобряваме SellSnap. Можеш да го промениш по всяко време.</string>
     <string name="profile_contact_data_request">Свържи се с нас относно твоите данни</string>
     <string name="profile_not_provided">Не е зададено</string>
     <string name="profile_value_yes">Да</string>

@@ -52,6 +52,8 @@ This applies to **in-app UI strings only**. Store listing copy (Play/App Store d
   | pt | formal (você, 3rd person) | "Ligue", "o seu" |
   | kk | informal (сен) | "қос", "-ың" |
   | pl | informal (ty) | "Połącz", "Twoje" |
+
+  Polish capitalises second-person pronouns and possessives mid-sentence (Ty, Ciebie, Ci, Twój, Twoje, Twojego).
 - Preserve placeholders exactly as in English (`%1$s`, `%1$d`, including position numbers). Keep emoji unless they read wrong in the target culture.
 - Match the existing files' XML conventions (these are Compose Multiplatform resources: apostrophes appear unescaped; `&`/`<` must be XML-escaped).
 

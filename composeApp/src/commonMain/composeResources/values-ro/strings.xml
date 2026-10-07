@@ -110,7 +110,7 @@
     <string name="profile_delete_account_data_cancel">Anulează</string>
     <string name="profile_privacy_data_title">Confidențialitate și date</string>
     <string name="profile_analytics_consent_title">Distribuie date analitice de utilizare</string>
-    <string name="profile_analytics_consent_subtitle">Date anonime de utilizare care ne ajută să îmbunătățim SellSnap. Dezactivat implicit — schimbă oricând.</string>
+    <string name="profile_analytics_consent_subtitle">Date anonime de utilizare care ne ajută să îmbunătățim SellSnap. Poți schimba oricând.</string>
     <string name="profile_contact_data_request">Contactează-ne despre datele tale</string>
     <string name="profile_not_provided">Nesetat</string>
     <string name="profile_value_yes">Da</string>

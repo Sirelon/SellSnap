@@ -110,7 +110,7 @@
     <string name="profile_delete_account_data_cancel">Cancelar</string>
     <string name="profile_privacy_data_title">Privacidade e dados</string>
     <string name="profile_analytics_consent_title">Partilhar dados analíticos de utilização</string>
-    <string name="profile_analytics_consent_subtitle">Dados de utilização anónimos que nos ajudam a melhorar o SellSnap. Desativado por predefinição — altere quando quiser.</string>
+    <string name="profile_analytics_consent_subtitle">Dados de utilização anónimos que nos ajudam a melhorar o SellSnap. Pode alterar quando quiser.</string>
     <string name="profile_contact_data_request">Contacte-nos sobre os seus dados</string>
     <string name="profile_not_provided">Não definido</string>
     <string name="profile_value_yes">Sim</string>

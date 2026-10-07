@@ -36,7 +36,7 @@
     <!-- Onboarding Screen Steps -->
     <string name="onboarding_step1_title">Zrób zdjęcie 📸</string>
     <string name="onboarding_step1_subtitle">Wyceluj, zrób zdjęcie, gotowe. Cokolwiek chcesz sprzedać — zajmiemy się resztą.</string>
-    <string name="onboarding_step2_title">AI pisze za ciebie ✍️</string>
+    <string name="onboarding_step2_title">AI pisze za Ciebie ✍️</string>
     <string name="onboarding_step2_subtitle">Tytuł, opis i uczciwa cena — gotowe, zanim kawa ostygnie.</string>
     <string name="onboarding_step3_title">Opublikuj jednym kliknięciem 🚀</string>
     <string name="onboarding_step3_subtitle">Jedno kliknięcie i jesteś na OLX. Kupujący, poznajcie swoje skarby.</string>
@@ -110,7 +110,7 @@
     <string name="profile_delete_account_data_cancel">Anuluj</string>
     <string name="profile_privacy_data_title">Prywatność i dane</string>
     <string name="profile_analytics_consent_title">Udostępniaj dane analityczne</string>
-    <string name="profile_analytics_consent_subtitle">Anonimowe dane użytkowania, które pomagają nam ulepszać SellSnap. Domyślnie wyłączone — zmień w dowolnym momencie.</string>
+    <string name="profile_analytics_consent_subtitle">Anonimowe dane użytkowania, które pomagają nam ulepszać SellSnap. Zmienisz to w dowolnym momencie.</string>
     <string name="profile_contact_data_request">Skontaktuj się z nami w sprawie swoich danych</string>
     <string name="profile_not_provided">Nie ustawiono</string>
     <string name="profile_value_yes">Tak</string>
@@ -373,8 +373,8 @@
 
     <!-- Ad lifecycle — states with nothing to act on. Each says what OLX is doing, not what the app can't do. -->
     <string name="advert_state_needs_payment">OLX czeka na płatność, zanim pokaże to ogłoszenie kupującym. Możesz zapłacić na OLX.</string>
-    <string name="advert_state_needs_confirmation">OLX potrzebuje twojego potwierdzenia, zanim kupujący zobaczą to ogłoszenie. Otwórz je na OLX, aby potwierdzić.</string>
-    <string name="advert_state_rejected">OLX odrzucił to ogłoszenie i wysłał ci maila z powodem.</string>
+    <string name="advert_state_needs_confirmation">OLX potrzebuje Twojego potwierdzenia, zanim kupujący zobaczą to ogłoszenie. Otwórz je na OLX, aby potwierdzić.</string>
+    <string name="advert_state_rejected">OLX odrzucił to ogłoszenie i wysłał Ci maila z powodem.</string>
     <string name="advert_state_unknown">SellSnap nie może ustalić, co się dzieje z tym ogłoszeniem. Otwórz je na OLX, aby sprawdzić.</string>
 
     <!-- Ad lifecycle — confirmations. Every one says what happens on OLX. -->
