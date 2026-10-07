@@ -335,6 +335,8 @@ render.experimental.xml
 .maestro/.env
 fastlane/google-play-key.json
 fastlane/*.p8
+# Signing profiles from `fastlane run sigh`; they live in Xcode's profile folder, not the repo.
+*.mobileprovision
 
 # Store-screenshot generator byproducts. The SVGs inline their source PNGs as base64,
 # so each one is multiple MB; they are regenerated on every run and are not deliverables.

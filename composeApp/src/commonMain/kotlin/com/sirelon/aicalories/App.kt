@@ -685,6 +685,7 @@ fun App() {
                         ) {
                             NotificationsPromptRoute(
                                 viewModel = notificationsPromptViewModel,
+                                isOnBackStack = { AppKey.NotificationsPrompt in navVm.backStack },
                                 onClose = { navVm.popDestination() },
                             )
                         }

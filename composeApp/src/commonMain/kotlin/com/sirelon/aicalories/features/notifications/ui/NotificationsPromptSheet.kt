@@ -29,12 +29,14 @@ import org.jetbrains.compose.resources.stringResource
 /**
  * Wires [NotificationsPromptSheet] to the OS permission request and the ViewModel. [onClose] pops
  * the sheet. Every way out reports exactly one answer: the buttons answer explicitly, and
- * swiping down, tapping the scrim or pressing back dispose the sheet, which counts as "Not now"
- * (the ViewModel ignores a second report).
+ * swiping down, tapping the scrim or pressing back pop the sheet, which counts as "Not now"
+ * (the ViewModel ignores a second report). A dispose while [isOnBackStack] is still true is an
+ * Activity recreation (rotation, dark mode): the sheet comes back, so it is not an answer.
  */
 @Composable
 fun NotificationsPromptRoute(
     viewModel: NotificationsPromptViewModel,
+    isOnBackStack: () -> Boolean,
     onClose: () -> Unit,
 ) {
     val permissionState = rememberPermissionState(Permission.Notification) { granted ->
@@ -42,9 +44,12 @@ fun NotificationsPromptRoute(
         onClose()
     }
     val currentViewModel by rememberUpdatedState(viewModel)
+    val currentIsOnBackStack by rememberUpdatedState(isOnBackStack)
 
     DisposableEffect(Unit) {
-        onDispose { currentViewModel.onAnswered(enabled = false, granted = false) }
+        onDispose {
+            if (!currentIsOnBackStack()) currentViewModel.onAnswered(enabled = false, granted = false)
+        }
     }
 
     NotificationsPromptSheet(
