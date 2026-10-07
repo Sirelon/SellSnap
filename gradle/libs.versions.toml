@@ -47,7 +47,7 @@ calf = "0.13.0"
 # https://github.com/supabase-community/supabase-kt/releases
 supabase = "3.8.0"
 # https://github.com/yshrsmz/BuildKonfig/releases
-buildKonfig = "0.22.0"
+buildKonfig = "0.23.0"
 # https://github.com/sqldelight/sqldelight/releases
 sqldelight = "2.4.0"
 
