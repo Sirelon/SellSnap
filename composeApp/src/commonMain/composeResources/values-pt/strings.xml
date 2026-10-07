@@ -127,6 +127,12 @@
     <string name="announcement_ok">OK</string>
     <string name="announcement_close">Fechar</string>
 
+    <!-- Notifications -->
+    <string name="notifications_prompt_title">Recebe avisos importantes do SellSnap</string>
+    <string name="notifications_prompt_message">Só te escrevemos quando for importante, por exemplo, quando houver uma atualização para instalar.</string>
+    <string name="notifications_prompt_enable">Ativar notificações</string>
+    <string name="notification_channel_updates">Atualizações do SellSnap</string>
+
     <!-- My OLX Ads -->
     <string name="nav_my_ads">Os meus anúncios</string>
     <string name="my_ads_screen_title">Os meus anúncios OLX</string>

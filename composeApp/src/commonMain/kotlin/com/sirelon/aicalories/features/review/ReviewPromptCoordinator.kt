@@ -46,12 +46,16 @@ class ReviewPromptCoordinator(
     /** An announcement dialog was shown this session. */
     var announcementShownThisSession: Boolean = false
 
+    /** The one-time notifications prompt sheet was shown this session. */
+    var notificationPromptShownThisSession: Boolean = false
+
     /**
-     * A launch dialog (announcement or What's New sheet) was already shown this session, so the
-     * other one is not stacked on top of it. Derived, so it cannot drift from the two flags.
+     * A launch dialog (announcement, What's New sheet or notifications prompt) was already shown
+     * this session, so no other one is stacked on top of it. Derived, so it cannot drift from the
+     * three flags.
      */
     val launchPromptShownThisSession: Boolean
-        get() = announcementShownThisSession || whatsNewShownThisSession
+        get() = announcementShownThisSession || whatsNewShownThisSession || notificationPromptShownThisSession
 
     suspend fun onPublishSucceeded() {
         store.incrementPublishCount()
@@ -103,6 +107,7 @@ class ReviewPromptCoordinator(
             hadPublishErrorThisSession = hadPublishErrorThisSession,
             whatsNewShownThisSession = whatsNewShownThisSession,
             announcementShownThisSession = announcementShownThisSession,
+            notificationPromptShownThisSession = notificationPromptShownThisSession,
             lastPromptEpochSeconds = lastPrompt,
             nowEpochSeconds = now,
         )

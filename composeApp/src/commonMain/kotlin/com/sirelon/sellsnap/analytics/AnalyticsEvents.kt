@@ -189,7 +189,14 @@ object AnalyticsEvents {
     /**
      * Carries `trigger` (`publish` | `copied_listing`) and `reason` - see ReviewPromptSkipReason:
      * `too_few_publishes` and `install_session` for `publish`, `too_few_copied_listings` for
-     * `copied_listing`, and `recent_error`, `whats_new`, `announcement`, `cooldown` for either.
+     * `copied_listing`, and `recent_error`, `whats_new`, `announcement`, `notification_prompt`, `cooldown` for either.
      */
     const val REVIEW_PROMPT_SKIPPED = "review_prompt_skipped"
+
+    /**
+     * The one-time notifications sheet was answered. Carries `choice` (`enable` | `not_now`; a
+     * swipe or back counts as `not_now`) and, only for `enable`, the Boolean `granted` the OS
+     * reported.
+     */
+    const val NOTIFICATION_PROMPT_ANSWERED = "notification_prompt_answered"
 }

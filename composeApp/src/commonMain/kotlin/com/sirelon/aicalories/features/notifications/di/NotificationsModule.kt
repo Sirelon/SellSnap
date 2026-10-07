@@ -3,6 +3,8 @@ package com.sirelon.sellsnap.features.notifications.di
 import com.sirelon.sellsnap.features.notifications.data.NotificationsStore
 import com.sirelon.sellsnap.features.notifications.data.PushNotificationsRepository
 import com.sirelon.sellsnap.features.notifications.data.pushNotificationsPlatformModule
+import com.sirelon.sellsnap.features.notifications.presentation.NotificationsPromptViewModel
+import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
 
 val notificationsModule = module {
@@ -17,4 +19,5 @@ val notificationsModule = module {
             analytics = get(),
         )
     }
+    viewModelOf(::NotificationsPromptViewModel)
 }

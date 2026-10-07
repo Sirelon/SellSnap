@@ -27,6 +27,7 @@ val appNavigationSavedStateConfiguration: SavedStateConfiguration =
                 subclass(AppKey.Profile::class, AppKey.Profile.serializer())
                 subclass(AppKey.Settings::class, AppKey.Settings.serializer())
                 subclass(AppKey.WhatsNewPrompt::class, AppKey.WhatsNewPrompt.serializer())
+                subclass(AppKey.NotificationsPrompt::class, AppKey.NotificationsPrompt.serializer())
                 subclass(AppKey.AllReleases::class, AppKey.AllReleases.serializer())
                 subclass(AppKey.Drafts::class, AppKey.Drafts.serializer())
                 subclass(AppKey.SellerPublishSuccess::class, AppKey.SellerPublishSuccess.serializer())

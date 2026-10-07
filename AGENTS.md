@@ -269,7 +269,7 @@ FCM, shared code in `composeApp/.../features/notifications/`. Every launch repor
 - **Pair an update push with an `announcements` doc** (see `features/announcements`): users who declined notifications only see the announcement.
 - **Android:** channel `updates`; the SDK displays background messages, `PushMessagingService` displays foreground ones.
 - **iOS:** the APNs key is uploaded in Firebase; `aps-environment` lives in the single `iosApp/iosApp/iosAppRelease.entitlements` (`development`; App Store export re-signs it to `production`, so the `com.sirelon.sellsnap AppStore` profile must include Push Notifications or the export fails). Without notification permission the device still gets the APNs token and topics. The share extension asks for permission when it is undecided.
-- **Permission prompt:** a one-time in-app sheet; its trigger lives in `features/notifications/`.
+- **Permission prompt:** a one-time bottom sheet at the start of a returning session in the seller flow, third in the launch-dialog order after the announcement and What's New (`NotificationsPromptViewModel`); once shown it is never offered again.
 
 ## Important Build Notes
 - `./gradlew` and the Xcode bridge both depend on `gradle/wrapper/gradle-wrapper.jar`; if it disappears again, shell builds can fall back to local Gradle `9.4.1`, but Xcode sync/build needs the wrapper jar restored.

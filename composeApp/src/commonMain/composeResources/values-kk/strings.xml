@@ -127,6 +127,12 @@
     <string name="announcement_ok">ОК</string>
     <string name="announcement_close">Жабу</string>
 
+    <!-- Notifications -->
+    <string name="notifications_prompt_title">SellSnap-тан маңызды жаңалықтарды біліп отыр</string>
+    <string name="notifications_prompt_message">Біз саған тек маңызды кезде ғана жазамыз, мысалы, орнату керек жаңарту шыққанда.</string>
+    <string name="notifications_prompt_enable">Хабарландыруларды қосу</string>
+    <string name="notification_channel_updates">SellSnap жаңартулары</string>
+
     <!-- My OLX Ads -->
     <string name="nav_my_ads">Менің хабарландыруларым</string>
     <string name="my_ads_screen_title">Менің OLX хабарландыруларым</string>
