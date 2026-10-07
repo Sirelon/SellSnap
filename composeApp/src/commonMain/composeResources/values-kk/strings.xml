@@ -87,6 +87,9 @@
     <string name="profile_field_last_login_at">Соңғы кіру</string>
     <string name="profile_screen_title">Профиль</string>
     <string name="settings_screen_title">Параметрлер</string>
+    <string name="settings_notifications_title">Хабарламалар</string>
+    <string name="settings_notifications_on">Қосулы</string>
+    <string name="settings_notifications_off">Өшірулі. Қосу үшін түрт.</string>
     <string name="profile_guest_title">Қонақ профилі</string>
     <string name="profile_guest_description">SellSnap арқылы жариялау үшін OLX-ті қос — аккаунт деректерің де осында пайда болады.</string>
     <string name="profile_olx_account">OLX аккаунты</string>
@@ -121,7 +124,7 @@
     <string name="whats_new_view_all">Барлық жаңартуларды көру</string>
     <string name="whats_new_installed_badge">Орнатылған</string>
     <string name="whats_new_empty_title">Әзірге ештеңе жоқ</string>
-    <string name="whats_new_empty_description">Шығарылым жазбалары үшін кейінірек қайта тексеріңіз.</string>
+    <string name="whats_new_empty_description">Шығарылым жазбалары үшін кейінірек қайта тексер.</string>
 
     <!-- Announcements -->
     <string name="announcement_ok">ОК</string>
@@ -130,7 +133,7 @@
     <!-- Notifications -->
     <string name="notifications_prompt_title">SellSnap-тан маңызды жаңалықтарды біліп отыр</string>
     <string name="notifications_prompt_message">Біз саған тек маңызды кезде ғана жазамыз, мысалы, орнату керек жаңарту шыққанда.</string>
-    <string name="notifications_prompt_enable">Хабарландыруларды қосу</string>
+    <string name="notifications_prompt_enable">Хабарламаларды қосу</string>
     <string name="notification_channel_updates">SellSnap жаңартулары</string>
 
     <!-- My OLX Ads -->
@@ -264,7 +267,7 @@
     <string name="error_publish_missing_category_or_location">Жарияладан бұрын санат пен орынды қос.</string>
     <string name="error_publish_missing_contact_name">OLX профиліңде аты жоқ. Кіріп, атыңды қос — қайталап көреміз.</string>
     <string name="error_category_suggestion_failed">Санатты ұсына алмадық.</string>
-    <string name="error_category_not_supported">Біз бұл санатты әлі қолдамаймыз (мысалы, жануарлар, жылжымайтын мүлік, көлік, жұмыс, жалдау). Басқа затты байқап көріңіз.</string>
+    <string name="error_category_not_supported">Біз бұл санатты әлі қолдамаймыз (мысалы, жануарлар, жылжымайтын мүлік, көлік, жұмыс, жалдау). Басқа затты байқап көр.</string>
     <string name="error_attributes_load_failed">Сипаттамаларды жүктеу мүмкін болмады.</string>
     <string name="error_user_profile_fetch_failed">Профиліңді жүктеу мүмкін болмады.</string>
     <string name="error_olx_auth_prepare_failed">OLX-ке кіруді бастау мүмкін болмады.</string>
@@ -322,10 +325,10 @@
     <string name="account_business_badge">Бизнес</string>
     <string name="profile_account_set_active">Белсенді ету</string>
     <string name="profile_account_add_button">OLX аккаунтын қосу</string>
-    <string name="profile_account_cap_reached_message">Бұл OLX сайтында ең көп дегенде 3 аккаунт қосуға болады. Жаңасын қосу үшін біреуін ажыратыңыз.</string>
+    <string name="profile_account_cap_reached_message">Бұл OLX сайтында ең көп дегенде 3 аккаунт қосуға болады. Жаңасын қосу үшін біреуін ажырат.</string>
     <string name="profile_active_account_details_title">Белсенді аккаунт деректері</string>
     <string name="profile_add_account_confirm_title">OLX аккаунтын қосу</string>
-    <string name="profile_add_account_confirm_subtitle">%1$s сайтында аккаунт қосасыз. Басқа аккаунттарың қосылған күйінде қалады — олардан шығудың қажеті жоқ.</string>
+    <string name="profile_add_account_confirm_subtitle">%1$s сайтында аккаунт қосасың. Басқа аккаунттарың қосылған күйінде қалады — олардан шығудың қажеті жоқ.</string>
     <string name="profile_add_account_confirm_note">Кіру OLX-тің өз бетінде орындалады — SellSnap құпия сөзіңді ешқашан көрмейді.</string>
     <string name="profile_add_account_confirm_continue">OLX-ке өту</string>
     <string name="profile_add_account_confirm_cancel">Бас тарту</string>
@@ -345,7 +348,7 @@
     <string name="profile_disconnect_confirm_cancel">Бас тарту</string>
     <string name="profile_reconnect_account_action">%1$s-ті қайта қосу</string>
     <string name="publish_target_account_label">Жарияланатын аккаунт</string>
-    <string name="publish_target_account_fallback_name">Сіздің OLX аккаунтыңыз</string>
+    <string name="publish_target_account_fallback_name">Сенің OLX аккаунтың</string>
     <string name="publish_target_account_picker_title">Аккаунтты таңдау</string>
     <string name="publish_target_account_picker_subtitle">Жаңа хабарландырулар осында таңдаған аккаунтқа жарияланады.</string>
     <string name="publish_success_target_account">%1$s аккаунтына жарияланды</string>

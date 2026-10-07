@@ -87,6 +87,9 @@
     <string name="profile_field_last_login_at">Ultima autentificare</string>
     <string name="profile_screen_title">Profil</string>
     <string name="settings_screen_title">Setări</string>
+    <string name="settings_notifications_title">Notificări</string>
+    <string name="settings_notifications_on">Activate</string>
+    <string name="settings_notifications_off">Dezactivate. Atinge pentru a activa.</string>
     <string name="profile_guest_title">Profil oaspete</string>
     <string name="profile_guest_description">Conectează OLX pentru a publica din SellSnap — detaliile contului tău vor apărea și ele aici.</string>
     <string name="profile_olx_account">Cont OLX</string>
@@ -121,7 +124,7 @@
     <string name="whats_new_view_all">Vezi toate actualizările</string>
     <string name="whats_new_installed_badge">Instalată</string>
     <string name="whats_new_empty_title">Nimic aici încă</string>
-    <string name="whats_new_empty_description">Reveniți mai târziu pentru notele de lansare.</string>
+    <string name="whats_new_empty_description">Revino mai târziu pentru notele de lansare.</string>
 
     <!-- Announcements -->
     <string name="announcement_ok">OK</string>
