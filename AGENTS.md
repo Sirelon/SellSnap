@@ -82,7 +82,7 @@ anything above that does not apply.
 - Ktor JVM backend (Cloud Run) for the Threads agent; design in `server/THREADS-AGENT-DESIGN.md`.
 - Standalone: does not depend on `:shared`. Builds with JDK 21 (`jvmToolchain(21)`) and reads its settings from environment variables (`Config`).
 - Deploy: `OWNER_TELEGRAM_ID=<id> OWNER_EMAIL=<email> server/deploy/deploy.sh [step ...]` runs the 11 idempotent steps (APIs, service accounts, secrets, Firestore TTL, Cloud Run, log exclusion, Telegram webhook, Scheduler jobs, alert policy, Storage rules); each billable, public or IAM step asks `confirm`. `server/Dockerfile` and `server/.gcloudignore` upload only `build/install/server`, so run `./gradlew :server:installDist` first.
-- Seed loader: `./gradlew :server:loadSeed --args="--accounts seed/accounts.json"` upserts accounts; `--args="--account <id> --lang <uk|pl> --tips seed/tips.json"` loads tips. It uses Application Default Credentials.
+- Seed loader: `./gradlew :server:loadSeed --args="--accounts seed/accounts.json"` upserts accounts; `--args="--account <id> --lang <uk|pl> --tips seed/tips.json"` loads tips. It uses Application Default Credentials; when those belong to another account, prefix `SEED_ACCESS_TOKEN=$(gcloud auth print-access-token)`.
 - Staging check: `server/deploy/STAGING-CHECKLIST.md` lists the live steps and the bot command or URL for each.
 - `*.html` and `*.js` are gitignored: a new one under `server/` needs `git add -f`.
 

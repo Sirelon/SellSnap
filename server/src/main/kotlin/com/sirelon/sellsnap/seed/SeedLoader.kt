@@ -1,5 +1,8 @@
 package com.sirelon.sellsnap.seed
 
+import com.google.auth.oauth2.AccessToken
+import com.google.auth.oauth2.GoogleCredentials
+import com.google.cloud.firestore.Firestore
 import com.google.cloud.firestore.FirestoreOptions
 import com.sirelon.sellsnap.content.ContentRules
 import com.sirelon.sellsnap.content.PostCode
@@ -203,7 +206,7 @@ fun main(args: Array<String>) {
         System.err.println(USAGE)
         exitProcess(2)
     }
-    val firestore = FirestoreOptions.getDefaultInstance().service
+    val firestore = seedFirestore(System.getenv())
     val exitCode = try {
         runBlocking { execute(SeedLoader(FirestoreSocialStore(firestore), Clock.systemUTC()), options) }
     } catch (e: SeedException) {
@@ -214,6 +217,22 @@ fun main(args: Array<String>) {
     }
     exitProcess(exitCode)
 }
+
+/**
+ * Application Default Credentials, or the gcloud sign-in when `SEED_ACCESS_TOKEN` is set
+ * (`SEED_ACCESS_TOKEN=$(gcloud auth print-access-token)`), for a Mac whose ADC belong to another account.
+ */
+private fun seedFirestore(env: Map<String, String>): Firestore {
+    val token = env["SEED_ACCESS_TOKEN"]?.takeIf { it.isNotBlank() }
+        ?: return FirestoreOptions.getDefaultInstance().service
+    return FirestoreOptions.newBuilder()
+        .setProjectId(env["GOOGLE_CLOUD_PROJECT"] ?: DEFAULT_PROJECT)
+        .setCredentials(GoogleCredentials.create(AccessToken(token, null)))
+        .build()
+        .service
+}
+
+private const val DEFAULT_PROJECT = "sellsnap-6e85c"
 
 private suspend fun execute(loader: SeedLoader, options: Map<String, String?>): Int {
     options["--accounts"]?.let { file ->
