@@ -55,6 +55,7 @@ class FirestoreMappingTest {
             editPromptMessageId = 6,
             editedByOwner = true,
             needsAttention = true,
+            autoApproved = true,
             pairedPostId = "pair",
         )
 

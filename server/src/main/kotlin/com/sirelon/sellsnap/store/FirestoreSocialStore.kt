@@ -200,6 +200,7 @@ internal fun SocialPost.toMap(): Map<String, Any?> = mapOf(
     "editPromptMessageId" to editPromptMessageId,
     "editedByOwner" to editedByOwner,
     "needsAttention" to needsAttention,
+    "autoApproved" to autoApproved,
     "pairedPostId" to pairedPostId,
     "createdAt" to createdAt.toTimestamp(),
 )
@@ -229,6 +230,7 @@ internal fun postFromMap(id: String, data: Map<String, Any?>): SocialPost = Soci
     editPromptMessageId = data.long("editPromptMessageId"),
     editedByOwner = data.bool("editedByOwner"),
     needsAttention = data.bool("needsAttention"),
+    autoApproved = data.bool("autoApproved"),
     pairedPostId = data.string("pairedPostId"),
     createdAt = data.instant("createdAt") ?: Instant.EPOCH,
 )

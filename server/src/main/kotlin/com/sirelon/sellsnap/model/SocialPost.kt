@@ -48,6 +48,8 @@ data class SocialPost(
     val editPromptMessageId: Long? = null,
     val editedByOwner: Boolean = false,
     val needsAttention: Boolean = false,
+    /** True when auto mode approved the post; a Delete or `/approval` sends such posts back to `pending`. */
+    val autoApproved: Boolean = false,
     val pairedPostId: String? = null,
     val createdAt: Instant,
 )

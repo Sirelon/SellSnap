@@ -1,0 +1,154 @@
+package com.sirelon.sellsnap.telegram
+
+import com.sirelon.sellsnap.content.ContentRules
+import com.sirelon.sellsnap.model.PostStatus
+import com.sirelon.sellsnap.threads.DeferReason
+import java.time.Instant
+import java.time.ZoneId
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
+import java.util.Locale
+
+/**
+ * Every word the bot says to the owner. The bot speaks English only (D14); the owner is its only
+ * reader. Keep each reply to one or two short sentences. No secret or token may enter any of these.
+ */
+object BotText {
+    // Preview header and body
+    const val NEEDS_ATTENTION = "needs attention"
+    const val NO_SLOT = "no slot yet"
+    const val POLL_OPTIONS_TITLE = "Poll options:"
+
+    fun header(handle: String, code: String, slot: String, needsAttention: Boolean): String =
+        listOfNotNull("@$handle", code, slot, NEEDS_ATTENTION.takeIf { needsAttention }).joinToString(" | ")
+
+    // Buttons
+    const val APPROVE = "Approve"
+    const val EDIT = "Edit"
+    const val SKIP = "Skip"
+    const val REGENERATE = "Regenerate"
+    const val DELETE = "Delete"
+    const val DELETE_BEFORE_SLOT = "Delete before slot"
+
+    // Answers to a button tap
+    const val APPROVED = "Approved."
+    const val SKIPPED = "Skipped."
+    const val EDIT_PROMPT_SENT = "Reply to the prompt below."
+    const val DELETED = "Deleted from Threads."
+    const val DELETED_BEFORE_SLOT = "Deleted before its slot."
+    const val POST_NOT_FOUND = "That post no longer exists."
+    const val UNKNOWN_BUTTON = "I do not know that button."
+    const val NO_MEDIA_ID = "No Threads id is recorded for this post. Delete it in the Threads app."
+    const val NO_TOKEN = "This account has no token."
+
+    fun alreadyStatus(status: PostStatus): String = "Already ${status.name.lowercase()}."
+
+    fun notDeletable(status: PostStatus): String = "A ${status.name.lowercase()} post cannot be deleted."
+
+    fun threadsDeleteFailed(reason: String): String = "Threads did not delete it: $reason."
+
+    // Edit flow
+    fun editPrompt(code: String): String = "Reply to this message with the new text for $code."
+
+    fun editSaved(code: String): String = "Saved and approved $code."
+
+    fun editRejected(code: String, violations: String): String =
+        "$code was not changed: $violations. Reply to the prompt again to try another text."
+
+    const val PLAIN_TEXT_HINT = "To change a post, tap Edit under it and reply to my prompt. To write a new post, send /post."
+
+    // Mode changes
+    fun graduated(accountId: String, handle: String, streak: Int): String =
+        "@$handle has $streak approved posts in a row, so it now posts on its own. Send /approval $accountId to undo."
+
+    fun deletedNotice(handle: String, reverted: Int): String =
+        "@$handle is back in approval mode." + revertedSuffix(reverted)
+
+    fun approvalDone(handle: String, reverted: Int): String =
+        "@$handle is in approval mode." + revertedSuffix(reverted)
+
+    private fun revertedSuffix(reverted: Int): String =
+        if (reverted > 0) " $reverted upcoming ${if (reverted == 1) "post needs" else "posts need"} your approval again." else ""
+
+    // Commands
+    const val USAGE =
+        "Commands: /post <account> [now] <text>, /token <account> <token>, /approval <account>, /resume <account>, /refresh <account>."
+    const val POST_USAGE = "Usage: /post <account> [now] <text>. Start a line with \"? \" to add a poll option."
+    const val TOKEN_USAGE = "Usage: /token <account> <token>."
+    const val POLL_WITH_PHOTO = "A poll cannot have a photo."
+    const val NO_PHOTO_FILE = "I could not get that photo from Telegram."
+    const val NO_FREE_SLOT = "There is no free slot in the next 14 days."
+    const val POST_RACE = "Another post was created at the same moment. Send it again."
+    const val TOKEN_MESSAGE_NOT_DELETED = "I could not delete your message. Please delete it yourself."
+    const val TOKEN_CHECK_FAILED = "I could not check that token."
+
+    fun unknownAccount(id: String): String = "There is no account named $id."
+
+    fun postRejected(violations: String): String = "The post was not created: $violations."
+
+    fun publishedNow(code: String): String = "Published $code."
+
+    fun publishedNowNeedsAttention(code: String): String =
+        "Published $code, but its Threads id was not recorded. Check it in the Threads app."
+
+    fun notPublishedNow(code: String, reason: DeferReason): String = "$code was not published now: ${deferText(reason)}."
+
+    fun failedNow(code: String, reason: String): String = "$code failed and the account is paused: $reason."
+
+    fun claimLost(code: String): String = "Another publisher took over $code. Check its status."
+
+    fun tokenSaved(accountId: String, expiresAt: Instant, permissionsExpireAt: Instant?, missingScopes: Set<String>): String =
+        buildString {
+            append("Token saved for $accountId. It expires ${date(expiresAt)}.")
+            if (permissionsExpireAt != null) append(" Private-profile access ends ${date(permissionsExpireAt)}.")
+            if (missingScopes.isNotEmpty()) append(" Missing optional scopes: ${missingScopes.sorted().joinToString(", ")}.")
+        }
+
+    fun tokenRejected(summary: String): String = "The token was not saved: $summary."
+
+    fun resumed(handle: String, moved: Int): String =
+        "@$handle is resumed." + if (moved > 0) " $moved overdue ${if (moved == 1) "post moved" else "posts moved"} to new slots." else ""
+
+    fun refreshed(accountId: String, expiresAt: Instant): String =
+        "Token for $accountId refreshed. It expires ${date(expiresAt)}."
+
+    fun refreshFailed(summary: String): String = "The refresh failed: $summary."
+
+    fun error(detail: String): String = "Something went wrong: $detail"
+
+    // Content rule violations
+    fun violation(violation: ContentRules.Violation): String = when (violation) {
+        ContentRules.Violation.Empty -> "the text is empty"
+        ContentRules.Violation.TooLong -> "the text is too long (limit ${ContentRules.MAX_LENGTH})"
+        ContentRules.Violation.PollOptionCount ->
+            "a poll needs ${ContentRules.POLL_MIN_OPTIONS} to ${ContentRules.POLL_MAX_OPTIONS} options"
+        ContentRules.Violation.PollOptionLength ->
+            "a poll option must have 1 to ${ContentRules.POLL_OPTION_MAX_LENGTH} characters"
+        ContentRules.Violation.RussianLetter -> "it has a letter used only in Russian"
+        ContentRules.Violation.LinkNotAllowed -> "a link is not allowed in this post"
+        ContentRules.Violation.LinkTooEarly -> "no link until ${ContentRules.MIN_PUBLISHED_BEFORE_LINK} posts are published"
+        ContentRules.Violation.RawUrl -> "write {link} instead of a raw link"
+    }
+
+    fun violations(violations: Collection<ContentRules.Violation>): String =
+        violations.joinToString("; ") { violation(it) }
+
+    private fun deferText(reason: DeferReason): String = when (reason) {
+        DeferReason.AccountPaused -> "the account is paused"
+        DeferReason.NoToken -> "the account has no token"
+        DeferReason.LimitExhausted -> "the daily Threads limit is used up"
+        DeferReason.NotPublishable -> "the post cannot be published now"
+        DeferReason.ClaimedElsewhere -> "another publish is running"
+        DeferReason.ContainerInProgress -> "Threads is still processing it, and the next tick will finish it"
+        DeferReason.RateLimited -> "Threads is rate limiting, and the next tick will retry"
+        DeferReason.TransientFailure -> "Threads had a temporary error, and the next tick will retry"
+    }
+
+    // Formatting
+    private val DATE: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMM yyyy", Locale.ENGLISH).withZone(ZoneOffset.UTC)
+    private val SLOT: DateTimeFormatter = DateTimeFormatter.ofPattern("EEE d MMM HH:mm", Locale.ENGLISH)
+
+    fun date(at: Instant): String = DATE.format(at)
+
+    fun slot(at: Instant, zone: ZoneId): String = SLOT.withZone(zone).format(at)
+}
