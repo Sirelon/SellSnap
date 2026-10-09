@@ -110,7 +110,7 @@ A tick takes every `approved` post whose `scheduledAt` has passed, moves it to `
 
 ### 3.6 Token and permission lifecycle
 
-Threads long-lived tokens are valid 60 days and refreshable once at least 24 hours old and not yet expired; an unrefreshed token expires for good. Permissions granted by app users with private profiles are valid for 90 days, after which the owner must re-authorize (Threads docs, Long-Lived Access Tokens, fetched 2026-10-05). The staging account is private, so it needs owner re-authorization every 90 days; the tick alerts 10 days ahead. The tick refreshes any token older than 50 days and alerts at 10 days before expiry if a refresh keeps failing. Scopes requested for every account: `threads_basic`, `threads_content_publish`, `threads_manage_replies`, `threads_manage_insights`, `threads_delete`; after App Review also `threads_keyword_search` and `threads_manage_mentions`.
+Threads long-lived tokens are valid 60 days and refreshable once at least 24 hours old and not yet expired; an unrefreshed token expires for good. Permissions granted by app users with private profiles are valid for 90 days, after which the owner must re-authorize (Threads docs, Long-Lived Access Tokens, fetched 2026-10-05). The staging account is private, so it needs owner re-authorization every 90 days; the tick alerts 10 days ahead. The tick refreshes any token older than 50 days and alerts at 10 days before expiry if a refresh keeps failing. Scopes requested for every account: `threads_basic`, `threads_content_publish`, `threads_read_replies`, `threads_manage_replies`, `threads_manage_insights`, `threads_delete`, `threads_keyword_search`, `threads_manage_mentions`. All are added to the Meta app before the first authorization, because a token carries only the scopes that existed when the account authorized; the last two work beyond the account's own posts only after App Review.
 
 ### 3.7 Phase 1 fixtures
 
@@ -221,6 +221,8 @@ Four weeks from the first brand-account post:
 Missing the bar means fixing the loop, not adding a platform. App Review status is reported alongside but is Meta's decision, not the loop's.
 
 ## 11. Owner hand-work
+
+Step-by-step instructions for the staging pair, the Meta app and the Telegram bot are in [THREADS-OWNER-SETUP.html](THREADS-OWNER-SETUP.html).
 
 | What | When |
 |---|---|
