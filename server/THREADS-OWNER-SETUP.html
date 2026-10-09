@@ -1,0 +1,489 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Threads agent — owner setup, part 1</title>
+<style>
+  :root {
+    --primary: #D0600A; --on-primary: #FFFFFF;
+    --bg: #FFF8F2; --on-bg: #3A1F00;
+    --surface-lowest: #FFFFFF; --surface-low: #FFF0E0; --surface-high: #FFD8B0;
+    --chip: #FFBF85; --on-chip: #5C2E00;
+    --outline: #D9A070; --success: #1B8E5A; --warning: #D97706; --error: #BA1A1A;
+    --muted: #7A5A3A;
+  }
+  :root[data-theme="dark"] {
+    --primary: #F08030; --on-primary: #1A0800;
+    --bg: #1E0D00; --on-bg: #FFEDD8;
+    --surface-lowest: #160600; --surface-low: #2A1400; --surface-high: #472400;
+    --chip: #5C2E00; --on-chip: #FFBF85;
+    --outline: #7A5030; --success: #4FD28A; --warning: #F59E0B; --error: #FFB4AB;
+    --muted: #C9A57F;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--on-bg);
+    font: 16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  main { max-width: 860px; margin: 0 auto; padding: 24px 20px 96px; }
+  header.top {
+    position: sticky; top: 0; z-index: 5; background: var(--bg);
+    border-bottom: 1px solid var(--outline); padding: 10px 20px;
+  }
+  .top-inner { max-width: 860px; margin: 0 auto; display: flex; gap: 16px; align-items: center; }
+  .progress { flex: 1; height: 8px; border-radius: 4px; background: var(--surface-high); overflow: hidden; }
+  .progress > div { height: 100%; width: 0; background: linear-gradient(90deg, var(--primary), #F08030); transition: width .2s; }
+  .progress-label { font-size: 13px; color: var(--muted); white-space: nowrap; }
+  .theme { display: flex; border: 1px solid var(--outline); border-radius: 8px; overflow: hidden; }
+  .theme button {
+    border: 0; background: transparent; color: var(--on-bg); padding: 4px 10px; font-size: 13px; cursor: pointer;
+  }
+  .theme button[aria-pressed="true"] { background: var(--primary); color: var(--on-primary); }
+  h1 { font-size: 28px; line-height: 1.2; margin: 16px 0 4px; }
+  h2 {
+    font-size: 21px; margin: 40px 0 8px; padding-top: 8px;
+    display: flex; gap: 10px; align-items: baseline;
+  }
+  h2 .num {
+    display: inline-flex; align-items: center; justify-content: center; flex: none;
+    width: 30px; height: 30px; border-radius: 50%; background: var(--primary); color: var(--on-primary);
+    font-size: 15px; font-weight: 700;
+  }
+  h2 .time { margin-left: auto; font-size: 13px; font-weight: 400; color: var(--muted); }
+  h3 { font-size: 17px; margin: 20px 0 6px; }
+  .sub { color: var(--muted); margin: 0 0 16px; }
+  a { color: var(--primary); }
+  .card {
+    background: var(--surface-low); border: 1px solid var(--outline); border-radius: 12px; padding: 14px 18px; margin: 14px 0;
+  }
+  .card.warn { border-left: 5px solid var(--warning); }
+  .card.ok { border-left: 5px solid var(--success); }
+  .card.err { border-left: 5px solid var(--error); }
+  .card p:first-child, .card ul:first-child { margin-top: 0; }
+  .card p:last-child, .card ul:last-child { margin-bottom: 0; }
+  ul.steps { list-style: none; padding: 0; margin: 8px 0; }
+  ul.steps li {
+    display: flex; gap: 10px; align-items: flex-start; padding: 8px 10px; margin: 4px 0;
+    border-radius: 8px; background: var(--surface-lowest); border: 1px solid transparent;
+  }
+  ul.steps li.done { opacity: .55; }
+  ul.steps li.done .text { text-decoration: line-through; text-decoration-color: var(--muted); }
+  ul.steps input[type="checkbox"] { width: 18px; height: 18px; margin-top: 3px; accent-color: var(--primary); flex: none; }
+  ul.steps .text { flex: 1; }
+  .ui {
+    font-weight: 600; background: var(--surface-high); padding: 0 5px; border-radius: 4px; white-space: nowrap;
+  }
+  code { font: 14px ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--surface-high); padding: 1px 5px; border-radius: 4px; }
+  pre {
+    position: relative; background: var(--surface-lowest); border: 1px solid var(--outline); border-radius: 10px;
+    padding: 12px 14px; overflow-x: auto; font: 13.5px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  pre code { background: none; padding: 0; }
+  pre .copy {
+    position: absolute; top: 6px; right: 6px; border: 1px solid var(--outline); background: var(--surface-low);
+    color: var(--on-bg); border-radius: 6px; font-size: 12px; padding: 2px 8px; cursor: pointer;
+  }
+  .tag {
+    display: inline-block; font-size: 11px; font-weight: 600; letter-spacing: .02em; text-transform: uppercase;
+    padding: 1px 6px; border-radius: 4px; margin-left: 6px; vertical-align: 1px; white-space: nowrap;
+  }
+  .tag.docs { background: var(--success); color: var(--surface-lowest); }
+  .tag.guide { background: var(--chip); color: var(--on-chip); }
+  .tag.tip { border: 1px solid var(--outline); color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 15px; }
+  th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--outline); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 13px; }
+  label.field { display: block; margin: 10px 0 4px; font-weight: 600; font-size: 14px; }
+  input.field, textarea.field {
+    width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--outline);
+    background: var(--surface-lowest); color: var(--on-bg); font: 14px ui-monospace, Menlo, monospace;
+  }
+  textarea.field { min-height: 70px; }
+  button.primary {
+    margin-top: 14px; border: 0; border-radius: 10px; padding: 10px 18px; font-size: 15px; font-weight: 600;
+    background: linear-gradient(90deg, var(--primary), #F08030); color: var(--on-primary); cursor: pointer;
+  }
+  .legend span { margin-right: 14px; }
+  nav.toc ol { margin: 6px 0; padding-left: 22px; columns: 2; column-gap: 32px; }
+  nav.toc li { margin: 2px 0; }
+  .timeline td:first-child { white-space: nowrap; font-weight: 600; }
+  footer { margin-top: 48px; font-size: 13px; color: var(--muted); }
+  @media (max-width: 640px) { nav.toc ol { columns: 1; } .progress-label { display: none; } }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-inner">
+    <div class="progress" aria-hidden="true"><div id="bar"></div></div>
+    <span class="progress-label" id="progress-label">0 / 0 done</span>
+    <div class="theme" role="group" aria-label="Theme">
+      <button data-theme-choice="system">System</button>
+      <button data-theme-choice="light">Light</button>
+      <button data-theme-choice="dark">Dark</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <h1>Threads agent — owner setup, part 1</h1>
+  <p class="sub">Staging account, Meta app, Telegram bot. About 75 minutes. Written 2026-10-09 for
+    <a href="THREADS-AGENT-DESIGN.md">THREADS-AGENT-DESIGN.md</a> §11 and Linear
+    <a href="https://linear.app/sirelon/issue/SIR-140">SIR-140</a>.</p>
+
+  <div class="card ok">
+    <p><strong>When you finish this page:</strong></p>
+    <ul>
+      <li>A private staging Instagram + Threads pair exists.</li>
+      <li>A Meta app has the staging profile as a Threads tester, and a test token works.</li>
+      <li>A Telegram bot exists. Its token and the Threads app secret are in Secret Manager.</li>
+      <li>You send me the non-secret values from <a href="#send">step 10</a>.</li>
+    </ul>
+    <p>Why today: the brand accounts must wait at least 7 days after the staging account (D34).
+      A staging account created on 2026-10-09 allows brand accounts on 2026-10-16.</p>
+  </div>
+
+  <div class="card warn">
+    <p><strong>Three rules for the whole page</strong></p>
+    <ul>
+      <li><strong>Secrets never go into chat, email or notes.</strong> The bot token, the Threads app
+        secret and any Threads access token go only into the Terminal commands on this page.</li>
+      <li><strong>Use your phone on your home network. Do not use a VPN.</strong> New accounts that change
+        network or device right away get flagged more often. <span class="tag tip">Tip</span></li>
+      <li><strong>Meta renames buttons often.</strong> If a label differs, pick the closest match and
+        note what you saw in step 10.</li>
+    </ul>
+    <p class="legend">Labels are marked by source:
+      <span><span class="tag docs">Meta docs</span> on Meta's developer pages</span>
+      <span><span class="tag guide">Guide</span> from help mirrors or third-party guides</span>
+      <span><span class="tag tip">Tip</span> my advice, not a Meta rule</span></p>
+  </div>
+
+  <nav class="toc card">
+    <strong>Steps</strong>
+    <ol>
+      <li><a href="#values">Values to use</a></li>
+      <li><a href="#instagram">Staging Instagram account</a></li>
+      <li><a href="#threads">Staging Threads profile</a></li>
+      <li><a href="#devaccount">Meta developer account</a></li>
+      <li><a href="#app">Create the Meta app</a></li>
+      <li><a href="#settings">Permissions and settings</a></li>
+      <li><a href="#tester">Add the staging tester</a></li>
+      <li><a href="#token">Test a token</a></li>
+      <li><a href="#telegram">Telegram bot</a></li>
+      <li><a href="#send">Store secrets, send me the values</a></li>
+      <li><a href="#later">What comes later</a></li>
+    </ol>
+  </nav>
+
+  <!-- 1 -->
+  <h2 id="values"><span class="num">1</span>Values to use</h2>
+  <p>Use these names unless they are taken. The fallback is in brackets.</p>
+  <table>
+    <tr><th>What</th><th>Value</th></tr>
+    <tr><td>Staging username (Instagram and Threads)</td><td><code>sellsnap.staging</code> (<code>sellsnap_staging</code>)</td></tr>
+    <tr><td>Staging display name</td><td><code>SellSnap Staging</code></td></tr>
+    <tr><td>Staging bio</td><td><code>Private test account.</code></td></tr>
+    <tr><td>Staging email</td><td><code>you+sellsnap.staging@gmail.com</code> — a plus alias of your Gmail. If Instagram rejects the <code>+</code>, use another address you own. One address holds at most 5 Instagram accounts. <span class="tag guide">Guide</span></td></tr>
+    <tr><td>Meta app name</td><td><code>SellSnap Agent</code>. Keep Meta product names (Threads, Instagram, Facebook) out of it. <span class="tag tip">Tip</span></td></tr>
+    <tr><td>Telegram bot name</td><td><code>SellSnap Agent</code></td></tr>
+    <tr><td>Telegram bot username</td><td><code>sellsnap_agent_bot</code> (<code>sellsnap_threads_bot</code>). It cannot change later.</td></tr>
+    <tr><td>Privacy policy URL</td><td><code>https://sirelon.github.io/SellSnap/privacy-policy/</code></td></tr>
+    <tr><td>Terms URL</td><td><code>https://sirelon.github.io/SellSnap/terms-and-conditions/</code></td></tr>
+    <tr><td>Placeholder callback URL</td><td><code>https://sirelon.github.io/SellSnap/</code> — I replace it with the service URL at deploy.</td></tr>
+    <tr><td>App icon (1024 px)</td><td><code>iosApp/iosApp/Assets.xcassets/AppIcon.appiconset/app-icon-1024.png</code></td></tr>
+  </table>
+  <ul class="steps">
+    <li><input type="checkbox"><span class="text">Have a password manager open. You will save the staging password and its backup codes.</span></li>
+  </ul>
+
+  <!-- 2 -->
+  <h2 id="instagram"><span class="num">2</span>Staging Instagram account<span class="time">~10 min, phone</span></h2>
+  <ul class="steps">
+    <li><input type="checkbox"><span class="text">In the Instagram app, tap the <span class="ui">Profile</span> tab. Tap your username at the top. Tap <span class="ui">Add Instagram account</span>, then <span class="ui">Create new account</span>. <span class="tag guide">Guide</span></span></li>
+    <li><input type="checkbox"><span class="text">Enter the username <code>sellsnap.staging</code> and the display name <code>SellSnap Staging</code>.</span></li>
+    <li><input type="checkbox"><span class="text">When Instagram offers Accounts Center, tap <span class="ui">Create password</span> instead of <span class="ui">Allow and continue</span>. This keeps the test account out of your personal Accounts Center. <span class="tag guide">Guide</span> <span class="tag tip">Tip</span></span></li>
+    <li><input type="checkbox"><span class="text">Add the staging email, confirm the code, and tap <span class="ui">Complete sign-up</span>. Save the password.</span></li>
+    <li><input type="checkbox"><span class="text">Make the account private: <span class="ui">☰</span> → <span class="ui">Account privacy</span> → turn on <span class="ui">Private account</span>.</span></li>
+    <li><input type="checkbox"><span class="text">Keep the account type <strong>Personal</strong>. Do not switch to Creator or Business: a professional account cannot be private. <span class="tag guide">Guide</span></span></li>
+    <li><input type="checkbox"><span class="text">Set the bio to <code>Private test account.</code> A profile photo is optional.</span></li>
+    <li><input type="checkbox"><span class="text">Turn on two-factor authentication: <span class="ui">☰</span> → <span class="ui">Accounts Center</span> → <span class="ui">Password and security</span> → <span class="ui">Two-factor authentication</span> → pick the account → <span class="ui">Authentication app</span>. Then save the codes from <span class="ui">Additional methods</span> → <span class="ui">Backup codes</span>. <span class="tag guide">Guide</span></span></li>
+    <li><input type="checkbox"><span class="text">Do not follow anyone, post, or send messages from this account. <span class="tag tip">Tip</span></span></li>
+  </ul>
+
+  <!-- 3 -->
+  <h2 id="threads"><span class="num">3</span>Staging Threads profile<span class="time">~5 min, phone</span></h2>
+  <ul class="steps">
+    <li><input type="checkbox"><span class="text">Open the Threads app. If it shows your personal profile, open <span class="ui">Profile</span> → tap your username → <span class="ui">Add profile</span>. On a fresh install, tap <span class="ui">Log in with Instagram</span>. <span class="tag guide">Guide</span></span></li>
+    <li><input type="checkbox"><span class="text">Log in with <code>sellsnap.staging</code>. Import the name and bio from Instagram.</span></li>
+    <li><input type="checkbox"><span class="text">When Threads asks about privacy, choose <span class="ui">Private profile</span>. Then tap <span class="ui">Join Threads</span>.</span></li>
+    <li><input type="checkbox"><span class="text">Check that it is private: <span class="ui">Profile</span> → <span class="ui">☰</span> → <span class="ui">Settings</span> → <span class="ui">Privacy</span> → <span class="ui">Private profile</span> is on. Threads privacy is set apart from Instagram privacy. <span class="tag guide">Guide</span></span></li>
+    <li><input type="checkbox"><span class="text">Optional: from your personal Threads profile, request to follow <code>sellsnap.staging</code>, and approve it there. Then you see the test posts in your own feed.</span></li>
+  </ul>
+  <div class="card">
+    <p>Threads also allows sign-up without Instagram in some regions. Use the Instagram path anyway.
+      The design plans an Instagram + Threads pair per account, and Meta's docs do not confirm
+      that a standalone profile can be a Threads tester. <span class="tag tip">Tip</span></p>
+  </div>
+
+  <!-- 4 -->
+  <h2 id="devaccount"><span class="num">4</span>Meta developer account<span class="time">~5 min, Mac · skip if you have one</span></h2>
+  <ul class="steps">
+    <li><input type="checkbox"><span class="text">Log in to Facebook in the browser, then open <a href="https://developers.facebook.com/">developers.facebook.com</a>. A Facebook account is needed. <span class="tag docs">Meta docs</span></span></li>
+    <li><input type="checkbox"><span class="text">Click <span class="ui">Get Started</span>. Accept the terms with <span class="ui">Next</span>. <span class="tag docs">Meta docs</span></span></li>
+    <li><input type="checkbox"><span class="text">Enter the codes Meta sends to your phone and your email. Pick <span class="ui">Developer</span> as the occupation. <span class="tag docs">Meta docs</span></span></li>
+  </ul>
+
+  <!-- 5 -->
+  <h2 id="app"><span class="num">5</span>Create the Meta app<span class="time">~5 min, Mac</span></h2>
+  <ul class="steps">
+    <li><input type="checkbox"><span class="text">Open <a href="https://developers.facebook.com/apps/creation/">developers.facebook.com/apps/creation</a> (or <span class="ui">My Apps</span> → <span class="ui">Create app</span>).</span></li>
+    <li><input type="checkbox"><span class="text"><span class="ui">App details</span>: name <code>SellSnap Agent</code>, your contact email → <span class="ui">Next</span>. <span class="tag docs">Meta docs</span></span></li>
+    <li><input type="checkbox"><span class="text"><span class="ui">Use cases</span>: select <span class="ui">Access the Threads API</span> → <span class="ui">Next</span>. <span class="tag docs">Meta docs</span></span></li>
+    <li><input type="checkbox"><span class="text"><span class="ui">Business</span>: choose <span class="ui">I don't want to connect a business portfolio yet.</span> → <span class="ui">Next</span>. You can connect one before App Review. <span class="tag docs">Meta docs</span></span></li>
+    <li><input type="checkbox"><span class="text"><span class="ui">Requirements</span> → <span class="ui">Next</span>. <span class="ui">Overview</span> → <span class="ui">Go to dashboard</span>. <span class="tag docs">Meta docs</span></span></li>
+    <li><input type="checkbox"><span class="text">Leave the app in <strong>Development</strong> mode. Do not publish it. Testers work in Development mode. <span class="tag docs">Meta docs</span></span></li>
+  </ul>
+
+  <!-- 6 -->
+  <h2 id="settings"><span class="num">6</span>Permissions and settings<span class="time">~10 min, Mac</span></h2>
+  <h3>Permissions</h3>
+  <ul class="steps">
+    <li><input type="checkbox"><span class="text">Left menu <span class="ui">Use cases</span> → <span class="ui">Access the Threads API</span> → <span class="ui">Customize</span> (pencil icon) → <span class="ui">Permissions</span>. <span class="tag docs">Meta docs</span></span></li>
+    <li><input type="checkbox"><span class="text">Click <span class="ui">Add</span> next to each of these 7 permissions. <code>threads_basic</code> is already there and cannot be removed. <span class="tag docs">Meta docs</span>
+      <br><code>threads_content_publish</code> <code>threads_delete</code> <code>threads_manage_insights</code> <code>threads_manage_replies</code> <code>threads_read_replies</code> <code>threads_keyword_search</code> <code>threads_manage_mentions</code></span></li>
+  </ul>
+  <div class="card">
+    <p>Add all 7 now, including the two for Phase 4. A token carries only the permissions that existed
+      when the account authorized the app. A permission added later forces a new authorization on
+      every account.</p>
+  </div>
+
+  <h3>Use-case settings</h3>
+  <ul class="steps">
+    <li><input type="checkbox"><span class="text">In the same use case, click <span class="ui">Settings</span> in the left menu. <span class="tag docs">Meta docs</span></span></li>
+    <li><input type="checkbox"><span class="text">Copy the <span class="ui">Threads app ID</span> into the form in step 10. It is not a secret. <span class="tag docs">Meta docs</span></span></li>
+    <li><input type="checkbox"><span class="text">Leave the <span class="ui">Threads app secret</span> hidden for now. Step 10 reads it in the Terminal. It differs from the main app secret. <span class="tag docs">Meta docs</span></span></li>
+    <li><input type="checkbox"><span class="text">Put the placeholder <code>https://sirelon.github.io/SellSnap/</code> into <span class="ui">Client OAuth Settings</span> (valid OAuth redirect URIs), <span class="ui">Deauthorize callback URL</span> and <span class="ui">Data Deletion Requests URL</span>. Click <span class="ui">Save</span>. <span class="tag docs">Meta docs</span></span></li>
+  </ul>
+
+  <h3>App settings for App Review</h3>
+  <ul class="steps">
+    <li><input type="checkbox"><span class="text">Left menu <span class="ui">App settings</span> → <span class="ui">Basic</span>. Fill <span class="ui">Privacy Policy URL</span> and <span class="ui">Terms of Service URL</span> from step 1, upload the 1024 px icon, and pick the closest <span class="ui">Category</span>. Click <span class="ui">Save changes</span>. App Review needs these; filling them now saves a round later. <span class="tag guide">Guide</span></span></li>
+  </ul>
+
+  <!-- 7 -->
+  <h2 id="tester"><span class="num">7</span>Add the staging tester<span class="time">~5 min, Mac + phone</span></h2>
+  <ul class="steps">
+    <li><input type="checkbox"><span class="text">Left menu <span class="ui">App roles</span> → <span class="ui">Roles</span> → <span class="ui">Add People</span> → choose <span class="ui">Threads Tester</span>. The use-case page also has a shortcut, <span class="ui">Add or Remove Threads Test Users</span>. <span class="tag docs">Meta docs</span></span></li>
+    <li><input type="checkbox"><span class="text">Enter the Threads username <code>sellsnap.staging</code> → <span class="ui">Add</span>. The row shows <span class="ui">Pending</span>. <span class="tag guide">Guide</span></span></li>
+    <li><input type="checkbox"><span class="text">In the Threads app, as <code>sellsnap.staging</code>: <span class="ui">Profile</span> → <span class="ui">☰</span> → <span class="ui">Settings</span> → <span class="ui">Account</span> → <span class="ui">Website permissions</span> → <span class="ui">Invites</span> → <span class="ui">Accept</span>. On the web: threads.com → <span class="ui">More</span> → <span class="ui">Settings</span> → same path. <span class="tag docs">Meta docs</span> <span class="tag guide">Guide</span></span></li>
+    <li><input type="checkbox"><span class="text">If the invite is not there, wait a minute and open the page again.</span></li>
+  </ul>
+  <div class="card">
+    <p>Meta's docs name only <em>"the Website permissions section under Account Settings"</em>.
+      The sub-menu names come from third-party guides.</p>
+  </div>
+
+  <!-- 8 -->
+  <h2 id="token"><span class="num">8</span>Test a token<span class="time">~5 min, Mac</span></h2>
+  <p>This step proves that steps 5–7 work today, not on deploy day. It also answers an open item
+    in the design (§9): where the dashboard token comes from, and how long it lives.</p>
+  <ul class="steps">
+    <li><input type="checkbox"><span class="text"><span class="ui">Use cases</span> → <span class="ui">Access the Threads API</span> → <span class="ui">Customize</span> → <span class="ui">Settings</span>. Scroll to the bottom, to the token generator. Click <span class="ui">Generate access token</span> next to <code>sellsnap.staging</code>. Log in as staging and approve every permission. Copy the token. It starts with <code>TH</code>. <span class="tag guide">Guide</span></span></li>
+    <li><input type="checkbox"><span class="text">If the settings page has no generator: <span class="ui">Tools</span> → <span class="ui">Graph API Explorer</span> → switch the host dropdown from <span class="ui">facebook</span> to <span class="ui">threads.net</span> → check that <span class="ui">Meta App</span> is <code>SellSnap Agent</code> → <span class="ui">Generate Threads Access Token</span>. <span class="tag guide">Guide</span></span></li>
+    <li><input type="checkbox"><span class="text">Run this in the Terminal. The commands on this page use zsh, the macOS default. <code>read -s</code> hides what you paste, so the token stays out of your shell history.</span></li>
+  </ul>
+<pre><code>read -s "TH_TOKEN?Threads token: "; echo
+curl -s "https://graph.threads.net/v1.0/me?fields=id,username&amp;access_token=$TH_TOKEN" | jq
+curl -s "https://graph.threads.net/v1.0/debug_token?input_token=$TH_TOKEN&amp;access_token=$TH_TOKEN" \
+  | jq -c '.data | {is_valid, scopes,
+      token_days: ((((.expires_at // 0) - now) / 86400) | floor),
+      grant_days: ((((.data_access_expires_at // 0) - now) / 86400) | floor)}'
+unset TH_TOKEN</code></pre>
+  <div class="card ok">
+    <p><strong>Expected</strong></p>
+    <ul>
+      <li>The first call prints <code>"username": "sellsnap.staging"</code>.</li>
+      <li>The second prints one line with <code>"is_valid":true</code> and 8 scopes. <code>token_days</code> is 0 for a 1-hour token or about 59 for a 60-day token. Copy that line into step 10.</li>
+    </ul>
+  </div>
+  <div class="card err">
+    <p><strong>If it fails</strong></p>
+    <ul>
+      <li><em>"The user has not accepted the invite to test the app"</em> — finish step 7. <span class="tag guide">Guide</span></li>
+      <li>Error code <code>190</code> — the token is wrong or expired. Generate a new one.</li>
+      <li>Fewer than 8 scopes — a permission in step 6 did not save. Add it, then generate a new token.</li>
+    </ul>
+  </div>
+  <ul class="steps">
+    <li><input type="checkbox"><span class="text">Do not keep the token. On deploy day you generate a fresh one and send it to the bot with <code>/token staging</code>.</span></li>
+  </ul>
+
+  <!-- 9 -->
+  <h2 id="telegram"><span class="num">9</span>Telegram bot<span class="time">~5 min, phone or Mac</span></h2>
+  <ul class="steps">
+    <li><input type="checkbox"><span class="text">In Telegram, open <code>@BotFather</code> (it has a blue check mark). Send <code>/newbot</code>.</span></li>
+    <li><input type="checkbox"><span class="text">Name: <code>SellSnap Agent</code>. Username: <code>sellsnap_agent_bot</code>. A username has 5–32 Latin letters, digits or underscores, ends in <code>bot</code>, and cannot change later.</span></li>
+    <li><input type="checkbox"><span class="text">BotFather replies with the token. It looks like <code>110201543:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw</code>. Leave the message there for step 10.</span></li>
+    <li><input type="checkbox"><span class="text">Send <code>/setjoingroups</code>, pick the bot, choose <span class="ui">Disable</span>. The bot works only in your private chat.</span></li>
+    <li><input type="checkbox"><span class="text">Optional: <code>/setuserpic</code> with the app icon.</span></li>
+    <li><input type="checkbox"><span class="text">Skip <code>/setcommands</code>. The service registers its commands when it starts.</span></li>
+    <li><input type="checkbox"><span class="text">Open your bot (<code>t.me/sellsnap_agent_bot</code>) and tap <span class="ui">Start</span>. Step 10 reads your user id from that message.</span></li>
+  </ul>
+
+  <!-- 10 -->
+  <h2 id="send"><span class="num">10</span>Store secrets, send me the values<span class="time">~5 min, Mac</span></h2>
+  <h3>Telegram token and your user id</h3>
+<pre><code>read -s "TG_TOKEN?Bot token: "; echo
+curl -s "https://api.telegram.org/bot$TG_TOKEN/getUpdates" | jq -c '[.result[] | .message.from // empty | {id, username}] | unique'
+printf %s "$TG_TOKEN" | gcloud secrets create TELEGRAM_BOT_TOKEN --data-file=- --replication-policy=automatic --project=sellsnap-6e85c
+unset TG_TOKEN</code></pre>
+  <p>The <code>id</code> number is your Telegram user id. An empty list means the bot has not seen your
+    <span class="ui">Start</span> yet. <code>getUpdates</code> works only until the service sets its webhook on deploy day.</p>
+
+  <h3>Threads app secret</h3>
+  <p>Click <span class="ui">Show</span> next to <span class="ui">Threads app secret</span> (step 6), copy it, then run:</p>
+<pre><code>read -s "TH_SECRET?Threads app secret: "; echo
+printf %s "$TH_SECRET" | gcloud secrets create THREADS_APP_SECRET --data-file=- --replication-policy=automatic --project=sellsnap-6e85c
+unset TH_SECRET
+gcloud secrets list --project=sellsnap-6e85c</code></pre>
+  <div class="card ok">
+    <p><strong>Expected:</strong> the list shows <code>OPENAI_KEY</code>, <code>TELEGRAM_BOT_TOKEN</code> and <code>THREADS_APP_SECRET</code>.
+      If a secret already exists, replace <code>secrets create NAME --replication-policy=automatic</code> with <code>secrets versions add NAME</code>.</p>
+  </div>
+  <ul class="steps">
+    <li><input type="checkbox"><span class="text">Delete the BotFather message that shows the token, and clear the clipboard.</span></li>
+  </ul>
+
+  <h3>Message to me</h3>
+  <p>Fill the form, click the button, paste the result into the chat. No field here is secret.</p>
+  <div class="card">
+    <label class="field" for="f-handle">Staging username</label>
+    <input class="field" id="f-handle" data-key="handle" value="sellsnap.staging">
+    <label class="field" for="f-appid">Threads app ID</label>
+    <input class="field" id="f-appid" data-key="appid">
+    <label class="field" for="f-bot">Bot username</label>
+    <input class="field" id="f-bot" data-key="bot" value="sellsnap_agent_bot">
+    <label class="field" for="f-tgid">Your Telegram user id</label>
+    <input class="field" id="f-tgid" data-key="tgid">
+    <label class="field" for="f-check">Token check line from step 8</label>
+    <input class="field" id="f-check" data-key="check" placeholder='{"is_valid":true,"scopes":[...],"token_days":0,"grant_days":89}'>
+    <label class="field" for="f-gen">Where the token came from</label>
+    <input class="field" id="f-gen" data-key="gen" value="Use case Settings → Generate access token">
+    <label class="field" for="f-notes">What differed from this page</label>
+    <textarea class="field" id="f-notes" data-key="notes" placeholder="Labels that did not match, steps that failed, anything odd"></textarea>
+    <button class="primary" id="copy-message">Copy message</button>
+    <span id="copied" style="margin-left:10px;color:var(--success)"></span>
+  </div>
+
+  <!-- 11 -->
+  <h2 id="later"><span class="num">11</span>What comes later</h2>
+  <table class="timeline">
+    <tr><th>When</th><th>What</th></tr>
+    <tr><td>Before 2026-10-16</td><td>Approve the brand bio copy. I send it as an English key-to-text list (D20).</td></tr>
+    <tr><td>2026-10-16 or later</td><td>Create <code>sellsnap.ua</code> and <code>sellsnap.pl</code> (fallback <code>sellsnap_ua</code>, <code>sellsnap_pl</code>) with steps 2, 3 and 7. Differences: the profiles are public, and each gets its own email. Post nothing by hand.</td></tr>
+    <tr><td>Phase 1 deploy day</td><td>I send the service URL. Replace the 3 placeholder URLs from step 6. Generate a token for each account (step 8) and send it to the bot with <code>/token &lt;account&gt;</code>.</td></tr>
+    <tr><td>Staging has 10 posts</td><td>Submit Meta App Review. I prepare the text.</td></tr>
+    <tr><td>Every 90 days</td><td>Re-authorize staging when the bot reminds you: a private profile's permission grant cannot be extended. <span class="tag docs">Meta docs</span></td></tr>
+    <tr><td>Before Phase 3</td><td>Photograph about 30 household items.</td></tr>
+  </table>
+
+  <footer>
+    <p><strong>Sources</strong>, fetched 2026-10-09:
+      Meta — <a href="https://developers.facebook.com/documentation/threads/get-started/create-an-app">Create an app (Threads)</a>,
+      <a href="https://developers.facebook.com/docs/threads/get-started">Threads get started</a>,
+      <a href="https://developers.facebook.com/docs/threads/get-started/long-lived-tokens">Long-lived tokens</a>,
+      <a href="https://developers.facebook.com/documentation/threads/troubleshooting/debug-access-token">Debug token</a>,
+      <a href="https://developers.facebook.com/docs/threads/changelog">Threads changelog</a>,
+      <a href="https://developers.facebook.com/docs/development/register">Developer registration</a>,
+      <a href="https://developers.facebook.com/docs/development/build-and-test/app-modes">App modes</a>,
+      <a href="https://transparency.meta.com/policies/community-standards/account-integrity/">Account integrity</a>.
+      Help mirrors — <a href="https://www.facebook.com/1696686240613595">Add Instagram account</a>,
+      <a href="https://www.facebook.com/1582474155197965">Two-factor authentication</a>,
+      <a href="https://help.instagram.com/225222310104065/">Threads private profile</a>.
+      Guides — <a href="https://botize.com/en/api-credentials/threads">Botize</a>,
+      <a href="https://slashpage.com/n8n-guide/dk58wg2e4kj63mnqevxz?tl=en">n8n guide</a>.
+      Telegram — <a href="https://core.telegram.org/bots/features">Bot features</a>,
+      <a href="https://core.telegram.org/bots/api">Bot API</a>.</p>
+  </footer>
+</main>
+
+<script>
+(() => {
+  const STORE = 'sellsnap-threads-setup-1';
+  const state = JSON.parse(localStorage.getItem(STORE) || '{}');
+  state.checks ??= {}; state.fields ??= {};
+  const save = () => localStorage.setItem(STORE, JSON.stringify(state));
+
+  // Theme: System / Light / Dark
+  const root = document.documentElement;
+  const media = matchMedia('(prefers-color-scheme: dark)');
+  const applyTheme = () => {
+    const choice = state.theme || 'system';
+    const dark = choice === 'dark' || (choice === 'system' && media.matches);
+    root.dataset.theme = dark ? 'dark' : 'light';
+    document.querySelectorAll('[data-theme-choice]').forEach(b =>
+      b.setAttribute('aria-pressed', String(b.dataset.themeChoice === choice)));
+  };
+  document.querySelectorAll('[data-theme-choice]').forEach(b => b.addEventListener('click', () => {
+    state.theme = b.dataset.themeChoice; save(); applyTheme();
+  }));
+  media.addEventListener('change', applyTheme);
+  applyTheme();
+
+  // Checklist with saved progress
+  const boxes = [...document.querySelectorAll('ul.steps input[type="checkbox"]')];
+  const bar = document.getElementById('bar');
+  const label = document.getElementById('progress-label');
+  const refresh = () => {
+    const done = boxes.filter(b => b.checked).length;
+    bar.style.width = (100 * done / boxes.length) + '%';
+    label.textContent = `${done} / ${boxes.length} done`;
+    boxes.forEach(b => b.closest('li').classList.toggle('done', b.checked));
+  };
+  boxes.forEach((b, i) => {
+    b.setAttribute('aria-label', b.nextElementSibling.textContent.trim().slice(0, 80));
+    b.checked = !!state.checks[i];
+    b.addEventListener('change', () => { state.checks[i] = b.checked; save(); refresh(); });
+  });
+  refresh();
+
+  // Copy buttons on code blocks
+  document.querySelectorAll('pre').forEach(pre => {
+    const btn = document.createElement('button');
+    btn.className = 'copy'; btn.textContent = 'Copy';
+    btn.addEventListener('click', async () => {
+      await navigator.clipboard.writeText(pre.querySelector('code').innerText);
+      btn.textContent = 'Copied'; setTimeout(() => (btn.textContent = 'Copy'), 1500);
+    });
+    pre.appendChild(btn);
+  });
+
+  // Message form with saved fields
+  const fields = [...document.querySelectorAll('[data-key]')];
+  fields.forEach(f => {
+    if (state.fields[f.dataset.key] !== undefined) f.value = state.fields[f.dataset.key];
+    f.addEventListener('input', () => { state.fields[f.dataset.key] = f.value; save(); });
+  });
+  const v = k => (document.querySelector(`[data-key="${k}"]`).value || '').trim() || '—';
+  document.getElementById('copy-message').addEventListener('click', async () => {
+    const text = [
+      'Threads setup part 1 done.',
+      `Staging username: ${v('handle')}`,
+      `Threads app ID: ${v('appid')}`,
+      `Bot username: @${v('bot').replace(/^@/, '')}`,
+      `Telegram user id: ${v('tgid')}`,
+      `Token check: ${v('check')}`,
+      `Token source: ${v('gen')}`,
+      `Differences: ${v('notes')}`,
+    ].join('\n');
+    await navigator.clipboard.writeText(text);
+    const c = document.getElementById('copied');
+    c.textContent = 'Copied'; setTimeout(() => (c.textContent = ''), 2000);
+  });
+})();
+</script>
+</body>
+</html>
