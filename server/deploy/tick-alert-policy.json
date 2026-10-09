@@ -1,0 +1,25 @@
+{
+  "displayName": "SellSnap agent: tick attempt failed",
+  "documentation": {
+    "mimeType": "text/markdown",
+    "content": "A Cloud Scheduler attempt of `sellsnap-tick` failed. Check the Cloud Run logs of `sellsnap-agent` (`POST /tick`) and the Telegram chat. Posts due this hour publish on the next tick."
+  },
+  "combiner": "OR",
+  "enabled": true,
+  "conditions": [
+    {
+      "displayName": "sellsnap-tick attempt finished with an error",
+      "conditionMatchedLog": {
+        "filter": "resource.type=\"cloud_scheduler_job\" AND resource.labels.job_id=\"sellsnap-tick\" AND severity>=ERROR"
+      }
+    }
+  ],
+  "alertStrategy": {
+    "notificationRateLimit": {
+      "period": "3600s"
+    }
+  },
+  "notificationChannels": [
+    "${CHANNEL}"
+  ]
+}
