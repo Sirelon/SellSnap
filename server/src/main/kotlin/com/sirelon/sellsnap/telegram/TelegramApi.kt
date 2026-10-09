@@ -57,7 +57,15 @@ data class Message(
     val text: String? = null,
     val caption: String? = null,
     val photo: List<PhotoSize> = emptyList(),
+    /** A file sent without compression; an image sent "as a file" arrives here instead of in [photo]. */
+    val document: Document? = null,
     @SerialName("reply_to_message") val replyToMessage: Message? = null,
+)
+
+@Serializable
+data class Document(
+    @SerialName("file_id") val fileId: String,
+    @SerialName("mime_type") val mimeType: String? = null,
 )
 
 @Serializable

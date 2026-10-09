@@ -75,19 +75,33 @@ class BotFixture {
         updateId: Long = nextUpdateId++,
         replyTo: Long? = null,
         photoFileId: String? = null,
+        document: Document? = null,
     ): Message {
         val id = nextIncomingMessageId++
         val message = Message(
             messageId = id,
             chat = Chat(OWNER),
             from = User(from),
-            text = text.takeIf { photoFileId == null },
-            caption = text.takeIf { photoFileId != null },
+            text = text.takeIf { photoFileId == null && document == null },
+            caption = text.takeIf { photoFileId != null || document != null },
             photo = listOfNotNull(photoFileId?.let { PhotoSize(it, 640, 480) }),
+            document = document,
             replyToMessage = replyTo?.let { Message(it, Chat(OWNER)) },
         )
         handler.handle(Update(updateId, message = message))
         return message
+    }
+
+    /** A photo or file with no caption at all. */
+    suspend fun sendBareImage(photoFileId: String? = null, document: Document? = null) {
+        val message = Message(
+            messageId = nextIncomingMessageId++,
+            chat = Chat(OWNER),
+            from = User(OWNER),
+            photo = listOfNotNull(photoFileId?.let { PhotoSize(it, 640, 480) }),
+            document = document,
+        )
+        handler.handle(Update(nextUpdateId++, message = message))
     }
 
     fun putPending(id: String = "stt0001", scheduledAt: Instant? = NOW.plusSeconds(3600), telegramMessageId: Long? = 900): SocialPost =

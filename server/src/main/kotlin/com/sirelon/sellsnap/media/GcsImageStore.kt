@@ -12,10 +12,10 @@ class GcsImageStore(
     private val storage: Storage,
     private val bucket: String,
 ) : ImageStore {
-    override suspend fun saveManualPhoto(code: String, jpeg: ByteArray): String {
-        val path = "social/manual/$code.jpg"
-        val info = BlobInfo.newBuilder(BlobId.of(bucket, path)).setContentType("image/jpeg").build()
-        withContext(Dispatchers.IO) { storage.create(info, jpeg) }
+    override suspend fun saveManualPhoto(code: String, bytes: ByteArray, contentType: String): String {
+        val path = manualPhotoPath(code, contentType)
+        val info = BlobInfo.newBuilder(BlobId.of(bucket, path)).setContentType(contentType).build()
+        withContext(Dispatchers.IO) { storage.create(info, bytes) }
         return path
     }
 

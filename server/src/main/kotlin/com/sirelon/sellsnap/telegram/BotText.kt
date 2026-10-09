@@ -77,6 +77,8 @@ object BotText {
     const val TOKEN_USAGE = "Usage: /token <account> <token>."
     const val POLL_WITH_PHOTO = "A poll cannot have a photo."
     const val NO_PHOTO_FILE = "I could not get that photo from Telegram."
+    const val UNSUPPORTED_FILE = "Send the image as a JPEG or PNG."
+    const val PHOTO_NEEDS_CAPTION = "Send the photo with /post <account> [now] <text> as its caption, in one message."
     const val NO_FREE_SLOT = "There is no free slot in the next 14 days."
     const val POST_RACE = "Another post was created at the same moment. Send it again."
     const val TOKEN_MESSAGE_NOT_DELETED = "I could not delete your message. Please delete it yourself."

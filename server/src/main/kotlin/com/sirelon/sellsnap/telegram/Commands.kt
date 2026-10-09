@@ -96,7 +96,8 @@ class Commands(
     private suspend fun post(message: Message, args: String) {
         val request = parsePost(args) ?: return reply(BotText.POST_USAGE)
         val account = store.account(request.accountId) ?: return reply(BotText.unknownAccount(request.accountId))
-        val photo = message.photo.maxByOrNull { it.width * it.height }
+        val photo = message.image()
+        if (photo == null && message.document != null) return reply(BotText.UNSUPPORTED_FILE)
         if (photo != null && request.pollOptions.isNotEmpty()) return reply(BotText.POLL_WITH_PHOTO)
         if (request.text.isEmpty() && photo == null) return reply(BotText.POST_USAGE)
 
@@ -133,7 +134,7 @@ class Commands(
 
         val imagePaths = if (photo != null) {
             val filePath = telegram.getFile(photo.fileId).filePath ?: return reply(BotText.NO_PHOTO_FILE)
-            listOf(images.saveManualPhoto(code, telegram.downloadFile(filePath)))
+            listOf(images.saveManualPhoto(code, telegram.downloadFile(filePath), photo.contentType))
         } else {
             emptyList()
         }
@@ -254,3 +255,12 @@ class Commands(
         }
     }
 }
+
+/** An image the owner attached: the largest photo size, or a JPEG or PNG sent as a file. */
+private class ImageFile(val fileId: String, val contentType: String)
+
+private val IMAGE_TYPES = setOf("image/jpeg", "image/png")
+
+private fun Message.image(): ImageFile? =
+    photo.maxByOrNull { it.width * it.height }?.let { ImageFile(it.fileId, "image/jpeg") }
+        ?: document?.takeIf { it.mimeType in IMAGE_TYPES }?.let { ImageFile(it.fileId, it.mimeType!!) }

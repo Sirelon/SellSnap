@@ -38,7 +38,13 @@ class BotUpdateHandler(
     }
 
     private suspend fun onMessage(message: Message) {
-        val text = message.text ?: message.caption ?: return
+        val text = message.text ?: message.caption
+        if (text == null) {
+            if (message.photo.isNotEmpty() || message.document != null) {
+                telegram.sendMessage(message.chat.id, BotText.PHOTO_NEEDS_CAPTION)
+            }
+            return
+        }
         when {
             text.trimStart().startsWith("/") -> commands.handle(message, text)
             message.text != null && approvals.onReply(message) -> Unit

@@ -127,6 +127,35 @@ class CommandsTest {
     }
 
     @Test
+    fun aPngSentAsAFileMakesAnImagePost() = runTest {
+        bot.telegram.files["photos/d1.jpg"] = byteArrayOf(1, 2, 3)
+
+        bot.say("/post staging Sent as a file", document = Document("d1", "image/png"))
+
+        val post = bot.post("stt0001")
+        assertEquals(PostKind.Image, post.kind)
+        assertEquals(listOf("social/manual/stt0001.png"), post.imagePaths)
+        assertContentEquals(byteArrayOf(1, 2, 3), bot.images.saved.getValue("social/manual/stt0001.png"))
+    }
+
+    @Test
+    fun aFileThatIsNotAnImageIsRefused() = runTest {
+        bot.say("/post staging Here is a PDF", document = Document("d2", "application/pdf"))
+
+        assertEquals(listOf(BotText.UNSUPPORTED_FILE), bot.sentTexts())
+        assertTrue(bot.store.allPosts.isEmpty())
+    }
+
+    @Test
+    fun aPhotoWithoutACaptionGetsAHint() = runTest {
+        bot.sendBareImage(photoFileId = "p1")
+        bot.sendBareImage(document = Document("d1", "image/jpeg"))
+
+        assertEquals(listOf(BotText.PHOTO_NEEDS_CAPTION, BotText.PHOTO_NEEDS_CAPTION), bot.sentTexts())
+        assertTrue(bot.store.allPosts.isEmpty())
+    }
+
+    @Test
     fun aPollCannotCarryAPhoto() = runTest {
         bot.say("/post staging Pick\n? A\n? B", photoFileId = "p1")
 
