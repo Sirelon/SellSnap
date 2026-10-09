@@ -189,7 +189,7 @@
     <tr><td>Telegram bot username</td><td><code>sellsnap_agent_bot</code> (<code>sellsnap_threads_bot</code>). It cannot change later.</td></tr>
     <tr><td>Privacy policy URL</td><td><code>https://sirelon.github.io/SellSnap/privacy-policy/</code></td></tr>
     <tr><td>Terms URL</td><td><code>https://sirelon.github.io/SellSnap/terms-and-conditions/</code></td></tr>
-    <tr><td>Placeholder callback URL</td><td><code>https://sirelon.github.io/SellSnap/</code> — I replace it with the service URL at deploy.</td></tr>
+    <tr><td>Placeholder callback URL</td><td><code>https://sirelon.github.io/SellSnap/</code> — it stays: tokens come from the dashboard, so the service has no OAuth routes.</td></tr>
     <tr><td>App icon (1024 px)</td><td><code>iosApp/iosApp/Assets.xcassets/AppIcon.appiconset/app-icon-1024.png</code></td></tr>
   </table>
   <ul class="steps">
@@ -397,7 +397,7 @@ gcloud secrets list --project=sellsnap-6e85c</code></pre>
     <tr><th>When</th><th>What</th></tr>
     <tr><td>Before 2026-10-16</td><td>Approve the brand bio copy. I send it as an English key-to-text list (D20).</td></tr>
     <tr><td>2026-10-16 or later</td><td>Create <code>sellsnap.ua</code> and <code>sellsnap.pl</code> (fallback <code>sellsnap_ua</code>, <code>sellsnap_pl</code>) with <a href="#create-account">Create a new account</a>, then steps 3 and 7. The profiles are public. Post nothing by hand.</td></tr>
-    <tr><td>Phase 1 deploy day</td><td>I send the service URL. Replace the 3 placeholder URLs from step 6. Generate a token for each account (step 8) and send it to the bot with <code>/token &lt;account&gt;</code>.</td></tr>
+    <tr><td>Phase 1 deploy day</td><td>Generate a token for each account (step 8) and send it to the bot with <code>/token &lt;account&gt; &lt;token&gt;</code>. The bot deletes that message.</td></tr>
     <tr><td>Staging has 10 posts</td><td>Submit Meta App Review. I prepare the text.</td></tr>
     <tr><td>Every 90 days</td><td>Re-authorize staging when the bot reminds you: a private profile's permission grant cannot be extended. <span class="tag docs">Meta docs</span></td></tr>
     <tr><td>Before Phase 3</td><td>Photograph about 30 household items.</td></tr>
