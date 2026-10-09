@@ -79,9 +79,8 @@ anything above that does not apply.
 - SwiftUI wrapper around the shared Compose app/framework.
 
 ### `server`
-- Minimal Ktor JVM backend.
-- Depends on `:shared`.
-- Current implementation is tiny; do not assume backend business logic lives here.
+- Ktor JVM backend (Cloud Run) for the Threads agent; design in `server/THREADS-AGENT-DESIGN.md`.
+- Standalone: does not depend on `:shared`. Builds with JDK 21 (`jvmToolchain(21)`) and reads its settings from environment variables (`Config`).
 
 ### `functions`
 - Firebase Cloud Functions (TypeScript, Node 22), outside the Gradle build.
@@ -135,7 +134,7 @@ anything above that does not apply.
 - iOS: `iosApp/iosApp/iOSApp.swift`
 - iOS Xcode sync/build bridge: `:composeApp:embedAndSignAppleFrameworkForXcode` is invoked from `iosApp/iosApp.xcodeproj/project.pbxproj`
 - Xcode compile phase skips the Gradle bridge when `OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED=YES`
-- Server: `server/src/main/kotlin/com/sirelon/aicalories/Application.kt`
+- Server: `server/src/main/kotlin/com/sirelon/sellsnap/Application.kt`
 - Cloud Functions: `functions/src/index.ts`
 
 ## Navigation Rules
