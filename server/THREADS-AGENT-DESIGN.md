@@ -39,7 +39,7 @@ zero; it does not amplify an existing one.
 | D17 | Polish drafts carry an English back-translation and pass a naturalness check before reaching the owner. |
 | D18 | Demo photo set: about 30 household items photographed once by the owner. |
 | D19 | Round-one bar in §10. |
-| D20 | Handles `sellsnap.ua` and `sellsnap.pl`, fallback `sellsnap_ua` and `sellsnap_pl`. Bio copy is approved as an English key-to-text list before account creation. |
+| D20 | Handles `sellsnap.ua` and `sellsnap.pl`, fallback `sellsnap_ua` and `sellsnap_pl`. Staging is the owner's existing, empty account `sellsnap.app`, kept private for good; if the handle is ever wanted for a public account, the staging account is renamed. Bio copy is approved as an English key-to-text list before account creation. |
 | D21 | Fixed weekly template (§6.1), variety inside each slot. |
 | D22 | Demo anatomy: carousel of the raw photo and a card rendered by the server from the unedited pipeline output; one-line hook as caption. A pipeline refusal drops the run. |
 | D23 | Only demo and product-update posts carry a link, and never the first five posts of a new account. |
