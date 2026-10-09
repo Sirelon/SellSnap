@@ -1,9 +1,19 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-    match /{allPaths=**} {
+    // social/ holds the images the Threads agent publishes (server/THREADS-AGENT-DESIGN.md, T2).
+    // Public read; no client write. The agent writes with the Admin SDK, which bypasses these rules.
+    match /social/{allPaths=**} {
       allow read: if true;
-      allow write: if request.resource.size < 15 * 1024 * 1024
+      allow write: if false;
+    }
+
+    // Everything else is the app's photo uploads, which run without Firebase Auth.
+    // Allow rules are OR-ed, so this catch-all has to exclude social/ itself.
+    match /{folder}/{allPaths=**} {
+      allow read: if true;
+      allow write: if folder != 'social'
+                   && request.resource.size < 15 * 1024 * 1024
                    && request.resource.contentType.matches('image/.*');
     }
   }
