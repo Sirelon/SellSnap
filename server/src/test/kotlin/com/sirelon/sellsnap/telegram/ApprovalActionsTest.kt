@@ -209,7 +209,7 @@ class ApprovalActionsTest {
         bot.say("bad ${Char(0x44B)} letter", replyTo = bot.post("stt0001").editPromptMessageId)
 
         assertEquals(PostStatus.Pending, bot.status("stt0001"))
-        assertTrue("used only in Russian" in bot.sentTexts().last())
+        assertTrue("used only in russian" in bot.sentTexts().last())
     }
 
     @Test

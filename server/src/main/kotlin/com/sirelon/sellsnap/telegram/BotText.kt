@@ -124,7 +124,7 @@ object BotText {
             "a poll needs ${ContentRules.POLL_MIN_OPTIONS} to ${ContentRules.POLL_MAX_OPTIONS} options"
         ContentRules.Violation.PollOptionLength ->
             "a poll option must have 1 to ${ContentRules.POLL_OPTION_MAX_LENGTH} characters"
-        ContentRules.Violation.RussianLetter -> "it has a letter used only in Russian"
+        ContentRules.Violation.RussianLetter -> "it has a letter used only in russian"
         ContentRules.Violation.LinkNotAllowed -> "a link is not allowed in this post"
         ContentRules.Violation.LinkTooEarly -> "no link until ${ContentRules.MIN_PUBLISHED_BEFORE_LINK} posts are published"
         ContentRules.Violation.RawUrl -> "write {link} instead of a raw link"
