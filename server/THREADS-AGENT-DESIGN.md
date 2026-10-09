@@ -79,11 +79,11 @@ Decision log lines for T1–T5 are in `.claude/decider/decisions.jsonl`.
 
 ### 3.2 Firestore collections (Admin-only; clients are default-denied)
 
-- `social_accounts/{accountId}` — handle, language, country, timezone, mode (`approval` | `auto`), approvalStreak, paused, pausedReason, threadsUserId, token, tokenExpiresAt, permissionsExpireAt (private profiles, §3.6), postSeq.
-- `social_posts/{postId}` — accountId, code, pillar, kind (`text` | `image` | `carousel` | `poll`), text, imagePaths, poll options, scheduledAt, status (`drafted` | `pending` | `approved` | `skipped` | `publishing` | `published` | `failed` | `deleted`), skipReason, containerId, mediaId, telegramMessageId, editedByOwner, needsAttention, pairedPostId (poll reveal), link, createdAt.
+- `social_accounts/{accountId}` — handle, language, country, timezone, mode (`approval` | `auto`), approvalStreak, paused, pausedReason, threadsUserId, token, tokenExpiresAt, tokenRefreshedAt, permissionsExpireAt (private profiles, §3.6), codePrefix (leading characters of the account's post codes), postSeq, publishedCount.
+- `social_posts/{postId}` — accountId, code, pillar, kind (`text` | `image` | `carousel` | `poll`), text, imagePaths, poll options, scheduledAt, status (`drafted` | `pending` | `approved` | `skipped` | `publishing` | `published` | `failed` | `deleted`), skipReason, containerId, mediaId, telegramMessageId, editPromptMessageId, editedByOwner, needsAttention, pairedPostId (poll reveal), link (the text carries the `{link}` placeholder), source (`seed` | `owner`), seedKey, claimId and publishingClaimedAt (the publisher's claim, §3.4), publishedAt, createdAt.
 - `social_replies/{replyId}` — accountId, targetMediaId, targetUserHash, targetText, draft, mentionsApp, expiresAt, status, mediaId.
 - `social_batches/{isoWeek}` — startedAt, finishedAt, slotsWritten, lastError.
-- `social_updates/{updateId}` — processed Telegram update ids, 7-day TTL.
+- `social_updates/{updateId}` — processed Telegram update ids; `expireAt` (7 days) is the TTL field.
 - `social_clicks/{clickId}` — code, ts, store, countryFromIp, uaFamily.
 - `social_metrics/{postId}_{yyyymmdd}` — the insight snapshot.
 - `social_spend/{yyyymmdd}` — model tokens and USD per vendor.
