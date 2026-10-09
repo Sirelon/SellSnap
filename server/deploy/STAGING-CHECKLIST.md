@@ -79,16 +79,16 @@ Meta's docs do not say whether a private profile can publish through the API. Th
 
 ## 8. Redirect `/go`
 
-21. Take a published code from the previous steps. In a terminal:
+21. Take a published code from the previous steps. `/go` answers GET only (a HEAD request, such as `curl -I`, gets 404). In a terminal:
 
     ```bash
-    curl -sI -A 'Mozilla/5.0 (Linux; Android 14; Pixel 8)' "$URL/go/<code>"
+    curl -s -o /dev/null -D - -A 'Mozilla/5.0 (Linux; Android 14; Pixel 8)' "$URL/go/<code>"
     ```
 
     Expect `302`, `cache-control: no-store`, no `set-cookie`, and `location: https://play.google.com/store/apps/details?id=com.sirelon.sellsnap&referrer=utm_source%3Dthreads%26utm_medium%3Dsocial%26utm_campaign%3D...`.
 22. Open `$URL/go/<code>` on an iPhone. It lands on the App Store page `apps.apple.com/app/id6776001373?ct=<code>`.
 23. Open it in a desktop browser. It lands on `https://sirelon.github.io/SellSnap/`.
-24. `curl -sI "$URL/go/stt9999"` (an unknown code) goes to the landing page. Firestore `social_clicks` holds one document per step 21 to 23 and none for the unknown code or for the Threads link-preview bot.
+24. `curl -s -o /dev/null -D - "$URL/go/stt9999"` (an unknown code) goes to the landing page. Firestore `social_clicks` holds one document per step 21 to 23 and none for the unknown code or for the Threads link-preview bot.
 25. Cloud Logging has no request log for `/go`: `gcloud logging read 'resource.type="cloud_run_revision" AND httpRequest.requestUrl:"/go/"' --freshness=1h --limit=3 --project sellsnap-6e85c` prints nothing.
 
 ## 9. Clean up
