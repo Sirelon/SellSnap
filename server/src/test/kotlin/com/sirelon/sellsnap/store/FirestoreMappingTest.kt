@@ -47,6 +47,7 @@ class FirestoreMappingTest {
             skipReason = "expired",
             claimId = "claim",
             publishingClaimedAt = instant,
+            transientFailures = 2,
             containerId = "container",
             mediaId = "media",
             publishedAt = instant,

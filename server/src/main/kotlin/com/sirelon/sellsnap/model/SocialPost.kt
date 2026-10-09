@@ -39,6 +39,8 @@ data class SocialPost(
     /** Identifies the publisher that moved the post to `publishing`; every later write is conditional on it. */
     val claimId: String? = null,
     val publishingClaimedAt: Instant? = null,
+    /** Consecutive ticks that ended in a transient Threads failure; reset on success. */
+    val transientFailures: Int = 0,
     val containerId: String? = null,
     val mediaId: String? = null,
     val publishedAt: Instant? = null,

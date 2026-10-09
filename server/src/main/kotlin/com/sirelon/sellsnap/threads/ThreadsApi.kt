@@ -41,6 +41,8 @@ class TokenInfo(
     val expiresAt: Instant?,
     /** End of the private-profile permission grant; null when the token has none. */
     val dataAccessExpiresAt: Instant?,
+    /** When the token was issued; a long-lived token younger than 24 hours cannot be refreshed yet. */
+    val issuedAt: Instant? = null,
 )
 
 class IssuedToken(val accessToken: String, val expiresInSeconds: Long)
