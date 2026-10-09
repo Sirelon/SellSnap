@@ -32,6 +32,15 @@ interface ThreadsApi {
 
     /** The account's most recent posts, newest first; used to recover a lost media id. */
     suspend fun recentThreads(userId: String, token: String, limit: Int): List<ThreadSummary>
+
+    /**
+     * Lifetime counts for [metrics] of one post, keyed by metric name. A metric the response does
+     * not carry is absent from the map. Needs the `threads_manage_insights` permission.
+     */
+    suspend fun mediaInsights(mediaId: String, token: String, metrics: List<String>): Map<String, Long>
+
+    /** The account's current follower count; the API has no history, so only a daily snapshot keeps one. */
+    suspend fun followersCount(userId: String, token: String): Long
 }
 
 class TokenInfo(

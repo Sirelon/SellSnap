@@ -1,7 +1,9 @@
 package com.sirelon.sellsnap.fakes
 
+import com.sirelon.sellsnap.model.AccountMetrics
 import com.sirelon.sellsnap.model.Pillar
 import com.sirelon.sellsnap.model.PostKind
+import com.sirelon.sellsnap.model.PostMetrics
 import com.sirelon.sellsnap.model.PostSource
 import com.sirelon.sellsnap.model.PostStatus
 import com.sirelon.sellsnap.model.SocialAccount
@@ -37,6 +39,14 @@ class InMemorySocialStore : SocialStore {
     @Volatile
     private var clickList = listOf<SocialClick>()
 
+    @Volatile
+    private var metricsMap = mapOf<String, PostMetrics>()
+
+    @Volatile
+    private var accountMetricsMap = mapOf<String, AccountMetrics>()
+
+    val allMetrics: Map<String, PostMetrics> get() = metricsMap
+    val allAccountMetrics: Map<String, AccountMetrics> get() = accountMetricsMap
     val allAccounts: Map<String, SocialAccount> get() = accountMap
     val allPosts: Map<String, SocialPost> get() = postMap
     val events: Map<String, SocialEvent> get() = eventMap
@@ -94,6 +104,29 @@ class InMemorySocialStore : SocialStore {
 
     override suspend fun logClick(click: SocialClick) = mutex.withLock {
         clickList = clickList + click
+    }
+
+    override suspend fun saveMetrics(metrics: PostMetrics) = mutex.withLock {
+        metricsMap = metricsMap + (metrics.id to metrics)
+    }
+
+    override suspend fun metricsOf(accountId: String, day: String): List<PostMetrics> =
+        metricsMap.values.filter { it.accountId == accountId && it.day == day }
+
+    override suspend fun accountMetrics(accountId: String, day: String): AccountMetrics? =
+        accountMetricsMap["${accountId}_$day"]
+
+    override suspend fun claimAccountDay(metrics: AccountMetrics): Boolean = mutex.withLock {
+        if (metrics.id in accountMetricsMap) {
+            false
+        } else {
+            accountMetricsMap = accountMetricsMap + (metrics.id to metrics)
+            true
+        }
+    }
+
+    override suspend fun saveAccountMetrics(metrics: AccountMetrics) = mutex.withLock {
+        accountMetricsMap = accountMetricsMap + (metrics.id to metrics)
     }
 
     private class MemoryTx(

@@ -174,6 +174,9 @@ object BotText {
     fun alertTickFailed(accountId: String, detail: String): String =
         "The tick failed for $accountId: $detail. The other accounts ran."
 
+    fun alertInsightsFailed(accountId: String, detail: String): String =
+        "Reading Threads insights for $accountId failed: $detail. The account keeps publishing, and the next tick tries again."
+
     // Formatting
     private val DATE: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMM yyyy", Locale.ENGLISH).withZone(ZoneOffset.UTC)
     private val SLOT: DateTimeFormatter = DateTimeFormatter.ofPattern("EEE d MMM HH:mm", Locale.ENGLISH)

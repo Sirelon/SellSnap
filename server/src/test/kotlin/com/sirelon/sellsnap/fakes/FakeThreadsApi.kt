@@ -33,6 +33,14 @@ class FakeThreadsApi(private val store: InMemorySocialStore? = null) : ThreadsAp
     var limit = PublishingLimit(quotaUsage = 0, quotaTotal = 250)
     var recent = listOf<ThreadSummary>()
 
+    /** Counts handed out by [mediaInsights], per media id; a media id without an entry gets [defaultInsights]. */
+    val insights = mutableMapOf<String, Map<String, Long>>()
+    var defaultInsights = mapOf("views" to 100L, "likes" to 10L, "replies" to 2L, "reposts" to 1L, "quotes" to 0L)
+    var followers = 1_234L
+
+    /** Returns a failure to throw, or null; lets a test fail only the call that asks for `views`. */
+    var insightsFailure: (mediaId: String, metrics: List<String>) -> Throwable? = { _, _ -> null }
+
     /** Statuses handed out in order; once empty every container is `Finished`. */
     val containerStatuses = ArrayDeque<ContainerStatus>()
 
@@ -98,6 +106,17 @@ class FakeThreadsApi(private val store: InMemorySocialStore? = null) : ThreadsAp
     override suspend fun recentThreads(userId: String, token: String, limit: Int): List<ThreadSummary> {
         record("recentThreads", userId, token, limit)
         return recent
+    }
+
+    override suspend fun mediaInsights(mediaId: String, token: String, metrics: List<String>): Map<String, Long> {
+        record("mediaInsights", mediaId, token, metrics)
+        insightsFailure(mediaId, metrics)?.let { throw it }
+        return (insights[mediaId] ?: defaultInsights).filterKeys { it in metrics }
+    }
+
+    override suspend fun followersCount(userId: String, token: String): Long {
+        record("followersCount", userId, token)
+        return followers
     }
 
     private companion object {

@@ -1,5 +1,7 @@
 package com.sirelon.sellsnap.store
 
+import com.sirelon.sellsnap.model.AccountMetrics
+import com.sirelon.sellsnap.model.PostMetrics
 import com.sirelon.sellsnap.model.PostStatus
 import com.sirelon.sellsnap.model.SocialAccount
 import com.sirelon.sellsnap.model.SocialClick
@@ -32,6 +34,20 @@ interface SocialStore {
     suspend fun recordEvent(event: SocialEvent): Boolean
 
     suspend fun logClick(click: SocialClick)
+
+    /** Writes the post's snapshot for its day, replacing an earlier one of the same day. */
+    suspend fun saveMetrics(metrics: PostMetrics)
+
+    /** The post snapshots of [accountId] taken on [day] (`yyyyMMdd`). */
+    suspend fun metricsOf(accountId: String, day: String): List<PostMetrics>
+
+    suspend fun accountMetrics(accountId: String, day: String): AccountMetrics?
+
+    /** Writes the account-day document unless it exists; true when written. This marks the day as collected. */
+    suspend fun claimAccountDay(metrics: AccountMetrics): Boolean
+
+    /** Writes the account-day document, replacing an existing one; used by a forced collection. */
+    suspend fun saveAccountMetrics(metrics: AccountMetrics)
 }
 
 /**

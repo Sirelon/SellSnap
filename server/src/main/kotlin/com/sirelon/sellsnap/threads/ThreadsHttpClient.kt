@@ -182,6 +182,31 @@ class ThreadsHttpClient(
         }
     }
 
+    override suspend fun mediaInsights(mediaId: String, token: String, metrics: List<String>): Map<String, Long> {
+        val body = get(
+            listOf(mediaId, "insights"),
+            "metric" to metrics.joinToString(","),
+            "access_token" to token,
+        )
+        val items = body["data"] as? JsonArray ?: throw unreadable()
+        return items.mapNotNull { item ->
+            val entry = item as? JsonObject ?: throw unreadable()
+            val name = entry.text("name") ?: throw unreadable()
+            entry.insightValue()?.let { name to it }
+        }.toMap()
+    }
+
+    override suspend fun followersCount(userId: String, token: String): Long {
+        val body = get(
+            listOf(userId, "threads_insights"),
+            "metric" to "followers_count",
+            "access_token" to token,
+        )
+        val items = body["data"] as? JsonArray ?: throw unreadable()
+        val entry = items.firstNotNullOfOrNull { (it as? JsonObject)?.takeIf { e -> e.text("name") == "followers_count" } }
+        return entry?.insightValue() ?: throw unreadable()
+    }
+
     private suspend fun get(
         segments: List<String>,
         vararg params: Pair<String, String>,
@@ -266,6 +291,12 @@ private fun JsonObject.requireText(key: String): String = text(key) ?: throw unr
 private fun JsonObject.int(key: String): Int? = (this[key] as? JsonPrimitive)?.intOrNull
 
 private fun JsonObject.long(key: String): Long? = (this[key] as? JsonPrimitive)?.longOrNull
+
+/** A metric entry's number: `values[0].value` for lifetime metrics, `total_value.value` for user totals. */
+private fun JsonObject.insightValue(): Long? {
+    val holder = (this["total_value"] as? JsonObject) ?: (this["values"] as? JsonArray)?.firstOrNull() as? JsonObject
+    return holder?.long("value")
+}
 
 private fun JsonObject.bool(key: String): Boolean? = (this[key] as? JsonPrimitive)?.booleanOrNull
 

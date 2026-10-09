@@ -3,9 +3,11 @@ package com.sirelon.sellsnap.store
 import com.google.cloud.Timestamp
 import com.sirelon.sellsnap.fakes.testAccount
 import com.sirelon.sellsnap.fakes.testPost
+import com.sirelon.sellsnap.model.AccountMetrics
 import com.sirelon.sellsnap.model.AccountMode
 import com.sirelon.sellsnap.model.Pillar
 import com.sirelon.sellsnap.model.PostKind
+import com.sirelon.sellsnap.model.PostMetrics
 import com.sirelon.sellsnap.model.PostSource
 import com.sirelon.sellsnap.model.PostStatus
 import java.time.Instant
@@ -60,6 +62,40 @@ class FirestoreMappingTest {
         )
 
         assertEquals(post, postFromMap(post.id, post.toMap()))
+    }
+
+    @Test
+    fun postMetricsSurviveAMapRoundTripWithAndWithoutViews() {
+        val metrics = PostMetrics("stt0001", "staging", "20261020", instant, views = 5_000_000_000L, likes = 10, replies = 2, reposts = 1, quotes = 0)
+
+        assertEquals(metrics, postMetricsFromMap(metrics.toMap()))
+        assertEquals("stt0001_20261020", metrics.id)
+        val noViews = metrics.copy(views = null)
+        assertEquals(noViews, postMetricsFromMap(noViews.toMap()))
+        assertEquals(null, noViews.toMap()["views"])
+    }
+
+    @Test
+    fun postMetricsStoreTheDocumentedFieldNames() {
+        val map = PostMetrics("stt0001", "staging", "20261020", instant, views = 7, likes = 10, replies = 2, reposts = 1, quotes = 0).toMap()
+
+        assertEquals(
+            setOf("postId", "accountId", "day", "at", "views", "likes", "replies", "reposts", "quotes"),
+            map.keys,
+        )
+        assertEquals("20261020", map["day"])
+        assertEquals(Timestamp.ofTimeSecondsAndNanos(instant.epochSecond, instant.nano), map["at"])
+    }
+
+    @Test
+    fun accountMetricsSurviveAMapRoundTrip() {
+        val metrics = AccountMetrics("staging", "20261020", instant, followersCount = 1_234)
+
+        assertEquals(metrics, accountMetricsFromMap(metrics.toMap()))
+        assertEquals("staging_20261020", metrics.id)
+        assertEquals(setOf("accountId", "day", "at", "followersCount"), metrics.toMap().keys)
+        val unknown = metrics.copy(followersCount = null)
+        assertEquals(unknown, accountMetricsFromMap(unknown.toMap()))
     }
 
     @Test

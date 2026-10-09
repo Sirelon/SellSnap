@@ -56,6 +56,7 @@ class Alerts(
                 AlertType.PermissionsExpiry -> BotText.alertPermissionsExpiry(account, request.expiresAt)
                 AlertType.TokenRefreshFailed -> BotText.alertTokenRefreshFailed(account, detail)
                 AlertType.TickFailed -> BotText.alertTickFailed(account, detail)
+                AlertType.InsightsFailed -> BotText.alertInsightsFailed(account, detail)
             }
         }
 

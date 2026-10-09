@@ -1,5 +1,6 @@
 package com.sirelon.sellsnap.tick
 
+import com.sirelon.sellsnap.insights.InsightsCollector
 import com.sirelon.sellsnap.model.EventType
 import com.sirelon.sellsnap.model.SocialEvent
 import com.sirelon.sellsnap.store.SocialStore
@@ -23,6 +24,8 @@ data class TickSummary(
     val accounts: Int = 0,
     val published: Int = 0,
     val queued: Int = 0,
+    /** Post insight snapshots written. */
+    val snapshots: Int = 0,
     val failedAccounts: Int = 0,
     val timedOut: Boolean = false,
 ) {
@@ -30,13 +33,15 @@ data class TickSummary(
     val ok: Boolean get() = failedAccounts == 0 && !timedOut
 
     fun line(): String =
-        "tick accounts=$accounts published=$published queued=$queued failed=$failedAccounts timedOut=$timedOut"
+        "tick accounts=$accounts published=$published queued=$queued snapshots=$snapshots failed=$failedAccounts timedOut=$timedOut"
 }
 
 /**
  * One scheduler tick. Each active account runs the token check, then publishes what is due, then
- * fills its queue, so a refreshed token is the one used to publish. The whole tick shares one
- * [timeout]. A failure in one account is recorded and alerted, and the other accounts still run.
+ * fills its queue, so a refreshed token is the one used to publish. Every account with a token,
+ * paused ones included, then gets its daily insight snapshot; a paused account gets nothing else.
+ * The whole tick shares one [timeout]. A failure in one account is recorded and alerted, and the
+ * other accounts still run; a failure in the snapshot step never fails the tick.
  */
 class TickRunner(
     private val store: SocialStore,
@@ -45,6 +50,7 @@ class TickRunner(
     private val filler: QueueFiller,
     private val previewSender: PreviewSender,
     private val alerts: Alerts,
+    private val insights: InsightsCollector,
     private val clock: Clock,
     private val timeout: Duration = 9.minutes,
 ) {
@@ -54,16 +60,21 @@ class TickRunner(
         var summary = TickSummary()
         try {
             withTimeout(timeout) {
-                for (account in store.accounts().filter { !it.paused }.sortedBy { it.id }) {
-                    summary = summary.copy(accounts = summary.accounts + 1)
-                    summary = try {
-                        val step = runAccount(account.id)
-                        summary.copy(published = summary.published + step.published, queued = summary.queued + step.queued)
-                    } catch (e: CancellationException) {
-                        throw e
-                    } catch (e: Exception) {
-                        reportFailure(account.id, e)
-                        summary.copy(failedAccounts = summary.failedAccounts + 1)
+                for (account in store.accounts().sortedBy { it.id }) {
+                    if (!account.paused) {
+                        summary = summary.copy(accounts = summary.accounts + 1)
+                        summary = try {
+                            val step = runAccount(account.id)
+                            summary.copy(published = summary.published + step.published, queued = summary.queued + step.queued)
+                        } catch (e: CancellationException) {
+                            throw e
+                        } catch (e: Exception) {
+                            reportFailure(account.id, e)
+                            summary.copy(failedAccounts = summary.failedAccounts + 1)
+                        }
+                    }
+                    if (account.token != null) {
+                        summary = summary.copy(snapshots = summary.snapshots + snapshot(account.id))
                     }
                 }
             }
@@ -94,6 +105,22 @@ class TickRunner(
         val fill = filler.fill(accountId)
         return AccountStep(published, fill.queued)
     }
+
+    /**
+     * Collects the account's insight snapshots and sends the alerts it asks for. It returns the
+     * number of post snapshots written and never throws, so one account's failure stops nothing.
+     */
+    private suspend fun snapshot(accountId: String): Int =
+        try {
+            val outcome = insights.collect(accountId)
+            outcome.alerts.forEach { runQuietly { alerts.sendOnce(it) } }
+            outcome.posts
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            reportFailure(accountId, e)
+            0
+        }
 
     /** Records an Error event, logs one redacted line and alerts the owner; none of it may throw. */
     private suspend fun reportFailure(accountId: String, error: Exception) {

@@ -30,7 +30,8 @@ import kotlin.test.assertTrue
  * https://developers.facebook.com/documentation/threads/create-posts/polls,
  * https://developers.facebook.com/docs/threads/get-started/long-lived-tokens,
  * https://developers.facebook.com/documentation/threads/troubleshooting/debug-access-token.md and
- * https://developers.facebook.com/docs/threads/posts/delete-posts, fetched 2026-10-09.
+ * https://developers.facebook.com/docs/threads/posts/delete-posts, fetched 2026-10-09; the insights
+ * fixtures follow https://developers.facebook.com/docs/threads/insights, fetched 2026-10-10.
  * The error body and the threads list follow the standard Graph shape; the pages do not show them.
  */
 class ThreadsHttpClientTest {
@@ -251,6 +252,97 @@ class ThreadsHttpClientTest {
         assertEquals(Instant.parse("2026-10-20T08:30:05Z"), threads[0].publishedAt)
         assertNull(threads[1].publishedAt)
         assertEquals("25", requests.single().url.parameters["limit"])
+    }
+
+    /**
+     * Inferred: the media insights shape (`name`, `period`, `values[0].value`, `title`, `id`) from
+     * https://developers.facebook.com/docs/threads/insights, fetched 2026-10-10.
+     */
+    @Test
+    fun readsMediaInsightsAsAMapOfMetricToCount() = runTest {
+        val client = api {
+            json(
+                """
+                {"data":[
+                {"name":"likes","period":"lifetime","values":[{"value":100}],"title":"Likes","id":"17900/insights/likes/lifetime"},
+                {"name":"replies","period":"lifetime","values":[{"value":10}],"title":"Replies","id":"17900/insights/replies/lifetime"}
+                ]}
+                """.trimIndent(),
+            )
+        }
+
+        val counts = client.mediaInsights("17900", TOKEN, listOf("likes", "replies", "reposts", "quotes"))
+
+        assertEquals(mapOf("likes" to 100L, "replies" to 10L), counts)
+        val request = requests.single()
+        assertEquals(HttpMethod.Get, request.method)
+        assertEquals("/v1.0/17900/insights", request.url.encodedPath)
+        assertEquals("likes,replies,reposts,quotes", request.url.parameters["metric"])
+        assertEquals(TOKEN, request.url.parameters["access_token"])
+    }
+
+    @Test
+    fun anEmptyMediaInsightsListIsAnEmptyMap() = runTest {
+        val client = api { json("""{"data":[]}""") }
+        assertEquals(emptyMap(), client.mediaInsights("17900", TOKEN, listOf("views")))
+        assertEquals("views", requests.single().url.parameters["metric"])
+    }
+
+    @Test
+    fun aMediaInsightsBodyWithoutADataListIsTransient() = runTest {
+        assertIs<ThreadsFailure.Transient>(
+            assertFailsWith<ThreadsFailure> { api { json("""{"id":"x"}""") }.mediaInsights("1", TOKEN, listOf("views")) },
+        )
+        assertIs<ThreadsFailure.Transient>(
+            assertFailsWith<ThreadsFailure> { api { json("""{"data":[{"values":[{"value":1}]}]}""") }.mediaInsights("1", TOKEN, listOf("views")) },
+        )
+    }
+
+    /**
+     * Inferred: the page shows `total_value.value` only for the `views` user metric and gives no
+     * `followers_count` example; the follower response is assumed to have the same shape
+     * (https://developers.facebook.com/docs/threads/insights, fetched 2026-10-10).
+     */
+    @Test
+    fun readsTheFollowersCountFromTheTotalValue() = runTest {
+        val client = api {
+            json("""{"data":[{"name":"followers_count","total_value":{"value":1234},"title":"followers_count","id":"1234/insights/followers_count/day"}]}""")
+        }
+
+        assertEquals(1234L, client.followersCount("1234", TOKEN))
+
+        val request = requests.single()
+        assertEquals(HttpMethod.Get, request.method)
+        assertEquals("/v1.0/1234/threads_insights", request.url.encodedPath)
+        assertEquals("followers_count", request.url.parameters["metric"])
+        assertNull(request.url.parameters["since"])
+        assertNull(request.url.parameters["until"])
+    }
+
+    @Test
+    fun aFollowersResponseWithoutTheCountIsTransient() = runTest {
+        assertIs<ThreadsFailure.Transient>(assertFailsWith<ThreadsFailure> { api { json("""{"data":[]}""") }.followersCount("1", TOKEN) })
+    }
+
+    @Test
+    fun insightsFailuresGoThroughTheClassificationWithoutLeakingTheToken() = runTest {
+        val body = """{"error":{"message":"bad $TOKEN","code":%d,"is_transient":false}}"""
+
+        suspend fun failure(status: HttpStatusCode, code: Int, call: suspend ThreadsHttpClient.() -> Unit): ThreadsFailure =
+            assertFailsWith<ThreadsFailure> { api { json(body.format(code), status) }.call() }
+
+        val media: suspend ThreadsHttpClient.() -> Unit = { mediaInsights("1", TOKEN, listOf("views")) }
+        val followers: suspend ThreadsHttpClient.() -> Unit = { followersCount("1", TOKEN) }
+        val permanent = failure(HttpStatusCode.BadRequest, 100, media)
+        assertIs<ThreadsFailure.Permanent>(permanent)
+        assertIs<ThreadsFailure.Permanent>(failure(HttpStatusCode.Forbidden, 10, followers))
+        assertIs<ThreadsFailure.RateLimited>(failure(HttpStatusCode.BadRequest, 4, media))
+        assertIs<ThreadsFailure.Transient>(failure(HttpStatusCode.InternalServerError, 2, followers))
+        for (f in listOf(permanent, failure(HttpStatusCode.BadRequest, 190, followers))) {
+            val text = f.message.orEmpty() + f.stackTraceToString()
+            assertFalse(TOKEN in text)
+            assertFalse("graph.threads.net" in text)
+        }
     }
 
     @Test

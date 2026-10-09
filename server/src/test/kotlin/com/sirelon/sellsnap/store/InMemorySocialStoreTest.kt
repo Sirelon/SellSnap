@@ -3,7 +3,9 @@ package com.sirelon.sellsnap.store
 import com.sirelon.sellsnap.fakes.InMemorySocialStore
 import com.sirelon.sellsnap.fakes.testAccount
 import com.sirelon.sellsnap.fakes.testPost
+import com.sirelon.sellsnap.model.AccountMetrics
 import com.sirelon.sellsnap.model.EventType
+import com.sirelon.sellsnap.model.PostMetrics
 import com.sirelon.sellsnap.model.PostStatus
 import com.sirelon.sellsnap.model.SocialEvent
 import kotlinx.coroutines.async
@@ -141,6 +143,36 @@ class InMemorySocialStoreTest {
         assertFalse(store.claimUpdate(42, expireAt))
         assertTrue(store.claimUpdate(43, expireAt))
         assertEquals(expireAt, store.updates[42])
+    }
+
+    @Test
+    fun metricsAreReadPerAccountAndDayAndRewrittenInPlace() = runTest {
+        fun metrics(post: String, account: String, day: String, likes: Long = 1) =
+            PostMetrics(post, account, day, now, views = null, likes = likes, replies = 0, reposts = 0, quotes = 0)
+        store.saveMetrics(metrics("a1", "staging", "20261020"))
+        store.saveMetrics(metrics("a2", "staging", "20261020"))
+        store.saveMetrics(metrics("a1", "staging", "20261021"))
+        store.saveMetrics(metrics("b1", "ua", "20261020"))
+        store.saveMetrics(metrics("a1", "staging", "20261020", likes = 9))
+
+        assertEquals(setOf("a1", "a2"), store.metricsOf("staging", "20261020").map { it.postId }.toSet())
+        assertEquals(9L, store.metricsOf("staging", "20261020").single { it.postId == "a1" }.likes)
+        assertEquals(listOf("b1"), store.metricsOf("ua", "20261020").map { it.postId })
+        assertTrue(store.metricsOf("ua", "20261021").isEmpty())
+    }
+
+    @Test
+    fun claimAccountDayWritesTheDocumentOnlyOnce() = runTest {
+        val first = AccountMetrics("staging", "20261020", now, followersCount = 10)
+
+        assertNull(store.accountMetrics("staging", "20261020"))
+        assertTrue(store.claimAccountDay(first))
+        assertFalse(store.claimAccountDay(first.copy(followersCount = 99)))
+        assertEquals(10L, store.accountMetrics("staging", "20261020")?.followersCount)
+        assertTrue(store.claimAccountDay(first.copy(day = "20261021")))
+
+        store.saveAccountMetrics(first.copy(followersCount = 11))
+        assertEquals(11L, store.accountMetrics("staging", "20261020")?.followersCount)
     }
 
     @Test

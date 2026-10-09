@@ -5,6 +5,7 @@ import com.google.cloud.storage.StorageOptions
 import com.sirelon.sellsnap.http.GoogleOidcVerifier
 import com.sirelon.sellsnap.http.OidcVerifier
 import com.sirelon.sellsnap.http.TelegramSecret
+import com.sirelon.sellsnap.insights.InsightsCollector
 import com.sirelon.sellsnap.media.GcsImageStore
 import com.sirelon.sellsnap.media.ImageStore
 import com.sirelon.sellsnap.redirect.RedirectService
@@ -77,6 +78,7 @@ class AppGraph(
                     filler = QueueFiller(store, sender, previews, clock),
                     previewSender = sender,
                     alerts = Alerts(store, telegram, clock, owner),
+                    insights = InsightsCollector(store, threads, clock),
                     clock = clock,
                 ),
                 updates = BotUpdateHandler(store, telegram, approvals, commands, clock, owner),

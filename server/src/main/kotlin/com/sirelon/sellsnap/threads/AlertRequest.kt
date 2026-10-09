@@ -21,6 +21,9 @@ enum class AlertType(val key: String) {
 
     /** The tick threw for one account; the other accounts still ran. */
     TickFailed("tick_failed"),
+
+    /** An insights call failed permanently or hit a rate limit; the account is never paused for it. */
+    InsightsFailed("insights_failed"),
 }
 
 /**

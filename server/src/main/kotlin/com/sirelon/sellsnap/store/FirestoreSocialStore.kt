@@ -8,9 +8,11 @@ import com.google.cloud.firestore.DocumentReference
 import com.google.cloud.firestore.DocumentSnapshot
 import com.google.cloud.firestore.Firestore
 import com.google.cloud.firestore.Transaction
+import com.sirelon.sellsnap.model.AccountMetrics
 import com.sirelon.sellsnap.model.AccountMode
 import com.sirelon.sellsnap.model.Pillar
 import com.sirelon.sellsnap.model.PostKind
+import com.sirelon.sellsnap.model.PostMetrics
 import com.sirelon.sellsnap.model.PostSource
 import com.sirelon.sellsnap.model.PostStatus
 import com.sirelon.sellsnap.model.SocialAccount
@@ -58,6 +60,24 @@ class FirestoreSocialStore(private val firestore: Firestore) : SocialStore {
         firestore.collection(CLICKS).document(click.id).set(click.toMap()).await()
     }
 
+    override suspend fun saveMetrics(metrics: PostMetrics) {
+        firestore.collection(METRICS).document(metrics.id).set(metrics.toMap()).await()
+    }
+
+    override suspend fun metricsOf(accountId: String, day: String): List<PostMetrics> =
+        firestore.collection(METRICS).whereEqualTo("accountId", accountId).whereEqualTo("day", day).get().await()
+            .documents.map { postMetricsFromMap(it.data) }
+
+    override suspend fun accountMetrics(accountId: String, day: String): AccountMetrics? =
+        accountMetricsDoc("${accountId}_$day").get().await().takeIf { it.exists() }?.data?.let(::accountMetricsFromMap)
+
+    override suspend fun claimAccountDay(metrics: AccountMetrics): Boolean =
+        createIfAbsent(accountMetricsDoc(metrics.id), metrics.toMap())
+
+    override suspend fun saveAccountMetrics(metrics: AccountMetrics) {
+        accountMetricsDoc(metrics.id).set(metrics.toMap()).await()
+    }
+
     private suspend fun createIfAbsent(doc: DocumentReference, data: Map<String, Any?>): Boolean =
         try {
             doc.create(data).await()
@@ -71,6 +91,8 @@ class FirestoreSocialStore(private val firestore: Firestore) : SocialStore {
     private fun postDoc(id: String) = firestore.collection(POSTS).document(id)
 
     private fun eventDoc(id: String) = firestore.collection(EVENTS).document(id)
+
+    private fun accountMetricsDoc(id: String) = firestore.collection(ACCOUNT_METRICS).document(id)
 
     private inner class FirestoreTx(private val tx: Transaction) : StoreTx {
         override fun account(id: String): SocialAccount? =
@@ -98,6 +120,8 @@ class FirestoreSocialStore(private val firestore: Firestore) : SocialStore {
         const val EVENTS = "social_events"
         const val CLICKS = "social_clicks"
         const val UPDATES = "social_updates"
+        const val METRICS = "social_metrics"
+        const val ACCOUNT_METRICS = "social_account_metrics"
     }
 }
 
@@ -241,6 +265,44 @@ internal fun SocialEvent.toMap(): Map<String, Any?> = mapOf(
     "at" to at.toTimestamp(),
     "postId" to postId,
     "detail" to detail,
+)
+
+internal fun PostMetrics.toMap(): Map<String, Any?> = mapOf(
+    "postId" to postId,
+    "accountId" to accountId,
+    "day" to day,
+    "at" to at.toTimestamp(),
+    "views" to views,
+    "likes" to likes,
+    "replies" to replies,
+    "reposts" to reposts,
+    "quotes" to quotes,
+)
+
+internal fun postMetricsFromMap(data: Map<String, Any?>): PostMetrics = PostMetrics(
+    postId = data.string("postId").orEmpty(),
+    accountId = data.string("accountId").orEmpty(),
+    day = data.string("day").orEmpty(),
+    at = data.instant("at") ?: Instant.EPOCH,
+    views = data.long("views"),
+    likes = data.long("likes") ?: 0,
+    replies = data.long("replies") ?: 0,
+    reposts = data.long("reposts") ?: 0,
+    quotes = data.long("quotes") ?: 0,
+)
+
+internal fun AccountMetrics.toMap(): Map<String, Any?> = mapOf(
+    "accountId" to accountId,
+    "day" to day,
+    "at" to at.toTimestamp(),
+    "followersCount" to followersCount,
+)
+
+internal fun accountMetricsFromMap(data: Map<String, Any?>): AccountMetrics = AccountMetrics(
+    accountId = data.string("accountId").orEmpty(),
+    day = data.string("day").orEmpty(),
+    at = data.instant("at") ?: Instant.EPOCH,
+    followersCount = data.long("followersCount"),
 )
 
 internal fun SocialClick.toMap(): Map<String, Any?> = mapOf(

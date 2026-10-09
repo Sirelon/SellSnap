@@ -75,7 +75,7 @@ Decision log lines for T1–T5 are in `.claude/decider/decisions.jsonl`.
 - **Drafter** — builds the brand context (voice samples from `values/strings.xml`, `values-uk`, `values-pl`; feature list and independence line from `store/copy/store-listing.md`; release notes from `scripts/release-notes.json`; guardrails) and asks the Claude model for the week's drafts per account, then for engagement replies. A second model pass checks every draft against the feature list (guardrail 1) and Polish drafts for naturalness (D17).
 - **Demo runner** — picks a photo from `social/photos/` not used on either brand account in the last 7 days, calls `analyzeThing` from `shared/` with the account's country, renders the card, uploads both images under `social/renders/`.
 - **Publisher** — Threads two-step publish: create container, store its id on the post, publish, store the media id. Carousels create item containers first. The status move `approved → publishing` is a conditional Firestore transaction, so two overlapping ticks cannot both publish.
-- **Insights** — Threads media insights per post (views, likes, replies, reposts, quotes) and poll results.
+- **Insights** — Threads media insights per post (views, likes, replies, reposts, quotes; `views` in its own call) and the follower count, snapshotted once per account per local day after publish and fill. A permanent failure or a rate limit becomes one owner alert per account per day and never pauses the account; a transient failure is skipped and the next tick retries. Poll results follow with the price-guess poll.
 
 ### 3.2 Firestore collections (Admin-only; clients are default-denied)
 
@@ -85,7 +85,8 @@ Decision log lines for T1–T5 are in `.claude/decider/decisions.jsonl`.
 - `social_batches/{isoWeek}` — startedAt, finishedAt, slotsWritten, lastError.
 - `social_updates/{updateId}` — processed Telegram update ids; `expireAt` (7 days) is the TTL field.
 - `social_clicks/{clickId}` — code, ts, store, countryFromIp, uaFamily.
-- `social_metrics/{postId}_{yyyymmdd}` — the insight snapshot.
+- `social_metrics/{postId}_{yyyymmdd}` — one post's insight snapshot for one day: postId, accountId, day (`yyyymmdd`, the account's local date), at, views (absent when the `views` metric was unavailable), likes, replies, reposts, quotes. Written once per account per local day for every published post with a media id that went live less than 14 days ago; a later write on the same day replaces the earlier one.
+- `social_account_metrics/{accountId}_{yyyymmdd}` — the account's follower count for one day: accountId, day, at, followersCount (null when the follower call failed permanently). The Threads API returns only the current count, so these snapshots are the follower history. The document is written last, after the post snapshots, and its existence marks the account-day as collected; a failure before it leaves the day open for the next tick. Paused accounts are collected too.
 - `social_spend/{yyyymmdd}` — model tokens and USD per vendor.
 - `social_events/{eventId}` — pauses, resumes, mode changes, deletes, alerts, token refreshes, errors.
 
