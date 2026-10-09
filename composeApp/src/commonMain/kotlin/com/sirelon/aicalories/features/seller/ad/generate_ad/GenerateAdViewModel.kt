@@ -2,6 +2,7 @@ package com.sirelon.sellsnap.features.seller.ad.generate_ad
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
+import com.aallam.openai.api.exception.OpenAITimeoutException
 import com.mohamedrejeb.calf.io.KmpFile
 import com.mohamedrejeb.calf.io.getName
 import com.mohamedrejeb.calf.io.readByteArray
@@ -29,6 +30,9 @@ import com.sirelon.sellsnap.features.seller.ad.loadScreenshotPhotos
 import com.sirelon.sellsnap.features.seller.ad.screenshotMode
 import com.sirelon.sellsnap.features.seller.categories.data.CategoriesRepository
 import com.sirelon.sellsnap.features.seller.categories.data.UnsupportedOlxCategoryException
+import com.sirelon.sellsnap.features.seller.currency.domain.OlxCurrency
+import com.sirelon.sellsnap.features.seller.drafts.Draft
+import com.sirelon.sellsnap.features.seller.drafts.DraftsRepository
 import com.sirelon.sellsnap.features.seller.openai.AD_GENERATION_MODEL_ID
 import com.sirelon.sellsnap.features.seller.openai.AD_GENERATION_PROMPT_VERSION
 import com.sirelon.sellsnap.features.seller.openai.AdAnalysis
@@ -42,12 +46,14 @@ import com.sirelon.sellsnap.generated.resources.error_photo_unreadable
 import com.sirelon.sellsnap.generated.resources.error_selected_files_process_failed
 import com.sirelon.sellsnap.generated.resources.error_upload_file_failed
 import com.sirelon.sellsnap.generated.resources.photos_limit_kept_message
+import kotlin.time.Clock
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.TimeSource
 import kotlin.uuid.Uuid
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.emptyFlow
@@ -84,7 +90,7 @@ private val AdGenerationTimeout = 2.minutes
 /** Thrown instead of letting `withTimeout` raise a [kotlinx.coroutines.CancellationException],
  * which [kotlinx.coroutines.flow.catch] would pass straight through as a cancellation rather than
  * a failure the seller can be told about and retry. */
-private class AdGenerationTimeoutException : Exception("Ad generation exceeded $AdGenerationTimeout")
+internal class AdGenerationTimeoutException : Exception("Ad generation exceeded $AdGenerationTimeout")
 
 class GenerateAdViewModel(
     private val mediaUploadHelper: MediaUploadHelper,
@@ -98,6 +104,7 @@ class GenerateAdViewModel(
     private val json: Json,
     private val analytics: Analytics,
     private val adGenerationLogRepository: AdGenerationLogRepository,
+    private val draftsRepository: DraftsRepository,
 ) : BaseViewModel<GenerateAdContract.GenerateAdState, GenerateAdContract.GenerateAdEvent, GenerateAdContract.GenerateAdEffect>() {
 
     private val restoredSavedState = readSavedState()
@@ -119,6 +126,14 @@ class GenerateAdViewModel(
 
         if (screenshotMode) seedScreenshotPhotos()
         observeSharedImages()
+
+        combine(draftsRepository.drafts(), countryStore.currentFlow) { all, country ->
+            all.filter { it.countryCode == country.code } to OlxCurrency.fallbackFor(country)
+        }
+            .onEach { (drafts, currency) ->
+                setState { it.copy(latestDraft = drafts.firstOrNull(), draftsCurrency = currency) }
+            }
+            .launchIn(viewModelScope)
     }
 
     /**
@@ -182,6 +197,21 @@ class GenerateAdViewModel(
                 generationJob?.cancel()
             }
 
+            is GenerateAdContract.GenerateAdEvent.OpenDraft -> {
+                analytics.logEvent(AnalyticsEvents.DRAFT_OPENED, mapOf("source" to "generate"))
+                // The success screen's "total time" reads AdFlowTimerStore. Restart it here so a
+                // reopened draft counts from the reopen, not from whenever the first photo of an
+                // unrelated listing on this screen was added (markFlowStartedIfNeeded alone would
+                // keep that older mark). The listing's own timer restarts on its next Submit, as it
+                // already does after any preview visit.
+                adFlowTimerStore.clear()
+                adFlowTimerStore.markFlowStartedIfNeeded()
+                postEffect(GenerateAdContract.GenerateAdEffect.OpenAdPreview(ad = event.draft.listing))
+            }
+
+            GenerateAdContract.GenerateAdEvent.OpenAllDrafts ->
+                postEffect(GenerateAdContract.GenerateAdEffect.OpenDrafts)
+
             is GenerateAdContract.GenerateAdEvent.RemovePhoto -> {
                 val removedPhoto = photoForFile(event.file)
                 setState { current ->
@@ -220,6 +250,8 @@ class GenerateAdViewModel(
         var uploadBytes: Long? = null
         var modelMs: Long? = null
         var attributesMs: Long? = null
+        // 0 or 1: whether the model call was retried (see retryModelCallOnce).
+        var retryCount = 0
 
         generationJob = flowOf(1)
             .onStart {
@@ -249,13 +281,16 @@ class GenerateAdViewModel(
 
             .map { images ->
                 val stageStartedAt = TimeSource.Monotonic.markNow()
-                val analysis = withTimeoutOrNull(AdGenerationTimeout) {
-                    openAi.analyzeThing(
-                        images = images,
-                        sellerPrompt = state.value.prompt,
-                        country = countryStore.current,
-                    )
-                } ?: throw AdGenerationTimeoutException()
+                // The photos are already uploaded, so a retry sends the same URLs again.
+                val analysis = retryModelCallOnce(onRetry = { retryCount = 1 }) {
+                    withTimeoutOrNull(AdGenerationTimeout) {
+                        openAi.analyzeThing(
+                            images = images,
+                            sellerPrompt = state.value.prompt,
+                            country = countryStore.current,
+                        )
+                    } ?: throw AdGenerationTimeoutException()
+                }
                 modelMs = stageStartedAt.elapsedNow().inWholeMilliseconds
                 images to analysis
             }
@@ -337,7 +372,18 @@ class GenerateAdViewModel(
                 outcomeLogged = true
                 analytics.logEvent(
                     AnalyticsEvents.AD_GENERATION_SUCCEEDED,
-                    buildGenerationStageParams(startedAt.elapsedNow().inWholeMilliseconds, photoCount, uploadMs, uploadBytes, modelMs, attributesMs),
+                    buildGenerationStageParams(startedAt.elapsedNow().inWholeMilliseconds, photoCount, uploadMs, uploadBytes, modelMs, attributesMs) +
+                        mapOf("retry_count" to retryCount),
+                )
+                val nowEpochSeconds = Clock.System.now().toEpochMilliseconds() / 1000
+                draftsRepository.upsert(
+                    Draft(
+                        id = generationSessionId,
+                        countryCode = countryStore.current.code,
+                        createdAtEpochSeconds = nowEpochSeconds,
+                        updatedAtEpochSeconds = nowEpochSeconds,
+                        listing = ad,
+                    ),
                 )
                 clearDraft()
                 postEffect(GenerateAdContract.GenerateAdEffect.OpenAdPreview(ad = ad))
@@ -355,7 +401,7 @@ class GenerateAdViewModel(
                 analytics.logEvent(
                     AnalyticsEvents.AD_GENERATION_FAILED,
                     buildGenerationStageParams(startedAt.elapsedNow().inWholeMilliseconds, photoCount, uploadMs, uploadBytes, modelMs, attributesMs) +
-                        mapOf("reason" to error.toFailureReason()),
+                        mapOf("reason" to error.toFailureReason(), "retry_count" to retryCount),
                 )
                 setState { it.copy(isLoading = false) }
                 showError(message)
@@ -611,8 +657,8 @@ class GenerateAdViewModel(
 
     private fun Throwable.toFailureReason(): String = when {
         this is UnsupportedOlxCategoryException -> "unsupported_category"
-        this is IncompleteGeneratedAdException -> "incomplete_ad"
-        this is AdGenerationTimeoutException -> "timeout"
+        this is IncompleteGeneratedAdException -> if (isEmptyOutput) "empty_output" else "incomplete_ad"
+        this is AdGenerationTimeoutException || this is OpenAITimeoutException -> "timeout"
         message?.startsWith(OpenAIRequestFailedPrefix) == true -> "openai_error"
         else -> "other"
     }
@@ -668,7 +714,14 @@ class GenerateAdViewModel(
     private fun clearDraft() {
         val photos = readSavedState().photos
         viewModelScope.launch { draftMediaFileStore.delete(photos) }
-        setState { GenerateAdContract.GenerateAdState() }
+        // The Drafts section belongs to the repository, not to the photos and prompt being
+        // cleared: resetting it here would blank the section until the repository emits again.
+        setState {
+            GenerateAdContract.GenerateAdState(
+                latestDraft = it.latestDraft,
+                draftsCurrency = it.draftsCurrency,
+            )
+        }
     }
 
     private fun photoForFile(file: KmpFile): DraftPhoto? {

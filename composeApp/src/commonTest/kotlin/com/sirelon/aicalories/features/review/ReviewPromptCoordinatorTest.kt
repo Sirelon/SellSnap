@@ -39,6 +39,32 @@ private fun coordinator(
 class ReviewPromptCoordinatorTest {
 
     @Test
+    fun `any launch dialog flag marks the launch prompt as shown`() {
+        val subject = coordinator()
+        assertFalse(subject.launchPromptShownThisSession)
+
+        subject.notificationPromptShownThisSession = true
+        assertTrue(subject.launchPromptShownThisSession)
+    }
+
+    @Test
+    fun `a notifications prompt this session blocks the review ask`() = runTest {
+        val storage = InMemoryOlxKeyValueStore()
+        val analytics = RecordingAnalytics()
+        val subject = coordinator(storage, analytics).apply {
+            isReturningSession = true
+            notificationPromptShownThisSession = true
+        }
+        val store = ReviewPromptStore(storage)
+        store.incrementPublishCount()
+        store.incrementPublishCount()
+
+        assertFalse(subject.requestIfEligible())
+        val skipped = analytics.events.single { it.first == AnalyticsEvents.REVIEW_PROMPT_SKIPPED }
+        assertEquals("notification_prompt", skipped.second["reason"])
+    }
+
+    @Test
     fun `an eligible publish records the cooldown before saying yes`() = runTest {
         val storage = InMemoryOlxKeyValueStore()
         val analytics = RecordingAnalytics()
@@ -55,6 +81,50 @@ class ReviewPromptCoordinatorTest {
         val requested = analytics.events.single { it.first == AnalyticsEvents.REVIEW_PROMPT_REQUESTED }
         assertEquals(2, requested.second["publish_count"])
         assertEquals(true, requested.second["returning_session"])
+        assertEquals("publish", requested.second["trigger"])
+    }
+
+    @Test
+    fun `the fifth copied listing asks and a publish afterwards is skipped for the cooldown`() = runTest {
+        val storage = InMemoryOlxKeyValueStore()
+        val analytics = RecordingAnalytics()
+        val subject = coordinator(storage, analytics).apply { isReturningSession = true }
+        val store = ReviewPromptStore(storage)
+
+        repeat(4) { subject.onListingCopied() }
+        assertFalse(subject.requestIfEligible(ReviewPromptTrigger.CopiedListing))
+        val tooFew = analytics.events.single { it.first == AnalyticsEvents.REVIEW_PROMPT_SKIPPED }
+        assertEquals("too_few_copied_listings", tooFew.second["reason"])
+        assertEquals("copied_listing", tooFew.second["trigger"])
+        assertNull(store.lastPromptEpochSeconds())
+
+        subject.onListingCopied()
+        assertTrue(subject.requestIfEligible(ReviewPromptTrigger.CopiedListing))
+        val requested = analytics.events.single { it.first == AnalyticsEvents.REVIEW_PROMPT_REQUESTED }
+        assertEquals("copied_listing", requested.second["trigger"])
+        assertEquals(5, requested.second["copied_listing_count"])
+
+        // A second ask in the same version, and a publish that would otherwise qualify.
+        assertFalse(subject.requestIfEligible(ReviewPromptTrigger.CopiedListing))
+        store.incrementPublishCount()
+        store.incrementPublishCount()
+        assertFalse(subject.requestIfEligible(ReviewPromptTrigger.Publish))
+        val skips = analytics.events.filter { it.first == AnalyticsEvents.REVIEW_PROMPT_SKIPPED }.drop(1)
+        assertEquals(listOf("cooldown", "cooldown"), skips.map { it.second["reason"] })
+        assertEquals(listOf("copied_listing", "publish"), skips.map { it.second["trigger"] })
+    }
+
+    @Test
+    fun `a publish ask blocks a later copied-listing ask`() = runTest {
+        val storage = InMemoryOlxKeyValueStore()
+        val subject = coordinator(storage).apply { isReturningSession = true }
+        val store = ReviewPromptStore(storage)
+        store.incrementPublishCount()
+        store.incrementPublishCount()
+        repeat(5) { subject.onListingCopied() }
+
+        assertTrue(subject.requestIfEligible(ReviewPromptTrigger.Publish))
+        assertFalse(subject.requestIfEligible(ReviewPromptTrigger.CopiedListing))
     }
 
     @Test

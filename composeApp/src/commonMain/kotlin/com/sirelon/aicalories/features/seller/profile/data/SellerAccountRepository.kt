@@ -22,6 +22,8 @@ import com.sirelon.sellsnap.features.seller.auth.domain.OlxSessionState
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxTokens
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxUser
 import com.sirelon.sellsnap.features.seller.auth.domain.SellerSessionMode
+import com.sirelon.sellsnap.features.seller.drafts.DraftsRepository
+import com.sirelon.sellsnap.features.seller.auth.domain.analyticsReason
 import com.sirelon.sellsnap.features.seller.location.OlxLocation
 import com.sirelon.sellsnap.features.seller.location.data.LocationRepository
 import com.sirelon.sellsnap.features.seller.my_ads.data.AdvertOutcomeStore
@@ -53,6 +55,7 @@ class SellerAccountRepository internal constructor(
     private val olxCountryStore: OlxCountryStore,
     private val draftMediaFileStore: DraftMediaFileStore,
     private val advertOutcomeStore: AdvertOutcomeStore,
+    private val draftsRepository: DraftsRepository,
     private val analyticsConsentRepository: AnalyticsConsentRepository,
     private val errorParser: OlxRemoteErrorParser,
     private val analytics: Analytics,
@@ -74,6 +77,8 @@ class SellerAccountRepository internal constructor(
 
     suspend fun createAuthorizationRequest(forceReauth: Boolean = false): OlxAuthorizationRequest =
         authRepository.createAuthorizationRequest(forceReauth)
+
+    suspend fun abandonPendingAuthorization() = authRepository.abandonPendingAuthorization()
 
     /** Pure UI gate for the "Add OLX account" button/action - at most [MAX_ACCOUNTS_PER_COUNTRY]
      * accounts per country. [addAccount] also re-checks this for a genuinely new account right
@@ -321,6 +326,7 @@ class SellerAccountRepository internal constructor(
         locationRepository.clearSavedLocation()
         draftMediaFileStore.deleteAll()
         advertOutcomeStore.clearAll()
+        draftsRepository.deleteAll()
         olxCountryStore.clear()
         analyticsConsentRepository.resetConsent()
         analytics.setUserProperty(USER_PROPERTY_CONNECTED_ACCOUNT_COUNT, "0")
@@ -447,18 +453,7 @@ sealed interface AddAccountFailureReason {
 private val AddAccountFailureReason.analyticsReason: String
     get() = when (this) {
         AddAccountFailureReason.AccountLimitReached -> "account_limit_reached"
-        is AddAccountFailureReason.Authorization -> when (error) {
-            is OlxApiError.MissingCode -> "missing_code"
-            is OlxApiError.InvalidState -> "invalid_state"
-            is OlxApiError.InvalidClient -> "invalid_client"
-            is OlxApiError.InvalidGrant -> "invalid_grant"
-            is OlxApiError.InvalidToken -> "invalid_token"
-            is OlxApiError.InsufficientScope -> "insufficient_scope"
-            is OlxApiError.NetworkFailure -> "network_failure"
-            is OlxApiError.RateLimited -> "rate_limited"
-            is OlxApiError.ValidationError -> "validation_error"
-            is OlxApiError.Unknown -> "unknown"
-        }
+        is AddAccountFailureReason.Authorization -> error.analyticsReason
     }
 
 private fun AddAccountFailureReason.toThrowable(): Throwable = when (this) {

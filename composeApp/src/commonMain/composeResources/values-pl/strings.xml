@@ -36,7 +36,7 @@
     <!-- Onboarding Screen Steps -->
     <string name="onboarding_step1_title">Zrób zdjęcie 📸</string>
     <string name="onboarding_step1_subtitle">Wyceluj, zrób zdjęcie, gotowe. Cokolwiek chcesz sprzedać — zajmiemy się resztą.</string>
-    <string name="onboarding_step2_title">AI pisze za ciebie ✍️</string>
+    <string name="onboarding_step2_title">AI pisze za Ciebie ✍️</string>
     <string name="onboarding_step2_subtitle">Tytuł, opis i uczciwa cena — gotowe, zanim kawa ostygnie.</string>
     <string name="onboarding_step3_title">Opublikuj jednym kliknięciem 🚀</string>
     <string name="onboarding_step3_subtitle">Jedno kliknięcie i jesteś na OLX. Kupujący, poznajcie swoje skarby.</string>
@@ -49,7 +49,6 @@
     <string name="tip_lighting">Dobre światło = lepsze wyniki</string>
     <string name="tip_angles">Fotografuj z kilku kątów</string>
     <string name="tip_defects">Nie ukrywaj zarysowań — kupujący cenią szczerość</string>
-    <string name="take_photo">Zrób zdjęcie</string>
 
     <!-- Preview Ad Screen -->
     <string name="publish_on_olx">Opublikuj na OLX</string>
@@ -64,13 +63,13 @@
     <string name="validation_errors_more">…i %1$d więcej</string>
     <string name="min_characters">Minimum %1$d znaków</string>
     <string name="character_count_range">%1$d/%2$d</string>
+    <string name="images_carousel_counter">%1$d/%2$d</string>
     <string name="change_button">Zmień</string>
 
     <!-- Analyze Screen -->
     <string name="bullet_item">• %1$s</string>
 
     <!-- Photos Section -->
-    <string name="photos_count_format">%1$d/%2$d zdjęć</string>
     <string name="add_photo_cd">Dodaj zdjęcie</string>
     <string name="add_photo_label">Dodaj</string>
     <string name="remove_photo_cd">Usuń zdjęcie</string>
@@ -88,6 +87,9 @@
     <string name="profile_field_last_login_at">Ostatnie logowanie</string>
     <string name="profile_screen_title">Profil</string>
     <string name="settings_screen_title">Ustawienia</string>
+    <string name="settings_notifications_title">Powiadomienia</string>
+    <string name="settings_notifications_on">Włączone</string>
+    <string name="settings_notifications_off">Wyłączone. Stuknij, aby włączyć.</string>
     <string name="profile_guest_title">Profil gościa</string>
     <string name="profile_guest_description">Połącz OLX, by publikować z SellSnap — Twoje dane konta pojawią się tutaj.</string>
     <string name="profile_olx_account">Konto OLX</string>
@@ -108,7 +110,7 @@
     <string name="profile_delete_account_data_cancel">Anuluj</string>
     <string name="profile_privacy_data_title">Prywatność i dane</string>
     <string name="profile_analytics_consent_title">Udostępniaj dane analityczne</string>
-    <string name="profile_analytics_consent_subtitle">Anonimowe dane użytkowania, które pomagają nam ulepszać SellSnap. Domyślnie wyłączone — zmień w dowolnym momencie.</string>
+    <string name="profile_analytics_consent_subtitle">Anonimowe dane użytkowania, które pomagają nam ulepszać SellSnap. Zmienisz to w dowolnym momencie.</string>
     <string name="profile_contact_data_request">Skontaktuj się z nami w sprawie swoich danych</string>
     <string name="profile_not_provided">Nie ustawiono</string>
     <string name="profile_value_yes">Tak</string>
@@ -123,6 +125,16 @@
     <string name="whats_new_installed_badge">Zainstalowana</string>
     <string name="whats_new_empty_title">Nic tu jeszcze nie ma</string>
     <string name="whats_new_empty_description">Zajrzyj później po informacje o wydaniu.</string>
+
+    <!-- Announcements -->
+    <string name="announcement_ok">OK</string>
+    <string name="announcement_close">Zamknij</string>
+
+    <!-- Notifications -->
+    <string name="notifications_prompt_title">Dostawaj ważne wieści od SellSnap</string>
+    <string name="notifications_prompt_message">Napiszemy tylko wtedy, gdy to naprawdę ważne, np. gdy jest aktualizacja do zainstalowania.</string>
+    <string name="notifications_prompt_enable">Włącz powiadomienia</string>
+    <string name="notification_channel_updates">Aktualizacje od SellSnap</string>
 
     <!-- My OLX Ads -->
     <string name="nav_my_ads">Moje ogłoszenia</string>
@@ -150,12 +162,12 @@
 
     <!-- Navigation -->
     <string name="back">Wstecz</string>
+    <string name="action_undo">Cofnij</string>
 
     <!-- Capacity Result Screen -->
     <string name="retry">Spróbuj ponownie</string>
 
     <!-- Analyze Screen -->
-    <string name="add_photos_title">Dodaj zdjęcia</string>
 
     <!-- Generate Ad Screen -->
     <string name="generate_with_ai">Generuj z AI</string>
@@ -167,6 +179,14 @@
     <string name="ai_hint_placeholder">np. Nike Air Max 90, rozmiar 42, noszone 2 miesiące</string>
     <string name="get_started">Zaczynamy</string>
     <string name="next">Dalej</string>
+
+    <!-- Drafts -->
+    <string name="drafts_title">Szkice</string>
+    <string name="drafts_copy_hint">Stuknij „Tytuł”, „Opis” lub „Cena”, aby skopiować.</string>
+    <string name="drafts_see_all">Zobacz wszystkie</string>
+    <string name="drafts_empty">Nie ma jeszcze szkiców.</string>
+    <string name="drafts_remove_cd">Usuń szkic</string>
+    <string name="drafts_removed">Szkic usunięty</string>
 
     <!-- AI Processing -->
     <string name="ai_creating_ad_title">Przygotowujemy Twoje ogłoszenie</string>
@@ -220,10 +240,10 @@
     <string name="publish_confirm_back">Poczekaj, chcę edytować</string>
     <string name="publish_confirm_photo_removed">Zdjęcie usunięte</string>
     <string name="publish_confirm_undo_remove_photo">Cofnij</string>
-    <string name="preview_back_info_title">Odrzucić ten szkic?</string>
-    <string name="preview_back_info_message">To ogłoszenie nie zostało jeszcze opublikowane. Jeśli wyjdziesz, szkic zostanie usunięty — zaczniesz od nowa na ekranie generowania.</string>
+    <string name="preview_back_info_title">Zamknąć to ogłoszenie?</string>
+    <string name="preview_back_info_message">Zostanie w Szkicach z Twoimi zmianami, dopóki go nie opublikujesz.</string>
     <string name="preview_back_info_stay">Kontynuuj edycję</string>
-    <string name="preview_back_info_leave">Odrzuć szkic</string>
+    <string name="preview_back_info_leave">Zamknij</string>
     <string name="publishing">Publikowanie…</string>
     <string name="copy_pill_default">Kopiuj</string>
     <string name="copy_pill_copied">Skopiowano ✓</string>
@@ -353,8 +373,8 @@
 
     <!-- Ad lifecycle — states with nothing to act on. Each says what OLX is doing, not what the app can't do. -->
     <string name="advert_state_needs_payment">OLX czeka na płatność, zanim pokaże to ogłoszenie kupującym. Możesz zapłacić na OLX.</string>
-    <string name="advert_state_needs_confirmation">OLX potrzebuje twojego potwierdzenia, zanim kupujący zobaczą to ogłoszenie. Otwórz je na OLX, aby potwierdzić.</string>
-    <string name="advert_state_rejected">OLX odrzucił to ogłoszenie i wysłał ci maila z powodem.</string>
+    <string name="advert_state_needs_confirmation">OLX potrzebuje Twojego potwierdzenia, zanim kupujący zobaczą to ogłoszenie. Otwórz je na OLX, aby potwierdzić.</string>
+    <string name="advert_state_rejected">OLX odrzucił to ogłoszenie i wysłał Ci maila z powodem.</string>
     <string name="advert_state_unknown">SellSnap nie może ustalić, co się dzieje z tym ogłoszeniem. Otwórz je na OLX, aby sprawdzić.</string>
 
     <!-- Ad lifecycle — confirmations. Every one says what happens on OLX. -->

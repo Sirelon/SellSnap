@@ -49,7 +49,6 @@
     <string name="tip_lighting">Lumină bună = rezultate mai bune</string>
     <string name="tip_angles">Fotografiază din mai multe unghiuri</string>
     <string name="tip_defects">Nu ascunde zgârieturile — cumpărătorii apreciază sinceritatea</string>
-    <string name="take_photo">Fotografiază</string>
 
     <!-- Preview Ad Screen -->
     <string name="publish_on_olx">Publică pe OLX</string>
@@ -64,13 +63,13 @@
     <string name="validation_errors_more">…și %1$d altele</string>
     <string name="min_characters">Cel puțin %1$d caractere, te rugăm</string>
     <string name="character_count_range">%1$d/%2$d</string>
+    <string name="images_carousel_counter">%1$d/%2$d</string>
     <string name="change_button">Modifică</string>
 
     <!-- Analyze Screen -->
     <string name="bullet_item">• %1$s</string>
 
     <!-- Photos Section -->
-    <string name="photos_count_format">%1$d/%2$d fotografii</string>
     <string name="add_photo_cd">Adaugă fotografie</string>
     <string name="add_photo_label">Adaugă</string>
     <string name="remove_photo_cd">Elimină fotografie</string>
@@ -88,6 +87,9 @@
     <string name="profile_field_last_login_at">Ultima autentificare</string>
     <string name="profile_screen_title">Profil</string>
     <string name="settings_screen_title">Setări</string>
+    <string name="settings_notifications_title">Notificări</string>
+    <string name="settings_notifications_on">Activate</string>
+    <string name="settings_notifications_off">Dezactivate. Atinge pentru a activa.</string>
     <string name="profile_guest_title">Profil oaspete</string>
     <string name="profile_guest_description">Conectează OLX pentru a publica din SellSnap — detaliile contului tău vor apărea și ele aici.</string>
     <string name="profile_olx_account">Cont OLX</string>
@@ -108,7 +110,7 @@
     <string name="profile_delete_account_data_cancel">Anulează</string>
     <string name="profile_privacy_data_title">Confidențialitate și date</string>
     <string name="profile_analytics_consent_title">Distribuie date analitice de utilizare</string>
-    <string name="profile_analytics_consent_subtitle">Date anonime de utilizare care ne ajută să îmbunătățim SellSnap. Dezactivat implicit — schimbă oricând.</string>
+    <string name="profile_analytics_consent_subtitle">Date anonime de utilizare care ne ajută să îmbunătățim SellSnap. Poți schimba oricând.</string>
     <string name="profile_contact_data_request">Contactează-ne despre datele tale</string>
     <string name="profile_not_provided">Nesetat</string>
     <string name="profile_value_yes">Da</string>
@@ -122,7 +124,17 @@
     <string name="whats_new_view_all">Vezi toate actualizările</string>
     <string name="whats_new_installed_badge">Instalată</string>
     <string name="whats_new_empty_title">Nimic aici încă</string>
-    <string name="whats_new_empty_description">Reveniți mai târziu pentru notele de lansare.</string>
+    <string name="whats_new_empty_description">Revino mai târziu pentru notele de lansare.</string>
+
+    <!-- Announcements -->
+    <string name="announcement_ok">OK</string>
+    <string name="announcement_close">Închide</string>
+
+    <!-- Notifications -->
+    <string name="notifications_prompt_title">Primește vești importante de la SellSnap</string>
+    <string name="notifications_prompt_message">Îți scriem doar când contează, de exemplu când e o actualizare de instalat.</string>
+    <string name="notifications_prompt_enable">Activează notificările</string>
+    <string name="notification_channel_updates">Actualizări de la SellSnap</string>
 
     <!-- My OLX Ads -->
     <string name="nav_my_ads">Anunțurile mele</string>
@@ -150,12 +162,12 @@
 
     <!-- Navigation -->
     <string name="back">Înapoi</string>
+    <string name="action_undo">Anulare</string>
 
     <!-- Capacity Result Screen -->
     <string name="retry">Reîncearcă</string>
 
     <!-- Analyze Screen -->
-    <string name="add_photos_title">Adaugă fotografii</string>
 
     <!-- Generate Ad Screen -->
     <string name="generate_with_ai">Generează cu AI</string>
@@ -167,6 +179,14 @@
     <string name="ai_hint_placeholder">ex. Nike Air Max 90, mărimea 42, purtați 2 luni</string>
     <string name="get_started">Să mergem</string>
     <string name="next">Următorul</string>
+
+    <!-- Drafts -->
+    <string name="drafts_title">Ciorne</string>
+    <string name="drafts_copy_hint">Atinge „Titlu”, „Descriere” sau „Preț” ca să copiezi.</string>
+    <string name="drafts_see_all">Vezi toate</string>
+    <string name="drafts_empty">Nicio ciornă încă.</string>
+    <string name="drafts_remove_cd">Șterge ciorna</string>
+    <string name="drafts_removed">Ciornă ștearsă</string>
 
     <!-- AI Processing -->
     <string name="ai_creating_ad_title">Pregătim anunțul tău</string>
@@ -220,10 +240,10 @@
     <string name="publish_confirm_back">Stai, vreau să editez</string>
     <string name="publish_confirm_photo_removed">Fotografie eliminată</string>
     <string name="publish_confirm_undo_remove_photo">Anulare</string>
-    <string name="preview_back_info_title">Renunți la acest ciornă?</string>
-    <string name="preview_back_info_message">Anunțul nu a fost publicat încă. Dacă pleci acum, ciorna va fi ștearsă — vei începe de la zero pe ecranul de generare.</string>
+    <string name="preview_back_info_title">Închizi acest anunț?</string>
+    <string name="preview_back_info_message">Rămâne în Ciorne, cu modificările tale, până îl publici.</string>
     <string name="preview_back_info_stay">Continuă editarea</string>
-    <string name="preview_back_info_leave">Renunță la ciornă</string>
+    <string name="preview_back_info_leave">Închide</string>
     <string name="publishing">Se publică…</string>
     <string name="copy_pill_default">Copiază</string>
     <string name="copy_pill_copied">Copiat ✓</string>

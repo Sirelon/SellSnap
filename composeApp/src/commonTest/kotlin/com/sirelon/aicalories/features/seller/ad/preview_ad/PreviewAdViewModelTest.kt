@@ -1,9 +1,13 @@
 package com.sirelon.sellsnap.features.seller.ad.preview_ad
 
+import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
+import androidx.compose.runtime.snapshots.Snapshot
 import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.ViewModelStore
 import com.sirelon.sellsnap.analytics.Analytics
 import com.sirelon.sellsnap.analytics.AnalyticsEvents
 import com.sirelon.sellsnap.features.auth.data.InMemoryOlxKeyValueStore
+import com.sirelon.sellsnap.features.common.presentation.awaitEffect
 import com.sirelon.sellsnap.features.media.upload.DraftMediaFileStore
 import com.sirelon.sellsnap.features.media.upload.DraftPhoto
 import com.sirelon.sellsnap.features.media.upload.PersistedDraftPhoto
@@ -40,6 +44,9 @@ import com.sirelon.sellsnap.features.seller.categories.domain.AttributeValidator
 import com.sirelon.sellsnap.features.seller.categories.domain.CategoriesMapper
 import com.sirelon.sellsnap.features.seller.categories.domain.OlxCategory
 import com.sirelon.sellsnap.features.seller.currency.data.CurrencyRepository
+import com.sirelon.sellsnap.features.seller.categories.domain.OlxAttributeValue
+import com.sirelon.sellsnap.features.seller.drafts.Draft
+import com.sirelon.sellsnap.features.seller.drafts.InMemoryDraftsRepository
 import com.sirelon.sellsnap.features.seller.location.DeviceLocation
 import com.sirelon.sellsnap.features.seller.location.LocationProvider
 import com.sirelon.sellsnap.features.seller.location.OlxLocation
@@ -64,8 +71,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import kotlinx.serialization.json.Json
@@ -76,7 +85,14 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
+
+private const val TestSessionId = "test-session"
+
+// Old enough that a rewrite of the seeded draft, which stamps the current time, is visible.
+private const val SeededDraftEpochSeconds = 1_000L
 
 /**
  * SIR-83 D6/A5: the identity assertion before publish is the primary defence against publishing
@@ -91,6 +107,21 @@ class PreviewAdViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
     private val testCategory = OlxCategory(id = 1, label = "Electronics", parentId = null, isLeaf = true)
     private val testLocation = OlxLocation(cityId = 1, cityName = "Kyiv", districtId = null, districtName = null)
+
+    // The draft is keyed by the listing's generationSessionId. Without one the ViewModel mints a
+    // random id of its own, and a test about the draft would pass without touching it.
+    private val testListing = AdvertisementWithAttributes(
+        advertisement = Advertisement(
+            title = "A perfectly fine test title",
+            description = "A sufficiently long test description with more than thirty characters in it.",
+            images = emptyList(),
+            suggestedPrice = 100f,
+            minPrice = 50f,
+            maxPrice = 200f,
+        ),
+        filledAttributes = emptyMap(),
+        generationSessionId = TestSessionId,
+    )
 
     @BeforeTest
     fun setUp() {
@@ -232,6 +263,31 @@ class PreviewAdViewModelTest {
             "the store-review gate counts live listings, so a deduplicated double-tap must count once",
         )
     }
+    @Test
+    fun `copying a listing counts once however often it is copied and asks only after the feedback`() =
+        runTest(testDispatcher) {
+            val accountStore = OlxAccountStore(InMemoryOlxKeyValueStore(), testJson)
+            val harness = harness(buildEngine { addHandler { respond("{}", HttpStatusCode.OK, jsonHeaders()) } }, accountStore)
+            repeat(4) { harness.reviewPromptStore.incrementCopiedListingCount() }
+            harness.reviewPromptCoordinator.isReturningSession = true
+            val viewModel = buildViewModel(harness)
+            viewModel.onEvent(PreviewAdEvent.ListingCopied)
+            viewModel.onEvent(PreviewAdEvent.ListingCopied)
+            advanceUntilIdle()
+            assertEquals(5, harness.reviewPromptStore.copiedListingCount())
+            assertTrue(harness.analytics.events.isEmpty(), "no ask at the tap")
+
+            viewModel.onEvent(PreviewAdEvent.CopyFeedbackFinished)
+            viewModel.onEvent(PreviewAdEvent.CopyFeedbackFinished)
+            advanceUntilIdle()
+            viewModel.effects.awaitEffect<PreviewAdEffect.RequestStoreReview>()
+            // The second finish is not decided again: a repeat would log a cooldown skip.
+            assertEquals(
+                listOf(AnalyticsEvents.REVIEW_PROMPT_REQUESTED),
+                harness.analytics.events.map { it.first },
+            )
+        }
+
     @Test
     fun `publish refuses to POST while the category's attributes have not loaded`() = runTest(testDispatcher) {
         val accountStore = OlxAccountStore(InMemoryOlxKeyValueStore(), testJson)
@@ -964,6 +1020,194 @@ class PreviewAdViewModelTest {
         )
     }
 
+    @Test
+    fun `editing the title updates the draft after the debounce`() = runTest(testDispatcher) {
+        val engine = buildEngine {
+            addHandler { respond("{}", status = HttpStatusCode.OK, headers = jsonHeaders()) }
+        }
+        val harness = harness(engine, OlxAccountStore(InMemoryOlxKeyValueStore(), testJson))
+        // What the model filled, and the attempt that produced the text: a guest preview never
+        // loads an attribute list, and a title edit must not wipe either from the draft.
+        val seeded = assertNotNull(harness.draftsRepository.get(TestSessionId))
+        harness.draftsRepository.upsert(
+            seeded.copy(
+                listing = seeded.listing.copy(
+                    filledAttributes = mapOf("color" to listOf(OlxAttributeValue(code = "red", label = "Red"))),
+                    lastAttemptId = "attempt-1",
+                ),
+            ),
+        )
+        val viewModel = buildViewModel(harness)
+        // Lets the draft stream's collectors start, so the edit below is what they react to.
+        runCurrent()
+
+        viewModel.titleState.setTextAndPlaceCursorAtEnd("New title")
+        // snapshotFlow re-evaluates only after a snapshot apply notification. The UI runtime sends
+        // it; a unit test has to.
+        Snapshot.sendApplyNotifications()
+        advanceTimeBy(501)
+        runCurrent()
+
+        val stored = assertNotNull(harness.draftsRepository.get(TestSessionId)).listing
+        assertEquals("New title", stored.advertisement.title)
+        assertEquals(listOf(OlxAttributeValue(code = "red", label = "Red")), stored.filledAttributes["color"])
+        assertEquals("attempt-1", stored.lastAttemptId)
+    }
+
+    @Test
+    fun `editing the price records the seller's price and keeps the model's suggestion`() = runTest(testDispatcher) {
+        val engine = buildEngine {
+            addHandler { respond("{}", status = HttpStatusCode.OK, headers = jsonHeaders()) }
+        }
+        val harness = harness(engine, OlxAccountStore(InMemoryOlxKeyValueStore(), testJson))
+        val viewModel = buildViewModel(harness)
+        runCurrent()
+
+        viewModel.onEvent(PreviewAdEvent.OnPriceChanged(150f))
+        advanceTimeBy(501)
+        runCurrent()
+
+        val listing = assertNotNull(harness.draftsRepository.get(TestSessionId)).listing
+        assertEquals(150f, listing.sellerPrice)
+        assertEquals(
+            100f,
+            listing.advertisement.suggestedPrice,
+            "the suggestion is what the published price is later measured against",
+        )
+    }
+
+    @Test
+    fun `closing the preview writes an edit younger than the debounce`() = runTest(testDispatcher) {
+        val engine = buildEngine {
+            addHandler { respond("{}", status = HttpStatusCode.OK, headers = jsonHeaders()) }
+        }
+        val harness = harness(engine, OlxAccountStore(InMemoryOlxKeyValueStore(), testJson))
+        val viewModel = buildViewModel(harness)
+        runCurrent()
+
+        viewModel.titleState.setTextAndPlaceCursorAtEnd("Edited right before leaving")
+        Snapshot.sendApplyNotifications()
+        // The edit reaches the sync stream but not yet the debounce: nothing is written.
+        runCurrent()
+        assertEquals("A perfectly fine test title", harness.draftsRepository.get(TestSessionId)?.listing?.advertisement?.title)
+
+        // What leaving the screen does to the ViewModel: cleared through its store, which cancels
+        // viewModelScope and calls onCleared.
+        ViewModelStore().apply { put("preview", viewModel) }.clear()
+        advanceUntilIdle()
+
+        assertEquals("Edited right before leaving", harness.draftsRepository.get(TestSessionId)?.listing?.advertisement?.title)
+    }
+
+    @Test
+    fun `a reopened draft publishes with the external id its earlier attempt sent`() = runTest(testDispatcher) {
+        // The earlier attempt's POST left the device and its answer was lost; the seller closed
+        // the preview and reopened the draft. Publish must look the id up before posting again -
+        // the same guard a process-death restore gets from the saved state.
+        val accountStore = OlxAccountStore(InMemoryOlxKeyValueStore(), testJson)
+        accountStore.write(
+            OlxAccountsRecord(
+                accounts = listOf(account(localIndex = 1, olxUserId = 100L, accessToken = "token-a")),
+                activeByCountry = mapOf("ua" to 1),
+                nextLocalIndex = 2,
+            ),
+        )
+        var lookedUp: String? = null
+        var postAdvertRequests = 0
+        val engine = buildEngine {
+            addHandler { request ->
+                when {
+                    request.url.encodedPath.contains("users/me") ->
+                        respond(userJson(id = 100L, name = "Seller"), status = HttpStatusCode.OK, headers = jsonHeaders())
+
+                    request.url.parameters["external_id"] != null -> {
+                        lookedUp = request.url.parameters["external_id"]
+                        respond(emptyAdvertsListJson(), status = HttpStatusCode.OK, headers = jsonHeaders())
+                    }
+
+                    request.url.encodedPath.contains("adverts") && request.method == HttpMethod.Post -> {
+                        postAdvertRequests += 1
+                        respond(postAdvertJson(id = 8L), status = HttpStatusCode.OK, headers = jsonHeaders())
+                    }
+
+                    else -> respond("{}", status = HttpStatusCode.OK, headers = jsonHeaders())
+                }
+            }
+        }
+        val harness = harness(engine, accountStore)
+        val viewModel = buildViewModel(
+            harness,
+            listing = testListing.copy(publishExternalId = "attempt-that-was-cut-off"),
+        )
+        viewModel.setState { it.copy(selectedCategory = testCategory, location = testLocation, attributesLoadState = AttributesLoadState.Loaded) }
+        val effects = mutableListOf<PreviewAdEffect>()
+        backgroundScope.launch { viewModel.effects.collect { effects += it } }
+
+        viewModel.onEvent(PreviewAdEvent.Publish)
+        advanceUntilIdle()
+
+        assertEquals("attempt-that-was-cut-off", lookedUp, "the reopened draft's attempt id must be looked up before any POST")
+        assertEquals(1, postAdvertRequests, "nothing live under that id, so the POST goes ahead")
+        assertEquals(1, effects.filterIsInstance<PreviewAdEffect.PublishSuccess>().size)
+    }
+
+    @Test
+    fun `opening a draft without changing anything does not rewrite it`() = runTest(testDispatcher) {
+        val engine = buildEngine {
+            addHandler { respond("{}", status = HttpStatusCode.OK, headers = jsonHeaders()) }
+        }
+        val harness = harness(engine, OlxAccountStore(InMemoryOlxKeyValueStore(), testJson))
+        val seeded = assertNotNull(harness.draftsRepository.get(TestSessionId))
+        buildViewModel(harness)
+
+        runCurrent()
+        advanceTimeBy(501)
+        runCurrent()
+
+        assertEquals(
+            seeded,
+            harness.draftsRepository.get(TestSessionId),
+            "a rewrite would move the draft to the top of Drafts for nothing",
+        )
+    }
+
+    @Test
+    fun `a successful publish deletes the draft`() = runTest(testDispatcher) {
+        val accountStore = OlxAccountStore(InMemoryOlxKeyValueStore(), testJson)
+        accountStore.write(
+            OlxAccountsRecord(
+                accounts = listOf(account(localIndex = 1, olxUserId = 100L, accessToken = "token-a")),
+                activeByCountry = mapOf("ua" to 1),
+                nextLocalIndex = 2,
+            ),
+        )
+        val engine = buildEngine {
+            addHandler { request ->
+                when {
+                    request.url.encodedPath.contains("users/me") ->
+                        respond(userJson(id = 100L, name = "Seller"), status = HttpStatusCode.OK, headers = jsonHeaders())
+
+                    request.url.encodedPath.contains("adverts") && request.method == HttpMethod.Post ->
+                        respond(postAdvertJson(id = 7L), status = HttpStatusCode.OK, headers = jsonHeaders())
+
+                    else -> respond("{}", status = HttpStatusCode.OK, headers = jsonHeaders())
+                }
+            }
+        }
+        val harness = harness(engine, accountStore)
+        val viewModel = buildViewModel(harness)
+        viewModel.setState { it.copy(selectedCategory = testCategory, location = testLocation, attributesLoadState = AttributesLoadState.Loaded) }
+        val effects = mutableListOf<PreviewAdEffect>()
+        backgroundScope.launch { viewModel.effects.collect { effects += it } }
+        assertNotNull(harness.draftsRepository.get(TestSessionId), "the draft exists until the listing is published")
+
+        viewModel.onEvent(PreviewAdEvent.Publish)
+        advanceUntilIdle()
+
+        assertEquals(1, effects.filterIsInstance<PreviewAdEffect.PublishSuccess>().size)
+        assertNull(harness.draftsRepository.get(TestSessionId), "a published listing must not stay in Drafts")
+    }
+
     // --- test harness -----------------------------------------------------------------------
 
     private fun buildEngine(block: MockEngineConfig.() -> Unit): MockEngine {
@@ -1018,17 +1262,10 @@ class PreviewAdViewModelTest {
     private fun buildViewModel(
         harness: TestHarness,
         savedStateHandle: SavedStateHandle = SavedStateHandle(),
+        listing: AdvertisementWithAttributes = testListing,
     ): PreviewAdViewModel {
-        val advertisement = Advertisement(
-            title = "A perfectly fine test title",
-            description = "A sufficiently long test description with more than thirty characters in it.",
-            images = emptyList(),
-            suggestedPrice = 100f,
-            minPrice = 50f,
-            maxPrice = 200f,
-        )
         return PreviewAdViewModel(
-            filledAdvertisement = AdvertisementWithAttributes(advertisement, emptyMap()),
+            filledAdvertisement = listing,
             categoriesRepository = harness.categoriesRepository,
             locationRepository = harness.locationRepository,
             olxApiClient = harness.olxApiClient,
@@ -1049,6 +1286,9 @@ class PreviewAdViewModelTest {
             adGenerationLogRepository = NoOpAdGenerationLogRepository,
             advertOutcomeStore = AdvertOutcomeStore(InMemoryOlxKeyValueStore(), testJson),
             reviewPromptCoordinator = harness.reviewPromptCoordinator,
+            draftsRepository = harness.draftsRepository,
+            // Same scheduler as everything else, so advanceUntilIdle() runs an onCleared flush.
+            applicationScope = CoroutineScope(testDispatcher),
         )
     }
 
@@ -1089,6 +1329,17 @@ class PreviewAdViewModelTest {
             olxApiClient = olxApiClient,
             locationStore = LocationStore(InMemoryOlxKeyValueStore(), testJson),
         )
+        val draftsRepository = InMemoryDraftsRepository().apply {
+            upsert(
+                Draft(
+                    id = TestSessionId,
+                    countryCode = "ua",
+                    createdAtEpochSeconds = SeededDraftEpochSeconds,
+                    updatedAtEpochSeconds = SeededDraftEpochSeconds,
+                    listing = testListing,
+                ),
+            )
+        }
         val repository = SellerAccountRepository(
             authRepository = authRepository,
             olxApiClient = olxApiClient,
@@ -1100,6 +1351,7 @@ class PreviewAdViewModelTest {
             olxCountryStore = countryStore,
             draftMediaFileStore = FakeDraftMediaFileStore,
             advertOutcomeStore = AdvertOutcomeStore(InMemoryOlxKeyValueStore(), testJson),
+            draftsRepository = draftsRepository,
             analyticsConsentRepository = analyticsConsentRepository,
             errorParser = errorParser,
             analytics = analytics,
@@ -1121,6 +1373,7 @@ class PreviewAdViewModelTest {
             analytics,
             reviewPromptStore,
             ReviewPromptCoordinator(store = reviewPromptStore, analytics = analytics),
+            draftsRepository,
         )
     }
 
@@ -1134,6 +1387,7 @@ class PreviewAdViewModelTest {
         val analytics: FakeAnalytics,
         val reviewPromptStore: ReviewPromptStore,
         val reviewPromptCoordinator: ReviewPromptCoordinator,
+        val draftsRepository: InMemoryDraftsRepository,
     )
 
     private class TestCredentialsProvider : OlxCredentialsProvider {

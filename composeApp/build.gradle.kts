@@ -24,6 +24,15 @@ plugins {
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.composeHotReload)
     alias(libs.plugins.kotlinSerialization)
+    alias(libs.plugins.sqldelight)
+}
+
+sqldelight {
+    databases {
+        create("SellSnapDatabase") {
+            packageName.set("com.sirelon.sellsnap.db")
+        }
+    }
 }
 
 compose {
@@ -119,6 +128,7 @@ kotlin {
                 implementation(libs.gitlive.firebase.storage)
                 implementation(libs.gitlive.firebase.installations)
                 implementation(libs.gitlive.firebase.firestore)
+                implementation(libs.gitlive.firebase.messaging)
             }
         }
         val iosMain = create("iosMain") {
@@ -134,6 +144,7 @@ kotlin {
             implementation(libs.androidx.core.ktx)
             implementation(libs.androidx.exifinterface)
             implementation(libs.koin.android)
+            implementation(libs.sqldelight.android.driver)
             implementation(libs.ktor.client.okhttp)
             implementation(libs.kotlinx.coroutines.android)
             implementation(libs.play.services.location)
@@ -141,6 +152,7 @@ kotlin {
             implementation(project.dependencies.platform(libs.firebase.bom))
             implementation(libs.gitlive.firebase.analytics)
             implementation(libs.gitlive.firebase.crashlytics)
+            implementation(libs.firebase.appcheck)
             // 1.10.0+ for CustomTabsIntent ephemeral browsing (SIR-83 Android force-relogin, D5) -
             // https://developer.chrome.com/docs/android/custom-tabs/guide-ephemeral-tab
             implementation("androidx.browser:browser:1.10.0")
@@ -172,6 +184,8 @@ kotlin {
             implementation(libs.coil.network.ktor)
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.serialization.json)
+            implementation(libs.sqldelight.runtime)
+            implementation(libs.sqldelight.coroutines)
             implementation(libs.ktor.client.core)
             implementation(libs.ktor.client.auth)
             implementation(libs.ktor.client.contentNegotiation)
@@ -198,10 +212,12 @@ kotlin {
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.ktor.client.java)
+            implementation(libs.sqldelight.sqlite.driver)
             implementation(libs.kotlinx.coroutines.swing)
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)
+            implementation(libs.sqldelight.native.driver)
             implementation(libs.gitlive.firebase.analytics)
             implementation(libs.gitlive.firebase.crashlytics)
         }

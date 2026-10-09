@@ -49,7 +49,6 @@
     <string name="tip_lighting">Good light = better results</string>
     <string name="tip_angles">Shoot from a few angles</string>
     <string name="tip_defects">Don't hide the scratches — buyers love honesty</string>
-    <string name="take_photo">Take Photo</string>
 
     <!-- Preview Ad Screen -->
     <string name="publish_on_olx">Publish on OLX</string>
@@ -64,6 +63,7 @@
     <string name="validation_errors_more">…and %1$d more</string>
     <string name="min_characters">At least %1$d characters, please</string>
     <string name="character_count_range">%1$d/%2$d</string>
+    <string name="images_carousel_counter">%1$d/%2$d</string>
     <string name="change_button">Change</string>
 
     <!-- Analyze Screen -->
@@ -72,7 +72,6 @@
     <!-- Team Screen -->
 
     <!-- Photos Section -->
-    <string name="photos_count_format">%1$d/%2$d photos</string>
     <string name="add_photo_cd">Add photo</string>
     <string name="add_photo_label">Add</string>
     <string name="remove_photo_cd">Remove photo</string>
@@ -90,6 +89,9 @@
     <string name="profile_field_last_login_at">Last login</string>
     <string name="profile_screen_title">Profile</string>
     <string name="settings_screen_title">Settings</string>
+    <string name="settings_notifications_title">Notifications</string>
+    <string name="settings_notifications_on">On</string>
+    <string name="settings_notifications_off">Off. Tap to turn on.</string>
     <string name="profile_guest_title">Guest profile</string>
     <string name="profile_guest_description">Hook up OLX to publish from SellSnap — your account details will land here too.</string>
     <string name="profile_olx_account">OLX account</string>
@@ -110,7 +112,7 @@
     <string name="profile_delete_account_data_cancel">Cancel</string>
     <string name="profile_privacy_data_title">Privacy &amp; data</string>
     <string name="profile_analytics_consent_title">Share usage analytics</string>
-    <string name="profile_analytics_consent_subtitle">Anonymous usage data that helps us improve SellSnap. Off by default — change anytime.</string>
+    <string name="profile_analytics_consent_subtitle">Anonymous usage data that helps us improve SellSnap. Change it anytime.</string>
     <string name="profile_contact_data_request">Contact us about your data</string>
     <string name="profile_not_provided">Not set</string>
     <string name="profile_value_yes">Yes</string>
@@ -125,6 +127,16 @@
     <string name="whats_new_installed_badge">Installed</string>
     <string name="whats_new_empty_title">Nothing here yet</string>
     <string name="whats_new_empty_description">Check back later for release notes.</string>
+
+    <!-- Announcements -->
+    <string name="announcement_ok">OK</string>
+    <string name="announcement_close">Close</string>
+
+    <!-- Notifications -->
+    <string name="notifications_prompt_title">Get a heads-up from SellSnap</string>
+    <string name="notifications_prompt_message">We'll only message you when it matters, like when there's an update you need to install.</string>
+    <string name="notifications_prompt_enable">Turn on notifications</string>
+    <string name="notification_channel_updates">Updates from SellSnap</string>
 
     <!-- My OLX Ads -->
     <string name="nav_my_ads">My ads</string>
@@ -152,12 +164,12 @@
 
     <!-- Navigation -->
     <string name="back">Back</string>
+    <string name="action_undo">Undo</string>
 
     <!-- Capacity Result Screen — status messages -->
     <string name="retry">Retry</string>
 
     <!-- Analyze Screen -->
-    <string name="add_photos_title">Add Photos</string>
 
     <!-- Generate Ad Screen -->
     <string name="generate_with_ai">Generate with AI</string>
@@ -169,6 +181,14 @@
     <string name="ai_hint_placeholder">e.g. Nike Air Max 90, size 42, worn for 2 months</string>
     <string name="get_started">Let's go</string>
     <string name="next">Next</string>
+
+    <!-- Drafts -->
+    <string name="drafts_title">Drafts</string>
+    <string name="drafts_copy_hint">Tap Title, Description or Price to copy it.</string>
+    <string name="drafts_see_all">See all</string>
+    <string name="drafts_empty">No drafts yet.</string>
+    <string name="drafts_remove_cd">Remove draft</string>
+    <string name="drafts_removed">Draft removed</string>
 
     <!-- AI Processing -->
     <string name="ai_creating_ad_title">Cooking up your ad</string>
@@ -222,10 +242,10 @@
     <string name="publish_confirm_back">Wait, let me edit</string>
     <string name="publish_confirm_photo_removed">Photo removed</string>
     <string name="publish_confirm_undo_remove_photo">Undo</string>
-    <string name="preview_back_info_title">Discard this draft?</string>
-    <string name="preview_back_info_message">This ad isn't published yet. Leave now and we'll toss the draft — you'll start fresh on the generate screen.</string>
+    <string name="preview_back_info_title">Close this listing?</string>
+    <string name="preview_back_info_message">It stays in Drafts with your changes until you publish it.</string>
     <string name="preview_back_info_stay">Keep editing</string>
-    <string name="preview_back_info_leave">Discard draft</string>
+    <string name="preview_back_info_leave">Close</string>
     <string name="publishing">Going live…</string>
     <string name="copy_pill_default">Copy</string>
     <string name="copy_pill_copied">Copied ✓</string>
@@ -341,8 +361,8 @@
     <string name="my_ads_empty_description_account">No listings for %1$s yet.</string>
     <string name="my_ads_account_fallback_name">your account</string>
     <string name="my_ads_reconnect_title">Reconnect this account</string>
-    <string name="my_ads_reconnect_description">This account\'s OLX connection expired. Reconnect to see its listings.</string>
-    <string name="my_ads_load_failed_account">Couldn\'t load ads for %1$s.</string>
+    <string name="my_ads_reconnect_description">This account's OLX connection expired. Reconnect to see its listings.</string>
+    <string name="my_ads_load_failed_account">Couldn't load ads for %1$s.</string>
 
     <!-- Ad lifecycle -->
     <string name="advert_actions_open_on_olx">View on OLX</string>

@@ -33,10 +33,32 @@ sealed interface ReviewPromptDecision {
  */
 enum class ReviewPromptSkipReason(val analyticsValue: String) {
     TooFewPublishes("too_few_publishes"),
+    TooFewCopiedListings("too_few_copied_listings"),
     InstallSession("install_session"),
     RecentError("recent_error"),
     WhatsNew("whats_new"),
+    Announcement("announcement"),
+    NotificationPrompt("notification_prompt"),
     Cooldown("cooldown"),
+}
+
+/**
+ * What made the app ask. Logged as `trigger` on both review events.
+ *
+ * The two triggers share one gate, one cooldown timestamp and one set of session flags, so whichever
+ * fires first spends the 130-day window and the other is skipped with
+ * [ReviewPromptSkipReason.Cooldown] until it ends.
+ */
+enum class ReviewPromptTrigger(val analyticsValue: String) {
+    /** The success screen after an advert was posted to OLX. */
+    Publish("publish"),
+
+    /**
+     * The preview, after a listing's title or description was copied. This is the only signal a
+     * guest produces: guests cannot publish, so they never reach the success screen, yet copying a
+     * generated listing out to paste elsewhere is the moment the product has delivered.
+     */
+    CopiedListing("copied_listing"),
 }
 
 /**
@@ -57,18 +79,46 @@ const val ReviewPromptMinPublishes: Int = 2
  */
 const val ReviewPromptMinPublishesInInstallSession: Int = 3
 
+/**
+ * Generated listings a guest must have copied from (title or description, once per listing)
+ * before being asked. Five is a habit rather than curiosity; someone who copied one listing out
+ * and left is the worst rater to spend a request on.
+ */
+const val ReviewPromptMinCopiedListings: Int = 5
+
+/**
+ * [count] is the counter the [trigger] is judged on: published adverts for
+ * [ReviewPromptTrigger.Publish], copied listings for [ReviewPromptTrigger.CopiedListing]. The install
+ * session allowance applies only to publishes - a guest has to come back before being asked.
+ */
 fun reviewPromptDecision(
-    publishCount: Int,
+    trigger: ReviewPromptTrigger,
+    count: Int,
     isReturningSession: Boolean,
     hadPublishErrorThisSession: Boolean,
     whatsNewShownThisSession: Boolean,
+    announcementShownThisSession: Boolean,
+    notificationPromptShownThisSession: Boolean,
     lastPromptEpochSeconds: Long?,
     nowEpochSeconds: Long,
 ): ReviewPromptDecision {
-    if (publishCount < ReviewPromptMinPublishes) {
-        return ReviewPromptDecision.Skip(ReviewPromptSkipReason.TooFewPublishes)
+    val minCount = when (trigger) {
+        ReviewPromptTrigger.Publish -> ReviewPromptMinPublishes
+        ReviewPromptTrigger.CopiedListing -> ReviewPromptMinCopiedListings
     }
-    if (!isReturningSession && publishCount < ReviewPromptMinPublishesInInstallSession) {
+    if (count < minCount) {
+        return ReviewPromptDecision.Skip(
+            when (trigger) {
+                ReviewPromptTrigger.Publish -> ReviewPromptSkipReason.TooFewPublishes
+                ReviewPromptTrigger.CopiedListing -> ReviewPromptSkipReason.TooFewCopiedListings
+            },
+        )
+    }
+    val installSessionMin = when (trigger) {
+        ReviewPromptTrigger.Publish -> ReviewPromptMinPublishesInInstallSession
+        ReviewPromptTrigger.CopiedListing -> Int.MAX_VALUE
+    }
+    if (!isReturningSession && count < installSessionMin) {
         return ReviewPromptDecision.Skip(ReviewPromptSkipReason.InstallSession)
     }
     if (hadPublishErrorThisSession) {
@@ -76,6 +126,12 @@ fun reviewPromptDecision(
     }
     if (whatsNewShownThisSession) {
         return ReviewPromptDecision.Skip(ReviewPromptSkipReason.WhatsNew)
+    }
+    if (announcementShownThisSession) {
+        return ReviewPromptDecision.Skip(ReviewPromptSkipReason.Announcement)
+    }
+    if (notificationPromptShownThisSession) {
+        return ReviewPromptDecision.Skip(ReviewPromptSkipReason.NotificationPrompt)
     }
     if (lastPromptEpochSeconds != null &&
         nowEpochSeconds - lastPromptEpochSeconds < ReviewPromptCooldownSeconds

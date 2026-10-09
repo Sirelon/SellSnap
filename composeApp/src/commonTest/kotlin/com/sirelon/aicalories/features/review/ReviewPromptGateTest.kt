@@ -6,16 +6,22 @@ import kotlin.test.assertEquals
 private const val Now = 1_800_000_000L
 
 private fun decide(
+    trigger: ReviewPromptTrigger = ReviewPromptTrigger.Publish,
     publishCount: Int = 2,
     isReturningSession: Boolean = true,
     hadPublishErrorThisSession: Boolean = false,
     whatsNewShownThisSession: Boolean = false,
+    announcementShownThisSession: Boolean = false,
+    notificationPromptShownThisSession: Boolean = false,
     lastPromptEpochSeconds: Long? = null,
 ) = reviewPromptDecision(
-    publishCount = publishCount,
+    trigger = trigger,
+    count = publishCount,
     isReturningSession = isReturningSession,
     hadPublishErrorThisSession = hadPublishErrorThisSession,
     whatsNewShownThisSession = whatsNewShownThisSession,
+    announcementShownThisSession = announcementShownThisSession,
+    notificationPromptShownThisSession = notificationPromptShownThisSession,
     lastPromptEpochSeconds = lastPromptEpochSeconds,
     nowEpochSeconds = Now,
 )
@@ -69,6 +75,22 @@ class ReviewPromptGateTest {
     }
 
     @Test
+    fun `the notifications prompt is the one interruption this session gets`() {
+        assertSkip(
+            ReviewPromptSkipReason.NotificationPrompt,
+            decide(notificationPromptShownThisSession = true),
+        )
+    }
+
+    @Test
+    fun `an announcement is the one interruption this session gets`() {
+        assertSkip(
+            ReviewPromptSkipReason.Announcement,
+            decide(announcementShownThisSession = true),
+        )
+    }
+
+    @Test
     fun `the cooldown runs to the second`() {
         val oneSecondShort = Now - ReviewPromptCooldownSeconds + 1
         assertSkip(
@@ -101,6 +123,51 @@ class ReviewPromptGateTest {
                 whatsNewShownThisSession = true,
                 lastPromptEpochSeconds = Now - 1,
             ),
+        )
+    }
+
+    @Test
+    fun `four copied listings are not enough`() {
+        assertSkip(
+            ReviewPromptSkipReason.TooFewCopiedListings,
+            decide(trigger = ReviewPromptTrigger.CopiedListing, publishCount = 4),
+        )
+    }
+
+    @Test
+    fun `the fifth copied listing is asked for`() {
+        assertEquals(
+            ReviewPromptDecision.Request,
+            decide(trigger = ReviewPromptTrigger.CopiedListing, publishCount = ReviewPromptMinCopiedListings),
+        )
+    }
+
+    @Test
+    fun `a guest has to come back before being asked, however many listings were copied`() {
+        assertSkip(
+            ReviewPromptSkipReason.InstallSession,
+            decide(trigger = ReviewPromptTrigger.CopiedListing, publishCount = 50, isReturningSession = false),
+        )
+    }
+
+    @Test
+    fun `a second ask in the same version is skipped by the shared cooldown`() {
+        assertSkip(
+            ReviewPromptSkipReason.Cooldown,
+            decide(
+                trigger = ReviewPromptTrigger.CopiedListing,
+                publishCount = 6,
+                lastPromptEpochSeconds = Now - 1,
+            ),
+        )
+    }
+
+    @Test
+    fun `a publish after a copied-listing ask is skipped by the shared cooldown`() {
+        // Both triggers read the one timestamp the copied_listing request wrote.
+        assertSkip(
+            ReviewPromptSkipReason.Cooldown,
+            decide(trigger = ReviewPromptTrigger.Publish, lastPromptEpochSeconds = Now - 1),
         )
     }
 

@@ -28,6 +28,7 @@ val profileModule = module {
             olxCountryStore = get(),
             draftMediaFileStore = get(),
             advertOutcomeStore = get(),
+            draftsRepository = get(),
             analyticsConsentRepository = get(),
             errorParser = get(),
             analytics = get(),

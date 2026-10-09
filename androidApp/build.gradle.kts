@@ -25,6 +25,18 @@ val versionProperties = Properties().apply {
 val appVersionName = versionProperties.getProperty("VERSION_NAME")
 val appVersionCode = versionProperties.getProperty("VERSION_CODE").toInt()
 
+// Fixed Firebase App Check debug token for debug builds, so emulator wipes and Maestro
+// `clearState` do not mint a new token that nobody registered. Registered once per machine via
+// the `appcheck-debug-token` skill; empty when local.properties has none (the provider then
+// mints and logs a random one).
+val localProperties = Properties().apply {
+    val localFile = rootProject.file("local.properties")
+    if (localFile.exists()) {
+        localFile.inputStream().use(::load)
+    }
+}
+val appCheckDebugToken = localProperties.getProperty("APP_CHECK_DEBUG_TOKEN").orEmpty()
+
 android {
     namespace = "com.sirelon.sellsnap"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
@@ -50,6 +62,9 @@ android {
     }
 
     buildTypes {
+        getByName("debug") {
+            buildConfigField("String", "APP_CHECK_DEBUG_TOKEN", "\"$appCheckDebugToken\"")
+        }
         getByName("release") {
             isMinifyEnabled = true
             isShrinkResources = true
@@ -63,6 +78,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     packaging {
@@ -93,4 +109,12 @@ dependencies {
     implementation(libs.compose.foundation)
     implementation(libs.compose.preview)
     debugImplementation(libs.compose.tooling)
+    // App Check provider factories live here, not in composeApp, so the debug provider never
+    // ships in a release build (see src/debug and src/release AppCheckProviders.kt).
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.appcheck.playintegrity)
+    implementation(libs.firebase.messaging)
+    implementation(libs.androidx.core.ktx)
+    debugImplementation(libs.firebase.appcheck.debug)
+    debugImplementation(libs.firebase.components)
 }

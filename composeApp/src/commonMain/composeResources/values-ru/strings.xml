@@ -50,7 +50,6 @@
     <string name="tip_lighting">Гарне світло = кращий результат</string>
     <string name="tip_angles">Знімайте з кількох кутів</string>
     <string name="tip_defects">Не ховайте подряпини — покупці люблять чесність</string>
-    <string name="take_photo">Зробити фото</string>
 
     <!-- Preview Ad Screen -->
     <string name="publish_on_olx">Опублікувати на OLX</string>
@@ -66,6 +65,7 @@
     <string name="ad_price_ai_estimated_range">ШІ радить: %1$s – %2$s</string>
     <string name="min_characters">Хоча б %1$d символів, будь ласка</string>
     <string name="character_count_range">%1$d/%2$d</string>
+    <string name="images_carousel_counter">%1$d/%2$d</string>
     <string name="change_button">Змінити</string>
 
     <!-- Analyze Screen -->
@@ -84,6 +84,9 @@
     <string name="profile_field_last_login_at">Останній вхід</string>
     <string name="profile_screen_title">Профіль</string>
     <string name="settings_screen_title">Налаштування</string>
+    <string name="settings_notifications_title">Сповіщення</string>
+    <string name="settings_notifications_on">Увімкнено</string>
+    <string name="settings_notifications_off">Вимкнено. Торкніться, щоб увімкнути.</string>
     <string name="profile_guest_title">Гостьовий профіль</string>
     <string name="profile_guest_description">Підключіть OLX, щоб публікувати з SellSnap — дані акаунта з'являться тут.</string>
     <string name="profile_olx_account">Акаунт OLX</string>
@@ -104,7 +107,7 @@
     <string name="profile_delete_account_data_cancel">Скасувати</string>
     <string name="profile_privacy_data_title">Приватність і дані</string>
     <string name="profile_analytics_consent_title">Ділитися аналітикою використання</string>
-    <string name="profile_analytics_consent_subtitle">Анонімні дані використання, що допомагають покращувати SellSnap. Вимкнено за замовчуванням — змінюйте будь-коли.</string>
+    <string name="profile_analytics_consent_subtitle">Анонімні дані використання, що допомагають покращувати SellSnap. Змінити це можна будь-коли.</string>
     <string name="profile_contact_data_request">Зв'язатися щодо ваших даних</string>
     <string name="profile_not_provided">Не задано</string>
     <string name="profile_value_yes">Так</string>
@@ -119,6 +122,16 @@
     <string name="whats_new_installed_badge">Встановлено</string>
     <string name="whats_new_empty_title">Тут поки що нічого немає</string>
     <string name="whats_new_empty_description">Загляньте пізніше, щоб дізнатися про оновлення.</string>
+
+    <!-- Announcements -->
+    <string name="announcement_ok">ОК</string>
+    <string name="announcement_close">Закрити</string>
+
+    <!-- Notifications -->
+    <string name="notifications_prompt_title">Дізнавайтеся про важливе від SellSnap</string>
+    <string name="notifications_prompt_message">Пишемо лише тоді, коли це справді важливо, наприклад, коли треба встановити оновлення.</string>
+    <string name="notifications_prompt_enable">Увімкнути сповіщення</string>
+    <string name="notification_channel_updates">Оновлення від SellSnap</string>
 
     <!-- My OLX Ads -->
     <string name="nav_my_ads">Мої оголошення</string>
@@ -145,7 +158,6 @@
     <string name="my_ads_status_unknown">Невідомо</string>
 
     <!-- Photos Section -->
-    <string name="photos_count_format">%1$d/%2$d фото</string>
     <string name="add_photo_cd">Додати фото</string>
     <string name="add_photo_label">Додати</string>
     <string name="remove_photo_cd">Видалити фото</string>
@@ -154,12 +166,12 @@
 
     <!-- Navigation -->
     <string name="back">Назад</string>
+    <string name="action_undo">Скасувати</string>
 
     <!-- Capacity Result Screen — status messages -->
     <string name="retry">Повторити</string>
 
     <!-- Analyze Screen -->
-    <string name="add_photos_title">Додати фото</string>
 
     <!-- Generate Ad Screen -->
     <string name="generate_with_ai">Створити з ШІ</string>
@@ -171,6 +183,14 @@
     <string name="ai_hint_placeholder">напр. Nike Air Max 90, розмір 42, носили 2 місяці</string>
     <string name="get_started">Почнемо</string>
     <string name="next">Далі</string>
+
+    <!-- Drafts -->
+    <string name="drafts_title">Чернетки</string>
+    <string name="drafts_copy_hint">Торкніться «Назва», «Опис» або «Ціна», щоб скопіювати.</string>
+    <string name="drafts_see_all">Показати всі</string>
+    <string name="drafts_empty">Чернеток поки немає.</string>
+    <string name="drafts_remove_cd">Видалити чернетку</string>
+    <string name="drafts_removed">Чернетку видалено</string>
 
     <!-- AI Processing -->
     <string name="ai_creating_ad_title">Готуємо ваше оголошення</string>
@@ -224,10 +244,10 @@
     <string name="publish_confirm_back">Стоп, ще треба підправити</string>
     <string name="publish_confirm_photo_removed">Фото видалено</string>
     <string name="publish_confirm_undo_remove_photo">Скасувати</string>
-    <string name="preview_back_info_title">Викинути цю чернетку?</string>
-    <string name="preview_back_info_message">Оголошення ще не опубліковане. Якщо вийти зараз, чернетка зникне — і ви повернетеся на екран генерації, щоб почати спочатку.</string>
+    <string name="preview_back_info_title">Закрити це оголошення?</string>
+    <string name="preview_back_info_message">Воно залишиться в чернетках разом із вашими змінами, доки ви його не опублікуєте.</string>
     <string name="preview_back_info_stay">Продовжити редагування</string>
-    <string name="preview_back_info_leave">Видалити чернетку</string>
+    <string name="preview_back_info_leave">Закрити</string>
     <string name="publishing">Публікуємо…</string>
     <string name="copy_pill_default">Копіювати</string>
     <string name="copy_pill_copied">Скопійовано ✓</string>

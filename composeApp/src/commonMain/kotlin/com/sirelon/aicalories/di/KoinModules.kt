@@ -2,24 +2,25 @@ package com.sirelon.sellsnap.di
 
 import com.sirelon.sellsnap.Greeting
 import com.sirelon.sellsnap.analytics.analyticsModule
+import com.sirelon.sellsnap.features.announcements.di.announcementsModule
 import com.sirelon.sellsnap.features.media.di.mediaModule
+import com.sirelon.sellsnap.features.notifications.di.notificationsModule
 import com.sirelon.sellsnap.features.review.di.reviewPromptModule
 import com.sirelon.sellsnap.features.seller.ad.generate_ad.di.generateAdModule
 import com.sirelon.sellsnap.features.seller.ad.generation_log.adGenerationLogModule
 import com.sirelon.sellsnap.features.seller.ad.preview_ad.di.previewAdModule
 import com.sirelon.sellsnap.features.seller.auth.di.sellerAuthModule
 import com.sirelon.sellsnap.features.seller.categories.categoriesModule
+import com.sirelon.sellsnap.features.seller.drafts.di.draftsModule
 import com.sirelon.sellsnap.features.seller.my_ads.di.myAdvertsModule
 import com.sirelon.sellsnap.features.seller.openai.OpenAIClient
 import com.sirelon.sellsnap.features.seller.profile.di.profileModule
 import com.sirelon.sellsnap.features.seller.settings.di.settingsModule
 import com.sirelon.sellsnap.features.whatsnew.di.whatsNewModule
-import com.sirelon.sellsnap.network.ApiTokenProvider
-import com.sirelon.sellsnap.network.createHttpClient
 import com.sirelon.sellsnap.network.createOpenAI
+import com.sirelon.sellsnap.network.openAIEndpointModule
 import com.sirelon.sellsnap.startup.appStartupModule
 import com.sirelon.sellsnap.supabase.SupabaseClient
-import com.sirelon.sellsnap.supabase.SupabaseConfig
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -43,7 +44,10 @@ val appModule = module {
         myAdvertsModule,
         appStartupModule,
         categoriesModule,
+        draftsModule,
         whatsNewModule,
+        announcementsModule,
+        notificationsModule,
         reviewPromptModule,
     )
     single { Greeting() }
@@ -53,11 +57,7 @@ val appModule = module {
 }
 
 val networkModule = module {
-    single {
-        ApiTokenProvider()
-            .apply { token = SupabaseConfig.OPENAI_KEY }
-    }
-    single { createHttpClient(get()) }
+    includes(openAIEndpointModule)
     single {
         Json {
             ignoreUnknownKeys = true
@@ -66,7 +66,7 @@ val networkModule = module {
             explicitNulls = false
         }
     }
-    single { createOpenAI(get()) }
+    single { createOpenAI(endpoint = get()) }
     single { OpenAIClient(openAI = get(), json = get(), compactJson = get()) }
     singleOf(::SupabaseClient)
 }

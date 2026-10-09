@@ -49,7 +49,6 @@
     <string name="tip_lighting">Жақсы жарық = жақсы нәтиже</string>
     <string name="tip_angles">Бірнеше бұрыштан түсір</string>
     <string name="tip_defects">Тырнақшаларды жасырма — сатып алушылар адалдықты бағалайды</string>
-    <string name="take_photo">Фото түсіру</string>
 
     <!-- Preview Ad Screen -->
     <string name="publish_on_olx">OLX-те жариялау</string>
@@ -64,13 +63,13 @@
     <string name="validation_errors_more">…және тағы %1$d</string>
     <string name="min_characters">Кемінде %1$d таңба болуы керек</string>
     <string name="character_count_range">%1$d/%2$d</string>
+    <string name="images_carousel_counter">%1$d/%2$d</string>
     <string name="change_button">Өзгерту</string>
 
     <!-- Analyze Screen -->
     <string name="bullet_item">• %1$s</string>
 
     <!-- Photos Section -->
-    <string name="photos_count_format">%1$d/%2$d фото</string>
     <string name="add_photo_cd">Фото қосу</string>
     <string name="add_photo_label">Қосу</string>
     <string name="remove_photo_cd">Фотоны жою</string>
@@ -88,6 +87,9 @@
     <string name="profile_field_last_login_at">Соңғы кіру</string>
     <string name="profile_screen_title">Профиль</string>
     <string name="settings_screen_title">Параметрлер</string>
+    <string name="settings_notifications_title">Хабарламалар</string>
+    <string name="settings_notifications_on">Қосулы</string>
+    <string name="settings_notifications_off">Өшірулі. Қосу үшін түрт.</string>
     <string name="profile_guest_title">Қонақ профилі</string>
     <string name="profile_guest_description">SellSnap арқылы жариялау үшін OLX-ті қос — аккаунт деректерің де осында пайда болады.</string>
     <string name="profile_olx_account">OLX аккаунты</string>
@@ -108,7 +110,7 @@
     <string name="profile_delete_account_data_cancel">Болдырмау</string>
     <string name="profile_privacy_data_title">Құпиялылық және деректер</string>
     <string name="profile_analytics_consent_title">Пайдалану аналитикасымен бөлісу</string>
-    <string name="profile_analytics_consent_subtitle">SellSnap-ты жақсартуға көмектесетін анонимді пайдалану деректері. Үнсіз келісім бойынша өшірулі — кез келген уақытта өзгертуге болады.</string>
+    <string name="profile_analytics_consent_subtitle">SellSnap-ты жақсартуға көмектесетін анонимді пайдалану деректері. Оны кез келген уақытта өзгертуге болады.</string>
     <string name="profile_contact_data_request">Деректерің туралы бізге хабарласу</string>
     <string name="profile_not_provided">Орнатылмаған</string>
     <string name="profile_value_yes">Иә</string>
@@ -122,7 +124,17 @@
     <string name="whats_new_view_all">Барлық жаңартуларды көру</string>
     <string name="whats_new_installed_badge">Орнатылған</string>
     <string name="whats_new_empty_title">Әзірге ештеңе жоқ</string>
-    <string name="whats_new_empty_description">Шығарылым жазбалары үшін кейінірек қайта тексеріңіз.</string>
+    <string name="whats_new_empty_description">Шығарылым жазбалары үшін кейінірек қайта тексер.</string>
+
+    <!-- Announcements -->
+    <string name="announcement_ok">ОК</string>
+    <string name="announcement_close">Жабу</string>
+
+    <!-- Notifications -->
+    <string name="notifications_prompt_title">SellSnap-тан маңызды жаңалықтарды біліп отыр</string>
+    <string name="notifications_prompt_message">Біз саған тек маңызды кезде ғана жазамыз, мысалы, орнату керек жаңарту шыққанда.</string>
+    <string name="notifications_prompt_enable">Хабарламаларды қосу</string>
+    <string name="notification_channel_updates">SellSnap жаңартулары</string>
 
     <!-- My OLX Ads -->
     <string name="nav_my_ads">Менің хабарландыруларым</string>
@@ -150,12 +162,12 @@
 
     <!-- Navigation -->
     <string name="back">Артқа</string>
+    <string name="action_undo">Болдырмау</string>
 
     <!-- Capacity Result Screen -->
     <string name="retry">Қайталап көру</string>
 
     <!-- Analyze Screen -->
-    <string name="add_photos_title">Фото қосу</string>
 
     <!-- Generate Ad Screen -->
     <string name="generate_with_ai">AI арқылы жасау</string>
@@ -167,6 +179,14 @@
     <string name="ai_hint_placeholder">мысалы, Nike Air Max 90, 42 өлшем, 2 ай киілген</string>
     <string name="get_started">Бастайық</string>
     <string name="next">Келесі</string>
+
+    <!-- Drafts -->
+    <string name="drafts_title">Жобалар</string>
+    <string name="drafts_copy_hint">Көшіру үшін «Тақырып», «Сипаттама» немесе «Баға» дегенді бас.</string>
+    <string name="drafts_see_all">Барлығын көру</string>
+    <string name="drafts_empty">Әзірге жоба жоқ.</string>
+    <string name="drafts_remove_cd">Жобаны жою</string>
+    <string name="drafts_removed">Жоба жойылды</string>
 
     <!-- AI Processing -->
     <string name="ai_creating_ad_title">Хабарландыруың дайындалуда</string>
@@ -220,10 +240,10 @@
     <string name="publish_confirm_back">Күте тұр, өңдейін</string>
     <string name="publish_confirm_photo_removed">Фото жойылды</string>
     <string name="publish_confirm_undo_remove_photo">Болдырмау</string>
-    <string name="preview_back_info_title">Бұл жобаны тастап кету керек пе?</string>
-    <string name="preview_back_info_message">Бұл хабарландыру әлі жарияланбаған. Кетсең, жоба жойылады — генерация экранынан қайта бастайсың.</string>
+    <string name="preview_back_info_title">Бұл хабарландыруды жабу керек пе?</string>
+    <string name="preview_back_info_message">Жариялағанша ол өзгерістеріңмен бірге Жобаларда сақталады.</string>
     <string name="preview_back_info_stay">Өңдеуді жалғастыру</string>
-    <string name="preview_back_info_leave">Жобаны тастау</string>
+    <string name="preview_back_info_leave">Жабу</string>
     <string name="publishing">Жариялануда…</string>
     <string name="copy_pill_default">Көшіру</string>
     <string name="copy_pill_copied">Көшірілді ✓</string>
@@ -244,10 +264,10 @@
 
     <!-- Error Messages -->
     <string name="error_location_fetch_failed">Орыныңды таба алмадық.</string>
-    <string name="error_publish_missing_category_or_location">Жарияладан бұрын санат пен орынды қос.</string>
+    <string name="error_publish_missing_category_or_location">Жарияламас бұрын санат пен орынды қос.</string>
     <string name="error_publish_missing_contact_name">OLX профиліңде аты жоқ. Кіріп, атыңды қос — қайталап көреміз.</string>
     <string name="error_category_suggestion_failed">Санатты ұсына алмадық.</string>
-    <string name="error_category_not_supported">Біз бұл санатты әлі қолдамаймыз (мысалы, жануарлар, жылжымайтын мүлік, көлік, жұмыс, жалдау). Басқа затты байқап көріңіз.</string>
+    <string name="error_category_not_supported">Біз бұл санатты әлі қолдамаймыз (мысалы, жануарлар, жылжымайтын мүлік, көлік, жұмыс, жалдау). Басқа затты байқап көр.</string>
     <string name="error_attributes_load_failed">Сипаттамаларды жүктеу мүмкін болмады.</string>
     <string name="error_user_profile_fetch_failed">Профиліңді жүктеу мүмкін болмады.</string>
     <string name="error_olx_auth_prepare_failed">OLX-ке кіруді бастау мүмкін болмады.</string>
@@ -305,10 +325,10 @@
     <string name="account_business_badge">Бизнес</string>
     <string name="profile_account_set_active">Белсенді ету</string>
     <string name="profile_account_add_button">OLX аккаунтын қосу</string>
-    <string name="profile_account_cap_reached_message">Бұл OLX сайтында ең көп дегенде 3 аккаунт қосуға болады. Жаңасын қосу үшін біреуін ажыратыңыз.</string>
+    <string name="profile_account_cap_reached_message">Бұл OLX сайтында ең көп дегенде 3 аккаунт қосуға болады. Жаңасын қосу үшін біреуін ажырат.</string>
     <string name="profile_active_account_details_title">Белсенді аккаунт деректері</string>
     <string name="profile_add_account_confirm_title">OLX аккаунтын қосу</string>
-    <string name="profile_add_account_confirm_subtitle">%1$s сайтында аккаунт қосасыз. Басқа аккаунттарың қосылған күйінде қалады — олардан шығудың қажеті жоқ.</string>
+    <string name="profile_add_account_confirm_subtitle">%1$s сайтында аккаунт қосасың. Басқа аккаунттарың қосылған күйінде қалады — олардан шығудың қажеті жоқ.</string>
     <string name="profile_add_account_confirm_note">Кіру OLX-тің өз бетінде орындалады — SellSnap құпия сөзіңді ешқашан көрмейді.</string>
     <string name="profile_add_account_confirm_continue">OLX-ке өту</string>
     <string name="profile_add_account_confirm_cancel">Бас тарту</string>
@@ -328,7 +348,7 @@
     <string name="profile_disconnect_confirm_cancel">Бас тарту</string>
     <string name="profile_reconnect_account_action">%1$s-ті қайта қосу</string>
     <string name="publish_target_account_label">Жарияланатын аккаунт</string>
-    <string name="publish_target_account_fallback_name">Сіздің OLX аккаунтыңыз</string>
+    <string name="publish_target_account_fallback_name">Сенің OLX аккаунтың</string>
     <string name="publish_target_account_picker_title">Аккаунтты таңдау</string>
     <string name="publish_target_account_picker_subtitle">Жаңа хабарландырулар осында таңдаған аккаунтқа жарияланады.</string>
     <string name="publish_success_target_account">%1$s аккаунтына жарияланды</string>

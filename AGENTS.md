@@ -83,6 +83,11 @@ anything above that does not apply.
 - Depends on `:shared`.
 - Current implementation is tiny; do not assume backend business logic lives here.
 
+### `functions`
+- Firebase Cloud Functions (TypeScript, Node 22), outside the Gradle build.
+- `openai`: HTTP proxy in `europe-west1` that holds the OpenAI key as a Secret Manager secret, verifies the `X-Firebase-AppCheck` header, allows only `POST /v1/responses` with `gpt-4.1`, and forwards OpenAI's status and body unchanged.
+- Deploy: `cd functions && npm install && npm run deploy` (the Firebase CLI runs through `npx firebase-tools`).
+
 ## Gradle Structure
 - Root includes exactly:
   - `:composeApp`
@@ -131,6 +136,7 @@ anything above that does not apply.
 - iOS Xcode sync/build bridge: `:composeApp:embedAndSignAppleFrameworkForXcode` is invoked from `iosApp/iosApp.xcodeproj/project.pbxproj`
 - Xcode compile phase skips the Gradle bridge when `OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED=YES`
 - Server: `server/src/main/kotlin/com/sirelon/aicalories/Application.kt`
+- Cloud Functions: `functions/src/index.ts`
 
 ## Navigation Rules
 - `App.kt` is intentionally thin. Do not move app navigation state into composables.
@@ -149,6 +155,8 @@ anything above that does not apply.
   1. add destination to `AppDestination`
   2. update `AppNavigationViewModel`
   3. register the entry in `App.kt`
+  4. register the key in `navigation/AppNavigationSavedState.kt` — the back stack is persisted
+     through its explicit `subclass(...)` list, so `@Serializable` alone is not enough
 
 ## DI Rules
 - DI framework is Koin.
@@ -181,6 +189,12 @@ Most features use some combination of:
   - Main subareas: `auth/`, `ad/`, `onboarding/`, `profile/`.
 - `features/media`
   - Upload, permission, picker, format conversion helpers used by seller ad photos.
+- `features/announcements`
+  - Launch dialog fed by the Firestore `announcements` collection (one doc = content + rules,
+    filtered on device; schema in `AnnouncementResponse`). Publish via Firestore REST as in the
+    `release-notes` skill. Host images in Firebase Storage: the Android emulator's DNS fails on
+    some third-party hosts (`fastly.picsum.photos` → `UnknownHostException`) while Google hosts
+    resolve, and the dialog silently drops an image that fails to load.
 
 ## Supabase Flow
 - Shared Supabase wrapper: `shared/.../supabase/SupabaseClient.kt`
@@ -204,7 +218,8 @@ Most features use some combination of:
 - **English copy is approved before any locale is touched.** When a ticket adds or rewords
   user-facing strings, post the list — one line per key, `key → text` — and wait for the owner's
   answer. Then run the `localize` agent once, with the final key list. One `localize` run per
-  ticket is the budget; six runs on one milestone is what this rule exists to stop.
+  ticket is the budget; six runs on one milestone is what this rule exists to stop. Each batch of
+  follow-ups the owner orders inside the ticket gets one more run, which carries all of its keys.
 - **Then show the Ukrainian.** Ukrainian is the language the owner actually reads and the primary
   market, so after `localize` returns, post the `key → text` list for `values-uk` before calling
   the ticket done. The other locales follow from it and are not posted.
@@ -226,6 +241,7 @@ Rules: `.claude/rules/edge-to-edge.md` — loads when you open a `ui/`, `*Screen
 - Camera launcher uses expect/actual style placement under `camera/`.
 - Image conversion is platform-specific under `features/media/ImageFormatConverter.*`.
 - Datastore abstraction lives under `datastore/KeyValueStore*`.
+- Drafts are stored with SQLDelight (schema in `composeApp/src/commonMain/sqldelight/`, generated `SellSnapDatabase`). The drivers per platform and `SqlDelightDraftsRepository` live under `features/seller/drafts/data/`; the repository is in `dataStoreMain`, where `Dispatchers.IO` is not visible, so it runs on `Dispatchers.Default`. The web targets use `InMemoryDraftsRepository`. The iOS framework is static, so it carries no `-lsqlite3` of its own; the app links sqlite3 because the FirebaseAnalytics package declares it. Room is unavailable until a KSP release exists for the project's Kotlin version.
 - Platform checks are centralized in `shared/.../platform/PlatformTargets.kt`.
 
 ## Secrets And Config
@@ -237,6 +253,24 @@ Rules: `.claude/rules/edge-to-edge.md` — loads when you open a `ui/`, `*Screen
   - package: `com.sirelon.sellsnap.supabase`
   - object: `SupabaseConfig`
 - Fallback defaults exist for local/dev builds; do not mistake them for production values.
+- The OpenAI key is not in any build. Android and iOS call the `openai` Cloud Function with a Firebase App Check token (`composeApp/.../network/OpenAIEndpoint.kt`, platform modules `OpenAIEndpointModule.*.kt`); the key lives in Secret Manager as `OPENAI_KEY`. Desktop calls OpenAI directly with `OPENAI_KEY` read from the environment at launch. Web has no App Check and cannot generate listings.
+- App Check providers: Play Integrity (Android release), App Attest (iOS release), debug providers in debug builds. A debug build's token must be registered in App Check or the proxy answers 401. Dev machines use fixed tokens: `APP_CHECK_DEBUG_TOKEN` in `local.properties` (Android) and `iosApp/Configuration/AppCheckDebugToken.local.xcconfig` (iOS), both gitignored; the `appcheck-debug-token` skill (`.claude/skills/`) registers them and handles the per-install fallback.
+
+## Push notifications
+
+FCM, shared code in `composeApp/.../features/notifications/`. Every launch reports the user property `notifications_enabled` and subscribes the device to its topics.
+
+- **Topics:** `all`, `all-<lang>` (en/uk/pl/pt/ro/bg/kk; `ru` → `uk`; anything else → `en`), and `qa` (debug builds only, subscribed natively).
+- **Test sends go to `qa` or one device token, never `all*`.** Debug and release share one Firebase app, so an `all*` test reaches real users.
+- **`link` data key** sets the tap target: `store` opens the store page of the receiving platform, `https://…` opens as given, anything else just opens the app.
+- **Send, console:** Messaging → New campaign → Notifications → Target: Topic → Additional options → Custom data `link`.
+- **Send, FCM v1 REST** (works with the owner's `gcloud` login; the Firebase MCP `messaging_send_message` tool failed without a reason on 2026-10-07):
+  `curl -X POST -H "Authorization: Bearer $(gcloud auth print-access-token)" -H "x-goog-user-project: sellsnap-6e85c" -H "Content-Type: application/json" https://fcm.googleapis.com/v1/projects/sellsnap-6e85c/messages:send -d '{"message":{"topic":"qa","notification":{"title":"…","body":"…"},"data":{"link":"store"}}}'`.
+  Everyone except Ukrainian: replace `"topic":"qa"` with `"condition":"'all' in topics && !('all-uk' in topics)"`.
+- **Pair an update push with an `announcements` doc** (see `features/announcements`): users who declined notifications only see the announcement.
+- **Android:** channel `updates`; the SDK displays background messages, `PushMessagingService` displays foreground ones.
+- **iOS:** the APNs key is uploaded in Firebase; `aps-environment` lives in the single `iosApp/iosApp/iosAppRelease.entitlements` (`development`; App Store export re-signs it to `production`, so the `com.sirelon.sellsnap AppStore` profile must include Push Notifications or the export fails). Without notification permission the device still gets the APNs token and topics. FCM refuses topic operations on each launch until the APNs token is set (error 505, no retry), so topic calls wait for `PushTokenBridge`, which the `MessagingDelegate` registration-token callback signals. Under SwiftUI, FCM's swizzled handler takes the APNs token and the app delegate's `didRegisterForRemoteNotificationsWithDeviceToken` is not called, so nothing may depend on it. The share extension asks for permission when it is undecided.
+- **Permission prompt:** a one-time bottom sheet at the start of a returning session in the seller flow, third in the launch-dialog order after the announcement and What's New (`NotificationsPromptViewModel`); once shown it is never offered again. Settings has a Notifications row (mobile only): it shows the OS prompt while the OS can still show it, otherwise it opens the app's system settings (`notificationsTapAction`).
 
 ## Important Build Notes
 - `./gradlew` and the Xcode bridge both depend on `gradle/wrapper/gradle-wrapper.jar`; if it disappears again, shell builds can fall back to local Gradle `9.4.1`, but Xcode sync/build needs the wrapper jar restored.
@@ -246,13 +280,14 @@ Rules: `.claude/rules/edge-to-edge.md` — loads when you open a `ui/`, `*Screen
 - Build `composeApp` Android library artifact: `./gradlew :composeApp:assemble`
 - Build Android app wrapper APK: `./gradlew :androidApp:assembleDebug`
 - Build desktop JVM artifact: `./gradlew :composeApp:jvmJar`
-- Run desktop app: `./gradlew :composeApp:run`
+- Run desktop app: `OPENAI_KEY=sk-... ./gradlew :composeApp:run` (desktop calls OpenAI directly; see Secrets And Config)
 - Run desktop app under Compose Hot Reload: `./gradlew :composeApp:hotRunJvm` (`--auto` for continuous reload; see Desktop UI Verification)
 - Package desktop native app for current OS: `./gradlew :composeApp:packageDistributionForCurrentOS`
 - Build shared module: `./gradlew :shared:build`
 - Build server: `./gradlew :server:build`
 - Run server: `./gradlew :server:run`
 - Run server in Ktor development mode: `./gradlew :server:run -Pdevelopment`
+- Deploy the OpenAI proxy: `cd functions && npm run deploy`; set its key once with `npx firebase-tools functions:secrets:set OPENAI_KEY --project sellsnap-6e85c`
 - Build web Wasm production bundle: `./gradlew :composeApp:wasmJsBrowserProductionWebpack`
 - Run web Wasm: `./gradlew :composeApp:wasmJsBrowserDevelopmentRun`
 - Build web JS production bundle: `./gradlew :composeApp:jsBrowserProductionWebpack`
@@ -318,8 +353,12 @@ Flows live in `.maestro/`, runner scripts in `scripts/maestro-*.sh`. Three thing
   return the *other* device's data.
 - **`screenshotMode` is committed as `false` and must never be committed `true`.** It bypasses
   the publish confirmation, and `scripts/ship.sh` refuses to release while it is enabled.
+- **A debug build without a registered App Check token cannot generate listings.** With the
+  fixed tokens from Secrets And Config in place this is a one-time setup per machine;
+  without them every `clearState` mints a new token and the `appcheck-debug-token` skill has
+  to run again before any flow that generates a listing.
 
-Prefer `testTag` ids over visible text in selectors — flows run in 4+ locales. Photos are never
+Prefer `testTag` ids over visible text in selectors — flows run in 4+ locales. Two exceptions bite: a `ModalBottomSheet` or dialog is its own window, where `testTagsAsResourceId` does not reach, so select its content by text; and `launchApp` grants every runtime permission by default (`POST_NOTIFICATIONS` included), so a flow that needs a permission undecided must pass `permissions: { all: unset }` or launch with `adb shell monkey`. Photos are never
 picked through the OS picker. Full workflow: the user-level `sellsnap-screenshots` skill (`~/.claude/skills/`).
 
 ## Fast “Where Do I Edit?” Guide
@@ -358,6 +397,8 @@ picked through the OS picker. Full workflow: the user-level `sellsnap-screenshot
 - Change AI ad generation pipeline:
   - `features/seller/ad/generate_ad/GenerateAdViewModel.kt`
   - `features/seller/openai/OpenAIClient.kt`
+- Change drafts (what is kept, the generate-screen section, the Drafts screen):
+  - `features/seller/drafts/`
 - Change which OLX top-level categories are user-facing:
   - `features/seller/categories/data/CategoriesRepository.kt` (`notSupportedParentIds`)
 - Change attribute validation rules:
@@ -373,6 +414,10 @@ picked through the OS picker. Full workflow: the user-level `sellsnap-screenshot
 - Change the sold / not-sold outcome data or the AI price-accuracy measurement:
   - `features/seller/my_ads/data/AdvertOutcomeStore.kt`
   - `features/seller/my_ads/domain/AdvertAnalyticsBuckets.kt`
+- Change push notifications (topics, permission, tap target, display):
+  - `features/notifications/`
+  - `androidApp/.../PushMessagingService.kt`, `PushNotifications.kt`
+  - `iosApp/iosApp/iOSApp.swift`
 - Change whether a market may extend listings:
   - `features/seller/auth/domain/OlxCountry.kt` (`supportsExtendCommand`)
 

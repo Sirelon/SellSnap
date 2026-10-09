@@ -181,6 +181,7 @@ import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import kotlin.math.roundToInt
+import kotlin.math.roundToLong
 import kotlin.time.Duration.Companion.milliseconds
 
 private const val TitleMinLength = 10
@@ -345,10 +346,14 @@ internal fun PreviewAdContentRoute(
                 },
             )
 
-            ReadyBanner(
-                elapsedMs = state.generationElapsedMs,
-                modifier = Modifier.padding(horizontal = AppDimens.Spacing.xl3),
-            )
+            // 0 means no generation ran in this flow (reopened from Recent, or a process-death
+            // restore); formatFriendlyElapsedTime would floor it to "1 second".
+            if (state.generationElapsedMs > 0) {
+                ReadyBanner(
+                    elapsedMs = state.generationElapsedMs,
+                    modifier = Modifier.padding(horizontal = AppDimens.Spacing.xl3),
+                )
+            }
 
             // SIR-83 U6: this is a normal scrollable card, not pinned to the bottom bar - a
             // dynamically-shown row inside AppScaffold's bottomBar changes the bar's height
@@ -648,11 +653,13 @@ private fun PreviewAdContent(
         AdTitleCard(
             titleState = titleState,
             isInvalid = isTitleInvalid,
+            onEvent = onEvent,
         )
 
         AdDescriptionCard(
             descriptionState = descriptionState,
             isInvalid = isDescriptionInvalid,
+            onEvent = onEvent,
         )
 
         // FlowRow, not Row: the three labels together run ~310dp in ru and the row has 328dp
@@ -805,6 +812,7 @@ private fun PreviewSectionInputCard(
 private fun AdTitleCard(
     titleState: TextFieldState,
     isInvalid: Boolean,
+    onEvent: (PreviewAdEvent) -> Unit,
 ) {
     PreviewSectionInputCard(
         label = stringResource(Res.string.ad_title_label),
@@ -815,7 +823,12 @@ private fun AdTitleCard(
             if (isInvalid) {
                 ErrorPill()
             }
-            CopyPill(value = titleState.text.toString(), field = "title")
+            CopyPill(
+                value = titleState.text.toString(),
+                field = "title",
+                onCopied = { onEvent(PreviewAdEvent.ListingCopied) },
+                onFeedbackFinished = { onEvent(PreviewAdEvent.CopyFeedbackFinished) },
+            )
             AiGeneratedBadge()
         },
     )
@@ -825,6 +838,7 @@ private fun AdTitleCard(
 private fun AdDescriptionCard(
     descriptionState: TextFieldState,
     isInvalid: Boolean,
+    onEvent: (PreviewAdEvent) -> Unit,
 ) {
     PreviewSectionInputCard(
         label = stringResource(Res.string.ad_description_label),
@@ -835,7 +849,12 @@ private fun AdDescriptionCard(
             if (isInvalid) {
                 ErrorPill()
             }
-            CopyPill(value = descriptionState.text.toString(), field = "description")
+            CopyPill(
+                value = descriptionState.text.toString(),
+                field = "description",
+                onCopied = { onEvent(PreviewAdEvent.ListingCopied) },
+                onFeedbackFinished = { onEvent(PreviewAdEvent.CopyFeedbackFinished) },
+            )
             AiGeneratedBadge()
         },
     )
@@ -875,9 +894,10 @@ private fun AdPriceCard(
                     )
                 }
 
+                // A whole number, as the field shows it: OLX's price field has no use for "1500.0".
                 CopyPill(
                     modifier = Modifier.padding(horizontal = AppDimens.Spacing.xl3),
-                    value = price.toString(),
+                    value = price.roundToLong().toString(),
                     field = "price",
                 )
             }
@@ -1158,6 +1178,10 @@ fun CopyPill(
     value: String,
     field: String,
     modifier: Modifier = Modifier,
+    label: String = stringResource(Res.string.copy_pill_default),
+    eventName: String = AnalyticsEvents.AD_CONTENT_COPIED,
+    onCopied: () -> Unit = {},
+    onFeedbackFinished: () -> Unit = {},
 ) {
     val clipboard = LocalClipboardManager.current
     val analytics: Analytics = koinInject()
@@ -1178,13 +1202,14 @@ fun CopyPill(
             scope.launch {
                 clipboard.setText(AnnotatedString(value))
                 copied = true
+                onCopied()
                 analytics.logEvent(
-                    AnalyticsEvents.AD_CONTENT_COPIED,
+                    eventName,
                     mapOf("field" to field),
                 )
             }
         },
-        text = stringResource(if (copied) Res.string.copy_pill_copied else Res.string.copy_pill_default),
+        text = if (copied) stringResource(Res.string.copy_pill_copied) else label,
         iconResource = if (copied) Res.drawable.ic_circle_check_big else Res.drawable.ic_copy,
         modifier = modifier
     )
@@ -1193,6 +1218,7 @@ fun CopyPill(
         LaunchedEffect(Unit) {
             delay(1400L.milliseconds)
             copied = false
+            onFeedbackFinished()
         }
     }
 }
@@ -1341,10 +1367,12 @@ private fun PreviewAdEditableSectionsPreview(
                 AdTitleCard(
                     titleState = rememberTextFieldState(title),
                     isInvalid = title.trim().length < TitleMinLength,
+                    onEvent = {},
                 )
                 AdDescriptionCard(
                     descriptionState = rememberTextFieldState(description),
                     isInvalid = description.trim().length < DescriptionMinLength,
+                    onEvent = {},
                 )
             }
         }

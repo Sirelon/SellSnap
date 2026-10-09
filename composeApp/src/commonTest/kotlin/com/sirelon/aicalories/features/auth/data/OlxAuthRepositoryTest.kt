@@ -27,6 +27,7 @@ import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlinx.coroutines.runBlocking
 
@@ -61,6 +62,32 @@ class OlxAuthRepositoryTest {
     }
 
     @Test
+    fun `abandonPendingAuthorization marks the open login once and keeps it for a late callback`() = runBlocking {
+        val sessionStore = OlxAuthSessionStore(InMemoryOlxKeyValueStore(), testJson)
+        val repository = createRepository(
+            engine = MockEngine { error("No HTTP call expected.") },
+            sessionStore = sessionStore,
+        )
+        val request = repository.createAuthorizationRequest()
+
+        val first = repository.abandonPendingAuthorization()
+        val second = repository.abandonPendingAuthorization()
+
+        assertEquals(request.state, first?.state)
+        assertNull(second)
+        val kept = sessionStore.read()
+        assertEquals(request.state, kept?.state)
+        assertEquals(true, kept?.abandoned)
+    }
+
+    @Test
+    fun `abandonPendingAuthorization returns null when no login is open`() = runBlocking {
+        val repository = createRepository(engine = MockEngine { error("No HTTP call expected.") })
+
+        assertNull(repository.abandonPendingAuthorization())
+    }
+
+    @Test
     fun `completeAuthorization rejects state mismatch`() = runBlocking {
         val repository = createRepository(engine = MockEngine { error("No HTTP call expected.") })
         val request = repository.createAuthorizationRequest()
@@ -72,6 +99,20 @@ class OlxAuthRepositoryTest {
         assertTrue(result.isFailure)
         assertIs<OlxApiException>(result.exceptionOrNull())
         assertIs<OlxApiError.InvalidState>((result.exceptionOrNull() as OlxApiException).error)
+        Unit
+    }
+
+    @Test
+    fun `completeAuthorization surfaces an OAuth error from the redirect with its code`() = runBlocking {
+        val repository = createRepository(engine = MockEngine { error("No HTTP call expected.") })
+        val request = repository.createAuthorizationRequest()
+
+        val result = runCatching {
+            repository.exchangeAuthorizationCallback("${request.redirectUri}?error=access_denied&state=${request.state}")
+        }
+
+        val error = assertIs<OlxApiError.AuthorizationError>(assertIs<OlxApiException>(result.exceptionOrNull()).error)
+        assertEquals("access_denied", error.code)
         Unit
     }
 

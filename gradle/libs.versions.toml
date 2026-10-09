@@ -48,6 +48,8 @@ calf = "0.13.0"
 supabase = "3.8.0"
 # https://github.com/yshrsmz/BuildKonfig/releases
 buildKonfig = "0.22.0"
+# https://github.com/sqldelight/sqldelight/releases
+sqldelight = "2.4.0"
 
 compose = "1.13.0-alpha01"
 playServicesLocation = "21.4.0"
@@ -136,7 +138,18 @@ gitlive-firebase-crashlytics = { module = "dev.gitlive:firebase-crashlytics", ve
 gitlive-firebase-storage = { module = "dev.gitlive:firebase-storage", version.ref = "gitliveFirebase" }
 gitlive-firebase-installations = { module = "dev.gitlive:firebase-installations", version.ref = "gitliveFirebase" }
 gitlive-firebase-firestore = { module = "dev.gitlive:firebase-firestore", version.ref = "gitliveFirebase" }
+gitlive-firebase-messaging = { module = "dev.gitlive:firebase-messaging", version.ref = "gitliveFirebase" }
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
+sqldelight-runtime = { module = "app.cash.sqldelight:runtime", version.ref = "sqldelight" }
+sqldelight-coroutines = { module = "app.cash.sqldelight:coroutines-extensions", version.ref = "sqldelight" }
+sqldelight-android-driver = { module = "app.cash.sqldelight:android-driver", version.ref = "sqldelight" }
+sqldelight-native-driver = { module = "app.cash.sqldelight:native-driver", version.ref = "sqldelight" }
+sqldelight-sqlite-driver = { module = "app.cash.sqldelight:sqlite-driver", version.ref = "sqldelight" }
+firebase-appcheck = { module = "com.google.firebase:firebase-appcheck" }
+firebase-messaging = { module = "com.google.firebase:firebase-messaging" }
+firebase-appcheck-playintegrity = { module = "com.google.firebase:firebase-appcheck-playintegrity" }
+firebase-appcheck-debug = { module = "com.google.firebase:firebase-appcheck-debug" }
+firebase-components = { module = "com.google.firebase:firebase-components" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
@@ -153,3 +166,4 @@ kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref =
 buildKonfig = { id = "com.codingfeline.buildkonfig", version.ref = "buildKonfig" }
 googleServices = { id = "com.google.gms.google-services", version.ref = "googleServices" }
 firebaseCrashlytics = { id = "com.google.firebase.crashlytics", version.ref = "crashlyticsPlugin" }
+sqldelight = { id = "app.cash.sqldelight", version.ref = "sqldelight" }

@@ -66,6 +66,8 @@ import com.sirelon.sellsnap.features.media.ui.CameraGalleryPicker
 import com.sirelon.sellsnap.features.media.ui.MAX_PHOTOS
 import com.sirelon.sellsnap.features.media.ui.PhotosGrid
 import com.sirelon.sellsnap.features.seller.ad.AdvertisementWithAttributes
+import com.sirelon.sellsnap.features.seller.drafts.Draft
+import com.sirelon.sellsnap.features.seller.drafts.ui.DraftsSection
 import com.sirelon.sellsnap.generated.resources.Res
 import com.sirelon.sellsnap.generated.resources.add_photos_to_continue
 import com.sirelon.sellsnap.generated.resources.ai_hint_label
@@ -93,6 +95,7 @@ private const val MAX_PROMPT_CHARS = 120
 @Composable
 fun GenerateAdScreen(
     openAdPreview: (AdvertisementWithAttributes) -> Unit,
+    openDrafts: () -> Unit,
     modifier: Modifier = Modifier,
     onLoadingChanged: (Boolean) -> Unit = {},
 ) {
@@ -141,6 +144,8 @@ fun GenerateAdScreen(
             }
 
             is GenerateAdContract.GenerateAdEffect.OpenAdPreview -> openAdPreview(effect.ad)
+
+            GenerateAdContract.GenerateAdEffect.OpenDrafts -> openDrafts()
         }
     }
 
@@ -170,6 +175,12 @@ fun GenerateAdScreen(
                     hapticFeedback.performStepFeedback()
                     viewModel.onEvent(GenerateAdContract.GenerateAdEvent.Submit)
                 },
+                onOpenDraft = {
+                    viewModel.onEvent(GenerateAdContract.GenerateAdEvent.OpenDraft(it))
+                },
+                onSeeAllDrafts = {
+                    viewModel.onEvent(GenerateAdContract.GenerateAdEvent.OpenAllDrafts)
+                },
                 modifier = modifier,
             )
         }
@@ -189,6 +200,8 @@ private fun GenerateAdScreenContent(
     onUploadClick: () -> Unit,
     onRemovePhoto: (KmpFile) -> Unit,
     onSubmitClick: () -> Unit,
+    onOpenDraft: (Draft) -> Unit,
+    onSeeAllDrafts: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val dismissKeyboard = rememberKeyboardDismissAction()
@@ -261,6 +274,17 @@ private fun GenerateAdScreenContent(
                             enabled = !state.isLoading,
                         )
                     }
+                }
+            }
+
+            if (state.latestDraft != null) {
+                item {
+                    DraftsSection(
+                        latestDraft = state.latestDraft,
+                        currency = state.draftsCurrency,
+                        onOpen = onOpenDraft,
+                        onSeeAll = onSeeAllDrafts,
+                    )
                 }
             }
 
@@ -566,6 +590,8 @@ private fun GenerateAdScreenEmptyPreview() {
             onUploadClick = {},
             onRemovePhoto = {},
             onSubmitClick = {},
+            onOpenDraft = {},
+            onSeeAllDrafts = {},
         )
     }
 }
@@ -584,6 +610,8 @@ private fun GenerateAdScreenWithPromptPreview() {
             onUploadClick = {},
             onRemovePhoto = {},
             onSubmitClick = {},
+            onOpenDraft = {},
+            onSeeAllDrafts = {},
         )
     }
 }

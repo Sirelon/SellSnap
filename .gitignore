@@ -41,6 +41,9 @@ mono_crash.*
 [Dd]ebug/
 [Dd]ebugPublic/
 [Rr]elease/
+# Android build-type source sets are sources, not build output
+!androidApp/src/debug/
+!androidApp/src/release/
 [Rr]eleases/
 x64/
 x86/
@@ -332,6 +335,8 @@ render.experimental.xml
 .maestro/.env
 fastlane/google-play-key.json
 fastlane/*.p8
+# Signing profiles from `fastlane run sigh`; they live in Xcode's profile folder, not the repo.
+*.mobileprovision
 
 # Store-screenshot generator byproducts. The SVGs inline their source PNGs as base64,
 # so each one is multiple MB; they are regenerated on every run and are not deliverables.
@@ -339,3 +344,11 @@ Design/StoreScreenshots/*.svg
 Design/AppStoreScreenshots/**/*.svg
 *.raw.png
 .claude/tmp/
+
+# Firebase CLI
+.firebase/
+firebase-debug.log
+firebase-debug.*.log
+
+# Per-machine Xcode settings (App Check debug token)
+*.local.xcconfig

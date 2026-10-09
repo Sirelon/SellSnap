@@ -136,6 +136,22 @@ interface PreviewAdContract {
         data object UndoRemoveImage : PreviewAdEvent
 
         data class VoteGeneratedContent(val vote: GeneratedContentVote) : PreviewAdEvent
+
+        /**
+         * The title or description was copied. Counts this listing once toward the store-review
+         * gate, however many times either pill is tapped; the price pill does not send it.
+         */
+        data object ListingCopied : PreviewAdEvent
+
+        /**
+         * The pill's "Copied" feedback has finished and the pill is back to its resting state.
+         * This is where the store-review prompt is requested, not at the tap: the tap is the
+         * moment the seller is switching to the marketplace app to paste, and a system sheet over
+         * the "Copied" confirmation would cover the feedback they just asked for. Waiting out the
+         * feedback is the same pattern as the publish success screen, which delays its request
+         * until the screen has settled. A seller who leaves within that window is not asked.
+         */
+        data object CopyFeedbackFinished : PreviewAdEvent
     }
 
     sealed interface PreviewAdEffect {
@@ -144,6 +160,9 @@ interface PreviewAdContract {
         data class PublishSuccess(val data: PublishSuccessData) : PreviewAdEffect
         data class PublishFailure(val message: String) : PreviewAdEffect
         data class NavigateToProfile(val reason: String) : PreviewAdEffect
+
+        /** The review gate granted a request: the screen calls the platform requester. */
+        data object RequestStoreReview : PreviewAdEffect
 
         /** D6/A5: the token about to publish did not belong to the account shown on this screen
          * (a missed [com.sirelon.sellsnap.features.seller.profile.data.SellerAccountRepository.setActiveAccount]

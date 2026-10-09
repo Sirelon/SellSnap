@@ -10,6 +10,8 @@
 	     FirebaseApp.configure() and cannot be backfilled by a later runtime enable. Opting out
 	     calls setAnalyticsCollectionEnabled(false), which Firebase persists across launches and
 	     which takes precedence over this default. -->
+	<key>AppCheckDebugToken</key>
+	<string>$(APP_CHECK_DEBUG_TOKEN)</string>
 	<key>FIREBASE_ANALYTICS_COLLECTION_ENABLED</key>
 	<true/>
 	<key>FirebaseCrashlyticsCollectionEnabled</key>

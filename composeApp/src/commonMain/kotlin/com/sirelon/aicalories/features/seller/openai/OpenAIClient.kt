@@ -9,6 +9,7 @@ import com.aallam.openai.api.response.ResponseRequest
 import com.aallam.openai.client.OpenAI
 import com.sirelon.sellsnap.features.seller.ad.Advertisement
 import com.sirelon.sellsnap.features.seller.ad.data.GeneratedAdMapper
+import com.sirelon.sellsnap.features.seller.ad.data.roundedToMarketSteps
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxCountry
 import com.sirelon.sellsnap.features.seller.categories.domain.AttributeInputType
 import com.sirelon.sellsnap.features.seller.categories.domain.OlxAttribute
@@ -28,13 +29,13 @@ const val AD_GENERATION_MODEL_ID = "gpt-4.1"
 
 // Bump whenever adGenerationInstructions changes, so ad-generation-log records stay attributable
 // to the exact prompt that produced them.
-const val AD_GENERATION_PROMPT_VERSION = "v3"
+const val AD_GENERATION_PROMPT_VERSION = "v4"
 
 private val DEFAULT_MODEL = ModelId(AD_GENERATION_MODEL_ID)
 private const val DEFAULT_IMAGE_DETAIL = "high"
 private val NUMBER_PATTERN = Regex("""-?\d+(?:\.\d+)?""")
 
-private fun adGenerationInstructions(country: OlxCountry): String = """
+internal fun adGenerationInstructions(country: OlxCountry): String = """
 You are writing a single second-hand listing for OLX ${country.nameEn}.
 Write like a real private seller talking about their own item — warm, concrete, specific.
 Do not sound like a product catalogue, an image caption, or a bot.
@@ -64,8 +65,8 @@ If the seller note is present, treat it as the source of truth.
 Use the photos to add concrete visible details that support the seller's facts: colour, visible wear, accessories included, distinguishing features. If the seller note contradicts the photos, trust the seller.
 
 Output fields:
-- title: short, searchable, in ${country.language}. Prefer item type + brand + key detail + exact size when available. No emoji, no ALL CAPS, no hashtags.
-- description: 3 to 6 short sentences in ${country.language}, conversational tone. No bullet points, no markdown, no hashtags, no emoji. If a seller note is present, at least one sentence should reflect its personal context (reason for selling, how long it was worn, etc.).
+- title: short, searchable, in ${country.language}. Prefer item type + brand + key detail + exact size when available. No emoji, no ALL CAPS, no hashtags. Never put a placeholder for an unknown value in the title ("r. brak", "розмір невідомий", "size unknown", "N/A", "?"): if the size, model or colour is not visible and not in the seller note, leave it out of the title.
+- description: 3 to 6 short sentences in ${country.language}, conversational tone. No bullet points, no markdown, no hashtags, no emoji. The first sentence states what the item is; it never opens with a selling verb or a stock phrase such as "Sprzedaję", "Продам", "Vând", "Vendo" or "Продавам". Fill the sentences with concrete visible detail; write fewer only when the photos and seller note truly show little, because then an accurate shorter description beats a padded one. If a seller note is present, at least one sentence should reflect its personal context (reason for selling, how long it was worn, etc.).
 - suggestedPrice, minPrice, maxPrice: plain integers in ${country.currencyCode} for the ${country.nameEn} second-hand market. Not retail, not collectible premium. Ensure minPrice <= suggestedPrice <= maxPrice.
 
 Guardrails:
@@ -74,6 +75,7 @@ Guardrails:
 - With no seller note you know nothing beyond the photos. Do not write how long the item was owned or used, how often it was worn, what it was bought for, who used it, or why it is being sold. Phrases like "barely worn", "used a couple of times", or "selling because I bought another one" are inventions unless the seller wrote them.
 - ${country.nameEn} is the marketplace, not a fact about this seller. Never turn it into a place the item is located or can be collected from.
 - Do not invent brand, size, material, defects, or condition.
+- A photo shows how an item looks, not how it feels or performs. Unless the seller note states it, never claim comfort, warmth or insulation, fit (how it fits or sits on the body), durability, smell or freshness, or that it is ideal or perfect for an occasion, activity, season or kind of person ("ideal for…").
 - Do not infer the season of clothing unless the seller says so or the photos make it unmistakable.
 - If uncertain, simply omit it rather than guessing.
 - Do not add filler phrases that are generic placeholders — write only real content.
@@ -198,8 +200,10 @@ class OpenAIClient(
             request = ResponseRequest(
                 model = model,
                 instructions = adGenerationInstructions(country).trimIndent(),
-                // Higher temperature gives the description a natural seller voice instead of a catalogue tone.
-                temperature = 0.7,
+                // Low so the same item gets the same price from one generation to the next: at 0.7
+                // prices for one item drifted up to 46% apart (SIR-116). The opener rule in the
+                // instructions now carries the variety in voice that the higher temperature gave.
+                temperature = 0.3,
                 // Polish and Ukrainian tokenize at roughly twice the English rate, so a six-sentence
                 // description plus title and three prices needs this much headroom; a 600 cap was hit in production.
                 maxOutputTokens = 1000,
@@ -231,7 +235,10 @@ class OpenAIClient(
             return AdAnalysis.Unusable(reason)
         }
 
-        return AdAnalysis.Generated(listingResponse.id, mapper.mapToDomain(generatedAd, images))
+        return AdAnalysis.Generated(
+            responseId = listingResponse.id,
+            advertisement = mapper.mapToDomain(generatedAd, images).roundedToMarketSteps(country),
+        )
     }
 
     private fun createListingAnalysisUserItem(

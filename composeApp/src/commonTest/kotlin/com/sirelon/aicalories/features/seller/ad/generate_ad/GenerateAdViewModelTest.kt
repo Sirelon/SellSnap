@@ -8,6 +8,7 @@ import com.mohamedrejeb.calf.io.KmpFile
 import com.sirelon.sellsnap.analytics.Analytics
 import com.sirelon.sellsnap.analytics.AnalyticsEvents
 import com.sirelon.sellsnap.features.auth.data.InMemoryOlxKeyValueStore
+import com.sirelon.sellsnap.features.common.presentation.awaitEffect
 import com.sirelon.sellsnap.features.media.PassthroughImageFormatConverter
 import com.sirelon.sellsnap.features.media.upload.DraftMediaFileStore
 import com.sirelon.sellsnap.features.media.upload.DraftPhoto
@@ -19,6 +20,8 @@ import com.sirelon.sellsnap.features.media.upload.PhotoUploader
 import com.sirelon.sellsnap.features.media.upload.UploadedFile
 import com.sirelon.sellsnap.features.media.upload.UploadingItem
 import com.sirelon.sellsnap.features.seller.ad.AdFlowTimerStore
+import com.sirelon.sellsnap.features.seller.ad.Advertisement
+import com.sirelon.sellsnap.features.seller.ad.AdvertisementWithAttributes
 import com.sirelon.sellsnap.features.seller.ad.generation_log.NoOpAdGenerationLogRepository
 import com.sirelon.sellsnap.features.seller.ad.loadScreenshotPhotos
 import com.sirelon.sellsnap.features.seller.auth.data.GuestModeStore
@@ -35,13 +38,22 @@ import com.sirelon.sellsnap.features.seller.auth.domain.OlxAuthCallback
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxCountry
 import com.sirelon.sellsnap.features.seller.categories.data.CategoriesRepository
 import com.sirelon.sellsnap.features.seller.categories.domain.CategoriesMapper
+import com.sirelon.sellsnap.features.seller.drafts.Draft
+import com.sirelon.sellsnap.features.seller.drafts.InMemoryDraftsRepository
 import com.sirelon.sellsnap.features.seller.openai.OpenAIClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.MockEngineConfig
+import io.ktor.client.engine.mock.MockRequestHandler
+import io.ktor.client.engine.mock.respond
+import io.ktor.http.HttpHeaders
+import io.ktor.http.content.TextContent
+import io.ktor.http.headersOf
+import com.sirelon.sellsnap.features.common.presentation.awaitEffect
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -49,6 +61,7 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.Json
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -236,7 +249,133 @@ class GenerateAdViewModelTest {
             advanceUntilIdle()
         }
 
+    @Test
+    fun `opening a draft reopens the preview for it and logs draft_opened`() =
+        runTest(testDispatcher) {
+            val harness = buildHarness()
+            val saved = listing("Nike Air Max 90")
+            harness.draftsRepository.upsert(draft(saved, countryCode = "ua", updatedAt = 1_000L))
+            val latest = harness.viewModel.state.first { it.latestDraft != null }.latestDraft!!
+
+            harness.viewModel.onEvent(GenerateAdContract.GenerateAdEvent.OpenDraft(latest))
+
+            val effect = harness.viewModel.effects.awaitEffect<GenerateAdContract.GenerateAdEffect.OpenAdPreview>()
+            assertEquals(saved, effect.ad)
+            val opened = harness.analytics.events.single { it.first == AnalyticsEvents.DRAFT_OPENED }
+            assertEquals("generate", opened.second["source"])
+        }
+
+    @Test
+    fun `the drafts section shows the latest draft of the current country and follows a country change`() =
+        runTest(testDispatcher) {
+            val harness = buildHarness()
+            harness.draftsRepository.upsert(draft(listing("Older Ukrainian listing"), countryCode = "ua", updatedAt = 1_000L))
+            harness.draftsRepository.upsert(draft(listing("Latest Ukrainian listing"), countryCode = "ua", updatedAt = 2_000L))
+            harness.draftsRepository.upsert(draft(listing("Polish listing"), countryCode = "pl", updatedAt = 3_000L))
+
+            try {
+                val inUkraine = harness.viewModel.state.first { it.latestDraft != null }
+                assertEquals("Latest Ukrainian listing", inUkraine.latestDraft?.listing?.advertisement?.title)
+
+                harness.countryStore.save(OlxCountry.PL)
+
+                val inPoland = harness.viewModel.state.first { state ->
+                    state.latestDraft?.listing?.advertisement?.title == "Polish listing"
+                }
+                assertEquals("PLN", inPoland.draftsCurrency.code)
+            } finally {
+                // save() writes the process-global current country, which other tests read.
+                harness.countryStore.save(OlxCountry.UA)
+            }
+        }
+
+    @Test
+    fun `see all asks the screen to open Drafts`() = runTest(testDispatcher) {
+        val harness = buildHarness()
+
+        harness.viewModel.onEvent(GenerateAdContract.GenerateAdEvent.OpenAllDrafts)
+
+        harness.viewModel.effects.awaitEffect<GenerateAdContract.GenerateAdEffect.OpenDrafts>()
+    }
+
+    @Test
+    fun `an empty answer is retried once with the same photo urls and the second answer succeeds`() =
+        runTest(testDispatcher) {
+            val requestBodies = mutableListOf<String>()
+            val harness = buildHarness(handler = { request ->
+                requestBodies += (request.body as TextContent).text
+                respondWithListing(if (requestBodies.size == 1) EMPTY_LISTING else VALID_LISTING)
+            })
+
+            harness.viewModel.onEvent(GenerateAdContract.GenerateAdEvent.Submit)
+            val effect = harness.viewModel.effects.awaitEffect<GenerateAdContract.GenerateAdEffect.OpenAdPreview>()
+
+            assertEquals(2, requestBodies.size)
+            assertEquals(requestBodies[0], requestBodies[1], "the retry sends the same photo urls, nothing re-uploaded")
+            assertEquals("Nike Air Max 90", effect.ad.advertisement.title)
+            val succeeded = harness.analytics.events.single { it.first == AnalyticsEvents.AD_GENERATION_SUCCEEDED }
+            assertEquals(1, succeeded.second["retry_count"])
+            assertTrue(harness.analytics.events.none { it.first == AnalyticsEvents.AD_GENERATION_FAILED })
+        }
+
+    @Test
+    fun `an answer that is fine first time logs retry_count 0`() = runTest(testDispatcher) {
+        val harness = buildHarness(handler = { respondWithListing(VALID_LISTING) })
+
+        harness.viewModel.onEvent(GenerateAdContract.GenerateAdEvent.Submit)
+        harness.viewModel.effects.awaitEffect<GenerateAdContract.GenerateAdEffect.OpenAdPreview>()
+
+        val succeeded = harness.analytics.events.single { it.first == AnalyticsEvents.AD_GENERATION_SUCCEEDED }
+        assertEquals(0, succeeded.second["retry_count"])
+    }
+
+    @Test
+    fun `two empty answers fail with reason empty_output after exactly one retry`() =
+        runTest(testDispatcher) {
+            var requests = 0
+            val harness = buildHarness(handler = {
+                requests++
+                respondWithListing(EMPTY_LISTING)
+            })
+
+            harness.viewModel.onEvent(GenerateAdContract.GenerateAdEvent.Submit)
+            harness.viewModel.effects.awaitEffect<GenerateAdContract.GenerateAdEffect.ShowMessage>()
+
+            assertEquals(2, requests, "one try plus exactly one retry")
+            val failed = harness.analytics.events.single { it.first == AnalyticsEvents.AD_GENERATION_FAILED }
+            assertEquals("empty_output", failed.second["reason"])
+            assertEquals(1, failed.second["retry_count"])
+            assertTrue(harness.analytics.events.none { it.first == AnalyticsEvents.AD_GENERATION_SUCCEEDED })
+            assertFalse(harness.viewModel.state.value.isLoading)
+        }
+
+    private fun io.ktor.client.engine.mock.MockRequestHandleScope.respondWithListing(listing: String) = respond(
+        content = """{"id":"resp_1","status":"completed","output":[{"id":"msg_1","type":"message","role":"assistant","content":[{"type":"output_text","text":${Json.encodeToString(String.serializer(), listing)}}]}]}""",
+        headers = headersOf(HttpHeaders.ContentType, "application/json"),
+    )
+
     // --- test harness -----------------------------------------------------------------------
+
+    private fun listing(title: String) = AdvertisementWithAttributes(
+        advertisement = Advertisement(
+            title = title,
+            description = "Description of $title",
+            images = listOf("https://x/$title.jpg"),
+            suggestedPrice = 100f,
+            minPrice = 90f,
+            maxPrice = 110f,
+        ),
+        filledAttributes = emptyMap(),
+        generationSessionId = "session-$title",
+    )
+
+    private fun draft(listing: AdvertisementWithAttributes, countryCode: String, updatedAt: Long) = Draft(
+        id = checkNotNull(listing.generationSessionId),
+        countryCode = countryCode,
+        createdAtEpochSeconds = updatedAt,
+        updatedAtEpochSeconds = updatedAt,
+        listing = listing,
+    )
 
     private suspend fun buildHarness(
         uploader: PhotoUploader = AlreadyUploadedPhotoUploader(),
@@ -244,11 +383,12 @@ class GenerateAdViewModelTest {
             progress = 100.0,
             uploadedFile = UploadedFile(id = "1", path = "drafts/photo1.jpg"),
         ),
+        handler: MockRequestHandler = { awaitCancellation() },
     ): Harness {
         val analytics = FakeAnalytics()
         val engine = MockEngine(
             MockEngineConfig().apply {
-                addHandler { awaitCancellation() }
+                addHandler(handler)
                 dispatcher = testDispatcher
             },
         )
@@ -285,6 +425,7 @@ class GenerateAdViewModelTest {
             repository = MediaUploadRepository(uploader = uploader),
         )
 
+        val draftsRepository = InMemoryDraftsRepository()
         val viewModel = GenerateAdViewModel(
             mediaUploadHelper = mediaUploadHelper,
             draftMediaFileStore = FakeDraftMediaFileStore,
@@ -297,6 +438,7 @@ class GenerateAdViewModelTest {
             json = testJson,
             analytics = analytics,
             adGenerationLogRepository = NoOpAdGenerationLogRepository,
+            draftsRepository = draftsRepository,
         )
 
         authRepository.enterGuestMode()
@@ -312,12 +454,25 @@ class GenerateAdViewModelTest {
             )
         }
 
-        return Harness(viewModel, analytics)
+        return Harness(
+            viewModel = viewModel,
+            analytics = analytics,
+            draftsRepository = draftsRepository,
+            countryStore = countryStore,
+        )
+    }
+
+    private companion object {
+        const val EMPTY_LISTING = """{"title":"","description":"","suggestedPrice":0,"minPrice":0,"maxPrice":0}"""
+        const val VALID_LISTING =
+            """{"title":"Nike Air Max 90","description":"Worn twice, clean sole.","suggestedPrice":1500,"minPrice":1200,"maxPrice":1800}"""
     }
 
     private data class Harness(
         val viewModel: GenerateAdViewModel,
         val analytics: FakeAnalytics,
+        val draftsRepository: InMemoryDraftsRepository,
+        val countryStore: OlxCountryStore,
     )
 
     private class TestCredentialsProvider : OlxCredentialsProvider {

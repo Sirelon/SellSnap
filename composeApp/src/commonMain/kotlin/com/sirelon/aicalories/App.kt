@@ -55,7 +55,12 @@ import com.sirelon.sellsnap.designsystem.screens.LoadingOverlay
 import com.sirelon.sellsnap.di.appModule
 import com.sirelon.sellsnap.di.networkModule
 import com.sirelon.sellsnap.features.consent.ConsentScreen
+import com.sirelon.sellsnap.features.announcements.presentation.AnnouncementViewModel
+import com.sirelon.sellsnap.features.announcements.ui.AnnouncementDialog
+import com.sirelon.sellsnap.features.review.ReviewPromptCoordinator
 import com.sirelon.sellsnap.features.review.StoreReviewPromptEffect
+import com.sirelon.sellsnap.features.review.rememberStoreReviewRequester
+import com.sirelon.sellsnap.features.seller.ad.AdvertisementWithAttributes
 import com.sirelon.sellsnap.features.seller.ad.generate_ad.GenerateAdScreen
 import com.sirelon.sellsnap.features.seller.ad.preview_ad.PreviewAdContentRoute
 import com.sirelon.sellsnap.features.seller.ad.preview_ad.PreviewAdContract
@@ -68,11 +73,13 @@ import com.sirelon.sellsnap.features.seller.ad.preview_ad.ui.PublishingScreen
 import com.sirelon.sellsnap.features.seller.ad.publish_success.PublishSuccessScreen
 import com.sirelon.sellsnap.features.seller.ad.screenshotMode
 import com.sirelon.sellsnap.features.seller.auth.data._currentOlxCountry
+import com.sirelon.sellsnap.features.seller.auth.presentation.OlxAuthDismissReason
 import com.sirelon.sellsnap.features.seller.auth.presentation.OlxCountryPickerScreenRoute
 import com.sirelon.sellsnap.features.seller.auth.presentation.SellerLandingScreenRoute
 import com.sirelon.sellsnap.features.seller.auth.presentation.rememberOlxAuthLauncher
 import com.sirelon.sellsnap.features.seller.categories.domain.OlxCategory
 import com.sirelon.sellsnap.features.seller.categories.presentation.CategoryPickerSheet
+import com.sirelon.sellsnap.features.seller.drafts.ui.DraftsScreenRoute
 import com.sirelon.sellsnap.features.seller.my_ads.ui.MyAdvertsScreenRoute
 import com.sirelon.sellsnap.features.seller.onboarding.OnboardingScreen
 import com.sirelon.sellsnap.features.seller.profile.data.SellerAccountRepository
@@ -82,6 +89,8 @@ import com.sirelon.sellsnap.features.seller.profile.ui.DisconnectOlxAccountConfi
 import com.sirelon.sellsnap.features.seller.profile.ui.OlxAccountAuthFailedSheet
 import com.sirelon.sellsnap.features.seller.profile.ui.ProfileScreenRoute
 import com.sirelon.sellsnap.features.seller.settings.ui.SettingsScreenRoute
+import com.sirelon.sellsnap.features.notifications.presentation.NotificationsPromptViewModel
+import com.sirelon.sellsnap.features.notifications.ui.NotificationsPromptRoute
 import com.sirelon.sellsnap.features.whatsnew.presentation.WhatsNewViewModel
 import com.sirelon.sellsnap.features.whatsnew.ui.AllReleasesScreenRoute
 import com.sirelon.sellsnap.features.whatsnew.ui.WhatsNewPromptSheet
@@ -138,6 +147,16 @@ fun App() {
             val accountRepository: SellerAccountRepository = koinInject()
             val analytics: Analytics = koinInject()
             val coroutineScope = rememberCoroutineScope()
+            // Add-account/reconnect never logs auth_started, so there is no duration here - see
+            // AUTH_ABANDONED. The pending session is marked so the next start does not report the
+            // same login again.
+            val logAuthAbandoned: (OlxAuthDismissReason) -> Unit = { reason ->
+                analytics.logEvent(
+                    AnalyticsEvents.AUTH_ABANDONED,
+                    mapOf("reason" to reason.analyticsValue, "country" to _currentOlxCountry.code),
+                )
+                coroutineScope.launch { accountRepository.abandonPendingAuthorization() }
+            }
             var isDeletingAccountData by remember { mutableStateOf(false) }
             var isDisconnectingAccount by remember { mutableStateOf(false) }
             val uriHandler = LocalUriHandler.current
@@ -147,7 +166,7 @@ fun App() {
             // platform mechanism, so having two instances is harmless (see OlxExternalAuthLauncher).
             val addAccountAuthLauncher = rememberOlxAuthLauncher(
                 forceReauth = true,
-                onDismissed = { analytics.logEvent(AnalyticsEvents.AUTH_ABANDONED) },
+                onDismissed = logAuthAbandoned,
             )
             fun startAddOrReconnectAuthorization() {
                 coroutineScope.launch {
@@ -161,18 +180,21 @@ fun App() {
             // merge, since the entries that read them never had per-entry ViewModelStore scoping
             // either.
             val whatsNewViewModel: WhatsNewViewModel = koinViewModel()
+            val announcementViewModel: AnnouncementViewModel = koinViewModel()
+            val notificationsPromptViewModel: NotificationsPromptViewModel = koinViewModel()
+            val reviewPromptCoordinator: ReviewPromptCoordinator = koinInject()
             var pendingCategory by remember { mutableStateOf<OlxCategory?>(null) }
             var isGeneratingAd by remember { mutableStateOf(false) }
             var isPreviewPublishing by remember { mutableStateOf(false) }
             val authLauncher = rememberOlxAuthLauncher(
-                onDismissed = { analytics.logEvent(AnalyticsEvents.AUTH_ABANDONED) },
+                onDismissed = logAuthAbandoned,
             )
             // SIR-83 (D5): a second launcher that forces a fresh OLX login, used only for
             // add-account and reconnect so the seller isn't silently bounced back into an account
             // they already have.
             val authLauncherForceReauth = rememberOlxAuthLauncher(
                 forceReauth = true,
-                onDismissed = { analytics.logEvent(AnalyticsEvents.AUTH_ABANDONED) },
+                onDismissed = logAuthAbandoned,
             )
             val connectOlxReason = stringResource(Res.string.guest_connect_olx_cta)
 
@@ -187,7 +209,7 @@ fun App() {
             // (WhatsNewPrompt, DeleteAccountDataConfirm, ...) - search back past those specific
             // overlay entries only for the tab underneath, so the bar stays visible under a sheet
             // but still correctly disappears under a genuinely pushed full-screen destination
-            // (PreviewAd, ImagesPreview, AllReleases, SellerPublishSuccess, ...), where tapping a
+            // (PreviewAd, ImagesPreview, AllReleases, Drafts, SellerPublishSuccess, ...), where tapping a
             // tab would silently discard whatever's in progress there without its own confirm step.
             val selectedRootTab = navVm.backStack.lastOrNull { !it.isOverlayEntry() }.toSellerRootTab()
 
@@ -196,16 +218,40 @@ fun App() {
             // doesn't change selectedRootTab - never re-fires this and re-adds a prompt the seller
             // just dismissed before its async "seen" write has landed.
             val isInSellerFlow = selectedRootTab != null
+            //
+            // One launch dialog per process, in this order: an announcement, else What's New, else
+            // the one-time notifications prompt (second or later session only). Whichever is shown
+            // sets the coordinator flag so a later run of this effect (the flag flips
+            // false -> true on every full-screen push and pop) does nothing.
             LaunchedEffect(isInSellerFlow) {
-                if (isInSellerFlow && whatsNewViewModel.shouldShowDialog()) {
+                if (!isInSellerFlow || reviewPromptCoordinator.launchPromptShownThisSession) return@LaunchedEffect
+                if (announcementViewModel.shouldShow()) return@LaunchedEffect
+                if (whatsNewViewModel.shouldShowDialog()) {
                     navVm.backStack.add(AppKey.WhatsNewPrompt)
+                } else if (notificationsPromptViewModel.shouldShowPrompt()) {
+                    navVm.backStack.add(AppKey.NotificationsPrompt)
                 }
+            }
+            val announcementState by announcementViewModel.state.collectAsStateWithLifecycle()
+            announcementState.announcement?.let { announcement ->
+                AnnouncementDialog(
+                    announcement = announcement,
+                    onDismiss = announcementViewModel::dismiss,
+                )
             }
             fun switchRootTab(tab: SellerRootTab) {
                 if (selectedRootTab == tab) return
                 navVm.backStack.apply {
                     clear()
                     add(tab.destination)
+                }
+            }
+
+            // A draft row can be double-tapped; the second tap must not stack a second PreviewAd on
+            // top of the first.
+            fun openAdPreview(advertisement: AdvertisementWithAttributes) {
+                if (navVm.backStack.lastOrNull() !is AppKey.PreviewAd) {
+                    navVm.backStack.add(AppKey.PreviewAd(advertisement))
                 }
             }
 
@@ -337,7 +383,12 @@ fun App() {
 
                         entry<AppKey.GenerateAd>(metadata = topLevelMetadata) {
                             GenerateAdScreen(
-                                openAdPreview = { navVm.backStack.add(AppKey.PreviewAd(it)) },
+                                openAdPreview = { openAdPreview(it) },
+                                openDrafts = {
+                                    if (navVm.backStack.lastOrNull() !is AppKey.Drafts) {
+                                        navVm.backStack.add(AppKey.Drafts)
+                                    }
+                                },
                                 onLoadingChanged = { isGeneratingAd = it },
                             )
                         }
@@ -358,13 +409,19 @@ fun App() {
                             )
                         }
 
+                        // Every PreviewAd shares PREVIEW_AD_FLOW_KEY, and that store is only cleared
+                        // once a popped entry leaves composition, after the pop transition. A draft
+                        // row can open a second preview inside that window, and an unkeyed
+                        // koinViewModel would hand back the previous listing's ViewModel.
                         entry<AppKey.PreviewAd>(
                             clazzContentKey = { PREVIEW_AD_FLOW_KEY },
                         ) { key ->
-                            val previewViewModel: PreviewAdViewModel =
-                                koinViewModel { parametersOf(key.advertisement) }
+                            val previewViewModel: PreviewAdViewModel = koinViewModel(
+                                key = key.advertisement.previewViewModelKey,
+                            ) { parametersOf(key.advertisement) }
                             val previewState by previewViewModel.state.collectAsStateWithLifecycle()
                             val snackbarHostState = remember { SnackbarHostState() }
+                            val requestReview = rememberStoreReviewRequester()
 
                             LaunchedEffect(previewState.isPublishing) {
                                 isPreviewPublishing = previewState.isPublishing
@@ -391,6 +448,9 @@ fun App() {
 
                                     is PreviewAdContract.PreviewAdEffect.NavigateToProfile ->
                                         navVm.backStack.add(AppKey.Profile(effect.reason))
+
+                                    PreviewAdContract.PreviewAdEffect.RequestStoreReview ->
+                                        requestReview()
 
                                     is PreviewAdContract.PreviewAdEffect.PublishAccountMismatch ->
                                         snackbarHostState.showSnackbar(effect.message)
@@ -452,7 +512,14 @@ fun App() {
                             metadata = BottomSheetSceneStrategy.bottomSheet() +
                                 SharedViewModelStoreNavEntryDecorator.parent(PREVIEW_AD_FLOW_KEY),
                         ) {
+                            // Remembered: the sheet keeps composing through its dismiss animation, after
+                            // the PreviewAd may already be gone from the stack.
+                            val previewViewModelKey = remember {
+                                navVm.backStack.filterIsInstance<AppKey.PreviewAd>().lastOrNull()
+                                    ?.advertisement?.previewViewModelKey ?: PREVIEW_AD_FLOW_KEY
+                            }
                             val sharedViewModel = koinViewModel<PreviewAdViewModel>(
+                                key = previewViewModelKey,
                                 viewModelStoreOwner = LocalSharedViewModelStoreOwner.current,
                             )
                             val state by sharedViewModel.state.collectAsStateWithLifecycle()
@@ -493,7 +560,14 @@ fun App() {
                             metadata = BottomSheetSceneStrategy.bottomSheet() +
                                 SharedViewModelStoreNavEntryDecorator.parent(PREVIEW_AD_FLOW_KEY),
                         ) {
+                            // Remembered: the sheet keeps composing through its dismiss animation, after
+                            // the PreviewAd may already be gone from the stack.
+                            val previewViewModelKey = remember {
+                                navVm.backStack.filterIsInstance<AppKey.PreviewAd>().lastOrNull()
+                                    ?.advertisement?.previewViewModelKey ?: PREVIEW_AD_FLOW_KEY
+                            }
                             val sharedViewModel = koinViewModel<PreviewAdViewModel>(
+                                key = previewViewModelKey,
                                 viewModelStoreOwner = LocalSharedViewModelStoreOwner.current,
                             )
                             val state by sharedViewModel.state.collectAsStateWithLifecycle()
@@ -533,7 +607,8 @@ fun App() {
                                         AnalyticsEvents.AD_DRAFT_EXIT_CHOICE,
                                         mapOf("choice" to "leave"),
                                     )
-                                    // Pop the whole preview-ad flow, back to GenerateAd.
+                                    // Close the whole preview-ad flow, back to the screen it was opened from.
+                                    // The listing stays in Drafts.
                                     navVm.backStack.removeAll {
                                         it is AppKey.PreviewBackInfo || it is AppKey.PreviewAd
                                     }
@@ -605,10 +680,27 @@ fun App() {
                             )
                         }
 
+                        entry<AppKey.NotificationsPrompt>(
+                            metadata = BottomSheetSceneStrategy.bottomSheet(),
+                        ) {
+                            NotificationsPromptRoute(
+                                viewModel = notificationsPromptViewModel,
+                                isOnBackStack = { AppKey.NotificationsPrompt in navVm.backStack },
+                                onClose = { navVm.popDestination() },
+                            )
+                        }
+
                         entry<AppKey.AllReleases> {
                             AllReleasesScreenRoute(
                                 viewModel = whatsNewViewModel,
                                 onBack = { navVm.popDestination() },
+                            )
+                        }
+
+                        entry<AppKey.Drafts> {
+                            DraftsScreenRoute(
+                                onBack = { navVm.popDestination() },
+                                openPreview = { openAdPreview(it) },
                             )
                         }
 
@@ -757,6 +849,11 @@ fun App() {
 
 private const val PREVIEW_AD_FLOW_KEY = "PreviewAdFlow"
 
+/** Keys PreviewAdViewModel per listing inside the shared PreviewAdFlow store - see the PreviewAd
+ * entry. Falls back to the flow key for a listing with no session id. */
+private val AdvertisementWithAttributes.previewViewModelKey: String
+    get() = generationSessionId ?: PREVIEW_AD_FLOW_KEY
+
 private object TopLevelTransitionKey : NavMetadataKey<Boolean>
 private val topLevelMetadata = metadata { put(TopLevelTransitionKey, true) }
 
@@ -787,7 +884,7 @@ private fun AppKey?.toSellerRootTab(): SellerRootTab? = when (this) {
 
 // Bottom-sheet/dialog entries only - i.e. every entry registered with
 // BottomSheetSceneStrategy.bottomSheet() metadata. Deliberately excludes full-screen pushed
-// destinations like PreviewAd/ImagesPreview/AllReleases/SellerPublishSuccess, which should hide
+// destinations like PreviewAd/ImagesPreview/AllReleases/Drafts/SellerPublishSuccess, which should hide
 // the tab bar rather than let it show through to whatever tab is underneath.
 private fun AppKey.isOverlayEntry(): Boolean = when (this) {
     AppKey.DeleteAccountDataConfirm,
@@ -796,6 +893,7 @@ private fun AppKey.isOverlayEntry(): Boolean = when (this) {
     is AppKey.DisconnectOlxAccountConfirm,
     AppKey.SelectCategory,
     AppKey.WhatsNewPrompt,
+    AppKey.NotificationsPrompt,
     AppKey.PreviewPublishConfirm,
     AppKey.PreviewAccountPicker,
     AppKey.PreviewBackInfo,
