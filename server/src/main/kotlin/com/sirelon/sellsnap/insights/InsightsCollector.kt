@@ -30,9 +30,9 @@ data class InsightsOutcome(
 /**
  * Daily snapshots of Threads insights, once per account per local day: per-post counts for posts
  * published in the last [WINDOW_DAYS] days, and the follower count. Paused accounts are collected
- * too, and no failure here ever pauses an account: a permanent failure or a rate limit becomes an
- * [AlertType.InsightsFailed] request, deduplicated per day by `Alerts.sendOnce`, and a transient
- * failure is skipped silently.
+ * too, and no failure here ever pauses an account: a permanent failure of the follower call or a
+ * rate limit becomes an [AlertType.InsightsFailed] request, deduplicated per day by `Alerts.sendOnce`;
+ * a permanent failure of one post (deleted in the Threads app) and a transient failure stay silent.
  *
  * The day is marked collected by `claimAccountDay`, which is the last write: post snapshots are
  * idempotent overwrites of `{postId}_{day}`, and the follower count is fetched last, so a crash,
@@ -91,7 +91,11 @@ class InsightsCollector(
         /** Reads one post's counts; `views` is its own call so its failure keeps the other metrics. */
         suspend fun collectPost(post: SocialPost) {
             val mediaId = post.mediaId ?: return
-            val core = attempt(post.code) { threads.mediaInsights(mediaId, token, CORE_METRICS) } ?: return
+            // A post deleted in the Threads app answers with a permanent error; that is normal and
+            // stays silent. The follower call needs the same permission, so a real one still alerts.
+            val core = attempt(post.code, alertOnPermanent = false) {
+                threads.mediaInsights(mediaId, token, CORE_METRICS)
+            } ?: return
             val views = if (rateLimited) null else optionalViews(mediaId)
             store.saveMetrics(
                 PostMetrics(
@@ -123,11 +127,11 @@ class InsightsCollector(
             }
 
         suspend fun collectFollowers(userId: String) {
-            followers = attempt("followers") { threads.followersCount(userId, token) }
+            followers = attempt("followers", alertOnPermanent = true) { threads.followersCount(userId, token) }
         }
 
         /** Runs [call]; a [ThreadsFailure] is recorded by its kind and becomes null, anything else propagates. */
-        private suspend fun <T> attempt(what: String, call: suspend () -> T): T? =
+        private suspend fun <T> attempt(what: String, alertOnPermanent: Boolean, call: suspend () -> T): T? =
             try {
                 call()
             } catch (failure: ThreadsFailure) {
@@ -137,7 +141,7 @@ class InsightsCollector(
                         rateLimited = true
                         alert(what, failure)
                     }
-                    is ThreadsFailure.Permanent -> alert(what, failure)
+                    is ThreadsFailure.Permanent -> if (alertOnPermanent) alert(what, failure)
                 }
                 null
             }

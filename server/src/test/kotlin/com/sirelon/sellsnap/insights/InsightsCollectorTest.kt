@@ -133,9 +133,10 @@ class InsightsCollectorTest {
     }
 
     @Test
-    fun aPermanentFailureAlertsOncePerDayAndNeverPausesTheAccount() = runTest {
+    fun aPermanentFollowersFailureAlertsOncePerDayAndNeverPausesTheAccount() = runTest {
         setUp(posts = arrayOf(published()))
-        fx.threads.insightsFailure = { _, _ -> ThreadsFailure.Permanent(100, "Threads rejected the request (HTTP 400, code 100)") }
+        val denied = ThreadsFailure.Permanent(10, "Threads rejected the request (HTTP 400, code 10)")
+        fx.threads.failNext("followersCount", denied)
         val alerts = Alerts(fx.store, fx.telegram, fx.clock, AgentFixture.OWNER)
 
         suspend fun tick() = collector.collect("staging").alerts.forEach { alerts.sendOnce(it) }
@@ -146,13 +147,26 @@ class InsightsCollectorTest {
         assertFalse(fx.memory.allAccounts.getValue("staging").paused)
         assertTrue(fx.memory.events.values.none { it.type == EventType.Pause })
         // The permanent failure still marks the day, so the second tick called nothing.
-        assertEquals(1, insightsCalls().size)
         assertEquals(1, fx.threads.callsTo("followersCount").size)
 
         fx.clock.advance(Duration.ofDays(1))
+        fx.threads.failNext("followersCount", denied)
         tick()
         assertEquals(2, fx.sentTexts().count { "insights for staging failed" in it })
         assertFalse(fx.memory.allAccounts.getValue("staging").paused)
+    }
+
+    @Test
+    fun aPostDeletedInTheThreadsAppIsSkippedWithoutAnAlert() = runTest {
+        setUp(posts = arrayOf(published()))
+        fx.threads.insightsFailure = { _, _ -> ThreadsFailure.Permanent(100, "Threads rejected the request (HTTP 400, code 100)") }
+
+        val outcome = collector.collect("staging")
+
+        assertTrue(outcome.alerts.isEmpty())
+        assertTrue(outcome.collected)
+        assertTrue(fx.memory.allMetrics.isEmpty())
+        assertEquals(PostStatus.Published, fx.memory.allPosts.getValue("stt0001").status)
     }
 
     @Test
@@ -256,7 +270,7 @@ class InsightsCollectorTest {
     @Test
     fun theAlertDetailNeverCarriesATokenOrAUrl() = runTest {
         setUp(posts = arrayOf(published()))
-        fx.threads.insightsFailure = { _, _ -> ThreadsFailure.Permanent(190, "Threads rejected the request ?access_token=SECRET123") }
+        fx.threads.failNext("followersCount", ThreadsFailure.Permanent(190, "Threads rejected the request ?access_token=SECRET123"))
 
         val detail = collector.collect("staging").alerts.single().detail.orEmpty()
 

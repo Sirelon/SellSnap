@@ -246,7 +246,7 @@ class TickRunnerTest {
         val fx = AgentFixture()
         fx.memory.put(fx.publishable(testAccount()))
         fx.put(testPost(status = PostStatus.Approved, scheduledAt = AgentFixture.NOW.minusSeconds(60)))
-        fx.threads.insightsFailure = { _, _ -> ThreadsFailure.Permanent(10, "Threads rejected the request (HTTP 400, code 10)") }
+        fx.threads.failNext("followersCount", ThreadsFailure.Permanent(10, "Threads rejected the request (HTTP 400, code 10)"))
 
         val summary = runner(fx).run()
 
