@@ -113,14 +113,12 @@ class InsightsCollectorTest {
         assertNull(post.views)
         assertEquals(10L, post.likes)
         assertEquals(2L, post.replies)
-        assertEquals(1, outcome.alerts.size)
-        assertEquals(AlertType.InsightsFailed, outcome.alerts.single().type)
-        assertTrue("views of stt0001" in outcome.alerts.single().detail.orEmpty())
+        assertTrue(outcome.alerts.isEmpty())
         assertTrue(outcome.collected)
     }
 
     @Test
-    fun aTransientViewsFailureIsSilentAndTheNextTickFillsItIn() = runTest {
+    fun aTransientViewsFailureIsSilentAndDoesNotHoldTheDayOpen() = runTest {
         setUp(posts = arrayOf(published()))
         fx.threads.insightsFailure = { _, metrics ->
             if ("views" in metrics) ThreadsFailure.Transient("Threads server error (HTTP 503)") else null
@@ -129,12 +127,9 @@ class InsightsCollectorTest {
         val first = collector.collect("staging")
 
         assertTrue(first.alerts.isEmpty())
-        assertFalse(first.collected)
+        assertTrue(first.collected)
         assertNull(fx.memory.allMetrics.getValue("stt0001_$day").views)
-
-        fx.threads.insightsFailure = { _, _ -> null }
-        assertTrue(collector.collect("staging").collected)
-        assertEquals(100L, fx.memory.allMetrics.getValue("stt0001_$day").views)
+        assertEquals(10L, fx.memory.allMetrics.getValue("stt0001_$day").likes)
     }
 
     @Test

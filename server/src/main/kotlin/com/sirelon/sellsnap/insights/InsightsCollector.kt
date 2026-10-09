@@ -92,9 +92,7 @@ class InsightsCollector(
         suspend fun collectPost(post: SocialPost) {
             val mediaId = post.mediaId ?: return
             val core = attempt(post.code) { threads.mediaInsights(mediaId, token, CORE_METRICS) } ?: return
-            val views = if (rateLimited) null else attempt("views of ${post.code}") {
-                threads.mediaInsights(mediaId, token, listOf(VIEWS))
-            }?.get(VIEWS)
+            val views = if (rateLimited) null else optionalViews(mediaId)
             store.saveMetrics(
                 PostMetrics(
                     postId = post.id,
@@ -110,6 +108,19 @@ class InsightsCollector(
             )
             snapshots++
         }
+
+        /**
+         * `views` is "in development" on Threads, so it is best effort: any failure leaves it null
+         * without an alert or a retry, and the digest ranks by likes and replies instead. Only a
+         * rate limit still stops the run, because the next call would fail the same way.
+         */
+        private suspend fun optionalViews(mediaId: String): Long? =
+            try {
+                threads.mediaInsights(mediaId, token, listOf(VIEWS))[VIEWS]
+            } catch (failure: ThreadsFailure) {
+                if (failure is ThreadsFailure.RateLimited) rateLimited = true
+                null
+            }
 
         suspend fun collectFollowers(userId: String) {
             followers = attempt("followers") { threads.followersCount(userId, token) }
