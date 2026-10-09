@@ -128,20 +128,21 @@
 
 <main>
   <h1>Threads agent — owner setup, part 1</h1>
-  <p class="sub">Staging account, Meta app, Telegram bot. About 75 minutes. Written 2026-10-09 for
+  <p class="sub">Staging account, Meta app, Telegram bot. About 70 minutes. Written 2026-10-09 for
     <a href="THREADS-AGENT-DESIGN.md">THREADS-AGENT-DESIGN.md</a> §11 and Linear
     <a href="https://linear.app/sirelon/issue/SIR-140">SIR-140</a>.</p>
 
   <div class="card ok">
     <p><strong>When you finish this page:</strong></p>
     <ul>
-      <li>A private staging Instagram + Threads pair exists.</li>
+      <li>Your <code>sellsnap.app</code> account is the private staging Instagram + Threads pair.</li>
       <li>A Meta app has the staging profile as a Threads tester, and a test token works.</li>
       <li>A Telegram bot exists. Its token and the Threads app secret are in Secret Manager.</li>
       <li>You send me the non-secret values from <a href="#send">step 10</a>.</li>
     </ul>
-    <p>Why today: the brand accounts must wait at least 7 days after the staging account (D34).
-      A staging account created on 2026-10-09 allows brand accounts on 2026-10-16.</p>
+    <p>Why today: the brand accounts must wait at least 7 days after the staging Threads profile (D34).
+      A profile created on 2026-10-09 allows brand accounts on 2026-10-16. If <code>sellsnap.app</code>
+      already had a Threads profile before 2026-10-02, the brand accounts can start now.</p>
   </div>
 
   <div class="card warn">
@@ -164,8 +165,8 @@
     <strong>Steps</strong>
     <ol>
       <li><a href="#values">Values to use</a></li>
-      <li><a href="#instagram">Staging Instagram account</a></li>
-      <li><a href="#threads">Staging Threads profile</a></li>
+      <li><a href="#instagram">Check the Instagram account</a></li>
+      <li><a href="#threads">Threads profile</a></li>
       <li><a href="#devaccount">Meta developer account</a></li>
       <li><a href="#app">Create the Meta app</a></li>
       <li><a href="#settings">Permissions and settings</a></li>
@@ -182,10 +183,7 @@
   <p>Use these names unless they are taken. The fallback is in brackets.</p>
   <table>
     <tr><th>What</th><th>Value</th></tr>
-    <tr><td>Staging username (Instagram and Threads)</td><td><code>sellsnap.staging</code> (<code>sellsnap_staging</code>)</td></tr>
-    <tr><td>Staging display name</td><td><code>SellSnap Staging</code></td></tr>
-    <tr><td>Staging bio</td><td><code>Private test account.</code></td></tr>
-    <tr><td>Staging email</td><td><code>you+sellsnap.staging@gmail.com</code> — a plus alias of your Gmail. If Instagram rejects the <code>+</code>, use another address you own. One address holds at most 5 Instagram accounts. <span class="tag guide">Guide</span></td></tr>
+    <tr><td>Staging account (Instagram and Threads)</td><td><code>sellsnap.app</code>, your existing account</td></tr>
     <tr><td>Meta app name</td><td><code>SellSnap Agent</code>. Keep Meta product names (Threads, Instagram, Facebook) out of it. <span class="tag tip">Tip</span></td></tr>
     <tr><td>Telegram bot name</td><td><code>SellSnap Agent</code></td></tr>
     <tr><td>Telegram bot username</td><td><code>sellsnap_agent_bot</code> (<code>sellsnap_threads_bot</code>). It cannot change later.</td></tr>
@@ -195,31 +193,45 @@
     <tr><td>App icon (1024 px)</td><td><code>iosApp/iosApp/Assets.xcassets/AppIcon.appiconset/app-icon-1024.png</code></td></tr>
   </table>
   <ul class="steps">
-    <li><input type="checkbox"><span class="text">Have a password manager open. You will save the staging password and its backup codes.</span></li>
+    <li><input type="checkbox"><span class="text">Have the <code>sellsnap.app</code> password and a password manager ready. You will save its backup codes.</span></li>
   </ul>
 
   <!-- 2 -->
-  <h2 id="instagram"><span class="num">2</span>Staging Instagram account<span class="time">~10 min, phone</span></h2>
+  <h2 id="instagram"><span class="num">2</span>Check the Instagram account<span class="time">~5 min, phone</span></h2>
   <ul class="steps">
-    <li><input type="checkbox"><span class="text">In the Instagram app, tap the <span class="ui">Profile</span> tab. Tap your username at the top. Tap <span class="ui">Add Instagram account</span>, then <span class="ui">Create new account</span>. <span class="tag guide">Guide</span></span></li>
-    <li><input type="checkbox"><span class="text">Enter the username <code>sellsnap.staging</code> and the display name <code>SellSnap Staging</code>.</span></li>
-    <li><input type="checkbox"><span class="text">When Instagram offers Accounts Center, tap <span class="ui">Create password</span> instead of <span class="ui">Allow and continue</span>. This keeps the test account out of your personal Accounts Center. <span class="tag guide">Guide</span> <span class="tag tip">Tip</span></span></li>
-    <li><input type="checkbox"><span class="text">Add the staging email, confirm the code, and tap <span class="ui">Complete sign-up</span>. Save the password.</span></li>
+    <li><input type="checkbox"><span class="text">In the Instagram app, switch to <code>sellsnap.app</code>: <span class="ui">Profile</span> tab → tap your username → pick it. If it is not on this phone, tap <span class="ui">Add Instagram account</span> → <span class="ui">Log into existing account</span>. <span class="tag guide">Guide</span></span></li>
+    <li><input type="checkbox"><span class="text">Open <span class="ui">☰</span> → <span class="ui">Accounts Center</span> → <span class="ui">Accounts</span>. If <code>sellsnap.app</code> is listed next to your personal profiles, tap it → <span class="ui">Remove from Accounts Center</span>. This keeps the test account apart from your personal accounts. <span class="tag guide">Guide</span> <span class="tag tip">Tip</span></span></li>
+    <li><input type="checkbox"><span class="text">The account type must be <strong>Personal</strong>: a professional account cannot be private. Open <span class="ui">☰</span> → <span class="ui">Account type and tools</span>. If it offers <span class="ui">Switch to personal account</span>, tap it. <span class="tag guide">Guide</span></span></li>
     <li><input type="checkbox"><span class="text">Make the account private: <span class="ui">☰</span> → <span class="ui">Account privacy</span> → turn on <span class="ui">Private account</span>.</span></li>
-    <li><input type="checkbox"><span class="text">Keep the account type <strong>Personal</strong>. Do not switch to Creator or Business: a professional account cannot be private. <span class="tag guide">Guide</span></span></li>
-    <li><input type="checkbox"><span class="text">Set the bio to <code>Private test account.</code> A profile photo is optional.</span></li>
-    <li><input type="checkbox"><span class="text">Turn on two-factor authentication: <span class="ui">☰</span> → <span class="ui">Accounts Center</span> → <span class="ui">Password and security</span> → <span class="ui">Two-factor authentication</span> → pick the account → <span class="ui">Authentication app</span>. Then save the codes from <span class="ui">Additional methods</span> → <span class="ui">Backup codes</span>. <span class="tag guide">Guide</span></span></li>
+    <li><input type="checkbox"><span class="text">Set the bio to <code>Private test account.</code></span></li>
+    <li><input type="checkbox"><span class="text">Turn on two-factor authentication if it is off: <span class="ui">☰</span> → <span class="ui">Accounts Center</span> → <span class="ui">Password and security</span> → <span class="ui">Two-factor authentication</span> → pick the account → <span class="ui">Authentication app</span>. Then save the codes from <span class="ui">Additional methods</span> → <span class="ui">Backup codes</span>. <span class="tag guide">Guide</span></span></li>
     <li><input type="checkbox"><span class="text">Do not follow anyone, post, or send messages from this account. <span class="tag tip">Tip</span></span></li>
   </ul>
+  <div class="card">
+    <p>If a step above fails, for example the account cannot leave Accounts Center or cannot become
+      Personal, stop and tell me. Then we keep <code>sellsnap.app</code> out of the agent and create a
+      new staging account.</p>
+  </div>
+  <details class="card" id="create-account">
+    <summary><strong>Create a new account</strong> — for the brand accounts in <a href="#later">step 11</a></summary>
+    <ol>
+      <li>In the Instagram app, tap the <span class="ui">Profile</span> tab. Tap your username at the top. Tap <span class="ui">Add Instagram account</span>, then <span class="ui">Create new account</span>. <span class="tag guide">Guide</span></li>
+      <li>Enter the username and the display name.</li>
+      <li>Use a new email for each account, for example <code>you+sellsnap.ua@gmail.com</code>, a plus alias of your Gmail. If Instagram rejects the <code>+</code>, use another address you own. One address holds at most 5 Instagram accounts. <span class="tag guide">Guide</span></li>
+      <li>When Instagram offers Accounts Center, tap <span class="ui">Create password</span> instead of <span class="ui">Allow and continue</span>. <span class="tag guide">Guide</span> <span class="tag tip">Tip</span></li>
+      <li>Confirm the email code and tap <span class="ui">Complete sign-up</span>. Save the password.</li>
+      <li>Turn on two-factor authentication as above.</li>
+    </ol>
+  </details>
 
   <!-- 3 -->
-  <h2 id="threads"><span class="num">3</span>Staging Threads profile<span class="time">~5 min, phone</span></h2>
+  <h2 id="threads"><span class="num">3</span>Threads profile<span class="time">~5 min, phone</span></h2>
   <ul class="steps">
     <li><input type="checkbox"><span class="text">Open the Threads app. If it shows your personal profile, open <span class="ui">Profile</span> → tap your username → <span class="ui">Add profile</span>. On a fresh install, tap <span class="ui">Log in with Instagram</span>. <span class="tag guide">Guide</span></span></li>
-    <li><input type="checkbox"><span class="text">Log in with <code>sellsnap.staging</code>. Import the name and bio from Instagram.</span></li>
+    <li><input type="checkbox"><span class="text">Log in with <code>sellsnap.app</code>. If it already has a Threads profile, Threads opens it: skip to the privacy check below, and note in step 10 when you created it. If not, import the name and bio from Instagram.</span></li>
     <li><input type="checkbox"><span class="text">When Threads asks about privacy, choose <span class="ui">Private profile</span>. Then tap <span class="ui">Join Threads</span>.</span></li>
     <li><input type="checkbox"><span class="text">Check that it is private: <span class="ui">Profile</span> → <span class="ui">☰</span> → <span class="ui">Settings</span> → <span class="ui">Privacy</span> → <span class="ui">Private profile</span> is on. Threads privacy is set apart from Instagram privacy. <span class="tag guide">Guide</span></span></li>
-    <li><input type="checkbox"><span class="text">Optional: from your personal Threads profile, request to follow <code>sellsnap.staging</code>, and approve it there. Then you see the test posts in your own feed.</span></li>
+    <li><input type="checkbox"><span class="text">Optional: from your personal Threads profile, request to follow <code>sellsnap.app</code>, and approve it there. Then you see the test posts in your own feed.</span></li>
   </ul>
   <div class="card">
     <p>Threads also allows sign-up without Instagram in some regions. Use the Instagram path anyway.
@@ -277,8 +289,8 @@
   <h2 id="tester"><span class="num">7</span>Add the staging tester<span class="time">~5 min, Mac + phone</span></h2>
   <ul class="steps">
     <li><input type="checkbox"><span class="text">Left menu <span class="ui">App roles</span> → <span class="ui">Roles</span> → <span class="ui">Add People</span> → choose <span class="ui">Threads Tester</span>. The use-case page also has a shortcut, <span class="ui">Add or Remove Threads Test Users</span>. <span class="tag docs">Meta docs</span></span></li>
-    <li><input type="checkbox"><span class="text">Enter the Threads username <code>sellsnap.staging</code> → <span class="ui">Add</span>. The row shows <span class="ui">Pending</span>. <span class="tag guide">Guide</span></span></li>
-    <li><input type="checkbox"><span class="text">In the Threads app, as <code>sellsnap.staging</code>: <span class="ui">Profile</span> → <span class="ui">☰</span> → <span class="ui">Settings</span> → <span class="ui">Account</span> → <span class="ui">Website permissions</span> → <span class="ui">Invites</span> → <span class="ui">Accept</span>. On the web: threads.com → <span class="ui">More</span> → <span class="ui">Settings</span> → same path. <span class="tag docs">Meta docs</span> <span class="tag guide">Guide</span></span></li>
+    <li><input type="checkbox"><span class="text">Enter the Threads username <code>sellsnap.app</code> → <span class="ui">Add</span>. The row shows <span class="ui">Pending</span>. <span class="tag guide">Guide</span></span></li>
+    <li><input type="checkbox"><span class="text">In the Threads app, as <code>sellsnap.app</code>: <span class="ui">Profile</span> → <span class="ui">☰</span> → <span class="ui">Settings</span> → <span class="ui">Account</span> → <span class="ui">Website permissions</span> → <span class="ui">Invites</span> → <span class="ui">Accept</span>. On the web: threads.com → <span class="ui">More</span> → <span class="ui">Settings</span> → same path. <span class="tag docs">Meta docs</span> <span class="tag guide">Guide</span></span></li>
     <li><input type="checkbox"><span class="text">If the invite is not there, wait a minute and open the page again.</span></li>
   </ul>
   <div class="card">
@@ -291,7 +303,7 @@
   <p>This step proves that steps 5–7 work today, not on deploy day. It also answers an open item
     in the design (§9): where the dashboard token comes from, and how long it lives.</p>
   <ul class="steps">
-    <li><input type="checkbox"><span class="text"><span class="ui">Use cases</span> → <span class="ui">Access the Threads API</span> → <span class="ui">Customize</span> → <span class="ui">Settings</span>. Scroll to the bottom, to the token generator. Click <span class="ui">Generate access token</span> next to <code>sellsnap.staging</code>. Log in as staging and approve every permission. Copy the token. It starts with <code>TH</code>. <span class="tag guide">Guide</span></span></li>
+    <li><input type="checkbox"><span class="text"><span class="ui">Use cases</span> → <span class="ui">Access the Threads API</span> → <span class="ui">Customize</span> → <span class="ui">Settings</span>. Scroll to the bottom, to the token generator. Click <span class="ui">Generate access token</span> next to <code>sellsnap.app</code>. Log in as <code>sellsnap.app</code> and approve every permission. Copy the token. It starts with <code>TH</code>. <span class="tag guide">Guide</span></span></li>
     <li><input type="checkbox"><span class="text">If the settings page has no generator: <span class="ui">Tools</span> → <span class="ui">Graph API Explorer</span> → switch the host dropdown from <span class="ui">facebook</span> to <span class="ui">threads.net</span> → check that <span class="ui">Meta App</span> is <code>SellSnap Agent</code> → <span class="ui">Generate Threads Access Token</span>. <span class="tag guide">Guide</span></span></li>
     <li><input type="checkbox"><span class="text">Run this in the Terminal. The commands on this page use zsh, the macOS default. <code>read -s</code> hides what you paste, so the token stays out of your shell history.</span></li>
   </ul>
@@ -305,7 +317,7 @@ unset TH_TOKEN</code></pre>
   <div class="card ok">
     <p><strong>Expected</strong></p>
     <ul>
-      <li>The first call prints <code>"username": "sellsnap.staging"</code>.</li>
+      <li>The first call prints <code>"username": "sellsnap.app"</code>.</li>
       <li>The second prints one line with <code>"is_valid":true</code> and 8 scopes. <code>token_days</code> is 0 for a 1-hour token or about 59 for a 60-day token. Copy that line into step 10.</li>
     </ul>
   </div>
@@ -361,7 +373,9 @@ gcloud secrets list --project=sellsnap-6e85c</code></pre>
   <p>Fill the form, click the button, paste the result into the chat. No field here is secret.</p>
   <div class="card">
     <label class="field" for="f-handle">Staging username</label>
-    <input class="field" id="f-handle" data-key="handle" value="sellsnap.staging">
+    <input class="field" id="f-handle" data-key="handle" value="sellsnap.app">
+    <label class="field" for="f-age">When the sellsnap.app Threads profile was created</label>
+    <input class="field" id="f-age" data-key="age" value="2026-10-09">
     <label class="field" for="f-appid">Threads app ID</label>
     <input class="field" id="f-appid" data-key="appid">
     <label class="field" for="f-bot">Bot username</label>
@@ -383,7 +397,7 @@ gcloud secrets list --project=sellsnap-6e85c</code></pre>
   <table class="timeline">
     <tr><th>When</th><th>What</th></tr>
     <tr><td>Before 2026-10-16</td><td>Approve the brand bio copy. I send it as an English key-to-text list (D20).</td></tr>
-    <tr><td>2026-10-16 or later</td><td>Create <code>sellsnap.ua</code> and <code>sellsnap.pl</code> (fallback <code>sellsnap_ua</code>, <code>sellsnap_pl</code>) with steps 2, 3 and 7. Differences: the profiles are public, and each gets its own email. Post nothing by hand.</td></tr>
+    <tr><td>2026-10-16 or later</td><td>Create <code>sellsnap.ua</code> and <code>sellsnap.pl</code> (fallback <code>sellsnap_ua</code>, <code>sellsnap_pl</code>) with <a href="#create-account">Create a new account</a>, then steps 3 and 7. The profiles are public. Post nothing by hand.</td></tr>
     <tr><td>Phase 1 deploy day</td><td>I send the service URL. Replace the 3 placeholder URLs from step 6. Generate a token for each account (step 8) and send it to the bot with <code>/token &lt;account&gt;</code>.</td></tr>
     <tr><td>Staging has 10 posts</td><td>Submit Meta App Review. I prepare the text.</td></tr>
     <tr><td>Every 90 days</td><td>Re-authorize staging when the bot reminds you: a private profile's permission grant cannot be extended. <span class="tag docs">Meta docs</span></td></tr>
@@ -412,7 +426,7 @@ gcloud secrets list --project=sellsnap-6e85c</code></pre>
 
 <script>
 (() => {
-  const STORE = 'sellsnap-threads-setup-1';
+  const STORE = 'sellsnap-threads-setup-2';
   const state = JSON.parse(localStorage.getItem(STORE) || '{}');
   state.checks ??= {}; state.fields ??= {};
   const save = () => localStorage.setItem(STORE, JSON.stringify(state));
@@ -472,6 +486,7 @@ gcloud secrets list --project=sellsnap-6e85c</code></pre>
     const text = [
       'Threads setup part 1 done.',
       `Staging username: ${v('handle')}`,
+      `Threads profile created: ${v('age')}`,
       `Threads app ID: ${v('appid')}`,
       `Bot username: @${v('bot').replace(/^@/, '')}`,
       `Telegram user id: ${v('tgid')}`,
