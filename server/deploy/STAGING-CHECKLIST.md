@@ -72,7 +72,7 @@ Meta's docs do not say whether a private profile can publish through the API. Th
 
 ## 7. A 4xx pauses the account
 
-17. In the Firestore console, edit `social_accounts/staging.token`: add `x` at the end of the value. Do not log the value.
+17. In the Firestore console, edit `social_accounts/staging.token`: change one character in the middle of the value (Threads still accepts a token with extra characters at the end). Keep the original to restore it. Do not log either value.
 18. Send `/post staging now Check four: forced failure`. Expect `<code> failed and the account is paused: ...`, an alert message that ends with `send /resume staging`, and `paused: true` on the account. Threads answers code 190 here.
 19. Send `/token staging <valid token>`. Expect `Token saved for staging.`
 20. Send `/resume staging`. Expect `@sellsnap.app is resumed.` Then `/post staging now Check four: recovered` publishes. Delete it with its Delete button.
