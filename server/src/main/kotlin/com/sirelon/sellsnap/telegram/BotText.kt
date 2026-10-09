@@ -144,6 +144,30 @@ object BotText {
         DeferReason.TransientFailure -> "Threads had a temporary error, and the next tick will retry"
     }
 
+    // Owner alerts
+    const val NO_DETAIL = "no detail"
+
+    fun alertPublishFailed(accountId: String, postCode: String?, detail: String): String =
+        "Publishing ${postCode ?: "a post"} failed and $accountId is paused: $detail. Fix the cause, then send /resume $accountId."
+
+    fun alertPublishStalled(accountId: String, postCode: String?, detail: String): String =
+        "${postCode ?: "A post"} on $accountId has failed on 3 ticks in a row: $detail."
+
+    fun alertPostNeedsAttention(accountId: String, postCode: String?): String =
+        "${postCode ?: "A post"} is live on $accountId, but its Threads id was not recorded. Check it in the Threads app."
+
+    fun alertTokenExpiry(accountId: String, expiresAt: Instant?): String =
+        "The Threads token for $accountId expires ${expiresAt?.let(::date) ?: "soon"}. Send /refresh $accountId, or /token $accountId <token> with a new one."
+
+    fun alertPermissionsExpiry(accountId: String, expiresAt: Instant?): String =
+        "Private-profile access for $accountId ends ${expiresAt?.let(::date) ?: "soon"}. Authorize the account again, then send /token $accountId <token>."
+
+    fun alertTokenRefreshFailed(accountId: String, detail: String): String =
+        "The token refresh for $accountId failed: $detail. Send /refresh $accountId to try again."
+
+    fun alertTickFailed(accountId: String, detail: String): String =
+        "The tick failed for $accountId: $detail. The other accounts ran."
+
     // Formatting
     private val DATE: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMM yyyy", Locale.ENGLISH).withZone(ZoneOffset.UTC)
     private val SLOT: DateTimeFormatter = DateTimeFormatter.ofPattern("EEE d MMM HH:mm", Locale.ENGLISH)

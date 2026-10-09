@@ -1,0 +1,10 @@
+{
+  "uk": [
+    { "key": "sample01", "text": "Placeholder tip one. This text only shows the file format." },
+    { "key": "sample02", "text": "Placeholder tip two. This text only shows the file format." }
+  ],
+  "pl": [
+    { "key": "sample01", "text": "Placeholder tip one. This text only shows the file format." },
+    { "key": "sample02", "text": "Placeholder tip two. This text only shows the file format." }
+  ]
+}

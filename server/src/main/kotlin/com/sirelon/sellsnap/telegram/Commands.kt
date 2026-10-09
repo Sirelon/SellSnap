@@ -2,6 +2,8 @@ package com.sirelon.sellsnap.telegram
 
 import com.sirelon.sellsnap.content.ContentRules
 import com.sirelon.sellsnap.content.PostCode
+import com.sirelon.sellsnap.content.occupiedSlots
+import com.sirelon.sellsnap.content.rollOverdue
 import com.sirelon.sellsnap.content.SlotPlanner
 import com.sirelon.sellsnap.media.ImageStore
 import com.sirelon.sellsnap.model.EventType
@@ -175,10 +177,6 @@ class Commands(
             taken = occupiedSlots(store.postsOf(account.id)),
         )
 
-    private fun occupiedSlots(posts: List<SocialPost>): List<Instant> = posts
-        .filter { it.status in SLOT_HOLDERS }
-        .mapNotNull { it.scheduledAt }
-
     private suspend fun publishNow(post: SocialPost) {
         when (val outcome = publisher.publishNow(post.id)) {
             is PublishOutcome.Published -> {
@@ -242,35 +240,9 @@ class Commands(
 
     /** Gives every overdue approved or pending post of [account] a new slot; returns how many moved. */
     private suspend fun rollOverdue(account: SocialAccount, now: Instant): Int {
-        val fresh = store.account(account.id) ?: account
-        val posts = store.postsOf(account.id)
-        val overdue = posts
-            .filter { (it.status == PostStatus.Approved || it.status == PostStatus.Pending) && it.scheduledAt?.isAfter(now) == false }
-            .sortedBy { it.scheduledAt }
-        if (overdue.isEmpty()) return 0
-        val overdueIds = overdue.map { it.id }.toSet()
-        val slots = SlotPlanner.roll(
-            now = now,
-            zone = fresh.zone,
-            publishedCount = fresh.publishedCount,
-            fixed = occupiedSlots(posts.filter { it.id !in overdueIds }),
-            toRoll = overdue.map { SlotPlanner.Rollable(it.id, SlotPlanner.requiresSlot2(it.kind, it.pillar)) },
-        )
-        var moved = 0
-        for (post in overdue) {
-            val slot = slots[post.id] ?: continue
-            val updated = store.transaction { tx ->
-                val current = tx.post(post.id)
-                if (current == null || current.status != post.status) {
-                    null
-                } else {
-                    current.copy(scheduledAt = slot).also(tx::putPost)
-                }
-            } ?: continue
-            moved++
-            if (updated.status == PostStatus.Pending) sender.refresh(updated)
-        }
-        return moved
+        val moved = store.rollOverdue(account.id, now)
+        moved.filter { it.status == PostStatus.Pending }.forEach { sender.refresh(it) }
+        return moved.size
     }
 
     // /refresh
@@ -280,10 +252,5 @@ class Commands(
             is RefreshResult.Refreshed -> reply(BotText.refreshed(account.id, result.tokenExpiresAt))
             is RefreshResult.Failed -> reply(BotText.refreshFailed(redact(result.summary)))
         }
-    }
-
-    private companion object {
-        /** Statuses whose `scheduledAt` uses up a slot or counts toward a day's cap. */
-        val SLOT_HOLDERS = setOf(PostStatus.Pending, PostStatus.Approved, PostStatus.Publishing, PostStatus.Published)
     }
 }

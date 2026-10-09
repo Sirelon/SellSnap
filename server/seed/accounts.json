@@ -1,0 +1,26 @@
+[
+  {
+    "id": "staging",
+    "handle": "sellsnap.app",
+    "language": "uk",
+    "country": "UA",
+    "timezone": "Europe/Kyiv",
+    "codePrefix": "st"
+  },
+  {
+    "id": "ua",
+    "handle": "sellsnap.ua",
+    "language": "uk",
+    "country": "UA",
+    "timezone": "Europe/Kyiv",
+    "codePrefix": "uk"
+  },
+  {
+    "id": "pl",
+    "handle": "sellsnap.pl",
+    "language": "pl",
+    "country": "PL",
+    "timezone": "Europe/Warsaw",
+    "codePrefix": "pl"
+  }
+]

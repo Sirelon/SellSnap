@@ -18,6 +18,9 @@ enum class AlertType(val key: String) {
     TokenExpiry("token_expiry"),
     PermissionsExpiry("permissions_expiry"),
     TokenRefreshFailed("token_refresh_failed"),
+
+    /** The tick threw for one account; the other accounts still ran. */
+    TickFailed("tick_failed"),
 }
 
 /**

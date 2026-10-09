@@ -1,8 +1,5 @@
 package com.sirelon.sellsnap
 
-import io.ktor.client.request.*
-import io.ktor.http.*
-import io.ktor.server.testing.*
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -10,15 +7,6 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class ApplicationTest {
-    @Test
-    fun stubRoutesAnswerNotImplemented() = testApplication {
-        application { module() }
-        assertEquals(HttpStatusCode.NotImplemented, client.post("/tick").status)
-        assertEquals(HttpStatusCode.NotImplemented, client.post("/batch").status)
-        assertEquals(HttpStatusCode.NotImplemented, client.post("/telegram").status)
-        assertEquals(HttpStatusCode.NotImplemented, client.get("/go/stt0001").status)
-    }
-
     @Test
     fun configReadsEnvAndDefaultsPort() {
         val config = Config.fromEnv(validEnv)

@@ -2,6 +2,7 @@ package com.sirelon.sellsnap.content
 
 import com.sirelon.sellsnap.model.Pillar
 import com.sirelon.sellsnap.model.PostKind
+import com.sirelon.sellsnap.model.PostStatus
 import java.time.Instant
 import java.time.LocalTime
 import java.time.ZoneId
@@ -17,6 +18,10 @@ object SlotPlanner {
     const val LAUNCH_POST_COUNT = 10
     const val MAX_PER_DAY = 2
     private const val SEARCH_DAYS = 14L
+
+    /** Statuses whose `scheduledAt` uses up a slot or counts toward a day's cap. */
+    val SLOT_HOLDERS: Set<PostStatus> =
+        setOf(PostStatus.Pending, PostStatus.Approved, PostStatus.Publishing, PostStatus.Published)
 
     class Rollable(val id: String, val slot2Only: Boolean)
 

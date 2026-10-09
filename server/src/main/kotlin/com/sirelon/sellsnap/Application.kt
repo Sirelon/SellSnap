@@ -7,10 +7,11 @@ import io.ktor.server.netty.*
 
 fun main() {
     val config = Config.fromEnv()
-    embeddedServer(Netty, port = config.port, host = "0.0.0.0", module = Application::module)
+    val graph = AppGraph.create(config)
+    embeddedServer(Netty, port = config.port, host = "0.0.0.0") { module(graph) }
         .start(wait = true)
 }
 
-fun Application.module() {
-    configureRoutes()
+fun Application.module(graph: AppGraph) {
+    configureRoutes(graph)
 }
