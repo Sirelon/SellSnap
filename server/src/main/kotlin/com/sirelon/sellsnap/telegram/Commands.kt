@@ -96,6 +96,8 @@ class Commands(
     private suspend fun post(message: Message, args: String) {
         val request = parsePost(args) ?: return reply(BotText.POST_USAGE)
         val account = store.account(request.accountId) ?: return reply(BotText.unknownAccount(request.accountId))
+        if (request.now && account.paused) return reply(BotText.pausedBeforeNow(account.handle, account.id))
+        if (request.now && account.token == null) return reply(BotText.NO_TOKEN)
         val photo = message.image()
         if (photo == null && message.document != null) return reply(BotText.UNSUPPORTED_FILE)
         if (photo != null && request.pollOptions.isNotEmpty()) return reply(BotText.POLL_WITH_PHOTO)

@@ -110,19 +110,19 @@ class QueueFillerTest {
     }
 
     @Test
-    fun aMissingPreviewIsSentAgainButAnApprovedPostWithoutButtonsIsLeftAlone() = runTest {
+    fun aMissingPreviewIsSentAgainForPendingAndApprovedPosts() = runTest {
         val fx = AgentFixture().also {
             it.memory.put(testAccount())
             it.put(testPost(id = "stt0001", status = PostStatus.Pending, scheduledAt = slot1))
-            // An approval-mode approved post has no buttons: a `/post now` post, reported inline.
+            // An approved post in approval mode carries Cancel, so its missing preview is sent too.
             it.put(testPost(id = "stt0002", status = PostStatus.Approved, scheduledAt = slot2))
         }
         val result = filler(fx).fill("staging")
 
-        assertEquals(1, result.resent)
+        assertEquals(2, result.resent)
         assertNotNull(fx.post("stt0001").telegramMessageId)
-        assertNull(fx.post("stt0002").telegramMessageId)
-        assertEquals(1, fx.telegram.callsOf<FakeTelegramApi.Call.Sent>().size)
+        assertNotNull(fx.post("stt0002").telegramMessageId)
+        assertEquals(2, fx.telegram.callsOf<FakeTelegramApi.Call.Sent>().size)
 
         // A second fill sends nothing more.
         assertEquals(0, filler(fx).fill("staging").resent)

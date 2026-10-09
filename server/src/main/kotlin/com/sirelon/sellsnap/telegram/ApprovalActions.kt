@@ -41,6 +41,7 @@ class ApprovalActions(
                 CallbackAction.EDIT -> askForEdit(postId)
                 CallbackAction.SKIP -> skip(postId, query)
                 CallbackAction.DELETE -> delete(postId, query)
+                CallbackAction.CANCEL -> cancel(postId, query)
                 else -> BotText.UNKNOWN_BUTTON
             }
         }
@@ -247,6 +248,34 @@ class ApprovalActions(
         }
     }
 
+    /**
+     * Cancel on an approved post in approval mode: a late Skip. The post is skipped, the streak
+     * stays as it is and no Delete event is written, so it is not an owner intervention (§10).
+     */
+    private suspend fun cancel(postId: String, query: CallbackQuery): String {
+        val move = store.transaction { tx ->
+            val post = tx.post(postId)
+            val account = post?.let { tx.account(it.accountId) }
+            when {
+                post == null || account == null -> Move.Missing
+                post.status != PostStatus.Approved -> Move.Wrong(post.status)
+                else -> {
+                    val cancelled = post.copy(status = PostStatus.Skipped, skipReason = CANCELLED_BEFORE_SLOT)
+                    tx.putPost(cancelled)
+                    Move.Done(cancelled, account, graduated = false)
+                }
+            }
+        }
+        return when (move) {
+            Move.Missing -> BotText.POST_NOT_FOUND
+            is Move.Wrong -> BotText.alreadyStatus(move.status)
+            is Move.Done -> {
+                updateKeyboard(query, move.post, move.account)
+                BotText.CANCELLED
+            }
+        }
+    }
+
     private suspend fun delete(postId: String, query: CallbackQuery): String {
         val post = store.post(postId) ?: return BotText.POST_NOT_FOUND
         val account = store.account(post.accountId) ?: return BotText.POST_NOT_FOUND
@@ -336,5 +365,6 @@ class ApprovalActions(
         const val GRADUATION_STREAK = 20
         const val SKIP_REASON = "skipped_by_owner"
         const val DELETED_BEFORE_SLOT = "deleted_before_slot"
+        const val CANCELLED_BEFORE_SLOT = "cancelled_before_slot"
     }
 }

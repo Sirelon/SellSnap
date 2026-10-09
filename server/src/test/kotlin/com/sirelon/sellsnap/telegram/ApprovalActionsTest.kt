@@ -44,7 +44,8 @@ class ApprovalActionsTest {
         assertEquals(PostStatus.Approved, bot.status("stt0001"))
         assertEquals(1, bot.account().approvalStreak)
         assertEquals(listOf<String?>(BotText.APPROVED), bot.answers())
-        assertNull(bot.telegram.callsOf<FakeTelegramApi.Call.Edited>().single().markup)
+        val buttons = bot.telegram.callsOf<FakeTelegramApi.Call.Edited>().single().markup as InlineKeyboardMarkup
+        assertEquals(listOf(BotText.CANCEL), buttons.inlineKeyboard.flatten().map { it.text })
     }
 
     @Test
@@ -255,6 +256,25 @@ class ApprovalActionsTest {
     }
 
     @Test
+    fun cancelInApprovalModeIsALateSkip() = runTest {
+        bot.store.put(bot.account().copy(approvalStreak = 7))
+        bot.store.put(testPost(status = PostStatus.Approved, scheduledAt = NOW.plusSeconds(3600)).copy(telegramMessageId = 900))
+
+        bot.tap("c:stt0001")
+
+        val post = bot.post("stt0001")
+        assertEquals(PostStatus.Skipped, post.status)
+        assertEquals("cancelled_before_slot", post.skipReason)
+        assertEquals(7, bot.account().approvalStreak)
+        assertEquals(AccountMode.Approval, bot.account().mode)
+        assertTrue(bot.store.events.isEmpty())
+        assertTrue(bot.threads.calls.none { it.method == "delete" })
+        assertEquals(listOf<String?>(BotText.CANCELLED), bot.answers())
+        bot.tap("c:stt0001")
+        assertEquals("Already skipped.", bot.answers().last())
+    }
+
+    @Test
     fun deleteBeforeTheSlotSkipsThePostWithoutCallingThreads() = runTest {
         bot.store.put(bot.account().copy(mode = AccountMode.Auto, approvalStreak = 20))
         bot.store.put(testPost(status = PostStatus.Approved, scheduledAt = NOW.plusSeconds(3600)).copy(autoApproved = true, telegramMessageId = 900))
@@ -360,7 +380,7 @@ class ApprovalActionsTest {
             previews.keyboard(testPost(status = status), a)?.inlineKeyboard?.flatten()?.map { it.text }
 
         assertEquals(listOf("Approve", "Edit", "Skip"), labels(PostStatus.Pending))
-        assertNull(labels(PostStatus.Approved))
+        assertEquals(listOf("Cancel"), labels(PostStatus.Approved))
         assertEquals(listOf("Delete before slot"), labels(PostStatus.Approved, auto))
         assertEquals(listOf("Delete"), labels(PostStatus.Published))
         assertNull(labels(PostStatus.Skipped))

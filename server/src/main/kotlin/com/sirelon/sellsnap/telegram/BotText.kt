@@ -29,10 +29,12 @@ object BotText {
     const val REGENERATE = "Regenerate"
     const val DELETE = "Delete"
     const val DELETE_BEFORE_SLOT = "Delete before slot"
+    const val CANCEL = "Cancel"
 
     // Answers to a button tap
     const val APPROVED = "Approved."
     const val SKIPPED = "Skipped."
+    const val CANCELLED = "Cancelled. It will not publish."
     const val EDIT_PROMPT_SENT = "Reply to the prompt below."
     const val DELETED = "Deleted from Threads."
     const val DELETED_BEFORE_SLOT = "Deleted before its slot."
@@ -92,6 +94,8 @@ object BotText {
 
     fun publishedNowNeedsAttention(code: String): String =
         "Published $code, but its Threads id was not recorded. Check it in the Threads app."
+
+    fun pausedBeforeNow(handle: String, accountId: String): String = "@$handle is paused. Send /resume $accountId first."
 
     fun notPublishedNow(code: String, reason: DeferReason): String = "$code was not published now: ${deferText(reason)}."
 

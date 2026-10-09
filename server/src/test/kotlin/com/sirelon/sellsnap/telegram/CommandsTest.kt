@@ -227,13 +227,34 @@ class CommandsTest {
     }
 
     @Test
-    fun postNowReportsAnAccountThatCannotPublish() = runTest {
+    fun postNowOnAPausedAccountIsRefusedBeforeAnythingIsCreated() = runTest {
         bot.store.put(bot.account().copy(paused = true, pausedReason = "test"))
 
         bot.say("/post staging now Hello")
 
-        assertEquals(PostStatus.Approved, bot.status("stt0001"))
-        assertEquals(BotText.notPublishedNow("stt0001", com.sirelon.sellsnap.threads.DeferReason.AccountPaused), bot.sentTexts().single())
+        assertTrue(bot.store.allPosts.isEmpty())
+        assertEquals(BotText.pausedBeforeNow(bot.account().handle, "staging"), bot.sentTexts().single())
+    }
+
+    @Test
+    fun postNowWithoutATokenIsRefused() = runTest {
+        bot.store.put(bot.account().copy(token = null))
+
+        bot.say("/post staging now Hello")
+
+        assertTrue(bot.store.allPosts.isEmpty())
+        assertEquals(BotText.NO_TOKEN, bot.sentTexts().single())
+    }
+
+    @Test
+    fun postNowFailingOnTheLimitReadMarksThePostFailed() = runTest {
+        bot.threads.failNext("publishingLimit", ThreadsFailure.Permanent(190, "Threads rejected the request (HTTP 400, code 190)"))
+
+        bot.say("/post staging now Hello")
+
+        assertEquals(PostStatus.Failed, bot.status("stt0001"))
+        assertTrue(bot.account().paused)
+        assertTrue(bot.sentTexts().single().startsWith("stt0001 failed and the account is paused"))
     }
 
     @Test

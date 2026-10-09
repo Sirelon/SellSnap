@@ -3,6 +3,7 @@ package com.sirelon.sellsnap.telegram
 import com.sirelon.sellsnap.fakes.FakeImageStore
 import com.sirelon.sellsnap.fakes.testAccount
 import com.sirelon.sellsnap.fakes.testPost
+import com.sirelon.sellsnap.model.AccountMode
 import com.sirelon.sellsnap.model.PostKind
 import com.sirelon.sellsnap.model.PostStatus
 import java.time.Instant
@@ -16,6 +17,17 @@ class PreviewsTest {
     private val previews = Previews(FakeImageStore(), "https://go.test/")
     private val account = testAccount()
     private val slot = Instant.parse("2026-10-12T05:30:00Z")
+
+    @Test
+    fun anApprovedPostOffersCancelInApprovalModeAndDeleteBeforeSlotInAutoMode() {
+        val approved = testPost(status = PostStatus.Approved, scheduledAt = slot)
+
+        val inApproval = previews.keyboard(approved, account)?.inlineKeyboard?.flatten()
+        val inAuto = previews.keyboard(approved, account.copy(mode = AccountMode.Auto))?.inlineKeyboard?.flatten()
+
+        assertEquals(listOf(BotText.CANCEL to "c:stt0001"), inApproval?.map { it.text to it.callbackData })
+        assertEquals(listOf(BotText.DELETE_BEFORE_SLOT to "d:stt0001"), inAuto?.map { it.text to it.callbackData })
+    }
 
     @Test
     fun aTextPostIsATextMessageWithAHeaderInTheAccountsLocalTime() {

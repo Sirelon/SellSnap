@@ -106,7 +106,7 @@ A tick takes every `approved` post whose `scheduledAt` has passed, moves it to `
 
 ### 3.5 Graduation
 
-`approvalStreak` increments on Approve without edit, resets on Edit or on any Delete, unchanged on Skip. At 20 the account's mode becomes `auto` and the owner is told. The Telegram command `/approval <account>` returns an account to approval mode and resets the streak. Replies never consult the mode.
+`approvalStreak` increments on Approve without edit, resets on Edit or on any Delete, unchanged on Skip. In approval mode an approved post carries a Cancel button until its slot; Cancel acts as a late Skip: the post is skipped, the streak is unchanged and no Delete event is written. At 20 the account's mode becomes `auto` and the owner is told. The Telegram command `/approval <account>` returns an account to approval mode and resets the streak. Replies never consult the mode.
 
 ### 3.6 Token and permission lifecycle
 

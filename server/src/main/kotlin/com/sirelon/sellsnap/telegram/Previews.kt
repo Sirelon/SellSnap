@@ -16,6 +16,7 @@ object CallbackAction {
     const val EDIT = "e"
     const val SKIP = "s"
     const val DELETE = "d"
+    const val CANCEL = "c"
     const val REGENERATE = "r"
 
     fun data(action: String, postId: String): String = "$action:$postId"
@@ -59,6 +60,8 @@ class Previews(
             }
             post.status == PostStatus.Approved && account.mode == AccountMode.Auto ->
                 listOf(listOf(button(BotText.DELETE_BEFORE_SLOT, CallbackAction.DELETE, post)))
+            post.status == PostStatus.Approved ->
+                listOf(listOf(button(BotText.CANCEL, CallbackAction.CANCEL, post)))
             post.status == PostStatus.Published ->
                 listOf(listOf(button(BotText.DELETE, CallbackAction.DELETE, post)))
             else -> emptyList()

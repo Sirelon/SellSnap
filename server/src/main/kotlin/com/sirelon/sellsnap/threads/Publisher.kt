@@ -9,6 +9,7 @@ import com.sirelon.sellsnap.model.SocialAccount
 import com.sirelon.sellsnap.model.SocialEvent
 import com.sirelon.sellsnap.model.SocialPost
 import com.sirelon.sellsnap.store.SocialStore
+import com.sirelon.sellsnap.store.transitionPost
 import kotlinx.coroutines.delay
 import java.time.Clock
 import java.time.Duration
@@ -100,7 +101,14 @@ class Publisher(
         if (post.status != PostStatus.Approved && !isStale(post, clock.instant())) {
             return notPublishable(postId, account.id)
         }
-        return publishAll(account, listOf(post), requireDue = false).single()
+        val outcome = publishAll(account, listOf(post), requireDue = false).single()
+        // A permanent failure before the claim (the limit read) pauses only the account; a `now`
+        // post must not stay approved, or /resume would roll it to a later slot and publish it.
+        if (outcome is PublishOutcome.Paused && outcome.postId == null) {
+            store.transitionPost(postId, PostStatus.Approved) { it.copy(status = PostStatus.Failed) }
+            return outcome.copy(postId = postId)
+        }
+        return outcome
     }
 
     private fun notPublishable(postId: String, accountId: String) =
