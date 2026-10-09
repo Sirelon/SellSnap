@@ -52,6 +52,25 @@ class RedirectServiceTest {
     }
 
     @Test
+    fun crawlersAreBotsAndPhoneModelsAreNot() {
+        val bots = listOf(
+            "facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)",
+            "Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)",
+            "Mozilla/5.0 (Linux; Android 6.0.1; Nexus 5X) (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
+            "TelegramBot (like TwitterBot)",
+            "WhatsApp/2.23.20.0 A",
+            "SomeCrawler/1.0",
+        )
+        bots.forEach { assertEquals(true, RedirectService.isBot(it), it) }
+        val people = listOf(
+            "Mozilla/5.0 (Linux; Android 10; CUBOT X30 Build/QP1A.190711.020) Mobile Safari/537.36",
+            "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) Mobile/15E148 Barcelona 350.0",
+            "Mozilla/5.0 (Linux; Android 14; SM-S911B) Chrome/129.0 Mobile Safari/537.36",
+        )
+        people.forEach { assertEquals(false, RedirectService.isBot(it), it) }
+    }
+
+    @Test
     fun userAgentFamilies() {
         assertEquals(UaFamily.Android, RedirectService.classify("Mozilla/5.0 (Linux; Android 14)"))
         assertEquals(UaFamily.Ios, RedirectService.classify("Mozilla/5.0 (iPad; CPU OS 17_0)"))

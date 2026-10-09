@@ -154,11 +154,21 @@ class RedirectService(
         private val MISS_TTL = java.time.Duration.ofSeconds(60)
         private val CLICK_WRITE_TIMEOUT = 3.seconds
 
-        private val BOT_MARKERS = listOf("facebookexternalhit", "meta-externalagent", "facebot", "bot", "crawler", "spider")
+        /** Link-preview fetchers and crawlers named outright. */
+        private val BOT_MARKERS = listOf(
+            "facebookexternalhit", "meta-externalagent", "facebot", "googlebot", "bingbot", "applebot",
+            "twitterbot", "telegrambot", "slackbot", "discordbot", "linkedinbot", "whatsapp", "yandexbot",
+        )
+
+        /**
+         * Generic crawler shapes: a versioned `…bot/` token, a contact URL, or the words crawler and spider.
+         * A bare "bot" is not enough: phone models such as CUBOT carry it.
+         */
+        private val GENERIC_BOT = Regex("bot/|crawler|spider|\\+https?://")
 
         fun isBot(userAgent: String?): Boolean {
             val ua = userAgent?.lowercase().orEmpty()
-            return BOT_MARKERS.any { it in ua }
+            return BOT_MARKERS.any { it in ua } || GENERIC_BOT.containsMatchIn(ua)
         }
 
         fun classify(userAgent: String?): UaFamily {
