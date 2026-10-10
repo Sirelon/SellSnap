@@ -16,7 +16,7 @@ enum class Pillar(val letter: Char) {
     Reveal('r'),
 }
 
-enum class PostSource { Seed, Owner }
+enum class PostSource { Seed, Owner, Drafter }
 
 data class SocialPost(
     val id: String,
@@ -52,9 +52,22 @@ data class SocialPost(
     val telegramMessageId: Long? = null,
     val editPromptMessageId: Long? = null,
     val editedByOwner: Boolean = false,
+    /** A review flag: the drafter's checks found a problem, or the post's media id was lost. The owner decides; it never blocks a publish. */
     val needsAttention: Boolean = false,
+    /** True once the post's link reply is given up on; the publisher then stops retrying it. */
+    val replyFailed: Boolean = false,
     /** True when auto mode approved the post; a Delete or `/approval` sends such posts back to `pending`. */
     val autoApproved: Boolean = false,
     val pairedPostId: String? = null,
+    /** English back-translation of a Polish draft, shown to the owner in the preview. */
+    val backTranslation: String? = null,
+    /** What the drafter's checks found, in plain words; set together with [needsAttention] on a drafted post. */
+    val checkNotes: String? = null,
+    /** Times the owner tapped Regenerate on this post. */
+    val regenerations: Int = 0,
+    /** What the post is about, for example `release:3.3` for the update that announces version 3.3. */
+    val sourceRef: String? = null,
+    /** ISO week of the batch that drafted the post, for example `2026-W43`. */
+    val batchWeek: String? = null,
     val createdAt: Instant,
 )

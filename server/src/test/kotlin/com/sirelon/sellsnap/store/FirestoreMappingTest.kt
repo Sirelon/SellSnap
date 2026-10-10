@@ -62,8 +62,14 @@ class FirestoreMappingTest {
             editPromptMessageId = 6,
             editedByOwner = true,
             needsAttention = true,
+            replyFailed = true,
             autoApproved = true,
             pairedPostId = "pair",
+            backTranslation = "Tip: photograph the item by a window.",
+            checkNotes = "The Polish does not read as natural: stiff opening.",
+            regenerations = 2,
+            sourceRef = "release:3.3",
+            batchWeek = "2026-W43",
         )
 
         assertEquals(post, postFromMap(post.id, post.toMap()))

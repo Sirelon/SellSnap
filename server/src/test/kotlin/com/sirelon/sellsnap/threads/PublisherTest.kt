@@ -736,7 +736,7 @@ class PublisherTest {
         assertEquals(ReplyState.Failed, outcome.state)
         assertEquals(AlertType.ReplyFailed, outcome.alerts.single().type)
         val saved = post()
-        assertTrue(saved.needsAttention)
+        assertTrue(saved.replyFailed)
         assertNull(saved.replyMediaId)
         assertEquals(PostStatus.Published, saved.status)
         assertFalse(account().paused)
@@ -808,7 +808,8 @@ class PublisherTest {
         val saved = post()
         assertEquals(PostStatus.Published, saved.status)
         assertEquals("media-2", saved.mediaId)
-        assertTrue(saved.needsAttention)
+        assertTrue(saved.replyFailed)
+        assertFalse(saved.needsAttention)
         assertNull(saved.replyMediaId)
         assertFalse(account().paused)
         assertEquals(1, account().publishedCount)
@@ -828,9 +829,35 @@ class PublisherTest {
         val outcome = assertIs<PublishOutcome.Replied>(publisher().publishDue("staging").single())
 
         assertEquals(ReplyState.Failed, outcome.state)
-        assertTrue(post().needsAttention)
+        assertTrue(post().replyFailed)
         assertFalse(account().paused)
         assertEquals("Threads could not process the reply (UNKNOWN)", outcome.alerts.single().detail)
+    }
+
+    @Test
+    fun aDraftFlaggedNeedsAttentionStillGetsItsReply() = runTest {
+        // A review flag from the drafter's checks must not stop the link reply (R2 item 12a).
+        store.put(livePost().copy(needsAttention = true, checkNotes = "Unsupported product claim: x"))
+
+        val outcome = assertIs<PublishOutcome.Replied>(publisher().publishDue("staging").single())
+
+        assertEquals(ReplyState.Published, outcome.state)
+        assertNotNull(post().replyMediaId)
+        assertTrue(post().needsAttention)
+        assertFalse(post().replyFailed)
+    }
+
+    @Test
+    fun replyFailedStopsReplyRetriesWhileNeedsAttentionAloneDoesNot() = runTest {
+        store.put(livePost(id = "stt0001").copy(replyFailed = true))
+        store.put(livePost(id = "stt0002").copy(needsAttention = true))
+
+        val outcomes = publisher().publishDue("staging")
+
+        assertEquals("stt0002", assertIs<PublishOutcome.Replied>(outcomes.single()).postId)
+        assertNull(post("stt0001").replyMediaId)
+        assertNotNull(post("stt0002").replyMediaId)
+        assertEquals(1, threads.callsTo("createContainer").size)
     }
 
     @Test
@@ -934,7 +961,7 @@ class PublisherTest {
         assertFalse(TOKEN in text, text)
         assertFalse(APP_SECRET in text, text)
         assertFalse("graph.threads.net" in text, text)
-        assertTrue(localStore.allPosts.getValue("stt0001").needsAttention)
+        assertTrue(localStore.allPosts.getValue("stt0001").replyFailed)
     }
 
     private class HookedThreadsApi(private val delegate: FakeThreadsApi) : ThreadsApi by delegate {

@@ -103,7 +103,8 @@ class TickRunnerTest {
 
         assertEquals(1, summary.published)
         assertEquals(PostStatus.Published, fx.status("stt0001"))
-        assertTrue(fx.post("stt0001").needsAttention)
+        assertTrue(fx.post("stt0001").replyFailed)
+        assertFalse(fx.post("stt0001").needsAttention)
         assertFalse(fx.account("staging").paused)
         assertEquals(1, fx.sentTexts().count { "The reply under stt0001 on staging failed" in it })
         assertEquals(2, fx.threads.callsTo("createContainer").size)

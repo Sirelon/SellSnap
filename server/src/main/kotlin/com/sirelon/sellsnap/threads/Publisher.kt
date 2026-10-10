@@ -42,7 +42,7 @@ enum class ReplyState {
     /** Not published now; a later tick retries it. */
     Deferred,
 
-    /** A permanent failure: the post stays live, is marked `needsAttention` and the owner is alerted. */
+    /** A permanent failure: the post stays live, is marked `replyFailed` and the owner is alerted. */
     Failed,
 }
 
@@ -127,10 +127,10 @@ class Publisher(
         return outcomes + publishReplies(account, owedReplies)
     }
 
-    /** A published post whose reply is not published and not given up on (`needsAttention` stops retries). */
+    /** A published post whose reply is not published and not given up on (`replyFailed` stops retries). */
     private fun replyOwed(post: SocialPost): Boolean =
         post.status == PostStatus.Published && post.replyText != null && post.replyMediaId == null &&
-            post.mediaId != null && !post.needsAttention
+            post.mediaId != null && !post.replyFailed
 
     /** The account is paused or Threads is failing: the replies wait for a later tick. */
     private fun blocksReplies(outcome: PublishOutcome): Boolean = when (outcome) {
@@ -578,7 +578,7 @@ class Publisher(
                         current!!.copy(
                             replyMediaId = replyId,
                             transientFailures = 0,
-                            needsAttention = current.needsAttention || lostId,
+                            replyFailed = current.replyFailed || lostId,
                         ),
                     )
                     if (lostId) {
@@ -617,7 +617,7 @@ class Publisher(
                 if (!holdsClaim(current)) {
                     false
                 } else {
-                    tx.putPost(current!!.copy(needsAttention = true))
+                    tx.putPost(current!!.copy(replyFailed = true))
                     tx.putEvent(SocialEvent("reply_failed_${post.id}_$claimId", account.id, EventType.Error, now, post.id, reason))
                     true
                 }
