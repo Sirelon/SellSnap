@@ -1,14 +1,19 @@
 package com.sirelon.sellsnap.telegram
 
+import com.sirelon.sellsnap.fakes.FakeLlmClient
 import com.sirelon.sellsnap.fakes.FakeTelegramApi
+import com.sirelon.sellsnap.fakes.testAccount
 import com.sirelon.sellsnap.fakes.testPost
+import com.sirelon.sellsnap.llm.LlmFailure
 import com.sirelon.sellsnap.model.AccountMode
 import com.sirelon.sellsnap.model.EventType
 import com.sirelon.sellsnap.model.Pillar
 import com.sirelon.sellsnap.model.PostSource
 import com.sirelon.sellsnap.model.PostStatus
+import com.sirelon.sellsnap.model.UsageCounters
 import com.sirelon.sellsnap.telegram.BotFixture.Companion.NOW
 import com.sirelon.sellsnap.threads.ThreadsFailure
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -435,6 +440,297 @@ class ApprovalActionsTest {
         assertEquals(PostStatus.Pending, bot.status("stt0002"))
         assertEquals(1, bot.store.events.values.count { it.type == EventType.ModeChange })
         assertEquals(BotText.approvalDone("sellsnap.staging", 1), bot.sentTexts().last())
+    }
+
+    // --- Edit on an AI draft
+
+    @Test
+    fun editingAnAiDraftClearsItsBackTranslationAndCheckNotes() = runTest {
+        bot.putDraft {
+            it.copy(backTranslation = "Old English version", checkNotes = "Guardrail: old finding", needsAttention = true)
+        }
+        bot.tap("e:stt0001")
+
+        bot.say("A new tip from the owner", replyTo = bot.post("stt0001").editPromptMessageId)
+
+        val post = bot.post("stt0001")
+        assertEquals("A new tip from the owner", post.text)
+        assertNull(post.backTranslation)
+        assertNull(post.checkNotes)
+        assertTrue(post.editedByOwner)
+        assertEquals(PostStatus.Approved, post.status)
+        assertEquals(0, bot.account().approvalStreak)
+        val shown = bot.telegram.callsOf<FakeTelegramApi.Call.Edited>().last().text.orEmpty()
+        assertFalse("Old English version" in shown)
+        assertFalse("Check:" in shown)
+    }
+
+    // --- Regenerate
+
+    private val newUk = "Сфотографуйте річ біля вікна: денне світло показує справжній колір 📸"
+
+    private fun edits() = bot.telegram.callsOf<FakeTelegramApi.Call.Edited>()
+
+    private fun draftCalls() = bot.llm.requests.filter { it.model == BotFixture.DRAFT_MODEL }
+
+    @Test
+    fun regenerateWritesANewVersionAndRefreshesThePreviewInPlace() = runTest {
+        bot.putDraft { it.copy(needsAttention = true, checkNotes = "Guardrail: old finding", editedByOwner = true) }
+        bot.llm.enqueue(bot.draftReply(newUk))
+        bot.llm.enqueue(bot.checkReply("uk"))
+
+        bot.tap("r:stt0001")
+
+        assertEquals(listOf<String?>(BotText.REGENERATING), bot.answers())
+        val post = bot.post("stt0001")
+        assertEquals(newUk, post.text)
+        assertEquals(1, post.regenerations)
+        assertEquals(PostStatus.Pending, post.status)
+        assertFalse(post.needsAttention)
+        assertNull(post.checkNotes)
+        assertNull(post.backTranslation)
+        assertFalse(post.editedByOwner)
+        assertNull(post.regeneratingSince)
+        assertEquals(listOf(BotFixture.DRAFT_MODEL, BotFixture.CHECK_MODEL), bot.llm.requests.map { it.model })
+
+        val refresh = edits().single()
+        assertEquals("editMessageText", refresh.method)
+        assertEquals(900L, refresh.messageId)
+        assertTrue(newUk in refresh.text.orEmpty())
+        assertFalse("Old draft text" in refresh.text.orEmpty())
+        assertEquals(
+            listOf("Approve", "Edit", "Skip", "Regenerate"),
+            refresh.markup!!.inlineKeyboard.flatten().map { it.text },
+        )
+        assertTrue(bot.telegram.callsOf<FakeTelegramApi.Call.Sent>().isEmpty())
+    }
+
+    @Test
+    fun theDrafterPromptCarriesThePostsPillarAndTheAccountsLatestTexts() = runTest {
+        bot.store.put(testPost(id = "stt0002", scheduledAt = NOW.minusSeconds(86_400)).copy(text = "Yesterday's tip"))
+        bot.putDraft()
+        bot.llm.enqueue(bot.draftReply(newUk))
+        bot.llm.enqueue(bot.checkReply("uk"))
+
+        bot.tap("r:stt0001")
+
+        val prompt = draftCalls().single().user
+        assertTrue("Ukrainian" in prompt)
+        assertTrue("Yesterday's tip" in prompt)
+        assertTrue("Old draft text" in prompt)
+        assertFalse("RELEASE" in prompt)
+    }
+
+    @Test
+    fun aRegeneratedUpdateIsWrittenFromTheReleaseThatItsSourceRefNames() = runTest {
+        bot.store.put(bot.account().copy(publishedCount = 12))
+        bot.putDraft { it.copy(pillar = Pillar.Update, sourceRef = "release:3.3", replyText = "Old: {link}") }
+        bot.llm.enqueue(bot.draftReply("Нове: чернетки зберігають незавершені оголошення ✍️", replyText = "Спробуйте: {link}"))
+        bot.llm.enqueue(bot.checkReply("uk"))
+
+        bot.tap("r:stt0001")
+
+        assertTrue("RELEASE 3.3" in draftCalls().single().user)
+        val post = bot.post("stt0001")
+        assertEquals("Спробуйте: {link}", post.replyText)
+        assertEquals(1, post.regenerations)
+    }
+
+    @Test
+    fun anUpdateWhoseReleaseIsGoneIsLeftAloneWithAShortReply() = runTest {
+        bot.putDraft { it.copy(pillar = Pillar.Update, sourceRef = "release:9.9") }
+        val before = bot.post("stt0001")
+
+        bot.tap("r:stt0001")
+
+        assertEquals(before, bot.post("stt0001"))
+        assertTrue(bot.llm.requests.isEmpty())
+        assertEquals(listOf(BotText.REGENERATE_NO_RELEASE), bot.sentTexts())
+    }
+
+    @Test
+    fun aRegeneratedPolishDraftGetsItsBackTranslationInTheRefreshedPreview() = runTest {
+        bot.store.put(testAccount(id = "pl", codePrefix = "pl", language = "pl"))
+        bot.putDraft(id = "plt0001") { it.copy(accountId = "pl", code = "plt0001") }
+        bot.llm.enqueue(bot.draftReply("Sfotografuj rzecz przy oknie: dzienne światło pokazuje prawdziwy kolor 📸"))
+        bot.llm.enqueue(bot.checkReply("pl", backTranslation = "Photograph the item by a window.", naturalnessOk = true))
+
+        bot.tap("r:plt0001")
+
+        assertEquals("Photograph the item by a window.", bot.post("plt0001").backTranslation)
+        assertTrue(edits().single().text.orEmpty().endsWith("\n\nEN: Photograph the item by a window."))
+    }
+
+    @Test
+    fun aFailedCheckKeepsTheNewVersionAndShowsItsNotes() = runTest {
+        bot.putDraft()
+        bot.llm.enqueue(bot.draftReply(newUk))
+        bot.llm.enqueue(bot.checkReply("uk", findings = listOf("1. Too pushy.")))
+        bot.llm.enqueue(bot.draftReply(newUk))
+        bot.llm.enqueue(bot.checkReply("uk", findings = listOf("1. Still too pushy.")))
+
+        bot.tap("r:stt0001")
+
+        val post = bot.post("stt0001")
+        assertTrue(post.needsAttention)
+        assertEquals("Guardrail: 1. Still too pushy.", post.checkNotes)
+        assertTrue(edits().single().text.orEmpty().endsWith("\n\nCheck: Guardrail: 1. Still too pushy."))
+    }
+
+    @Test
+    fun aSecondTapWhileTheFirstIsStillWritingRunsNothing() = runTest {
+        lateinit var racing: BotFixture
+        racing = BotFixture(
+            FakeLlmClient { request ->
+                if (request.model == BotFixture.DRAFT_MODEL) {
+                    // The owner taps again while the model is still answering.
+                    runBlocking { racing.tap("r:stt0001") }
+                    racing.draftReply(newUk)
+                } else {
+                    racing.checkReply("uk")
+                }
+            },
+        )
+        racing.putDraft()
+
+        racing.tap("r:stt0001")
+
+        assertEquals(listOf<String?>(BotText.REGENERATING, BotText.REGENERATE_RUNNING), racing.answers())
+        assertEquals(1, racing.llm.requests.count { it.model == BotFixture.DRAFT_MODEL })
+        assertEquals(1, racing.post("stt0001").regenerations)
+        assertEquals(newUk, racing.post("stt0001").text)
+        assertNull(racing.post("stt0001").regeneratingSince)
+    }
+
+    @Test
+    fun aMarkerFromARunningTapRefusesAndAStaleMarkerDoesNot() = runTest {
+        bot.putDraft { it.copy(regeneratingSince = NOW.minusSeconds(60)) }
+        val before = bot.post("stt0001")
+
+        bot.tap("r:stt0001")
+
+        assertEquals(listOf<String?>(BotText.REGENERATE_RUNNING), bot.answers())
+        assertEquals(before, bot.post("stt0001"))
+        assertTrue(bot.llm.requests.isEmpty())
+
+        bot.store.put(before.copy(regeneratingSince = NOW.minusSeconds(600)))
+        bot.llm.enqueue(bot.draftReply(newUk))
+        bot.llm.enqueue(bot.checkReply("uk"))
+
+        bot.tap("r:stt0001")
+
+        assertEquals(1, bot.post("stt0001").regenerations)
+        assertNull(bot.post("stt0001").regeneratingSince)
+    }
+
+    @Test
+    fun theThirdRegenerationHidesTheButtonAndTheFourthTapIsRefused() = runTest {
+        bot.putDraft { it.copy(regenerations = 2) }
+        bot.llm.enqueue(bot.draftReply(newUk))
+        bot.llm.enqueue(bot.checkReply("uk"))
+
+        bot.tap("r:stt0001")
+
+        assertEquals(3, bot.post("stt0001").regenerations)
+        assertEquals(listOf("Approve", "Edit", "Skip"), edits().single().markup!!.inlineKeyboard.flatten().map { it.text })
+        val requestsSoFar = bot.llm.requests.size
+
+        bot.tap("r:stt0001")
+
+        assertEquals(BotText.NO_MORE_VERSIONS, bot.answers().last())
+        assertEquals(3, bot.post("stt0001").regenerations)
+        assertEquals(requestsSoFar, bot.llm.requests.size)
+        assertEquals(1, edits().size)
+    }
+
+    @Test
+    fun aDraftThatBreaksTheRulesTwiceLeavesThePostUnchanged() = runTest {
+        bot.putDraft()
+        val before = bot.post("stt0001")
+        repeat(2) { bot.llm.enqueue(bot.draftReply("Read more at https://example.com/tip")) }
+
+        bot.tap("r:stt0001")
+
+        assertEquals(before, bot.post("stt0001"))
+        assertEquals(listOf<String?>(BotText.REGENERATING), bot.answers())
+        assertEquals(listOf(BotText.REGENERATE_FAILED), bot.sentTexts())
+        assertTrue(edits().isEmpty())
+    }
+
+    @Test
+    fun anUnreachableModelGivesTheBusyReplyAndLeavesThePostUnchanged() = runTest {
+        bot.putDraft()
+        val before = bot.post("stt0001")
+        bot.llm.enqueueFailure(LlmFailure.Transient("The model is busy"))
+
+        bot.tap("r:stt0001")
+
+        assertEquals(before, bot.post("stt0001"))
+        assertEquals(listOf(BotText.REGENERATE_BUSY), bot.sentTexts())
+        assertEquals(900L, bot.telegram.callsOf<FakeTelegramApi.Call.Sent>().single().replyToMessageId)
+        assertTrue(edits().isEmpty())
+
+        // The marker is gone, so the owner can tap again.
+        bot.llm.enqueue(bot.draftReply(newUk))
+        bot.llm.enqueue(bot.checkReply("uk"))
+        bot.tap("r:stt0001")
+        assertEquals(1, bot.post("stt0001").regenerations)
+    }
+
+    @Test
+    fun aPostThatIsNotFromTheDrafterHasNoRegenerateButtonAndAForgedTapIsRefused() = runTest {
+        bot.putPending()
+        val before = bot.post("stt0001")
+
+        assertEquals(listOf("Approve", "Edit", "Skip"), bot.previews.keyboard(before, bot.account())!!.inlineKeyboard.flatten().map { it.text })
+        bot.tap("r:stt0001")
+
+        assertEquals(listOf<String?>(BotText.CANNOT_REGENERATE), bot.answers())
+        assertEquals(before, bot.post("stt0001"))
+        assertTrue(bot.llm.requests.isEmpty())
+    }
+
+    @Test
+    fun aTapOnAPostThatIsNoLongerPendingOrDoesNotExistIsRefused() = runTest {
+        bot.putDraft { it.copy(status = PostStatus.Approved) }
+
+        bot.tap("r:stt0001")
+        bot.tap("r:missing")
+
+        assertEquals(listOf<String?>("Already approved.", BotText.POST_NOT_FOUND), bot.answers())
+        assertTrue(bot.llm.requests.isEmpty())
+    }
+
+    @Test
+    fun aPostThatChangesWhileTheModelWritesKeepsItsNewStateAndDropsTheNewVersion() = runTest {
+        lateinit var racing: BotFixture
+        racing = BotFixture(
+            FakeLlmClient { request ->
+                if (request.model == BotFixture.DRAFT_MODEL) runBlocking { racing.tap("s:stt0001") }
+                if (request.model == BotFixture.DRAFT_MODEL) racing.draftReply(newUk) else racing.checkReply("uk")
+            },
+        )
+        racing.putDraft()
+
+        racing.tap("r:stt0001")
+
+        assertEquals(PostStatus.Skipped, racing.post("stt0001").status)
+        assertEquals("Old draft text", racing.post("stt0001").text)
+        assertEquals(0, racing.post("stt0001").regenerations)
+        assertEquals(BotText.REGENERATE_POST_CHANGED, racing.sentTexts().last())
+    }
+
+    @Test
+    fun theDailyUsageLimitGivesItsOwnReplyAndLeavesThePostUnchanged() = runTest {
+        bot.putDraft()
+        val before = bot.post("stt0001")
+        bot.store.addUsage("20261012", BotFixture.DRAFT_MODEL, UsageCounters(calls = 180, promptTokens = 0, outputTokens = 0, thoughtsTokens = 0))
+
+        bot.tap("r:stt0001")
+
+        assertEquals(before, bot.post("stt0001"))
+        assertTrue(bot.llm.requests.isEmpty())
+        assertEquals(listOf(BotText.USAGE_LIMIT_REACHED), bot.sentTexts())
     }
 
     // --- Previews on the keyboard

@@ -68,6 +68,7 @@ class FirestoreMappingTest {
             backTranslation = "Tip: photograph the item by a window.",
             checkNotes = "The Polish does not read as natural: stiff opening.",
             regenerations = 2,
+            regeneratingSince = instant,
             sourceRef = "release:3.3",
             batchWeek = "2026-W43",
         )

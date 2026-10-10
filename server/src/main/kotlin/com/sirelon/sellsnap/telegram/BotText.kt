@@ -19,6 +19,8 @@ object BotText {
     const val NO_SLOT = "no slot yet"
     const val POLL_OPTIONS_TITLE = "Poll options:"
     const val REPLY_TITLE = "↳ reply:"
+    const val BACK_TRANSLATION_PREFIX = "EN: "
+    const val CHECK_NOTES_PREFIX = "Check: "
 
     fun header(handle: String, code: String, slot: String, needsAttention: Boolean): String =
         listOfNotNull("@$handle", code, slot, NEEDS_ATTENTION.takeIf { needsAttention }).joinToString(" | ")
@@ -49,6 +51,17 @@ object BotText {
     fun notDeletable(status: PostStatus): String = "A ${status.name.lowercase()} post cannot be deleted."
 
     fun threadsDeleteFailed(reason: String): String = "Threads did not delete it: $reason."
+
+    // Regenerate
+    const val REGENERATING = "Writing a new version…"
+    const val REGENERATE_RUNNING = "A new version is already being written."
+    const val NO_MORE_VERSIONS = "No more new versions for this post"
+    const val CANNOT_REGENERATE = "This post cannot be regenerated."
+    const val USAGE_LIMIT_REACHED = "Daily AI limit reached, try tomorrow"
+    const val REGENERATE_BUSY = "The AI is busy right now, so the post is unchanged."
+    const val REGENERATE_FAILED = "The AI did not return a usable version, so the post is unchanged."
+    const val REGENERATE_NO_RELEASE = "The release for this post is no longer listed, so I cannot write a new version."
+    const val REGENERATE_POST_CHANGED = "The post changed while I was writing, so I dropped the new version."
 
     // Edit flow
     fun editPrompt(code: String, hasReply: Boolean = false): String =

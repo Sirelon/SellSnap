@@ -2,6 +2,12 @@ package com.sirelon.sellsnap
 
 import com.google.cloud.firestore.FirestoreOptions
 import com.google.cloud.storage.StorageOptions
+import com.sirelon.sellsnap.brand.BrandContext
+import com.sirelon.sellsnap.brand.FirestoreReleaseNotesSource
+import com.sirelon.sellsnap.brand.ReleaseNotesSource
+import com.sirelon.sellsnap.draft.DraftChecker
+import com.sirelon.sellsnap.draft.DraftPipeline
+import com.sirelon.sellsnap.draft.Drafter
 import com.sirelon.sellsnap.http.GoogleOidcVerifier
 import com.sirelon.sellsnap.http.OidcVerifier
 import com.sirelon.sellsnap.http.TelegramSecret
@@ -21,6 +27,7 @@ import com.sirelon.sellsnap.telegram.BotUpdateHandler
 import com.sirelon.sellsnap.telegram.Commands
 import com.sirelon.sellsnap.telegram.PreviewSender
 import com.sirelon.sellsnap.telegram.Previews
+import com.sirelon.sellsnap.telegram.Regenerator
 import com.sirelon.sellsnap.telegram.TelegramApi
 import com.sirelon.sellsnap.telegram.TelegramHttpClient
 import com.sirelon.sellsnap.telegram.telegramHttpClient
@@ -46,16 +53,20 @@ class AppGraph(
 ) {
     companion object {
         /** The real adapters: Firestore and Storage with default credentials, Threads, Telegram and Gemini over HTTP. */
-        fun create(config: Config, clock: Clock = Clock.systemUTC()): AppGraph = assemble(
-            config = config,
-            store = FirestoreSocialStore(FirestoreOptions.getDefaultInstance().service),
-            telegram = TelegramHttpClient(telegramHttpClient(), config.telegramBotToken),
-            threads = ThreadsHttpClient(threadsHttpClient(), config.threadsAppSecret),
-            images = GcsImageStore(StorageOptions.getDefaultInstance().service, config.storageBucket),
-            llm = GeminiLlmClient(geminiHttpClient(), config.geminiApiKey),
-            oidc = GoogleOidcVerifier(config.oidcAudience, config.schedulerSaEmail),
-            clock = clock,
-        )
+        fun create(config: Config, clock: Clock = Clock.systemUTC()): AppGraph {
+            val firestore = FirestoreOptions.getDefaultInstance().service
+            return assemble(
+                config = config,
+                store = FirestoreSocialStore(firestore),
+                telegram = TelegramHttpClient(telegramHttpClient(), config.telegramBotToken),
+                threads = ThreadsHttpClient(threadsHttpClient(), config.threadsAppSecret),
+                images = GcsImageStore(StorageOptions.getDefaultInstance().service, config.storageBucket),
+                llm = GeminiLlmClient(geminiHttpClient(), config.geminiApiKey),
+                releases = FirestoreReleaseNotesSource(firestore),
+                oidc = GoogleOidcVerifier(config.oidcAudience, config.schedulerSaEmail),
+                clock = clock,
+            )
+        }
 
         /** Wires the services over the given ports; tests call this with fakes. */
         fun assemble(
@@ -65,13 +76,21 @@ class AppGraph(
             threads: ThreadsApi,
             images: ImageStore,
             llm: LlmClient,
+            releases: ReleaseNotesSource,
             oidc: OidcVerifier,
             clock: Clock,
         ): AppGraph {
             val owner = config.ownerTelegramId
-            val previews = Previews(images, config.postLinkTemplate)
+            val previews = Previews(images, config.postLinkTemplate, regenerateAvailable = true)
             val sender = PreviewSender(telegram, previews, store, owner)
-            val approvals = ApprovalActions(store, telegram, threads, previews, sender, clock, owner)
+            val usage = UsageTracker(store, clock, config.dailyCallLimit)
+            val brand = BrandContext.load()
+            val pipeline = DraftPipeline(
+                Drafter(llm, usage, brand, config.draftModel),
+                DraftChecker(llm, usage, brand, config.checkModel),
+            )
+            val regenerator = Regenerator(store, telegram, pipeline, releases, previews, sender, clock, owner)
+            val approvals = ApprovalActions(store, telegram, threads, previews, sender, clock, owner, regenerator)
             val publisher = Publisher(store, threads, images, clock, config.postLinkTemplate)
             val tokens = TokenLifecycle(store, threads, clock)
             val commands = Commands(store, telegram, images, publisher, tokens, previews, sender, approvals, clock, owner)
@@ -92,7 +111,7 @@ class AppGraph(
                 updates = BotUpdateHandler(store, telegram, approvals, commands, clock, owner),
                 redirects = RedirectService(store, links, clock),
                 llm = llm,
-                usage = UsageTracker(store, clock, config.dailyCallLimit),
+                usage = usage,
             )
         }
     }

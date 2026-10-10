@@ -1,28 +1,52 @@
 package com.sirelon.sellsnap.telegram
 
+import com.sirelon.sellsnap.brand.BrandContext
+import com.sirelon.sellsnap.brand.ReleaseChange
+import com.sirelon.sellsnap.brand.ReleaseNotes
+import com.sirelon.sellsnap.draft.DraftChecker
+import com.sirelon.sellsnap.draft.DraftPipeline
+import com.sirelon.sellsnap.draft.Drafter
 import com.sirelon.sellsnap.fakes.FakeImageStore
+import com.sirelon.sellsnap.fakes.FakeLlmClient
+import com.sirelon.sellsnap.fakes.FakeReleaseNotesSource
 import com.sirelon.sellsnap.fakes.FakeTelegramApi
 import com.sirelon.sellsnap.fakes.FakeThreadsApi
 import com.sirelon.sellsnap.fakes.InMemorySocialStore
 import com.sirelon.sellsnap.fakes.MutableClock
 import com.sirelon.sellsnap.fakes.testAccount
+import com.sirelon.sellsnap.llm.LlmResult
+import com.sirelon.sellsnap.model.PostSource
 import com.sirelon.sellsnap.model.PostStatus
 import com.sirelon.sellsnap.model.SocialPost
+import com.sirelon.sellsnap.spend.UsageTracker
 import com.sirelon.sellsnap.threads.Me
 import com.sirelon.sellsnap.threads.Publisher
 import com.sirelon.sellsnap.threads.TokenLifecycle
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import java.time.Instant
 
 /** The whole Telegram side on fakes, with one staging account that holds a Threads token. */
-class BotFixture {
+class BotFixture(val llm: FakeLlmClient = FakeLlmClient()) {
     val clock = MutableClock(NOW)
     val store = InMemorySocialStore()
     val telegram = FakeTelegramApi()
     val threads = FakeThreadsApi(store)
     val images = FakeImageStore()
-    val previews = Previews(images, LINK_TEMPLATE)
+    val releases = FakeReleaseNotesSource(listOf(RELEASE))
+    val usage = UsageTracker(store, clock, dailyCallLimit = 200)
+    private val brand = BrandContext.load()
+    val pipeline = DraftPipeline(
+        Drafter(llm, usage, brand, DRAFT_MODEL),
+        DraftChecker(llm, usage, brand, CHECK_MODEL),
+    )
+    val previews = Previews(images, LINK_TEMPLATE, regenerateAvailable = true)
     val sender = PreviewSender(telegram, previews, store, OWNER)
-    val approvals = ApprovalActions(store, telegram, threads, previews, sender, clock, OWNER)
+    val regenerator = Regenerator(store, telegram, pipeline, releases, previews, sender, clock, OWNER)
+    val approvals = ApprovalActions(store, telegram, threads, previews, sender, clock, OWNER, regenerator)
     val publisher = Publisher(store, threads, images, clock, LINK_TEMPLATE)
     val tokens = TokenLifecycle(store, threads, clock)
     val commands = Commands(store, telegram, images, publisher, tokens, previews, sender, approvals, clock, OWNER)
@@ -109,8 +133,66 @@ class BotFixture {
             .copy(telegramMessageId = telegramMessageId)
             .also(store::put)
 
+    /** A pending post that the drafter wrote, with the preview message 900. */
+    fun putDraft(
+        id: String = "stt0001",
+        scheduledAt: Instant? = NOW.plusSeconds(3600),
+        change: (SocialPost) -> SocialPost = { it },
+    ): SocialPost =
+        com.sirelon.sellsnap.fakes.testPost(id = id, status = PostStatus.Pending, scheduledAt = scheduledAt)
+            .copy(source = PostSource.Drafter, text = "Old draft text", telegramMessageId = 900)
+            .let(change)
+            .also(store::put)
+
+    /** The drafter's JSON answer, as the fake model returns it. */
+    fun draftReply(text: String, replyText: String? = null): LlmResult = FakeLlmClient.reply(
+        DRAFT_MODEL,
+        buildJsonObject {
+            put("text", text)
+            if (replyText != null) put("replyText", replyText)
+            put("claimedFeatureIds", JsonArray(emptyList()))
+        }.toString(),
+    )
+
+    /** The checker's JSON answer; a clean pass unless [findings] or [naturalnessOk] say otherwise. */
+    fun checkReply(
+        language: String = "uk",
+        findings: List<String> = emptyList(),
+        backTranslation: String? = null,
+        naturalnessOk: Boolean? = null,
+    ): LlmResult = FakeLlmClient.reply(
+        CHECK_MODEL,
+        buildJsonObject {
+            put("detectedLanguage", language)
+            put("unsupportedClaims", JsonArray(emptyList()))
+            put("guardrailFindings", JsonArray(findings.map(::JsonPrimitive)))
+            put("backTranslationEn", backTranslation?.let(::JsonPrimitive) ?: JsonNull)
+            put("naturalnessOk", naturalnessOk?.let(::JsonPrimitive) ?: JsonNull)
+            put("naturalnessIssues", JsonArray(emptyList()))
+        }.toString(),
+    )
+
     companion object {
+        const val DRAFT_MODEL = "draft-model"
+        const val CHECK_MODEL = "check-model"
         const val OWNER = 42L
+
+        val RELEASE = ReleaseNotes(
+            version = "3.3",
+            date = "2026-10-12",
+            changes = listOf(
+                ReleaseChange(
+                    id = "drafts",
+                    title = mapOf("en" to "Drafts", "uk" to "Чернетки", "pl" to "Szkice"),
+                    summary = mapOf(
+                        "en" to "Unfinished listings are kept.",
+                        "uk" to "Незавершені оголошення зберігаються.",
+                        "pl" to "Niedokończone ogłoszenia są zapisywane.",
+                    ),
+                ),
+            ),
+        )
+
         const val LINK_TEMPLATE = "https://go.test/go/{code}"
 
         /** A Monday, 08:00 in Kyiv. */

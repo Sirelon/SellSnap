@@ -28,13 +28,14 @@ class ApprovalActions(
     private val sender: PreviewSender,
     private val clock: Clock,
     private val ownerChatId: Long,
+    private val regenerator: Regenerator? = null,
 ) {
-    /** Handles a button tap. Always answers the callback query. */
+    /** Handles a button tap. Answers the callback query exactly once; Regenerate answers it itself, before its slow work. */
     suspend fun onCallback(query: CallbackQuery) {
         val data = query.data.orEmpty()
         val action = data.substringBefore(':', "")
         val postId = data.substringAfter(':', "")
-        val answer = when {
+        val answer: String? = when {
             postId.isEmpty() -> BotText.UNKNOWN_BUTTON
             else -> when (action) {
                 CallbackAction.APPROVE -> approve(postId, query)
@@ -42,10 +43,11 @@ class ApprovalActions(
                 CallbackAction.SKIP -> skip(postId, query)
                 CallbackAction.DELETE -> delete(postId, query)
                 CallbackAction.CANCEL -> cancel(postId, query)
+                CallbackAction.REGENERATE -> regenerate(postId, query)
                 else -> BotText.UNKNOWN_BUTTON
             }
         }
-        telegram.answerCallbackQuery(query.id, answer)
+        if (answer != null) telegram.answerCallbackQuery(query.id, answer)
     }
 
     /**
@@ -93,6 +95,9 @@ class ApprovalActions(
                     status = PostStatus.Approved,
                     editedByOwner = true,
                     editPromptMessageId = null,
+                    // They describe the draft that the owner just replaced.
+                    backTranslation = null,
+                    checkNotes = null,
                 )
                 tx.putPost(edited)
                 tx.putAccount(owner.copy(approvalStreak = 0))
@@ -198,6 +203,13 @@ class ApprovalActions(
                 BotText.APPROVED
             }
         }
+    }
+
+    /** Null when [Regenerator] has answered the tap itself. */
+    private suspend fun regenerate(postId: String, query: CallbackQuery): String? {
+        val regenerator = regenerator ?: return BotText.UNKNOWN_BUTTON
+        regenerator.regenerate(postId, query.id)
+        return null
     }
 
     private suspend fun askForEdit(postId: String): String {
@@ -378,6 +390,8 @@ class ApprovalActions(
     companion object {
         /** Consecutive approvals without an edit after which an account publishes on its own (D1). */
         const val GRADUATION_STREAK = 20
+        /** Times the owner may ask for a new version of one post. */
+        const val MAX_REGENERATIONS = 3
         const val SKIP_REASON = "skipped_by_owner"
         const val DELETED_BEFORE_SLOT = "deleted_before_slot"
         const val CANCELLED_BEFORE_SLOT = "cancelled_before_slot"

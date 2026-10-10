@@ -3,6 +3,7 @@ package com.sirelon.sellsnap
 import com.sirelon.sellsnap.fakes.FakeImageStore
 import com.sirelon.sellsnap.fakes.FakeLlmClient
 import com.sirelon.sellsnap.fakes.FakeOidcVerifier
+import com.sirelon.sellsnap.fakes.FakeReleaseNotesSource
 import com.sirelon.sellsnap.fakes.FakeTelegramApi
 import com.sirelon.sellsnap.fakes.FakeThreadsApi
 import com.sirelon.sellsnap.fakes.InMemorySocialStore
@@ -46,7 +47,7 @@ class AgentFixture(
     val oidc = FakeOidcVerifier()
     val llm = FakeLlmClient()
     val config = testConfig(appleProviderToken)
-    val graph = AppGraph.assemble(config, store, telegram, threads, images, llm, oidc, clock)
+    val graph = AppGraph.assemble(config, store, telegram, threads, images, llm, FakeReleaseNotesSource(), oidc, clock)
 
     fun account(id: String) = memory.allAccounts.getValue(id)
 

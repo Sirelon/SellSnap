@@ -5,6 +5,7 @@ import com.sirelon.sellsnap.content.postLinkUrl
 import com.sirelon.sellsnap.media.ImageStore
 import com.sirelon.sellsnap.model.AccountMode
 import com.sirelon.sellsnap.model.PostKind
+import com.sirelon.sellsnap.model.PostSource
 import com.sirelon.sellsnap.model.PostStatus
 import com.sirelon.sellsnap.model.SocialAccount
 import com.sirelon.sellsnap.model.SocialPost
@@ -27,8 +28,9 @@ object CallbackAction {
 class Preview(val text: String, val photoUrl: String?, val keyboard: InlineKeyboardMarkup?)
 
 /**
- * Builds the owner's preview of a post. [regenerateAvailable] is the one switch for the
- * Regenerate button; the drafter that would serve it does not exist yet.
+ * Builds the owner's preview of a post. [regenerateAvailable] says the service can write a new version
+ * of a draft; the button then shows under a pending post that the drafter wrote and that has
+ * versions left ([canRegenerate]).
  */
 class Previews(
     private val images: ImageStore,
@@ -41,8 +43,15 @@ class Previews(
     fun build(post: SocialPost, account: SocialAccount): Preview {
         val photo = post.imagePaths.firstOrNull()?.takeIf { post.kind == PostKind.Image }?.let(images::publicUrl)
         val limit = if (photo != null) CAPTION_LIMIT else MESSAGE_LIMIT
-        return Preview(fit(body(post, account), limit), photo, keyboard(post, account))
+        return Preview(fit(body(post, account), appendix(post, account), limit), photo, keyboard(post, account))
     }
+
+    /** True when the Regenerate button belongs under [post]: a pending post the drafter wrote, with versions left. */
+    fun canRegenerate(post: SocialPost): Boolean =
+        regenerateAvailable &&
+            post.source == PostSource.Drafter &&
+            post.status == PostStatus.Pending &&
+            post.regenerations < ApprovalActions.MAX_REGENERATIONS
 
     /** The buttons for the post's status, or null when it has none. */
     fun keyboard(post: SocialPost, account: SocialAccount): InlineKeyboardMarkup? {
@@ -55,7 +64,7 @@ class Previews(
                         button(BotText.SKIP, CallbackAction.SKIP, post),
                     ),
                 )
-                if (regenerateAvailable) add(listOf(button(BotText.REGENERATE, CallbackAction.REGENERATE, post)))
+                if (canRegenerate(post)) add(listOf(button(BotText.REGENERATE, CallbackAction.REGENERATE, post)))
             }
             post.status == PostStatus.Approved && account.mode == AccountMode.Auto ->
                 listOf(listOf(button(BotText.DELETE_BEFORE_SLOT, CallbackAction.DELETE, post)))
@@ -92,8 +101,37 @@ class Previews(
         }
     }
 
+    /**
+     * What the checks add under the post, in the order they are cut from the end: the English
+     * back-translation of a Polish draft, then the notes of a post that needs attention.
+     */
+    private fun appendix(post: SocialPost, account: SocialAccount): List<String> = listOfNotNull(
+        post.backTranslation?.takeIf { account.language == "pl" && it.isNotBlank() }?.let { BotText.BACK_TRANSLATION_PREFIX + it },
+        post.checkNotes?.takeIf { post.needsAttention && it.isNotBlank() }?.let { BotText.CHECK_NOTES_PREFIX + it },
+    )
+
+    /**
+     * [body] followed by the [appendix] parts, each after a blank line, within [limit]. The parts are cut
+     * from the end first, and only as much as needed. The post text is cut only when [body] alone is too long.
+     */
+    private fun fit(body: String, appendix: List<String>, limit: Int): String {
+        if (body.length >= limit) return cut(body, limit)
+        val result = StringBuilder(body)
+        for (part in appendix) {
+            val addition = PART_SEPARATOR + part
+            val room = limit - result.length
+            if (addition.length <= room) {
+                result.append(addition)
+            } else {
+                if (room > PART_SEPARATOR.length + MIN_PART_LENGTH) result.append(PART_SEPARATOR).append(cut(part, room - PART_SEPARATOR.length))
+                break
+            }
+        }
+        return result.toString()
+    }
+
     /** Cuts [text] to [limit] characters, ending with an ellipsis, without splitting a surrogate pair. */
-    private fun fit(text: String, limit: Int): String {
+    private fun cut(text: String, limit: Int): String {
         if (text.length <= limit) return text
         var end = limit - 1
         if (Character.isHighSurrogate(text[end - 1])) end--
@@ -104,6 +142,10 @@ class Previews(
         const val CAPTION_LIMIT = 1024
         const val MESSAGE_LIMIT = 4096
         const val CALLBACK_DATA_LIMIT = 64
+        private const val PART_SEPARATOR = "\n\n"
+
+        /** A cut appendix part shorter than this is dropped instead of shown as a stub. */
+        private const val MIN_PART_LENGTH = 20
     }
 }
 

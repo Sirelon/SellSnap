@@ -65,6 +65,8 @@ data class SocialPost(
     val checkNotes: String? = null,
     /** Times the owner tapped Regenerate on this post. */
     val regenerations: Int = 0,
+    /** Set while a Regenerate tap is writing a new version; a second tap is refused until it clears or goes stale. */
+    val regeneratingSince: Instant? = null,
     /** What the post is about, for example `release:3.3` for the update that announces version 3.3. */
     val sourceRef: String? = null,
     /** ISO week of the batch that drafted the post, for example `2026-W43`. */
