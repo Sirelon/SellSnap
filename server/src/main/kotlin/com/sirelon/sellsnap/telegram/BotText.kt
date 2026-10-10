@@ -55,9 +55,9 @@ object BotText {
     // Regenerate
     const val REGENERATING = "Writing a new version…"
     const val REGENERATE_RUNNING = "A new version is already being written."
-    const val NO_MORE_VERSIONS = "No more new versions for this post"
+    const val NO_MORE_VERSIONS = "No more new versions for this post."
     const val CANNOT_REGENERATE = "This post cannot be regenerated."
-    const val USAGE_LIMIT_REACHED = "Daily AI limit reached, try tomorrow"
+    const val USAGE_LIMIT_REACHED = "Daily AI limit reached, try tomorrow."
     const val REGENERATE_BUSY = "The AI is busy right now, so the post is unchanged."
     const val REGENERATE_FAILED = "The AI did not return a usable version, so the post is unchanged."
     const val REGENERATE_NO_RELEASE = "The release for this post is no longer listed, so I cannot write a new version."
