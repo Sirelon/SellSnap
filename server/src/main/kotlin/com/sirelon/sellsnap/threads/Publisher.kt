@@ -104,15 +104,13 @@ class Publisher(
     private val threads: ThreadsApi,
     private val images: ImageStore,
     private val clock: Clock,
-    publicBaseUrl: String,
+    private val linkTemplate: String,
     private val newClaimId: () -> String = { UUID.randomUUID().toString() },
     private val retryDelays: List<KDuration> = DEFAULT_RETRY_DELAYS,
     private val statusPollInterval: KDuration = 10.seconds,
     private val maxWaitPerPost: KDuration = 60.seconds,
     private val staleClaimAfter: Duration = Duration.ofMinutes(15),
 ) {
-    private val baseUrl = publicBaseUrl
-
     /**
      * Publishes the account's due posts, recovers its stale claims, then publishes the link replies
      * that are still owed; the tick calls this.
@@ -310,7 +308,7 @@ class Publisher(
         }
 
         private fun containerRequest(): ContainerRequest {
-            val text = ContentRules.render(post.text, postLinkUrl(baseUrl, post.code), account.language)
+            val text = ContentRules.render(post.text, postLinkUrl(linkTemplate, post.code, account.language), account.language)
             return when (post.kind) {
                 PostKind.Text -> ContainerRequest(PostKind.Text, text)
                 PostKind.Poll -> ContainerRequest(PostKind.Poll, text, pollOptions = post.pollOptions)
@@ -337,7 +335,7 @@ class Publisher(
 
         /** The container is already published: find the media id by the post's text among the latest threads. */
         private suspend fun recoverPublished(): PublishOutcome {
-            val rendered = ContentRules.render(post.text, postLinkUrl(baseUrl, post.code), account.language)
+            val rendered = ContentRules.render(post.text, postLinkUrl(linkTemplate, post.code, account.language), account.language)
             val recent = call { threads.recentThreads(userId, token, RECENT_THREADS) }
             val match = recent.filter { it.text == rendered }.maxByOrNull { it.publishedAt ?: Instant.EPOCH }
             return recordPublished(match?.id)
@@ -534,7 +532,7 @@ class Publisher(
         )
 
         private fun renderedReply(): String =
-            ContentRules.render(post.replyText.orEmpty(), postLinkUrl(baseUrl, post.code), account.language)
+            ContentRules.render(post.replyText.orEmpty(), postLinkUrl(linkTemplate, post.code, account.language), account.language)
 
         private suspend fun createContainer(): String {
             val replyTo = post.mediaId ?: throw ThreadsFailure.Permanent(null, "The reply has no post to answer")

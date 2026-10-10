@@ -32,13 +32,11 @@ class Preview(val text: String, val photoUrl: String?, val keyboard: InlineKeybo
  */
 class Previews(
     private val images: ImageStore,
-    publicBaseUrl: String,
+    private val linkTemplate: String,
     private val regenerateAvailable: Boolean = false,
 ) {
-    private val baseUrl = publicBaseUrl
-
-    /** The redirect URL that replaces `{link}` in the post with [code]. */
-    fun linkUrl(code: String): String = postLinkUrl(baseUrl, code)
+    /** The URL that replaces `{link}` in the post with [code] on an account that writes in [language]. */
+    fun linkUrl(code: String, language: String): String = postLinkUrl(linkTemplate, code, language)
 
     fun build(post: SocialPost, account: SocialAccount): Preview {
         val photo = post.imagePaths.firstOrNull()?.takeIf { post.kind == PostKind.Image }?.let(images::publicUrl)
@@ -79,7 +77,7 @@ class Previews(
     private fun body(post: SocialPost, account: SocialAccount): String {
         val slot = post.scheduledAt?.let { BotText.slot(it, account.zone) } ?: BotText.NO_SLOT
         val header = BotText.header(account.handle, post.code, slot, post.needsAttention)
-        val text = ContentRules.render(post.text, linkUrl(post.code), account.language)
+        val text = ContentRules.render(post.text, linkUrl(post.code, account.language), account.language)
         return buildString {
             append(header)
             if (text.isNotBlank()) append("\n\n").append(text)
@@ -89,7 +87,7 @@ class Previews(
             }
             post.replyText?.let { reply ->
                 append("\n\n").append(BotText.REPLY_TITLE).append("\n")
-                append(ContentRules.render(reply, linkUrl(post.code), account.language))
+                append(ContentRules.render(reply, linkUrl(post.code, account.language), account.language))
             }
         }
     }

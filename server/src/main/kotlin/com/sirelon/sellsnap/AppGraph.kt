@@ -61,10 +61,10 @@ class AppGraph(
             clock: Clock,
         ): AppGraph {
             val owner = config.ownerTelegramId
-            val previews = Previews(images, config.publicBaseUrl)
+            val previews = Previews(images, config.postLinkTemplate)
             val sender = PreviewSender(telegram, previews, store, owner)
             val approvals = ApprovalActions(store, telegram, threads, previews, sender, clock, owner)
-            val publisher = Publisher(store, threads, images, clock, config.publicBaseUrl)
+            val publisher = Publisher(store, threads, images, clock, config.postLinkTemplate)
             val tokens = TokenLifecycle(store, threads, clock)
             val commands = Commands(store, telegram, images, publisher, tokens, previews, sender, approvals, clock, owner)
             val links = StoreLinks(config.playPackage, config.appStoreId, config.appleProviderToken, config.landingUrl)

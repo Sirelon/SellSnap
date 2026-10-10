@@ -1,5 +1,8 @@
 package com.sirelon.sellsnap
 
+import com.sirelon.sellsnap.content.DEFAULT_POST_LINK_TEMPLATE
+import com.sirelon.sellsnap.content.expandLinkTemplate
+
 /** Runtime settings read from environment variables. Secrets arrive through Cloud Run secret injection. */
 class Config(
     val port: Int,
@@ -10,6 +13,8 @@ class Config(
     val schedulerSaEmail: String,
     val oidcAudience: String,
     val publicBaseUrl: String,
+    /** The post link template with `{PUBLIC_BASE_URL}` filled in; still holds `{code}` and `{lang}`. */
+    val postLinkTemplate: String,
     val storageBucket: String,
     val playPackage: String,
     val appStoreId: String,
@@ -38,6 +43,10 @@ class Config(
                 raw.toLongOrNull() ?: 0L.also { problems += "OWNER_TELEGRAM_ID is not a number" }
             } ?: 0L.also { problems += "OWNER_TELEGRAM_ID is missing" }
 
+            val publicBaseUrl = required("PUBLIC_BASE_URL")
+            val linkTemplate = expandLinkTemplate(optional("POST_LINK_TEMPLATE") ?: DEFAULT_POST_LINK_TEMPLATE, publicBaseUrl)
+            if ("{code}" !in linkTemplate) problems += "POST_LINK_TEMPLATE has no {code}"
+
             val config = Config(
                 port = port,
                 telegramBotToken = required("TELEGRAM_BOT_TOKEN"),
@@ -46,7 +55,8 @@ class Config(
                 ownerTelegramId = ownerId,
                 schedulerSaEmail = required("SCHEDULER_SA_EMAIL"),
                 oidcAudience = required("OIDC_AUDIENCE"),
-                publicBaseUrl = required("PUBLIC_BASE_URL"),
+                publicBaseUrl = publicBaseUrl,
+                postLinkTemplate = linkTemplate,
                 storageBucket = required("STORAGE_BUCKET"),
                 playPackage = required("PLAY_PACKAGE"),
                 appStoreId = required("APP_STORE_ID"),

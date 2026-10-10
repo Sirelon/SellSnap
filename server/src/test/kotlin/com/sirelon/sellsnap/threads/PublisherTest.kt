@@ -47,8 +47,8 @@ class PublisherTest {
         store.put(testAccount().copy(token = TOKEN, threadsUserId = "u1"))
     }
 
-    private fun publisher(api: ThreadsApi = threads, prefix: String = "claim") = Publisher(
-        store, api, FakeImageStore(), clock, "https://go.test/",
+    private fun publisher(api: ThreadsApi = threads, prefix: String = "claim", template: String = LINK_TEMPLATE) = Publisher(
+        store, api, FakeImageStore(), clock, template,
         newClaimId = { "$prefix-${++claims}" },
     )
 
@@ -98,6 +98,22 @@ class PublisherTest {
         assertEquals(PostStatus.Publishing, atPublish.status)
         assertEquals("claim-1", atPublish.claimId)
         assertEquals(NOW, atPublish.publishingClaimedAt)
+    }
+
+    @Test
+    fun theLinkPointsAtTheWebsiteWithTheAccountLanguageAndThePostCode() = runTest {
+        store.put(testAccount(id = "pl", codePrefix = "pl", language = "pl", timezone = "Europe/Warsaw").copy(token = TOKEN, threadsUserId = "u2"))
+        store.put(testPost(id = "plt0001", accountId = "pl", scheduledAt = NOW.minusSeconds(60)).copy(pillar = Pillar.Update, text = "News: {link}", link = true, replyText = "Get it: {link}"))
+        store.put(duePost().copy(pillar = Pillar.Update, text = "News: {link}", link = true))
+
+        publisher(template = WEBSITE_TEMPLATE).publishDue("pl")
+        publisher(template = WEBSITE_TEMPLATE).publishDue("staging")
+
+        val texts = threads.callsTo("createContainer").map { (it.args[2] as ContainerRequest).text }
+        assertTrue("https://sirelon.github.io/SellSnap/?lang=pl&p=plt0001" in texts[0], texts[0])
+        assertTrue("https://sirelon.github.io/SellSnap/?lang=pl&p=plt0001" in texts[1], texts[1])
+        assertTrue("https://sirelon.github.io/SellSnap/?lang=uk&p=stt0001" in texts[2], texts[2])
+        assertTrue(texts.none { "/go/" in it })
     }
 
     @Test
@@ -563,7 +579,7 @@ class PublisherTest {
             }
             val api = ThreadsHttpClient(HttpClient(engine) { expectSuccess = false }, APP_SECRET)
 
-            val outcomes = Publisher(localStore, api, FakeImageStore(), clock, "https://go.test", newClaimId = { "c" })
+            val outcomes = Publisher(localStore, api, FakeImageStore(), clock, LINK_TEMPLATE, newClaimId = { "c" })
                 .publishDue("staging")
 
             val text = outcomes.toString() + localStore.allPosts + localStore.events +
@@ -910,7 +926,7 @@ class PublisherTest {
         val engine = MockEngine { respond(leaky, HttpStatusCode.BadRequest, headersOf(HttpHeaders.ContentType, "application/json")) }
         val api = ThreadsHttpClient(HttpClient(engine) { expectSuccess = false }, APP_SECRET)
 
-        val outcomes = Publisher(localStore, api, FakeImageStore(), clock, "https://go.test", newClaimId = { "c" })
+        val outcomes = Publisher(localStore, api, FakeImageStore(), clock, LINK_TEMPLATE, newClaimId = { "c" })
             .publishDue("staging")
 
         val text = outcomes.toString() + localStore.allPosts + localStore.events +
@@ -943,6 +959,8 @@ class PublisherTest {
     private companion object {
         val NOW: Instant = Instant.parse("2026-10-20T09:00:00Z")
         const val TOKEN = "SECRET-TOKEN-123"
+        const val LINK_TEMPLATE = "https://go.test/go/{code}"
+        const val WEBSITE_TEMPLATE = "https://sirelon.github.io/SellSnap/?lang={lang}&p={code}"
         const val APP_SECRET = "APP-SECRET-456"
     }
 }

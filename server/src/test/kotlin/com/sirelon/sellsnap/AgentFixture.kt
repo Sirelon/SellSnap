@@ -21,6 +21,7 @@ fun testConfig(appleProviderToken: String? = null) = Config(
     schedulerSaEmail = AgentFixture.SCHEDULER_EMAIL,
     oidcAudience = "https://agent.test",
     publicBaseUrl = "https://agent.test",
+    postLinkTemplate = "https://agent.test/go/{code}",
     storageBucket = "bucket",
     playPackage = "com.sirelon.sellsnap",
     appStoreId = "6776001373",

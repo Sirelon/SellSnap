@@ -14,7 +14,7 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class PreviewsTest {
-    private val previews = Previews(FakeImageStore(), "https://go.test/")
+    private val previews = Previews(FakeImageStore(), "https://go.test/go/{code}")
     private val account = testAccount()
     private val slot = Instant.parse("2026-10-12T05:30:00Z")
 
@@ -113,9 +113,23 @@ class PreviewsTest {
     }
 
     @Test
-    fun theLinkUrlIsBuiltFromTheBaseAndTheCode() {
-        assertEquals("https://go.test/go/stt0001", previews.linkUrl("stt0001"))
-        assertEquals("https://go.test/go/stt0001", com.sirelon.sellsnap.content.postLinkUrl("https://go.test/", "stt0001"))
+    fun theLinkUrlIsBuiltFromTheTemplateTheCodeAndTheLanguage() {
+        assertEquals("https://go.test/go/stt0001", previews.linkUrl("stt0001", "uk"))
+        val website = Previews(FakeImageStore(), "https://sirelon.github.io/SellSnap/?lang={lang}&p={code}")
+        assertEquals("https://sirelon.github.io/SellSnap/?lang=uk&p=ukt0042", website.linkUrl("ukt0042", "uk"))
+        assertEquals("https://sirelon.github.io/SellSnap/?lang=pl&p=plt0042", website.linkUrl("plt0042", "pl"))
+    }
+
+    @Test
+    fun aLinkedPostAndItsReplyPreviewTheWebsiteLink() {
+        val website = Previews(FakeImageStore(), "https://sirelon.github.io/SellSnap/?lang={lang}&p={code}")
+        val pl = testAccount(id = "pl", codePrefix = "pl", language = "pl")
+        val post = testPost(id = "plt0001", accountId = "pl", status = PostStatus.Pending)
+            .copy(text = "News {link}", replyText = "Get it: {link}")
+
+        val text = website.build(post, pl).text
+
+        assertEquals(2, "https://sirelon.github.io/SellSnap/?lang=pl&p=plt0001".toRegex(RegexOption.LITERAL).findAll(text).count(), text)
     }
 
     @Test
@@ -123,7 +137,7 @@ class PreviewsTest {
         val post = testPost(status = PostStatus.Pending)
 
         val hidden = previews.keyboard(post, account)!!.inlineKeyboard.flatten().map { it.text }
-        val shown = Previews(FakeImageStore(), "https://go.test", regenerateAvailable = true)
+        val shown = Previews(FakeImageStore(), "https://go.test/go/{code}", regenerateAvailable = true)
             .keyboard(post, account)!!.inlineKeyboard.flatten().map { it.text }
 
         assertFalse("Regenerate" in hidden)

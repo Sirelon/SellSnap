@@ -68,7 +68,7 @@ class ApprovalActions(
                 pollOptions = post.pollOptions,
                 language = account.language,
                 publishedCount = account.publishedCount,
-                linkUrl = previews.linkUrl(post.code),
+                linkUrl = previews.linkUrl(post.code, account.language),
                 replyText = post.replyText,
             ),
         )

@@ -22,7 +22,7 @@ class QueueFillerTest {
     private val slot2 = Instant.parse("2026-10-12T16:30:00Z")
 
     private fun filler(fx: AgentFixture): QueueFiller {
-        val previews = Previews(fx.images, fx.config.publicBaseUrl)
+        val previews = Previews(fx.images, fx.config.postLinkTemplate)
         return QueueFiller(fx.store, PreviewSender(fx.telegram, previews, fx.store, AgentFixture.OWNER), previews, fx.clock)
     }
 

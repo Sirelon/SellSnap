@@ -27,6 +27,29 @@ class ApplicationTest {
     }
 
     @Test
+    fun postLinkTemplateDefaultsToTheRedirect() {
+        assertEquals("https://agent.example.run.app/go/{code}", Config.fromEnv(validEnv).postLinkTemplate)
+    }
+
+    @Test
+    fun postLinkTemplateIsReadFromEnvAndKeepsItsPlaceholders() {
+        val website = "https://sirelon.github.io/SellSnap/?lang={lang}&p={code}"
+        assertEquals(website, Config.fromEnv(validEnv + ("POST_LINK_TEMPLATE" to website)).postLinkTemplate)
+        assertEquals(
+            "https://agent.example.run.app/r/{code}?l={lang}",
+            Config.fromEnv(validEnv + ("POST_LINK_TEMPLATE" to "{PUBLIC_BASE_URL}/r/{code}?l={lang}")).postLinkTemplate,
+        )
+    }
+
+    @Test
+    fun postLinkTemplateWithoutACodeIsRejected() {
+        val error = assertFailsWith<IllegalStateException> {
+            Config.fromEnv(validEnv + ("POST_LINK_TEMPLATE" to "https://sirelon.github.io/SellSnap/"))
+        }
+        assertTrue("POST_LINK_TEMPLATE" in error.message.orEmpty())
+    }
+
+    @Test
     fun configFailsOnMissingOwnerId() {
         val error = assertFailsWith<IllegalStateException> { Config.fromEnv(validEnv - "OWNER_TELEGRAM_ID") }
         assertTrue("OWNER_TELEGRAM_ID" in error.message.orEmpty())

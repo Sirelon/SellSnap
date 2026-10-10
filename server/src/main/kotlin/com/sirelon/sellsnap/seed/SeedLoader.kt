@@ -5,7 +5,6 @@ import com.google.auth.oauth2.GoogleCredentials
 import com.google.cloud.firestore.Firestore
 import com.google.cloud.firestore.FirestoreOptions
 import com.sirelon.sellsnap.content.ContentRules
-import com.sirelon.sellsnap.content.postLinkUrl
 import com.sirelon.sellsnap.content.PostCode
 import com.sirelon.sellsnap.model.Pillar
 import com.sirelon.sellsnap.model.PostKind
@@ -148,7 +147,7 @@ class SeedLoader(private val store: SocialStore, private val clock: Clock) {
                             pollOptions = emptyList(),
                             language = account.language,
                             publishedCount = account.publishedCount,
-                            linkUrl = postLinkUrl("https://example.invalid", account.codePrefix),
+                            linkUrl = "", // a tip may not hold {link} (checked below), so no link is ever rendered
                         ),
                     )
                     if (violations.isNotEmpty()) problems[tip.key] = violations.joinToString(", ") { it.name }

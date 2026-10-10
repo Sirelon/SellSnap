@@ -26,13 +26,13 @@ import kotlin.time.Duration.Companion.minutes
 
 class TickRunnerTest {
     private fun runner(fx: AgentFixture, store: SocialStore = fx.store, timeout: kotlin.time.Duration = 9.minutes): TickRunner {
-        val base = fx.config.publicBaseUrl
-        val previews = Previews(fx.images, base)
+        val template = fx.config.postLinkTemplate
+        val previews = Previews(fx.images, template)
         val sender = PreviewSender(fx.telegram, previews, store, AgentFixture.OWNER)
         return TickRunner(
             store = store,
             tokens = TokenLifecycle(store, fx.threads, fx.clock),
-            publisher = Publisher(store, fx.threads, fx.images, fx.clock, base),
+            publisher = Publisher(store, fx.threads, fx.images, fx.clock, template),
             filler = QueueFiller(store, sender, previews, fx.clock),
             previewSender = sender,
             alerts = Alerts(store, fx.telegram, fx.clock, AgentFixture.OWNER),

@@ -31,6 +31,9 @@ SCHEDULER_SA="$SCHEDULER_SA_NAME@$PROJECT.iam.gserviceaccount.com"
 PLAY_PACKAGE=com.sirelon.sellsnap
 APP_STORE_ID=6776001373
 LANDING_URL=https://sirelon.github.io/SellSnap/
+# What a post links to: the website, which reports visits and store taps to /click (design D15).
+# {lang} and {code} are filled by the service per post; the website reads them as ?lang= and ?p=.
+POST_LINK_TEMPLATE='https://sirelon.github.io/SellSnap/?lang={lang}&p={code}'
 
 # Secrets the service reads. The first two are created by the owner (THREADS-OWNER-SETUP.html, step 10);
 # TELEGRAM_WEBHOOK_SECRET is created by step 3.
@@ -46,7 +49,7 @@ APIS=(
 )
 
 LOG_EXCLUSION_NAME=sellsnap-agent-go-requests
-LOG_EXCLUSION_FILTER='resource.type="cloud_run_revision" AND resource.labels.service_name="sellsnap-agent" AND httpRequest.requestUrl:"/go/"'
+LOG_EXCLUSION_FILTER='resource.type="cloud_run_revision" AND resource.labels.service_name="sellsnap-agent" AND (httpRequest.requestUrl:"/go/" OR httpRequest.requestUrl:"/click")'
 
 ALERT_DISPLAY_NAME="SellSnap agent: tick attempt failed"
 
@@ -137,6 +140,24 @@ derive_url() {
   [[ "$number" =~ ^[0-9]+$ ]] || die "could not read the project number"
   URL="https://$SERVICE-$number.$REGION.run.app"
   log "Step 6: service URL is $URL"
+}
+
+# The --set-env-vars argument of step 5. The values hold no comma, so gcloud's default list separator
+# would work, but POST_LINK_TEMPLATE carries ? & = { }, so the list uses gcloud's alternate-delimiter
+# syntax (^|^ makes | the separator; no value holds a |). See `gcloud topic escaping`.
+build_env_vars() {
+  local v="^|^OWNER_TELEGRAM_ID=$OWNER_TELEGRAM_ID"
+  v+="|SCHEDULER_SA_EMAIL=$SCHEDULER_SA"
+  v+="|OIDC_AUDIENCE=$URL"
+  v+="|PUBLIC_BASE_URL=$URL"
+  v+="|POST_LINK_TEMPLATE=$POST_LINK_TEMPLATE"
+  v+="|STORAGE_BUCKET=$BUCKET"
+  v+="|PLAY_PACKAGE=$PLAY_PACKAGE"
+  v+="|APP_STORE_ID=$APP_STORE_ID"
+  v+="|LANDING_URL=$LANDING_URL"
+  # APPLE_PROVIDER_TOKEN is optional (Config.kt); without it App Store links carry only ct=.
+  if [[ -n "${APPLE_PROVIDER_TOKEN:-}" ]]; then v+="|APPLE_PROVIDER_TOKEN=$APPLE_PROVIDER_TOKEN"; fi
+  printf '%s' "$v"
 }
 
 # Step 1. Free: enabling an API costs nothing; the billable use comes in later steps.
@@ -236,16 +257,7 @@ step5_deploy() {
   [[ -n "$URL" ]] || derive_url
 
   local env_vars
-  env_vars="OWNER_TELEGRAM_ID=$OWNER_TELEGRAM_ID"
-  env_vars+=",SCHEDULER_SA_EMAIL=$SCHEDULER_SA"
-  env_vars+=",OIDC_AUDIENCE=$URL"
-  env_vars+=",PUBLIC_BASE_URL=$URL"
-  env_vars+=",STORAGE_BUCKET=$BUCKET"
-  env_vars+=",PLAY_PACKAGE=$PLAY_PACKAGE"
-  env_vars+=",APP_STORE_ID=$APP_STORE_ID"
-  env_vars+=",LANDING_URL=$LANDING_URL"
-  # APPLE_PROVIDER_TOKEN is optional (Config.kt); without it App Store links carry only ct=.
-  if [[ -n "${APPLE_PROVIDER_TOKEN:-}" ]]; then env_vars+=",APPLE_PROVIDER_TOKEN=$APPLE_PROVIDER_TOKEN"; fi
+  env_vars="$(build_env_vars)"
 
   local secrets="TELEGRAM_BOT_TOKEN=TELEGRAM_BOT_TOKEN:latest"
   secrets+=",THREADS_APP_SECRET=THREADS_APP_SECRET:latest"
@@ -284,18 +296,26 @@ step5_deploy() {
   fi
 }
 
-# Step 7. /go answers redirects only. The click is already stored in Firestore, so its request log is noise.
+# Step 7. /go answers redirects only and /click answers 204 only. Each click is already stored in
+# Firestore, so their request logs are noise. An existing exclusion with another filter is updated.
 step7_log_exclusion() {
-  log "Step 7: Cloud Logging exclusion for /go request logs"
-  if gcloud logging sinks describe _Default --project "$PROJECT" --format=json \
-      | jq -e --arg n "$LOG_EXCLUSION_NAME" '.exclusions[]? | select(.name == $n)' >/dev/null; then
-    echo "exclusion $LOG_EXCLUSION_NAME exists"
-    return 0
+  log "Step 7: Cloud Logging exclusion for /go and /click request logs"
+  local current
+  current="$(gcloud logging sinks describe _Default --project "$PROJECT" --format=json \
+    | jq -r --arg n "$LOG_EXCLUSION_NAME" '.exclusions[]? | select(.name == $n) | .filter')"
+  if [[ -z "$current" ]]; then
+    # [APPROVE] changes the _Default log sink (free: it reduces log ingestion)
+    confirm "Add exclusion $LOG_EXCLUSION_NAME to the _Default sink: $LOG_EXCLUSION_FILTER (free)" || return 0
+    gcloud logging sinks update _Default --project "$PROJECT" \
+      --add-exclusion "name=$LOG_EXCLUSION_NAME,description=Redirect and click request logs of the SellSnap agent,filter=$LOG_EXCLUSION_FILTER"
+  elif [[ "$current" == "$LOG_EXCLUSION_FILTER" ]]; then
+    echo "exclusion $LOG_EXCLUSION_NAME exists with the current filter"
+  else
+    # [APPROVE] changes the _Default log sink (free: it reduces log ingestion)
+    confirm "Update exclusion $LOG_EXCLUSION_NAME on the _Default sink from: $current  to: $LOG_EXCLUSION_FILTER (free)" || return 0
+    gcloud logging sinks update _Default --project "$PROJECT" \
+      --update-exclusion "name=$LOG_EXCLUSION_NAME,description=Redirect and click request logs of the SellSnap agent,filter=$LOG_EXCLUSION_FILTER"
   fi
-  # [APPROVE] changes the _Default log sink (free: it reduces log ingestion)
-  confirm "Add exclusion $LOG_EXCLUSION_NAME to the _Default sink: $LOG_EXCLUSION_FILTER (free)" || return 0
-  gcloud logging sinks update _Default --project "$PROJECT" \
-    --add-exclusion "name=$LOG_EXCLUSION_NAME,description=Redirect request logs of the SellSnap agent,filter=$LOG_EXCLUSION_FILTER"
 }
 
 # Calls a Telegram Bot API method. The token goes to curl through stdin, so it never shows in `ps`.

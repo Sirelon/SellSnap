@@ -20,10 +20,10 @@ class BotFixture {
     val telegram = FakeTelegramApi()
     val threads = FakeThreadsApi(store)
     val images = FakeImageStore()
-    val previews = Previews(images, BASE_URL)
+    val previews = Previews(images, LINK_TEMPLATE)
     val sender = PreviewSender(telegram, previews, store, OWNER)
     val approvals = ApprovalActions(store, telegram, threads, previews, sender, clock, OWNER)
-    val publisher = Publisher(store, threads, images, clock, BASE_URL)
+    val publisher = Publisher(store, threads, images, clock, LINK_TEMPLATE)
     val tokens = TokenLifecycle(store, threads, clock)
     val commands = Commands(store, telegram, images, publisher, tokens, previews, sender, approvals, clock, OWNER)
     val handler = BotUpdateHandler(store, telegram, approvals, commands, clock, OWNER)
@@ -111,7 +111,7 @@ class BotFixture {
 
     companion object {
         const val OWNER = 42L
-        const val BASE_URL = "https://go.test"
+        const val LINK_TEMPLATE = "https://go.test/go/{code}"
 
         /** A Monday, 08:00 in Kyiv. */
         val NOW: Instant = Instant.parse("2026-10-12T05:00:00Z")

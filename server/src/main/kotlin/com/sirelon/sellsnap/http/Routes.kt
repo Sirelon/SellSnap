@@ -1,6 +1,7 @@
 package com.sirelon.sellsnap.http
 
 import com.sirelon.sellsnap.AppGraph
+import com.sirelon.sellsnap.redirect.ClickEvent
 import com.sirelon.sellsnap.telegram.Update
 import com.sirelon.sellsnap.threads.redact
 import io.ktor.http.*
@@ -10,7 +11,11 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.SerializationException
+import io.ktor.utils.io.readRemaining
+import kotlinx.io.readString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 
 private val updateJson = Json { ignoreUnknownKeys = true }
 
@@ -41,6 +46,9 @@ fun Application.configureRoutes(graph: AppGraph) {
                 handleTelegram(call, graph)
             }
         }
+        post("/click") {
+            handleClick(call, graph)
+        }
         get("/go/{code}") {
             call.guarded {
                 val code = call.parameters["code"].orEmpty()
@@ -50,6 +58,44 @@ fun Application.configureRoutes(graph: AppGraph) {
             }
         }
     }
+}
+
+/**
+ * `POST /click`: the website reports a visit or a store tap for a post code. The body is text holding
+ * `{"p": "<code>", "e": "view" | "play" | "appstore"}`, because `navigator.sendBeacon` sends
+ * `text/plain` and needs no CORS preflight. The answer is always 204 without cookies, so a caller
+ * learns nothing about which codes exist. Only a malformed body is logged, as one line without the body.
+ */
+private suspend fun handleClick(call: ApplicationCall, graph: AppGraph) {
+    call.response.header(HttpHeaders.CacheControl, "no-store")
+    call.response.header(HttpHeaders.AccessControlAllowOrigin, WEBSITE_ORIGIN)
+    val body = try {
+        call.receiveChannel().readRemaining(MAX_CLICK_BODY + 1L).readString()
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        null
+    }
+    val parsed = body?.takeIf { it.length <= MAX_CLICK_BODY }?.let(::parseClickBody)
+    if (parsed == null) {
+        call.application.log.warn("Click body was malformed")
+    } else {
+        val (code, event) = parsed
+        if (event != null) graph.redirects.report(code, event, call.request.headers[HttpHeaders.UserAgent])
+    }
+    call.respond(HttpStatusCode.NoContent)
+}
+
+/** The code and event of a click body, with a null event for an event name we do not know; null when the body is not the expected shape. */
+private fun parseClickBody(text: String): Pair<String, ClickEvent?>? {
+    val obj = try {
+        updateJson.parseToJsonElement(text) as? JsonObject
+    } catch (e: SerializationException) {
+        null
+    } ?: return null
+    val code = (obj["p"] as? JsonPrimitive)?.takeIf { it.isString }?.content ?: return null
+    val event = (obj["e"] as? JsonPrimitive)?.takeIf { it.isString }?.content ?: return null
+    return code to ClickEvent.fromWire(event)
 }
 
 /** Answers 401 and returns false unless the request carries a valid scheduler OIDC token. */
@@ -99,6 +145,12 @@ private suspend fun ApplicationCall.guarded(block: suspend () -> Unit) {
 
 private fun redactedLine(what: String, e: Exception): String =
     redact("$what: ${e::class.simpleName}: ${e.message.orEmpty()}").replace(Regex("\\s+"), " ").take(MAX_LOG_LINE)
+
+/** The GitHub Pages site that reports clicks; it is the only origin a browser `fetch` may read the answer for. */
+private const val WEBSITE_ORIGIN = "https://sirelon.github.io"
+
+/** A real click body is under 100 characters. */
+private const val MAX_CLICK_BODY = 512
 
 private const val MAX_PATH_LOG = 40
 private const val MAX_LOG_LINE = 300

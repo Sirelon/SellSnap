@@ -16,6 +16,17 @@ import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.time.Duration.Companion.seconds
 
+/** What the website reports for a post code through `POST /click`, and the `store` value it is logged under. */
+enum class ClickEvent(val wire: String, val store: String) {
+    View("view", "landing"),
+    Play("play", "play"),
+    AppStore("appstore", "appstore");
+
+    companion object {
+        fun fromWire(value: String): ClickEvent? = entries.firstOrNull { it.wire == value }
+    }
+}
+
 enum class UaFamily(val key: String) {
     Android("android"),
     Ios("ios"),
@@ -43,7 +54,7 @@ class StoreLinks(
 }
 
 /**
- * Serves `/go/{code}` (D15). A code is checked for shape before anything is read. Known codes and
+ * Serves `/go/{code}` (D15) and records the visits and store taps the website reports (`POST /click`). A code is checked for shape before anything is read. Known codes and
  * misses are cached in memory, so repeated or random requests cost no more reads. Crawlers get the
  * landing page and are never logged. Clicks are logged without cookies or IP, at most
  * [clickCapPerCodePerDay] per code and UTC day on each instance.
@@ -80,6 +91,17 @@ class RedirectService(
         }
         logClick(code, storeName, family)
         return target
+    }
+
+    /**
+     * Logs a visit or store tap that the website reports for [code] (`POST /click`). The checks run
+     * in order: code shape, known code (cached), crawler, per-code cap. Never throws except on cancellation.
+     */
+    suspend fun report(code: String, event: ClickEvent, userAgent: String?) {
+        if (!PostCode.isValid(code)) return
+        languageOf(code) ?: return
+        if (isBot(userAgent)) return
+        logClick(code, event.store, classify(userAgent))
     }
 
     private suspend fun languageOf(code: String): String? {

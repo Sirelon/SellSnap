@@ -144,7 +144,7 @@ class Commands(
                 pollOptions = request.pollOptions,
                 language = account.language,
                 publishedCount = account.publishedCount,
-                linkUrl = previews.linkUrl(code),
+                linkUrl = previews.linkUrl(code, account.language),
                 replyText = request.replyText,
             ),
         )
