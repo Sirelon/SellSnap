@@ -7,7 +7,7 @@
 #
 #   OWNER_TELEGRAM_ID   the owner's numeric Telegram user id (the only user the bot obeys)
 #   OWNER_EMAIL         receives the Cloud Monitoring alert when a tick fails
-#   [step ...]          run only these steps (1-11); with no argument every step runs in order
+#   [step ...]          run only these steps (1-12); with no argument steps 1-9, 11 and 12 run in order
 #
 # Every step looks at the live state first and skips what already exists, so the script is safe to
 # run again. Each step that creates a billable or public resource, changes IAM, or changes live
@@ -469,6 +469,28 @@ step11_storage_rules() {
   (cd "$ROOT" && npx -y firebase-tools deploy --only storage --project "$PROJECT")
 }
 
+# Step 12. Keeps only the two newest server images, so the source-deploy repository stays inside
+# Artifact Registry's free 0.5 GB. Free; deletes old images only.
+step12_image_cleanup() {
+  log "Step 12: Artifact Registry cleanup policy"
+  local current
+  current="$(gcloud artifacts repositories list-cleanup-policies cloud-run-source-deploy \
+    --project "$PROJECT" --location "$REGION" --format=json 2>/dev/null || echo '[]')"
+  if jq -e '.[]? | select(.name == "keep-latest-2")' <<<"$current" >/dev/null; then
+    echo "cleanup policy exists"
+    return 0
+  fi
+  # [APPROVE] deletes all but the two newest images in cloud-run-source-deploy (free)
+  confirm "Keep only the 2 newest images in cloud-run-source-deploy (free; old revisions lose their image)" || return 0
+  local policy
+  policy="$(mktemp)"
+  jq -n '[{name: "keep-latest-2", action: {type: "Keep"}, mostRecentVersions: {keepCount: 2}},
+          {name: "delete-older", action: {type: "Delete"}, condition: {tagState: "ANY"}}]' >"$policy"
+  gcloud artifacts repositories set-cleanup-policies cloud-run-source-deploy \
+    --project "$PROJECT" --location "$REGION" --policy="$policy" --no-dry-run --quiet
+  rm -f "$policy"
+}
+
 main() {
   local tool step
   trap '[[ -z "$SECRET_TMP" ]] || rm -f "$SECRET_TMP"' EXIT
@@ -479,7 +501,9 @@ main() {
   [[ "${OWNER_EMAIL:-}" == *@* ]] || die "set OWNER_EMAIL to the address that receives the tick alert"
 
   local steps=("$@")
-  if (( ${#steps[@]} == 0 )); then steps=(1 2 3 4 5 6 7 8 9 10 11); fi
+  # Step 10 (Cloud Monitoring alert) is off by default: the project runs frugal, and the bot alerts on
+  # failures itself. Run it explicitly when the project can afford monitoring.
+  if (( ${#steps[@]} == 0 )); then steps=(1 2 3 4 5 6 7 8 9 11 12); fi
 
   derive_url
   for step in "${steps[@]}"; do
@@ -495,7 +519,8 @@ main() {
       9) step9_scheduler ;;
       10) step10_alerting ;;
       11) step11_storage_rules ;;
-      *) die "unknown step $step (1-11)" ;;
+      12) step12_image_cleanup ;;
+      *) die "unknown step $step (1-12)" ;;
     esac
   done
   log "Done. Smoke test: gcloud scheduler jobs run sellsnap-tick --location $REGION --project $PROJECT"
