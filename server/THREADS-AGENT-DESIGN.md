@@ -8,8 +8,8 @@ on top; nothing here repeats them. Work is tracked under Linear epic
 ## 1. Purpose and scope
 
 An autonomous service that promotes SellSnap on Threads in Ukrainian and Polish, with the
-owner approving from his phone. Round one is Threads only, two brand accounts plus one private
-staging account, four weeks from the first brand-account post. Other platforms and languages
+owner approving from his phone. Round one is Threads only, two brand accounts, four weeks from
+the first brand-account post. Other platforms and languages
 come after the round-one bar in §10 is met.
 
 Baseline at design time: about a dozen real users in the previous 90 days, all in Ukraine and
@@ -22,8 +22,8 @@ zero; it does not amplify an existing one.
 |---|---|
 | D1 | Graduated autonomy: every draft is approved by the owner; an account flips to auto-publish after 20 consecutive approved broadcast posts with no edits; engagement replies and replies under own posts never graduate. |
 | D2 | Control surface is a private Telegram bot locked to the owner's user id. Posts may use Threads polls. |
-| D3 | Brand accounts only, one per language: Ukrainian, Polish, plus one private staging account. No founder account automation, no persona accounts. |
-| D4 | Broadcast from day one; engagement (keyword search and replies to strangers) after Meta App Review clears. The review is filed once the staging account has ten posts. |
+| D3 | Brand accounts only, one per language: Ukrainian, Polish. No founder account automation, no persona accounts. A private test account is added once the brand accounts have real followers. |
+| D4 | Broadcast from day one; engagement (keyword search and replies to strangers) after Meta App Review clears. The review is filed once the Ukrainian account has ten posts. |
 | D5 | Platform: Threads via the official Threads API. |
 | D6 | Markets: Ukraine and Poland first. One account per language, never mixed. |
 | D7 | Pillars: demos, selling tips, interactive (price-guess polls, title picks), product updates. Demos call the real generation pipeline on owner-shot photos. Real user data is never a source, anonymized or not. |
@@ -39,7 +39,7 @@ zero; it does not amplify an existing one.
 | D17 | Polish drafts carry an English back-translation and pass a naturalness check before reaching the owner. |
 | D18 | Demo photo set: about 30 household items photographed once by the owner. |
 | D19 | Round-one bar in §10. |
-| D20 | Handles `sellsnap.ua` and `sellsnap.pl`, fallback `sellsnap_ua` and `sellsnap_pl`. Staging is the owner's existing, empty account `sellsnap.app`, kept private for good; if the handle is ever wanted for a public account, the staging account is renamed. Bio copy is approved as an English key-to-text list before account creation. |
+| D20 | Handles: the Ukrainian account is the owner's existing `sellsnap.app` (internal account id `ua`); the Polish account is `sellsnap.pl`, fallback `sellsnap_pl`. Bio copy is approved as an English key-to-text list before account creation. |
 | D21 | Fixed weekly template (§6.1), variety inside each slot. |
 | D22 | Demo anatomy: carousel of the raw photo and a card rendered by the server from the unedited pipeline output; one-line hook as caption. A pipeline refusal drops the run. |
 | D23 | Only demo and product-update posts carry a link, and never in the text of the first five posts of a new account. Owner `/post` posts may carry one, and so may a reply under a post, under the same pillar rule. |
@@ -49,11 +49,11 @@ zero; it does not amplify an existing one.
 | D27 | Weekly digest content in §7. |
 | D28 | Voice: the in-app voice from `strings.xml`, emoji allowed, competitors never named, demo prices always a range. Ukrainian never uses broadcast or TV wording for publishing. |
 | D29 | Build in four phases (§8), each usable alone. |
-| D30 | Every code path posts to the staging account before a brand account. |
+| D30 | While the brand accounts have no audience, new code paths are first exercised on the Ukrainian account under owner approval. Once they have real followers, a private test account takes that role and every code path posts there before a brand account. |
 | D31 | This doc plus epic SIR-139 with one ticket per phase. Independent Fable review of this doc before code (done 2026-10-05, findings folded in). |
 | D32 | Owner hand-work and timing in §11. |
 | D33 | Owner time: about 20 minutes on Sunday plus taps during the week. Less than that and the template drops to five posts a week per account. |
-| D34 | New-account ramp (Inferred: Meta's new-account spam thresholds are not published): the staging account is created first, brand accounts at least a week later; no links in the text of an account's first five posts (a reply may carry one); the same photo never appears on both brand accounts within 7 days; the tick reads the account's publishing limit before posting. |
+| D34 | New-account ramp (Inferred: Meta's new-account spam thresholds are not published): no links in the text of an account's first five posts (a reply may carry one); the same photo never appears on both brand accounts within 7 days; the tick reads the account's publishing limit before posting. |
 | T1 | Static keys (Claude, OpenAI, Telegram) in Secret Manager; rotating Threads tokens per account in a Firestore collection readable only by the Admin SDK. |
 | T2 | Public images in the existing Firebase Storage bucket under `social/`, public read on that prefix only, Admin SDK writes only. Live Storage rules are pulled into `storage.rules` first. |
 | T3 | `OpenAIClient` and its models move to `shared/`; the prompt takes country name, language and currency only, decoupled from `OlxCountry`, which embeds per-country OLX client credentials and a composeApp expect/actual. Separate commit. |
@@ -113,7 +113,7 @@ A post with a `replyText` is followed by its reply once the post is `published`:
 
 ### 3.6 Token and permission lifecycle
 
-Threads long-lived tokens are valid 60 days and refreshable once at least 24 hours old and not yet expired; an unrefreshed token expires for good. Permissions granted by app users with private profiles are valid for 90 days, after which the owner must re-authorize (Threads docs, Long-Lived Access Tokens, fetched 2026-10-05). The staging account is private, so it needs owner re-authorization every 90 days; the tick alerts 10 days ahead. The tick refreshes any token older than 50 days and alerts at 10 days before expiry if a refresh keeps failing. Scopes requested for every account: `threads_basic`, `threads_content_publish`, `threads_read_replies`, `threads_manage_replies`, `threads_manage_insights`, `threads_delete`, `threads_keyword_search`, `threads_manage_mentions`. All are added to the Meta app before the first authorization, because a token carries only the scopes that existed when the account authorized; the last two work beyond the account's own posts only after App Review.
+Threads long-lived tokens are valid 60 days and refreshable once at least 24 hours old and not yet expired; an unrefreshed token expires for good. Permissions granted by app users with private profiles are valid for 90 days, after which the owner must re-authorize (Threads docs, Long-Lived Access Tokens, fetched 2026-10-05). A private profile needs owner re-authorization every 90 days; the tick alerts 10 days ahead. Public profiles extend the grant on every refresh. The tick refreshes any token older than 50 days and alerts at 10 days before expiry if a refresh keeps failing. Scopes requested for every account: `threads_basic`, `threads_content_publish`, `threads_read_replies`, `threads_manage_replies`, `threads_manage_insights`, `threads_delete`, `threads_keyword_search`, `threads_manage_mentions`. All are added to the Meta app before the first authorization, because a token carries only the scopes that existed when the account authorized; the last two work beyond the account's own posts only after App Review.
 
 ### 3.7 Phase 1 fixtures
 
@@ -226,15 +226,15 @@ Missing the bar means fixing the loop, not adding a platform. App Review status 
 
 ## 11. Owner hand-work
 
-Step-by-step instructions for the staging pair, the Meta app and the Telegram bot are in [THREADS-OWNER-SETUP.html](THREADS-OWNER-SETUP.html).
+Step-by-step instructions for an account pair, the Meta app and the Telegram bot are in [THREADS-OWNER-SETUP.html](THREADS-OWNER-SETUP.html).
 
 | What | When |
 |---|---|
-| Staging Instagram + Threads pair (private profile) | before Phase 1 is testable |
-| Brand pairs `sellsnap.ua`, `sellsnap.pl` | at least a week after staging, before the first brand post (D34) |
+| Ukrainian account `sellsnap.app`: switch the Threads and Instagram profiles to public | before the first real post |
+| Polish pair `sellsnap.pl` | before the first Polish post |
 | Meta developer app with the Threads use case, the accounts as testers, their long-lived tokens entered via `/token` | before Phase 1 is testable |
 | Telegram bot via BotFather; bot token and owner user id | before Phase 1 is testable |
 | Approve bio copy, the ten seed tips per language, and the engagement seed queries | before account creation / before Phase 1 launch / before Phase 4 |
 | About 30 photos of household items | before Phase 3 |
-| Submit Meta App Review with the prepared text | the day staging has ten posts |
-| Re-authorize the private staging account | every 90 days, on the bot's reminder |
+| Submit Meta App Review with the prepared text | the day the Ukrainian account has ten posts |
+| Re-authorize any private account | every 90 days, on the bot's reminder |

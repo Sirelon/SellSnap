@@ -1,12 +1,12 @@
 # Staging live checklist (D30)
 
-Runs against the staging account `staging` (`@sellsnap.app`, code prefix `st`) after `server/deploy/deploy.sh` has finished and the owner has put the service URL into the Meta app. Bot commands go to the Telegram bot chat. Every step ends with the result to expect.
+Runs against the Ukrainian account `ua` (`@sellsnap.app`, code prefix `uk`) after `server/deploy/deploy.sh` has finished. While the brand accounts have no audience this is the live test account (D30); once they have real followers a private test account takes its place. Bot commands go to the Telegram bot chat. Every step ends with the result to expect.
 
 ```bash
 URL=https://sellsnap-agent-186709313778.europe-west1.run.app
 ```
 
-Firestore edits are made in the console: <https://console.firebase.google.com/project/sellsnap-6e85c/firestore/databases/-default-/data/~2Fsocial_accounts~2Fstaging>.
+Firestore edits are made in the console: <https://console.firebase.google.com/project/sellsnap-6e85c/firestore/databases/-default-/data/~2Fsocial_accounts~2Fua>.
 
 ## 1. Routes refuse strangers
 
@@ -16,8 +16,8 @@ Firestore edits are made in the console: <https://console.firebase.google.com/pr
 
 ## 2. Token intake
 
-4. Generate a one-hour token for `@sellsnap.app` in the Meta dashboard's token generator. Send `/token staging <token>`. The bot deletes your message and replies `Token saved for staging. It expires <date>.` The date is about 60 days away (the short token was exchanged) and the reply names the private-profile access end date.
-5. Firestore `social_accounts/staging` now has `token`, `tokenExpiresAt` and `threadsUserId`.
+4. Generate a one-hour token for `@sellsnap.app` in the Meta dashboard's token generator. Send `/token ua <token>`. The bot deletes your message and replies `Token saved for ua. It expires <date>.` The date is about 60 days away (the short token was exchanged) and the reply names the private-profile access end date.
+5. Firestore `social_accounts/ua` now has `token`, `tokenExpiresAt` and `threadsUserId`.
 
 ## 3. Private-profile probe (owner's OK first)
 
@@ -46,36 +46,36 @@ Meta's docs do not say whether a private profile can publish through the API. Th
 
 ## 4. Publish: text, poll, image
 
-8. `/post staging now Check one: a plain text post`. The bot replies `Published <code>.` with the post's preview and a Delete button. The post shows on `@sellsnap.app`.
+8. `/post ua now Check one: a plain text post`. The bot replies `Published <code>.` with the post's preview and a Delete button. The post shows on `@sellsnap.app`.
 9. Poll. Send one message with three lines:
 
    ```
-   /post staging now Which do you list first?
+   /post ua now Which do you list first?
    ? Phone
    ? Bike
    ```
 
    Expect `Published <code>.` and a poll with both options on Threads.
-10. Image. Send a photo to the bot with the caption `/post staging now Check three: a photo post`. Expect `Published <code>.` and the photo on Threads. `curl -sI "https://firebasestorage.googleapis.com/v0/b/sellsnap-6e85c.firebasestorage.app/o/social%2Fmanual%2F<code>.jpg?alt=media"` returns `200`.
-11. Slot publish. Send `/post staging A post for its slot`, tap Approve, and wait for the next 08:30 or 19:30 Kyiv slot. The post appears at the slot, within the hour's tick. Run `gcloud scheduler jobs run sellsnap-tick --location europe-west1 --project sellsnap-6e85c` to see a tick on demand.
+10. Image. Send a photo to the bot with the caption `/post ua now Check three: a photo post`. Expect `Published <code>.` and the photo on Threads. `curl -sI "https://firebasestorage.googleapis.com/v0/b/sellsnap-6e85c.firebasestorage.app/o/social%2Fmanual%2F<code>.jpg?alt=media"` returns `200`.
+11. Slot publish. Send `/post ua A post for its slot`, tap Approve, and wait for the next 08:30 or 19:30 Kyiv slot. The post appears at the slot, within the hour's tick. Run `gcloud scheduler jobs run sellsnap-tick --location europe-west1 --project sellsnap-6e85c` to see a tick on demand.
 
 ## 5. Edit, Skip, Delete
 
-12. Edit. Send `/post staging Edit me`, tap Edit, reply to the prompt with `Edited text`. Expect `Saved and approved <code>.` Firestore `social_posts/<code>` has `editedByOwner: true`; `social_accounts/staging.approvalStreak` is `0`.
-13. Skip. Send `/post staging Skip me`, tap Skip. Expect `Skipped.`
+12. Edit. Send `/post ua Edit me`, tap Edit, reply to the prompt with `Edited text`. Expect `Saved and approved <code>.` Firestore `social_posts/<code>` has `editedByOwner: true`; `social_accounts/ua.approvalStreak` is `0`.
+13. Skip. Send `/post ua Skip me`, tap Skip. Expect `Skipped.`
 14. Delete after publish. Tap Delete on the preview from step 8. Expect `Deleted from Threads.` and `@sellsnap.app is back in approval mode.` The post is gone from Threads and its Firestore `status` is `deleted`.
-15. Delete before slot. In the console set `social_accounts/staging.mode` to `auto`, then run the tick (step 11's command). The next queued tip arrives with a `Delete before slot` button and no Approve. Tap it. Expect `Deleted before its slot.` and `@sellsnap.app is back in approval mode.`; `mode` reads `approval` again.
+15. Delete before slot. In the console set `social_accounts/ua.mode` to `auto`, then run the tick (step 11's command). The next queued tip arrives with a `Delete before slot` button and no Approve. Tap it. Expect `Deleted before its slot.` and `@sellsnap.app is back in approval mode.`; `mode` reads `approval` again.
 
 ## 6. Refresh
 
-16. Next day (a token refreshes once it is 24 hours old), send `/refresh staging`. Expect `Token for staging refreshed. It expires <date>.` with a date about 60 days out. Before 24 hours the reply is `The refresh failed: ...`, which is correct.
+16. Next day (a token refreshes once it is 24 hours old), send `/refresh ua`. Expect `Token for ua refreshed. It expires <date>.` with a date about 60 days out. Before 24 hours the reply is `The refresh failed: ...`, which is correct.
 
 ## 7. A 4xx pauses the account
 
-17. In the Firestore console, edit `social_accounts/staging.token`: change one character in the middle of the value (Threads still accepts a token with extra characters at the end). Keep the original to restore it. Do not log either value.
-18. Send `/post staging now Check four: forced failure`. Expect `<code> failed and the account is paused: ...`, an alert message that ends with `send /resume staging`, and `paused: true` on the account. Threads answers code 190 here.
-19. Send `/token staging <valid token>`. Expect `Token saved for staging.`
-20. Send `/resume staging`. Expect `@sellsnap.app is resumed.` Then `/post staging now Check four: recovered` publishes. Delete it with its Delete button.
+17. In the Firestore console, edit `social_accounts/ua.token`: change one character in the middle of the value (Threads still accepts a token with extra characters at the end). Keep the original to restore it. Do not log either value.
+18. Send `/post ua now Check four: forced failure`. Expect `<code> failed and the account is paused: ...`, an alert message that ends with `send /resume ua`, and `paused: true` on the account. Threads answers code 190 here.
+19. Send `/token ua <valid token>`. Expect `Token saved for ua.`
+20. Send `/resume ua`. Expect `@sellsnap.app is resumed.` Then `/post ua now Check four: recovered` publishes. Delete it with its Delete button.
 
 ## 8. Redirect `/go`
 
@@ -93,4 +93,4 @@ Meta's docs do not say whether a private profile can publish through the API. Th
 
 ## 9. Clean up
 
-26. Delete every test post still on `@sellsnap.app` with its Delete button, then send `/approval staging`. The seed tips stay queued.
+26. Delete every test post still on `@sellsnap.app` with its Delete button, then send `/approval ua`. The seed tips stay queued.
