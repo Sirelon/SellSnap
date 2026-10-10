@@ -400,7 +400,11 @@
     const dict = I18N[lang];
     document.querySelectorAll("[data-i18n]").forEach((el) => {
       const key = el.dataset.i18n;
-      if (dict[key] != null) el.textContent = dict[key];
+      if (dict[key] == null) return;
+      let text = dict[key];
+      if (el.hasAttribute("data-strip-emoji")) text = text.replace(EMOJI_TAIL, "");
+      if (el.hasAttribute("data-split-sentences")) renderSentences(el, text);
+      else el.textContent = text;
     });
     document.querySelectorAll("[data-i18n-attr]").forEach((el) => {
       // Format: "attrName:key;attrName:key"
@@ -409,12 +413,31 @@
         if (attr && key && dict[key] != null) el.setAttribute(attr, dict[key]);
       });
     });
+    document.querySelectorAll("[data-mock-price]").forEach((el) => { el.textContent = MOCK_PRICE[lang]; });
     document.title = dict.page_title;
     const meta = document.querySelector('meta[name="description"]');
     if (meta) meta.setAttribute("content", dict.page_description);
     const langSelect = document.querySelector("[data-lang-select]");
     if (langSelect) langSelect.value = lang;
     localStorage.setItem(LANG_KEY, lang);
+  }
+
+  // The mock listing's price, in the currency of each language's OLX market.
+  const MOCK_PRICE = { uk: "3 500 ₴", en: "€90", bg: "90 €", kk: "45 000 ₸", pl: "350 zł", pt: "90 €", ro: "450 lei" };
+
+  // Display headings drop the trailing emoji; the copy itself stays as in the app.
+  const EMOJI_TAIL = /\s*[\p{Extended_Pictographic}\uFE0F\u200D]+$/u;
+
+  // The hero headline is three short sentences: one line each, the middle one accented.
+  function renderSentences(el, text) {
+    const parts = text.split(/(?<=\.)\s+/);
+    el.textContent = "";
+    parts.forEach((part, i) => {
+      const line = document.createElement("span");
+      line.className = parts.length === 3 && i === 1 ? "line accent" : "line";
+      line.textContent = part;
+      el.appendChild(line);
+    });
   }
 
   function applyTheme(theme) {
@@ -469,8 +492,94 @@
     report(p, "view");
   }
 
+  // The "How it works" section is pinned while it scrolls; its progress picks the step.
+  function setupStory() {
+    const story = document.querySelector("[data-story]");
+    if (!story) return;
+    const segs = story.querySelectorAll("[data-seg]");
+    const steps = segs.length;
+    let ticking = false;
+
+    function update() {
+      ticking = false;
+      const rect = story.getBoundingClientRect();
+      const range = story.offsetHeight - window.innerHeight;
+      const progress = range > 0 ? Math.min(1, Math.max(0, -rect.top / range)) : 0;
+      const step = Math.min(steps - 1, Math.floor(progress * steps));
+      if (story.dataset.step !== String(step)) story.dataset.step = String(step);
+      segs.forEach((seg, i) => {
+        const fill = Math.min(1, Math.max(0, progress * steps - i));
+        seg.style.setProperty("--fill", fill.toFixed(3));
+        seg.classList.toggle("active", i === step);
+      });
+    }
+
+    function onScroll() {
+      if (!ticking) {
+        ticking = true;
+        requestAnimationFrame(update);
+      }
+    }
+
+    const device = story.querySelector(".story-device");
+    const phone = story.querySelector(".phone");
+    function fitPhone() {
+      const scale = Math.min(1, 0.96 * device.clientHeight / phone.offsetHeight, device.clientWidth / phone.offsetWidth);
+      phone.style.setProperty("--phone-scale", scale.toFixed(3));
+    }
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", () => { fitPhone(); onScroll(); });
+    fitPhone();
+    update();
+  }
+
+  function setupMotion() {
+    const topbar = document.querySelector("[data-topbar]");
+    const parallax = document.querySelector("[data-parallax]");
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    function onScroll() {
+      const y = window.scrollY;
+      if (topbar) topbar.classList.toggle("scrolled", y > 12);
+      if (parallax && !reduceMotion && y < window.innerHeight) {
+        parallax.style.setProperty("--parallax", (y * 0.25).toFixed(1) + "px");
+      }
+    }
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+
+    const reveals = document.querySelectorAll(".reveal");
+    if ("IntersectionObserver" in window) {
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          entry.target.classList.add("in");
+          io.unobserve(entry.target);
+        });
+      }, { rootMargin: "0px 0px -8% 0px" });
+      reveals.forEach((el) => {
+        const siblings = Array.from(el.parentElement.children).filter((c) => c.classList.contains("reveal"));
+        el.style.setProperty("--delay", (siblings.indexOf(el) * 0.08).toFixed(2) + "s");
+        io.observe(el);
+      });
+    } else {
+      reveals.forEach((el) => el.classList.add("in"));
+    }
+
+    document.querySelectorAll(".feature-card").forEach((card) => {
+      card.addEventListener("pointermove", (ev) => {
+        const r = card.getBoundingClientRect();
+        card.style.setProperty("--mx", (ev.clientX - r.left) + "px");
+        card.style.setProperty("--my", (ev.clientY - r.top) + "px");
+      });
+    });
+  }
+
   function init() {
     setupAttribution();
+    setupStory();
+    setupMotion();
     applyLang(detectInitialLang());
     applyTheme(localStorage.getItem(THEME_KEY) || "system");
     const langSelect = document.querySelector("[data-lang-select]");
