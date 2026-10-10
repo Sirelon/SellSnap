@@ -56,6 +56,29 @@ class ApplicationTest {
     }
 
     @Test
+    fun configRequiresTheGeminiKeyAndDefaultsModelsAndLimit() {
+        val error = assertFailsWith<IllegalStateException> { Config.fromEnv(validEnv - "GEMINI_API_KEY") }
+        assertTrue("GEMINI_API_KEY" in error.message.orEmpty())
+
+        val config = Config.fromEnv(validEnv)
+        assertEquals("gemini-3.8-flash", config.draftModel)
+        assertEquals("gemini-3.5-flash-lite", config.checkModel)
+        assertEquals(200, config.dailyCallLimit)
+    }
+
+    @Test
+    fun configReadsModelsAndLimitFromEnv() {
+        val config = Config.fromEnv(
+            validEnv + mapOf("DRAFT_MODEL" to "gemini-x", "CHECK_MODEL" to "gemini-y", "DAILY_CALL_LIMIT" to "50"),
+        )
+        assertEquals("gemini-x", config.draftModel)
+        assertEquals("gemini-y", config.checkModel)
+        assertEquals(50, config.dailyCallLimit)
+        assertFailsWith<IllegalStateException> { Config.fromEnv(validEnv + ("DAILY_CALL_LIMIT" to "0")) }
+        assertFailsWith<IllegalStateException> { Config.fromEnv(validEnv + ("DAILY_CALL_LIMIT" to "many")) }
+    }
+
+    @Test
     fun configToStringHidesSecrets() {
         assertTrue("secret-value" !in Config.fromEnv(validEnv).toString())
     }
@@ -72,5 +95,6 @@ class ApplicationTest {
         "PLAY_PACKAGE" to "com.sirelon.sellsnap",
         "APP_STORE_ID" to "6776001373",
         "LANDING_URL" to "https://example.com",
+        "GEMINI_API_KEY" to "secret-value",
     )
 }

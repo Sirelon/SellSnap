@@ -20,12 +20,22 @@ class Config(
     val appStoreId: String,
     val appleProviderToken: String?,
     val landingUrl: String,
+    val geminiApiKey: String,
+    /** The model that drafts posts. */
+    val draftModel: String = DEFAULT_DRAFT_MODEL,
+    /** The model that checks drafts. */
+    val checkModel: String = DEFAULT_CHECK_MODEL,
+    /** Calls per model per UTC day that the free tier allows; drafting stops at 90% of it. */
+    val dailyCallLimit: Int = DEFAULT_DAILY_CALL_LIMIT,
 ) {
     /** Leaves out every secret field. */
     override fun toString(): String = "Config(port=$port, publicBaseUrl=$publicBaseUrl)"
 
     companion object {
         const val DEFAULT_PORT = 8080
+        const val DEFAULT_DRAFT_MODEL = "gemini-3.8-flash"
+        const val DEFAULT_CHECK_MODEL = "gemini-3.5-flash-lite"
+        const val DEFAULT_DAILY_CALL_LIMIT = 200
 
         /** Fails naming every missing or malformed variable, never printing a value. */
         fun fromEnv(env: Map<String, String> = System.getenv()): Config {
@@ -42,6 +52,11 @@ class Config(
             val ownerId = optional("OWNER_TELEGRAM_ID")?.let { raw ->
                 raw.toLongOrNull() ?: 0L.also { problems += "OWNER_TELEGRAM_ID is not a number" }
             } ?: 0L.also { problems += "OWNER_TELEGRAM_ID is missing" }
+
+            val dailyCallLimit = optional("DAILY_CALL_LIMIT")?.let { raw ->
+                raw.toIntOrNull()?.takeIf { it > 0 }
+                    ?: DEFAULT_DAILY_CALL_LIMIT.also { problems += "DAILY_CALL_LIMIT is not a positive number" }
+            } ?: DEFAULT_DAILY_CALL_LIMIT
 
             val publicBaseUrl = required("PUBLIC_BASE_URL")
             val linkTemplate = expandLinkTemplate(optional("POST_LINK_TEMPLATE") ?: DEFAULT_POST_LINK_TEMPLATE, publicBaseUrl)
@@ -62,6 +77,10 @@ class Config(
                 appStoreId = required("APP_STORE_ID"),
                 appleProviderToken = optional("APPLE_PROVIDER_TOKEN"),
                 landingUrl = required("LANDING_URL"),
+                geminiApiKey = required("GEMINI_API_KEY"),
+                draftModel = optional("DRAFT_MODEL") ?: DEFAULT_DRAFT_MODEL,
+                checkModel = optional("CHECK_MODEL") ?: DEFAULT_CHECK_MODEL,
+                dailyCallLimit = dailyCallLimit,
             )
             check(problems.isEmpty()) { "Invalid configuration: ${problems.joinToString("; ")}" }
             return config

@@ -10,6 +10,7 @@ import com.sirelon.sellsnap.model.SocialAccount
 import com.sirelon.sellsnap.model.SocialClick
 import com.sirelon.sellsnap.model.SocialEvent
 import com.sirelon.sellsnap.model.SocialPost
+import com.sirelon.sellsnap.model.UsageCounters
 import com.sirelon.sellsnap.store.SocialStore
 import com.sirelon.sellsnap.store.StoreTx
 import kotlinx.coroutines.sync.Mutex
@@ -45,6 +46,10 @@ class InMemorySocialStore : SocialStore {
     @Volatile
     private var accountMetricsMap = mapOf<String, AccountMetrics>()
 
+    @Volatile
+    private var usageMap = mapOf<String, Map<String, UsageCounters>>()
+
+    val allUsage: Map<String, Map<String, UsageCounters>> get() = usageMap
     val allMetrics: Map<String, PostMetrics> get() = metricsMap
     val allAccountMetrics: Map<String, AccountMetrics> get() = accountMetricsMap
     val allAccounts: Map<String, SocialAccount> get() = accountMap
@@ -128,6 +133,20 @@ class InMemorySocialStore : SocialStore {
     override suspend fun saveAccountMetrics(metrics: AccountMetrics) = mutex.withLock {
         accountMetricsMap = accountMetricsMap + (metrics.id to metrics)
     }
+
+    override suspend fun addUsage(day: String, model: String, delta: UsageCounters) = mutex.withLock {
+        val models = usageMap[day].orEmpty()
+        val current = models[model] ?: UsageCounters()
+        val updated = UsageCounters(
+            calls = current.calls + delta.calls,
+            promptTokens = current.promptTokens + delta.promptTokens,
+            outputTokens = current.outputTokens + delta.outputTokens,
+            thoughtsTokens = current.thoughtsTokens + delta.thoughtsTokens,
+        )
+        usageMap = usageMap + (day to (models + (model to updated)))
+    }
+
+    override suspend fun usageOf(day: String): Map<String, UsageCounters> = usageMap[day].orEmpty()
 
     private class MemoryTx(
         private val accounts: Map<String, SocialAccount>,

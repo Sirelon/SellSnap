@@ -36,8 +36,9 @@ LANDING_URL=https://sirelon.github.io/SellSnap/
 POST_LINK_TEMPLATE='https://sirelon.github.io/SellSnap/?lang={lang}&p={code}'
 
 # Secrets the service reads. The first two are created by the owner (THREADS-OWNER-SETUP.html, step 10);
+# GEMINI_API_KEY is an AI Studio key (project without billing) that the owner stores in Secret Manager;
 # TELEGRAM_WEBHOOK_SECRET is created by step 3.
-OWNER_SECRETS=(TELEGRAM_BOT_TOKEN THREADS_APP_SECRET)
+OWNER_SECRETS=(TELEGRAM_BOT_TOKEN THREADS_APP_SECRET GEMINI_API_KEY)
 WEBHOOK_SECRET_NAME=TELEGRAM_WEBHOOK_SECRET
 
 APIS=(
@@ -262,6 +263,7 @@ step5_deploy() {
   local secrets="TELEGRAM_BOT_TOKEN=TELEGRAM_BOT_TOKEN:latest"
   secrets+=",THREADS_APP_SECRET=THREADS_APP_SECRET:latest"
   secrets+=",TELEGRAM_WEBHOOK_SECRET=TELEGRAM_WEBHOOK_SECRET:latest"
+  secrets+=",GEMINI_API_KEY=GEMINI_API_KEY:latest"
 
   local what="Deploy Cloud Run service $SERVICE to $URL, public (--allow-unauthenticated), min 0 / max 2 instances, 512Mi, CPU boost. Billable, usage-based: a handful of requests an hour stays in the free tier. Cloud Build and Artifact Registry are free tier at this size."
   if gcloud run services describe "$SERVICE" --region "$REGION" --project "$PROJECT" >/dev/null 2>&1; then

@@ -7,6 +7,7 @@ import com.sirelon.sellsnap.model.SocialAccount
 import com.sirelon.sellsnap.model.SocialClick
 import com.sirelon.sellsnap.model.SocialEvent
 import com.sirelon.sellsnap.model.SocialPost
+import com.sirelon.sellsnap.model.UsageCounters
 import java.time.Instant
 
 /** Persistence port. Queries use single-field equality; callers filter further in memory. */
@@ -48,6 +49,12 @@ interface SocialStore {
 
     /** Writes the account-day document, replacing an existing one; used by a forced collection. */
     suspend fun saveAccountMetrics(metrics: AccountMetrics)
+
+    /** Adds [delta] to [model]'s counters in `social_spend/{day}` (`yyyyMMdd`, UTC) atomically; concurrent calls never lose an increment. */
+    suspend fun addUsage(day: String, model: String, delta: UsageCounters)
+
+    /** The day's counters per model; empty when nothing was recorded. */
+    suspend fun usageOf(day: String): Map<String, UsageCounters>
 }
 
 /**

@@ -7,6 +7,7 @@ import kotlinx.coroutines.test.currentTime
 import kotlinx.coroutines.test.runTest
 import java.io.IOException
 import kotlin.test.Test
+import kotlin.time.Duration.Companion.seconds
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
@@ -128,6 +129,26 @@ class RetryTest {
             withRetry {
                 calls++
                 error("bug")
+            }
+        }
+        assertEquals(1, calls)
+    }
+
+    @Test
+    fun aCustomPredicateDecidesWhatIsRetried() = runTest {
+        var calls = 0
+        val result = withRetryIf(listOf(1.seconds, 1.seconds), { it is IllegalStateException }) { attempt ->
+            calls++
+            if (attempt < 2) error("again") else "done"
+        }
+        assertEquals("done", result)
+        assertEquals(3, calls)
+
+        calls = 0
+        assertFailsWith<ThreadsFailure.Transient> {
+            withRetryIf(DEFAULT_RETRY_DELAYS, { false }) {
+                calls++
+                throw ThreadsFailure.Transient("not retried here")
             }
         }
         assertEquals(1, calls)

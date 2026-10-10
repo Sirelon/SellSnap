@@ -1,6 +1,7 @@
 package com.sirelon.sellsnap
 
 import com.sirelon.sellsnap.fakes.FakeImageStore
+import com.sirelon.sellsnap.fakes.FakeLlmClient
 import com.sirelon.sellsnap.fakes.FakeOidcVerifier
 import com.sirelon.sellsnap.fakes.FakeTelegramApi
 import com.sirelon.sellsnap.fakes.FakeThreadsApi
@@ -27,6 +28,7 @@ fun testConfig(appleProviderToken: String? = null) = Config(
     appStoreId = "6776001373",
     appleProviderToken = appleProviderToken,
     landingUrl = "https://sellsnap.test/landing",
+    geminiApiKey = "gemini-key-value-for-tests-only",
 )
 
 /** The whole service on fakes. [store] is what the services see; [memory] is the data behind it. */
@@ -42,8 +44,9 @@ class AgentFixture(
     val threads = FakeThreadsApi(memory)
     val images = FakeImageStore()
     val oidc = FakeOidcVerifier()
+    val llm = FakeLlmClient()
     val config = testConfig(appleProviderToken)
-    val graph = AppGraph.assemble(config, store, telegram, threads, images, oidc, clock)
+    val graph = AppGraph.assemble(config, store, telegram, threads, images, llm, oidc, clock)
 
     fun account(id: String) = memory.allAccounts.getValue(id)
 

@@ -51,4 +51,30 @@ class RedactorTest {
         val out = redact("access_token=a and again access_token=b")
         assertEquals("access_token=[redacted] and again access_token=[redacted]", out)
     }
+
+    @Test
+    fun masksGoogleApiKeysInUrlsAndBare() {
+        val key = "AIzaSyA1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6Q"
+        assertEquals(39, key.length)
+        assertEquals("GET https://x/v1beta/models/m:generateContent?key=[redacted]", redact("GET https://x/v1beta/models/m:generateContent?key=$key"))
+        assertEquals("key [redacted] leaked", redact("key $key leaked"))
+    }
+
+    @Test
+    fun masksGoogleAuthKeysThatStartWithAq() {
+        val key = "AQ.Ab8RN6Iexample_key-0123456789abcdef"
+        assertEquals("rejected [redacted] here", redact("rejected $key here"))
+    }
+
+    @Test
+    fun masksTheApiKeyHeaderWhateverTheKeyLooksLike() {
+        assertEquals("x-goog-api-key: [redacted]", redact("x-goog-api-key: some-odd-key-value"))
+        assertEquals("X-Goog-Api-Key:[redacted], other", redact("X-Goog-Api-Key:abc123, other"))
+    }
+
+    @Test
+    fun leavesTextThatOnlyLooksLikeAGoogleKeyAlone() {
+        val text = "AIza too short, and AQ.x is short too"
+        assertEquals(text, redact(text))
+    }
 }

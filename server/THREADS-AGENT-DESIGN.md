@@ -90,7 +90,7 @@ Decision log lines for T1–T5 are in `.claude/decider/decisions.jsonl`.
 - `social_clicks/{clickId}` — code, ts, store, countryFromIp, uaFamily.
 - `social_metrics/{postId}_{yyyymmdd}` — one post's insight snapshot for one day: postId, accountId, day (`yyyymmdd`, the account's local date), at, views (absent when the `views` metric was unavailable), likes, replies, reposts, quotes. Written once per account per local day for every published post with a media id that went live less than 14 days ago; a later write on the same day replaces the earlier one.
 - `social_account_metrics/{accountId}_{yyyymmdd}` — the account's follower count for one day: accountId, day, at, followersCount (null when the follower call failed permanently). The Threads API returns only the current count, so these snapshots are the follower history. The document is written last, after the post snapshots, and its existence marks the account-day as collected; a failure before it leaves the day open for the next tick. Paused accounts are collected too.
-- `social_spend/{yyyymmdd}` — model calls and tokens per model, to watch the free-tier limits.
+- `social_spend/{yyyymmdd}` — one document per UTC day: `day` and `models`, a map from model id to its counters `calls`, `promptTokens`, `outputTokens` and `thoughtsTokens`. Each model call adds to its model's counters with Firestore increments, so concurrent calls lose nothing. Drafting stops for a model when its `calls` reach 90% of `DAILY_CALL_LIMIT` (default 200, per model). The document holds no money.
 - `social_events/{eventId}` — pauses, resumes, mode changes, deletes, alerts, token refreshes, errors.
 
 ### 3.3 Weekly batch flow

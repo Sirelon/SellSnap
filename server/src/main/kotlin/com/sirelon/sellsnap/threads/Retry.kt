@@ -42,13 +42,24 @@ fun isRetryable(failure: Throwable): Boolean = failure is ThreadsFailure.Transie
 suspend fun <T> withRetry(
     delays: List<Duration> = DEFAULT_RETRY_DELAYS,
     block: suspend (attempt: Int) -> T,
+): T = withRetryIf(delays, ::isRetryable, block)
+
+/**
+ * [withRetry] for a caller with its own failure type: [block] is retried while [retryable] accepts
+ * the failure, and the last failure is rethrown as it is, except that an [IOException] becomes a
+ * [ThreadsFailure.Transient].
+ */
+suspend fun <T> withRetryIf(
+    delays: List<Duration>,
+    retryable: (Throwable) -> Boolean,
+    block: suspend (attempt: Int) -> T,
 ): T {
     var attempt = 0
     while (true) {
         try {
             return block(attempt)
         } catch (failure: Throwable) {
-            if (!isRetryable(failure) || attempt >= delays.size) throw failure.asThreadsFailure()
+            if (!retryable(failure) || attempt >= delays.size) throw failure.asThreadsFailure()
             delay(delays[attempt])
             attempt++
         }

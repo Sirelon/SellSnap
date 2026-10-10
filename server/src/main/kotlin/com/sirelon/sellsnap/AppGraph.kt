@@ -6,10 +6,14 @@ import com.sirelon.sellsnap.http.GoogleOidcVerifier
 import com.sirelon.sellsnap.http.OidcVerifier
 import com.sirelon.sellsnap.http.TelegramSecret
 import com.sirelon.sellsnap.insights.InsightsCollector
+import com.sirelon.sellsnap.llm.GeminiLlmClient
+import com.sirelon.sellsnap.llm.LlmClient
+import com.sirelon.sellsnap.llm.geminiHttpClient
 import com.sirelon.sellsnap.media.GcsImageStore
 import com.sirelon.sellsnap.media.ImageStore
 import com.sirelon.sellsnap.redirect.RedirectService
 import com.sirelon.sellsnap.redirect.StoreLinks
+import com.sirelon.sellsnap.spend.UsageTracker
 import com.sirelon.sellsnap.store.FirestoreSocialStore
 import com.sirelon.sellsnap.store.SocialStore
 import com.sirelon.sellsnap.telegram.ApprovalActions
@@ -37,15 +41,18 @@ class AppGraph(
     val ticks: TickRunner,
     val updates: BotUpdateHandler,
     val redirects: RedirectService,
+    val llm: LlmClient,
+    val usage: UsageTracker,
 ) {
     companion object {
-        /** The real adapters: Firestore and Storage with default credentials, Threads and Telegram over HTTP. */
+        /** The real adapters: Firestore and Storage with default credentials, Threads, Telegram and Gemini over HTTP. */
         fun create(config: Config, clock: Clock = Clock.systemUTC()): AppGraph = assemble(
             config = config,
             store = FirestoreSocialStore(FirestoreOptions.getDefaultInstance().service),
             telegram = TelegramHttpClient(telegramHttpClient(), config.telegramBotToken),
             threads = ThreadsHttpClient(threadsHttpClient(), config.threadsAppSecret),
             images = GcsImageStore(StorageOptions.getDefaultInstance().service, config.storageBucket),
+            llm = GeminiLlmClient(geminiHttpClient(), config.geminiApiKey),
             oidc = GoogleOidcVerifier(config.oidcAudience, config.schedulerSaEmail),
             clock = clock,
         )
@@ -57,6 +64,7 @@ class AppGraph(
             telegram: TelegramApi,
             threads: ThreadsApi,
             images: ImageStore,
+            llm: LlmClient,
             oidc: OidcVerifier,
             clock: Clock,
         ): AppGraph {
@@ -83,6 +91,8 @@ class AppGraph(
                 ),
                 updates = BotUpdateHandler(store, telegram, approvals, commands, clock, owner),
                 redirects = RedirectService(store, links, clock),
+                llm = llm,
+                usage = UsageTracker(store, clock, config.dailyCallLimit),
             )
         }
     }

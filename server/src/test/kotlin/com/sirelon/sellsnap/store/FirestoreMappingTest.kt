@@ -1,6 +1,7 @@
 package com.sirelon.sellsnap.store
 
 import com.google.cloud.Timestamp
+import com.google.cloud.firestore.FieldValue
 import com.sirelon.sellsnap.fakes.testAccount
 import com.sirelon.sellsnap.fakes.testPost
 import com.sirelon.sellsnap.model.AccountMetrics
@@ -10,6 +11,7 @@ import com.sirelon.sellsnap.model.PostKind
 import com.sirelon.sellsnap.model.PostMetrics
 import com.sirelon.sellsnap.model.PostSource
 import com.sirelon.sellsnap.model.PostStatus
+import com.sirelon.sellsnap.model.UsageCounters
 import java.time.Instant
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -99,6 +101,46 @@ class FirestoreMappingTest {
         assertEquals(setOf("accountId", "day", "at", "followersCount"), metrics.toMap().keys)
         val unknown = metrics.copy(followersCount = null)
         assertEquals(unknown, accountMetricsFromMap(unknown.toMap()))
+    }
+
+    @Test
+    fun usageIncrementsAddEachCounterUnderTheModelKey() {
+        val delta = UsageCounters(calls = 1, promptTokens = 120, outputTokens = 30, thoughtsTokens = 250)
+
+        val map = usageIncrements("20261020", "gemini-3.8-flash", delta)
+
+        assertEquals("20261020", map["day"])
+        val models = map["models"] as Map<*, *>
+        assertEquals(setOf("gemini-3.8-flash"), models.keys)
+        assertEquals(
+            mapOf(
+                "calls" to FieldValue.increment(1),
+                "promptTokens" to FieldValue.increment(120),
+                "outputTokens" to FieldValue.increment(30),
+                "thoughtsTokens" to FieldValue.increment(250),
+            ),
+            models["gemini-3.8-flash"],
+        )
+    }
+
+    @Test
+    fun usageReadsBackPerModelAndTreatsMissingCountersAsZero() {
+        val data = mapOf(
+            "day" to "20261020",
+            "models" to mapOf(
+                "gemini-3.8-flash" to mapOf("calls" to 3L, "promptTokens" to 300L, "outputTokens" to 90L, "thoughtsTokens" to 700L),
+                "gemini-3.5-flash-lite" to mapOf("calls" to 2L),
+            ),
+        )
+
+        assertEquals(
+            mapOf(
+                "gemini-3.8-flash" to UsageCounters(3, 300, 90, 700),
+                "gemini-3.5-flash-lite" to UsageCounters(calls = 2),
+            ),
+            usageFromMap(data),
+        )
+        assertEquals(emptyMap(), usageFromMap(mapOf("day" to "20261020")))
     }
 
     @Test

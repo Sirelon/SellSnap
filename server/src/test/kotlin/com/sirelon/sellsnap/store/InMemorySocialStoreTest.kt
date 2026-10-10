@@ -8,6 +8,7 @@ import com.sirelon.sellsnap.model.EventType
 import com.sirelon.sellsnap.model.PostMetrics
 import com.sirelon.sellsnap.model.PostStatus
 import com.sirelon.sellsnap.model.SocialEvent
+import com.sirelon.sellsnap.model.UsageCounters
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.test.runTest
@@ -173,6 +174,20 @@ class InMemorySocialStoreTest {
 
         store.saveAccountMetrics(first.copy(followersCount = 11))
         assertEquals(11L, store.accountMetrics("staging", "20261020")?.followersCount)
+    }
+
+    @Test
+    fun addUsageAddsToTheDayAndModelCounters() = runTest {
+        assertTrue(store.usageOf("20261020").isEmpty())
+
+        store.addUsage("20261020", "m1", UsageCounters(1, 100, 10, 5))
+        store.addUsage("20261020", "m1", UsageCounters(1, 200, 20, 0))
+        store.addUsage("20261020", "m2", UsageCounters(1, 1, 1, 1))
+        store.addUsage("20261021", "m1", UsageCounters(1, 7, 7, 7))
+
+        assertEquals(UsageCounters(2, 300, 30, 5), store.usageOf("20261020").getValue("m1"))
+        assertEquals(UsageCounters(1, 1, 1, 1), store.usageOf("20261020").getValue("m2"))
+        assertEquals(UsageCounters(1, 7, 7, 7), store.usageOf("20261021").getValue("m1"))
     }
 
     @Test

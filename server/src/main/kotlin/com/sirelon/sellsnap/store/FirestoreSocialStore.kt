@@ -6,7 +6,9 @@ import com.google.api.gax.rpc.StatusCode
 import com.google.cloud.Timestamp
 import com.google.cloud.firestore.DocumentReference
 import com.google.cloud.firestore.DocumentSnapshot
+import com.google.cloud.firestore.FieldValue
 import com.google.cloud.firestore.Firestore
+import com.google.cloud.firestore.SetOptions
 import com.google.cloud.firestore.Transaction
 import com.sirelon.sellsnap.model.AccountMetrics
 import com.sirelon.sellsnap.model.AccountMode
@@ -19,6 +21,7 @@ import com.sirelon.sellsnap.model.SocialAccount
 import com.sirelon.sellsnap.model.SocialClick
 import com.sirelon.sellsnap.model.SocialEvent
 import com.sirelon.sellsnap.model.SocialPost
+import com.sirelon.sellsnap.model.UsageCounters
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.time.Instant
@@ -78,6 +81,13 @@ class FirestoreSocialStore(private val firestore: Firestore) : SocialStore {
         accountMetricsDoc(metrics.id).set(metrics.toMap()).await()
     }
 
+    override suspend fun addUsage(day: String, model: String, delta: UsageCounters) {
+        firestore.collection(SPEND).document(day).set(usageIncrements(day, model, delta), SetOptions.merge()).await()
+    }
+
+    override suspend fun usageOf(day: String): Map<String, UsageCounters> =
+        firestore.collection(SPEND).document(day).get().await().takeIf { it.exists() }?.data?.let(::usageFromMap).orEmpty()
+
     private suspend fun createIfAbsent(doc: DocumentReference, data: Map<String, Any?>): Boolean =
         try {
             doc.create(data).await()
@@ -122,6 +132,7 @@ class FirestoreSocialStore(private val firestore: Firestore) : SocialStore {
         const val UPDATES = "social_updates"
         const val METRICS = "social_metrics"
         const val ACCOUNT_METRICS = "social_account_metrics"
+        const val SPEND = "social_spend"
     }
 }
 
@@ -310,6 +321,34 @@ internal fun accountMetricsFromMap(data: Map<String, Any?>): AccountMetrics = Ac
     at = data.instant("at") ?: Instant.EPOCH,
     followersCount = data.long("followersCount"),
 )
+
+/**
+ * A merge-set body that increments one model's counters. [FieldValue.increment] makes each add
+ * atomic on the server, and the model name is a map key, so a dot in it is not read as a path.
+ */
+internal fun usageIncrements(day: String, model: String, delta: UsageCounters): Map<String, Any?> = mapOf(
+    "day" to day,
+    "models" to mapOf(
+        model to mapOf(
+            "calls" to FieldValue.increment(delta.calls),
+            "promptTokens" to FieldValue.increment(delta.promptTokens),
+            "outputTokens" to FieldValue.increment(delta.outputTokens),
+            "thoughtsTokens" to FieldValue.increment(delta.thoughtsTokens),
+        ),
+    ),
+)
+
+internal fun usageFromMap(data: Map<String, Any?>): Map<String, UsageCounters> =
+    (data["models"] as Map<*, *>?).orEmpty().entries.associate { (model, counters) ->
+        val fields = counters as Map<*, *>
+        fun count(key: String) = (fields[key] as Number?)?.toLong() ?: 0L
+        model as String to UsageCounters(
+            calls = count("calls"),
+            promptTokens = count("promptTokens"),
+            outputTokens = count("outputTokens"),
+            thoughtsTokens = count("thoughtsTokens"),
+        )
+    }
 
 internal fun SocialClick.toMap(): Map<String, Any?> = mapOf(
     "code" to code,
