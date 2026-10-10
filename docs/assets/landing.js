@@ -2,6 +2,9 @@
   const LANG_KEY = "sellsnap-lang";
   const THEME_KEY = "sellsnap-theme";
   const SUPPORTED_LANGS = ["uk", "en", "bg", "kk", "pl", "pt", "ro"];
+  // The SellSnap agent service; it counts visits and store taps per post code.
+  const CLICK_URL = "https://sellsnap-agent-186709313778.europe-west1.run.app/click";
+  const POST_CODE = /^[a-z0-9]{1,30}$/;
 
   const I18N = {
     uk: {
@@ -428,7 +431,46 @@
     localStorage.setItem(THEME_KEY, theme);
   }
 
+  function report(p, e) {
+    const body = JSON.stringify({ p: p, e: e });
+    try {
+      // A string body goes out as text/plain, so the browser sends no CORS preflight.
+      if (navigator.sendBeacon && navigator.sendBeacon(CLICK_URL, body)) return;
+      fetch(CLICK_URL, { method: "POST", body: body, keepalive: true }).catch(() => {});
+    } catch (err) {
+      // Counting a visit must never break the page.
+    }
+  }
+
+  function withQuery(url, param) {
+    return url + (url.indexOf("?") === -1 ? "?" : "&") + param;
+  }
+
+  // A post's link carries its code as ?p=. With a valid code, the store links pass it on to
+  // Google Play (install referrer) and the App Store (campaign token), and the visit and each
+  // store tap are reported. Without one, the page is unchanged. No cookie or storage is used.
+  function setupAttribution() {
+    const p = new URLSearchParams(window.location.search).get("p");
+    if (!p || !POST_CODE.test(p)) return;
+
+    const referrer = "utm_source=threads&utm_medium=social&utm_campaign=" + p.slice(0, 2) + "&utm_content=" + p;
+    const stores = [
+      { selector: 'a[href^="https://play.google.com/"]', event: "play", param: "referrer=" + encodeURIComponent(referrer) },
+      { selector: 'a[href^="https://apps.apple.com/"]', event: "appstore", param: "ct=" + p },
+    ];
+    stores.forEach((store) => {
+      document.querySelectorAll(store.selector).forEach((link) => {
+        link.setAttribute("href", withQuery(link.getAttribute("href"), store.param));
+        // The beacon is queued before navigation and survives it, so the click is not prevented.
+        link.addEventListener("click", () => report(p, store.event));
+        link.addEventListener("auxclick", (ev) => { if (ev.button === 1) report(p, store.event); });
+      });
+    });
+    report(p, "view");
+  }
+
   function init() {
+    setupAttribution();
     applyLang(detectInitialLang());
     applyTheme(localStorage.getItem(THEME_KEY) || "system");
     const langSelect = document.querySelector("[data-lang-select]");
