@@ -27,45 +27,45 @@ class ThreadsAgentEndToEndTest {
         application { module(fx.graph) }
         val client = createClient { followRedirects = false }
 
-        // Seed: accounts, a token for staging, two tips.
+        // Seed: accounts, a token for ua, two tips.
         val loader = SeedLoader(fx.store, fx.clock)
         loader.upsertAccounts(File("seed/accounts.json").readText())
-        fx.memory.put(fx.publishable(fx.account("staging")))
+        fx.memory.put(fx.publishable(fx.account("ua")))
         val tips = checkNotNull(javaClass.getResource("/seed/tips-sample.json")).readText()
-        assertEquals(listOf("stt0001", "stt0002"), (loader.loadTips("staging", "uk", tips) as TipsResult.Loaded).created)
+        assertEquals(listOf("ukt0001", "ukt0002"), (loader.loadTips("ua", "uk", tips) as TipsResult.Loaded).created)
 
         // Tick at 08:00 Kyiv: both drafts get a slot and a preview with Approve, Edit and Skip.
         assertEquals(HttpStatusCode.OK, client.postScheduler("/tick").status)
-        assertEquals(PostStatus.Pending, fx.status("stt0001"))
-        assertEquals(Instant.parse("2026-10-12T05:30:00Z"), fx.post("stt0001").scheduledAt)
-        assertEquals(Instant.parse("2026-10-12T16:30:00Z"), fx.post("stt0002").scheduledAt)
+        assertEquals(PostStatus.Pending, fx.status("ukt0001"))
+        assertEquals(Instant.parse("2026-10-12T05:30:00Z"), fx.post("ukt0001").scheduledAt)
+        assertEquals(Instant.parse("2026-10-12T16:30:00Z"), fx.post("ukt0002").scheduledAt)
         val previews = fx.telegram.callsOf<FakeTelegramApi.Call.Sent>()
         assertEquals(2, previews.size)
         assertTrue(previews.all { buttons(it.markup as? InlineKeyboardMarkup) == listOf("Approve", "Edit", "Skip") })
-        val messageId = assertNotNull(fx.post("stt0001").telegramMessageId)
+        val messageId = assertNotNull(fx.post("ukt0001").telegramMessageId)
 
         // The owner taps Approve; the webhook handles it.
-        val approve = client.postTelegram(callbackUpdateJson(updateId = 100, data = "a:stt0001", messageId = messageId))
+        val approve = client.postTelegram(callbackUpdateJson(updateId = 100, data = "a:ukt0001", messageId = messageId))
         assertEquals(HttpStatusCode.OK, approve.status)
-        assertEquals(PostStatus.Approved, fx.status("stt0001"))
-        assertEquals(PostStatus.Pending, fx.status("stt0002"))
+        assertEquals(PostStatus.Approved, fx.status("ukt0001"))
+        assertEquals(PostStatus.Pending, fx.status("ukt0002"))
 
         // Before the slot a tick publishes nothing.
         client.postScheduler("/tick")
-        assertEquals(PostStatus.Approved, fx.status("stt0001"))
+        assertEquals(PostStatus.Approved, fx.status("ukt0001"))
         assertTrue(fx.threads.published.isEmpty())
 
         // After the slot the tick publishes it and refreshes the preview with a Delete button.
         fx.clock.advance(Duration.ofMinutes(31))
         assertEquals(HttpStatusCode.OK, client.postScheduler("/tick").status)
 
-        val published = fx.post("stt0001")
+        val published = fx.post("ukt0001")
         assertEquals(PostStatus.Published, published.status)
         assertNotNull(published.mediaId)
         assertEquals(1, fx.threads.published.size)
-        assertEquals(1, fx.account("staging").publishedCount)
+        assertEquals(1, fx.account("ua").publishedCount)
         val refresh = fx.telegram.callsOf<FakeTelegramApi.Call.Edited>().last { it.messageId == messageId }
         assertEquals(listOf("Delete"), buttons(refresh.markup))
-        assertEquals(PostStatus.Pending, fx.status("stt0002"))
+        assertEquals(PostStatus.Pending, fx.status("ukt0002"))
     }
 }

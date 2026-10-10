@@ -30,21 +30,19 @@ class SeedLoaderTest {
     private fun quote(text: String) = "\"" + text.replace("\\", "\\\\").replace("\"", "\\\"") + "\""
 
     @Test
-    fun theCommittedAccountsFileLoadsThreeAccounts() = runTest {
-        assertEquals(listOf("staging", "ua", "pl"), loader.upsertAccounts(accountsJson))
+    fun theCommittedAccountsFileLoadsTheUkrainianAndPolishAccounts() = runTest {
+        assertEquals(listOf("ua", "pl"), loader.upsertAccounts(accountsJson))
 
-        val staging = store.allAccounts.getValue("staging")
-        assertEquals(listOf("sellsnap.app", "uk", "UA", "Europe/Kyiv", "st"), listOf(staging.handle, staging.language, staging.country, staging.timezone, staging.codePrefix))
         val ua = store.allAccounts.getValue("ua")
-        assertEquals(listOf("sellsnap.ua", "uk", "UA", "Europe/Kyiv", "uk"), listOf(ua.handle, ua.language, ua.country, ua.timezone, ua.codePrefix))
+        assertEquals(listOf("sellsnap.app", "uk", "UA", "Europe/Kyiv", "uk"), listOf(ua.handle, ua.language, ua.country, ua.timezone, ua.codePrefix))
         val pl = store.allAccounts.getValue("pl")
         assertEquals(listOf("sellsnap.pl", "pl", "PL", "Europe/Warsaw", "pl"), listOf(pl.handle, pl.language, pl.country, pl.timezone, pl.codePrefix))
-        assertEquals(AccountMode.Approval, staging.mode)
+        assertEquals(AccountMode.Approval, ua.mode)
     }
 
     @Test
     fun upsertKeepsTheTokenModeStreakAndCounters() = runTest {
-        val live = testAccount().copy(
+        val live = testAccount(id = "ua", codePrefix = "uk").copy(
             handle = "old.handle",
             mode = AccountMode.Auto,
             approvalStreak = 20,
@@ -60,53 +58,54 @@ class SeedLoaderTest {
 
         loader.upsertAccounts(accountsJson)
 
-        val after = store.allAccounts.getValue("staging")
+        val after = store.allAccounts.getValue("ua")
         assertEquals(live.copy(handle = "sellsnap.app"), after)
     }
 
     @Test
     fun tipsBecomeDraftedTipPostsWithCodesFromThePostSequence() = runTest {
         loader.upsertAccounts(accountsJson)
-        val result = loader.loadTips("staging", "uk", sampleTips)
+        val result = loader.loadTips("ua", "uk", sampleTips)
 
-        assertEquals(TipsResult.Loaded(listOf("stt0001", "stt0002"), emptyList()), result)
-        val first = store.allPosts.getValue("stt0001")
+        assertEquals(TipsResult.Loaded(listOf("ukt0001", "ukt0002"), emptyList()), result)
+        val first = store.allPosts.getValue("ukt0001")
         assertEquals("sample01", first.seedKey)
         assertEquals(PostStatus.Drafted, first.status)
         assertEquals(Pillar.Tip, first.pillar)
         assertEquals(PostKind.Text, first.kind)
         assertEquals(PostSource.Seed, first.source)
-        assertEquals("staging", first.accountId)
-        assertEquals(2, store.allAccounts.getValue("staging").postSeq)
+        assertEquals("ua", first.accountId)
+        assertEquals(2, store.allAccounts.getValue("ua").postSeq)
     }
 
     @Test
     fun loadingTwiceAddsNothing() = runTest {
         loader.upsertAccounts(accountsJson)
-        loader.loadTips("staging", "uk", sampleTips)
-        val second = loader.loadTips("staging", "uk", sampleTips)
+        loader.loadTips("ua", "uk", sampleTips)
+        val second = loader.loadTips("ua", "uk", sampleTips)
 
         assertEquals(TipsResult.Loaded(emptyList(), listOf("sample01", "sample02")), second)
         assertEquals(2, store.allPosts.size)
-        assertEquals(2, store.allAccounts.getValue("staging").postSeq)
+        assertEquals(2, store.allAccounts.getValue("ua").postSeq)
     }
 
     @Test
     fun aNewTipInALaterLoadContinuesTheSequence() = runTest {
         loader.upsertAccounts(accountsJson)
-        loader.loadTips("staging", "uk", sampleTips)
-        val result = loader.loadTips("staging", "uk", tips("sample01" to "Placeholder tip one. This text only shows the file format.", "sample03" to "Placeholder tip three."))
+        loader.loadTips("ua", "uk", sampleTips)
+        val result = loader.loadTips("ua", "uk", tips("sample01" to "Placeholder tip one. This text only shows the file format.", "sample03" to "Placeholder tip three."))
 
-        assertEquals(TipsResult.Loaded(listOf("stt0003"), listOf("sample01")), result)
-        assertEquals("sample03", store.allPosts.getValue("stt0003").seedKey)
+        assertEquals(TipsResult.Loaded(listOf("ukt0003"), listOf("sample01")), result)
+        assertEquals("sample03", store.allPosts.getValue("ukt0003").seedKey)
     }
 
     @Test
     fun twoAccountsMayShareAKeyAndTheirCodesUseTheirOwnPrefix() = runTest {
         loader.upsertAccounts(accountsJson)
-        loader.loadTips("staging", "uk", sampleTips)
-        val result = loader.loadTips("ua", "uk", sampleTips)
-        assertEquals(TipsResult.Loaded(listOf("ukt0001", "ukt0002"), emptyList()), result)
+        loader.loadTips("ua", "uk", sampleTips)
+        val polish = tips("sample01" to "Placeholder tip one.", "sample02" to "Placeholder tip two.").replace("\"uk\"", "\"pl\"")
+        val result = loader.loadTips("pl", "pl", polish)
+        assertEquals(TipsResult.Loaded(listOf("plt0001", "plt0002"), emptyList()), result)
     }
 
     @Test
@@ -121,7 +120,7 @@ class SeedLoaderTest {
             "empty01" to " ",
         )
 
-        val result = loader.loadTips("staging", "uk", bad)
+        val result = loader.loadTips("ua", "uk", bad)
 
         val rejected = result as TipsResult.Rejected
         assertEquals(setOf("link01", "url01", "long01", "ru01", "empty01"), rejected.problems.keys)
@@ -130,13 +129,13 @@ class SeedLoaderTest {
         assertTrue("TooLong" in rejected.problems.getValue("long01"))
         assertTrue("RussianLetter" in rejected.problems.getValue("ru01"))
         assertTrue(store.allPosts.isEmpty())
-        assertEquals(0, store.allAccounts.getValue("staging").postSeq)
+        assertEquals(0, store.allAccounts.getValue("ua").postSeq)
     }
 
     @Test
     fun aDuplicateKeyIsRejected() = runTest {
         loader.upsertAccounts(accountsJson)
-        val result = loader.loadTips("staging", "uk", tips("same" to "One.", "same" to "Two."))
+        val result = loader.loadTips("ua", "uk", tips("same" to "One.", "same" to "Two."))
         assertEquals(setOf("same"), (result as TipsResult.Rejected).problems.keys)
         assertTrue(store.allPosts.isEmpty())
     }
@@ -145,9 +144,9 @@ class SeedLoaderTest {
     fun wrongAccountLanguageOrFileIsAnError() = runTest {
         loader.upsertAccounts(accountsJson)
         assertFailsWith<SeedException> { loader.loadTips("nobody", "uk", sampleTips) }
-        assertFailsWith<SeedException> { loader.loadTips("staging", "pl", sampleTips) }
+        assertFailsWith<SeedException> { loader.loadTips("ua", "pl", sampleTips) }
         assertFailsWith<SeedException> { loader.loadTips("pl", "pl", tips("a" to "b")) }
-        assertFailsWith<SeedException> { loader.loadTips("staging", "uk", "{ not json") }
+        assertFailsWith<SeedException> { loader.loadTips("ua", "uk", "{ not json") }
         assertTrue(store.allPosts.isEmpty())
     }
 
