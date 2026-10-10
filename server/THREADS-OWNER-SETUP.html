@@ -128,21 +128,20 @@
 
 <main>
   <h1>Threads agent — owner setup, part 1</h1>
-  <p class="sub">Staging account, Meta app, Telegram bot. About 70 minutes. Written 2026-10-09 for
+  <p class="sub">Ukrainian account, Meta app, Telegram bot. About 70 minutes. Written 2026-10-10 for
     <a href="THREADS-AGENT-DESIGN.md">THREADS-AGENT-DESIGN.md</a> §11 and Linear
     <a href="https://linear.app/sirelon/issue/SIR-140">SIR-140</a>.</p>
 
   <div class="card ok">
     <p><strong>When you finish this page:</strong></p>
     <ul>
-      <li>Your <code>sellsnap.app</code> account is the private staging Instagram + Threads pair.</li>
-      <li>A Meta app has the staging profile as a Threads tester, and a test token works.</li>
+      <li>Your <code>sellsnap.app</code> account is the public Ukrainian SellSnap Instagram + Threads pair, with account id <code>ua</code>.</li>
+      <li>A Meta app has the Ukrainian profile as a Threads tester, and a test token works.</li>
       <li>A Telegram bot exists. Its token and the Threads app secret are in Secret Manager.</li>
       <li>You send me the non-secret values from <a href="#send">step 10</a>.</li>
     </ul>
-    <p>Why today: the brand accounts must wait at least 7 days after the staging Threads profile (D34).
-      A profile created on 2026-10-09 allows brand accounts on 2026-10-16. If <code>sellsnap.app</code>
-      already had a Threads profile before 2026-10-02, the brand accounts can start now.</p>
+    <p>Why today: the Polish account <code>sellsnap.pl</code> can start any time after this page (step 11).
+      The Meta app and the bot are shared by both accounts.</p>
   </div>
 
   <div class="card warn">
@@ -170,7 +169,7 @@
       <li><a href="#devaccount">Meta developer account</a></li>
       <li><a href="#app">Create the Meta app</a></li>
       <li><a href="#settings">Permissions and settings</a></li>
-      <li><a href="#tester">Add the staging tester</a></li>
+      <li><a href="#tester">Add the Ukrainian tester</a></li>
       <li><a href="#token">Test a token</a></li>
       <li><a href="#telegram">Telegram bot</a></li>
       <li><a href="#send">Store secrets, send me the values</a></li>
@@ -183,7 +182,8 @@
   <p>Use these names unless they are taken. The fallback is in brackets.</p>
   <table>
     <tr><th>What</th><th>Value</th></tr>
-    <tr><td>Staging account (Instagram and Threads)</td><td><code>sellsnap.app</code>, your existing account</td></tr>
+    <tr><td>Ukrainian account (Instagram and Threads)</td><td><code>sellsnap.app</code>, account id <code>ua</code>, your existing account</td></tr>
+    <tr><td>Polish account (Instagram and Threads)</td><td><code>sellsnap.pl</code> (fallback <code>sellsnap_pl</code>), account id <code>pl</code>, created in <a href="#later">step 11</a></td></tr>
     <tr><td>Meta app name</td><td><code>SellSnap Agent</code>. Keep Meta product names (Threads, Instagram, Facebook) out of it. <span class="tag tip">Tip</span></td></tr>
     <tr><td>Telegram bot name</td><td><code>SellSnap Agent</code></td></tr>
     <tr><td>Telegram bot username</td><td><code>sellsnap_agent_bot</code> (<code>sellsnap_threads_bot</code>). It cannot change later.</td></tr>
@@ -201,22 +201,21 @@
   <ul class="steps">
     <li><input type="checkbox"><span class="text">In the Instagram app, switch to <code>sellsnap.app</code>: <span class="ui">Profile</span> tab → tap your username → pick it. If it is not on this phone, tap <span class="ui">Add Instagram account</span> → <span class="ui">Log into existing account</span>. <span class="tag guide">Guide</span></span></li>
     <li><input type="checkbox"><span class="text">The account can stay in your personal Accounts Center. Turn off profile sync so your personal name and photo never reach it: <span class="ui">☰</span> → <span class="ui">Accounts Center</span> → <span class="ui">Profiles</span> → <code>sellsnap.app</code> → its name → turn off <span class="ui">Sync profile info</span>. <span class="tag docs">Meta docs</span></span></li>
-    <li><input type="checkbox"><span class="text">The account type must be <strong>Personal</strong>: a professional account cannot be private. Open <span class="ui">☰</span> → <span class="ui">Account type and tools</span>. If it offers <span class="ui">Switch to personal account</span>, tap it. <span class="tag guide">Guide</span></span></li>
-    <li><input type="checkbox"><span class="text">Make the account private: <span class="ui">☰</span> → <span class="ui">Account privacy</span> → turn on <span class="ui">Private account</span>.</span></li>
-    <li><input type="checkbox"><span class="text">Set the bio to <code>Private test account.</code></span></li>
+    <li><input type="checkbox"><span class="text">The account type must be <strong>Personal</strong> or <strong>Creator</strong>. Open <span class="ui">☰</span> → <span class="ui">Account type and tools</span>. If it shows a Business account, tap <span class="ui">Switch to personal account</span>. <span class="tag guide">Guide</span></span></li>
+    <li><input type="checkbox"><span class="text">Make the account public: <span class="ui">☰</span> → <span class="ui">Account privacy</span> → turn <strong>off</strong> <span class="ui">Private account</span>.</span></li>
+    <li><input type="checkbox"><span class="text">Set the bio to <code>ШІ перетворює ваше фото на готове оголошення 📸 Поради для продавців в Україні. Незалежний застосунок, не афілійований з OLX.</code></span></li>
     <li><input type="checkbox"><span class="text">Turn on two-factor authentication if it is off: <span class="ui">☰</span> → <span class="ui">Accounts Center</span> → <span class="ui">Password and security</span> → <span class="ui">Two-factor authentication</span> → pick the account → <span class="ui">Authentication app</span>. Then save the codes from <span class="ui">Additional methods</span> → <span class="ui">Backup codes</span>. <span class="tag guide">Guide</span></span></li>
-    <li><input type="checkbox"><span class="text">Do not follow anyone, post, or send messages from this account. <span class="tag tip">Tip</span></span></li>
   </ul>
   <div class="card">
     <p>If a step above fails, for example the account cannot become Personal, stop and tell me. Then we keep <code>sellsnap.app</code> out of the agent and create a
-      new staging account.</p>
+      new Ukrainian account.</p>
   </div>
   <details class="card" id="create-account">
-    <summary><strong>Create a new account</strong> — for the brand accounts in <a href="#later">step 11</a></summary>
+    <summary><strong>Create a new account</strong> — for the Polish account in <a href="#later">step 11</a></summary>
     <ol>
       <li>In the Instagram app, tap the <span class="ui">Profile</span> tab. Tap your username at the top. Tap <span class="ui">Add Instagram account</span>, then <span class="ui">Create new account</span>. <span class="tag guide">Guide</span></li>
       <li>Enter the username and the display name.</li>
-      <li>Use a new email for each account, for example <code>you+sellsnap.ua@gmail.com</code>, a plus alias of your Gmail. If Instagram rejects the <code>+</code>, use another address you own. One address holds at most 5 Instagram accounts. <span class="tag guide">Guide</span></li>
+      <li>Use a new email for each account, for example <code>you+sellsnap.pl@gmail.com</code>, a plus alias of your Gmail. If Instagram rejects the <code>+</code>, use another address you own. One address holds at most 5 Instagram accounts. <span class="tag guide">Guide</span></li>
       <li>When Instagram offers Accounts Center, tap <span class="ui">Create password</span> instead of <span class="ui">Allow and continue</span>. <span class="tag guide">Guide</span> <span class="tag tip">Tip</span></li>
       <li>Confirm the email code and tap <span class="ui">Complete sign-up</span>. Save the password.</li>
       <li>Turn on two-factor authentication as above.</li>
@@ -227,10 +226,9 @@
   <h2 id="threads"><span class="num">3</span>Threads profile<span class="time">~5 min, phone</span></h2>
   <ul class="steps">
     <li><input type="checkbox"><span class="text">Open the Threads app. If it shows your personal profile, open <span class="ui">Profile</span> → tap your username → <span class="ui">Add profile</span>. On a fresh install, tap <span class="ui">Log in with Instagram</span>. <span class="tag guide">Guide</span></span></li>
-    <li><input type="checkbox"><span class="text">Log in with <code>sellsnap.app</code>. If it already has a Threads profile, Threads opens it: skip to the privacy check below, and note in step 10 when you created it. If not, import the name and bio from Instagram.</span></li>
-    <li><input type="checkbox"><span class="text">When Threads asks about privacy, choose <span class="ui">Private profile</span>. Then tap <span class="ui">Join Threads</span>.</span></li>
-    <li><input type="checkbox"><span class="text">Check that it is private: <span class="ui">Profile</span> → <span class="ui">☰</span> → <span class="ui">Settings</span> → <span class="ui">Privacy</span> → <span class="ui">Private profile</span> is on. Threads privacy is set apart from Instagram privacy. <span class="tag guide">Guide</span></span></li>
-    <li><input type="checkbox"><span class="text">Optional: from your personal Threads profile, request to follow <code>sellsnap.app</code>, and approve it there. Then you see the test posts in your own feed.</span></li>
+    <li><input type="checkbox"><span class="text">Log in with <code>sellsnap.app</code>. If it already has a Threads profile, Threads opens it: skip to the privacy check below. If not, import the name and bio from Instagram.</span></li>
+    <li><input type="checkbox"><span class="text">When Threads asks about privacy, choose <span class="ui">Public profile</span>. Then tap <span class="ui">Join Threads</span>.</span></li>
+    <li><input type="checkbox"><span class="text">Check that it is public: <span class="ui">Profile</span> → <span class="ui">☰</span> → <span class="ui">Settings</span> → <span class="ui">Privacy</span> → <span class="ui">Private profile</span> is off. Threads privacy is set apart from Instagram privacy. <span class="tag guide">Guide</span></span></li>
   </ul>
   <div class="card">
     <p>Threads also allows sign-up without Instagram in some regions. Use the Instagram path anyway.
@@ -285,7 +283,7 @@
   </ul>
 
   <!-- 7 -->
-  <h2 id="tester"><span class="num">7</span>Add the staging tester<span class="time">~5 min, Mac + phone</span></h2>
+  <h2 id="tester"><span class="num">7</span>Add the Ukrainian tester<span class="time">~5 min, Mac + phone</span></h2>
   <ul class="steps">
     <li><input type="checkbox"><span class="text">Left menu <span class="ui">App roles</span> → <span class="ui">Roles</span> → <span class="ui">Add People</span> → choose <span class="ui">Threads Tester</span>. The use-case page also has a shortcut, <span class="ui">Add or Remove Threads Test Users</span>. <span class="tag docs">Meta docs</span></span></li>
     <li><input type="checkbox"><span class="text">Enter the Threads username <code>sellsnap.app</code> → <span class="ui">Add</span>. The row shows <span class="ui">Pending</span>. <span class="tag guide">Guide</span></span></li>
@@ -329,7 +327,7 @@ unset TH_TOKEN</code></pre>
     </ul>
   </div>
   <ul class="steps">
-    <li><input type="checkbox"><span class="text">Do not keep the token. On deploy day you generate a fresh one and send it to the bot with <code>/token staging</code>.</span></li>
+    <li><input type="checkbox"><span class="text">Do not keep the token. On deploy day you generate a fresh one and send it to the bot with <code>/token ua &lt;token&gt;</code>.</span></li>
   </ul>
 
   <!-- 9 -->
@@ -371,10 +369,8 @@ gcloud secrets list --project=sellsnap-6e85c</code></pre>
   <h3>Message to me</h3>
   <p>Fill the form, click the button, paste the result into the chat. No field here is secret.</p>
   <div class="card">
-    <label class="field" for="f-handle">Staging username</label>
+    <label class="field" for="f-handle">Ukrainian account username</label>
     <input class="field" id="f-handle" data-key="handle" value="sellsnap.app">
-    <label class="field" for="f-age">When the sellsnap.app Threads profile was created</label>
-    <input class="field" id="f-age" data-key="age" value="2026-10-09">
     <label class="field" for="f-appid">Threads app ID</label>
     <input class="field" id="f-appid" data-key="appid">
     <label class="field" for="f-bot">Bot username</label>
@@ -395,11 +391,11 @@ gcloud secrets list --project=sellsnap-6e85c</code></pre>
   <h2 id="later"><span class="num">11</span>What comes later</h2>
   <table class="timeline">
     <tr><th>When</th><th>What</th></tr>
-    <tr><td>Before 2026-10-16</td><td>Approve the brand bio copy. I send it as an English key-to-text list (D20).</td></tr>
-    <tr><td>2026-10-16 or later</td><td>Create <code>sellsnap.ua</code> and <code>sellsnap.pl</code> (fallback <code>sellsnap_ua</code>, <code>sellsnap_pl</code>) with <a href="#create-account">Create a new account</a>, then steps 3 and 7. The profiles are public. Post nothing by hand.</td></tr>
-    <tr><td>Phase 1 deploy day</td><td>Generate a token for each account (step 8) and send it to the bot with <code>/token &lt;account&gt; &lt;token&gt;</code>. The bot deletes that message.</td></tr>
-    <tr><td>Staging has 10 posts</td><td>Submit Meta App Review. I prepare the text.</td></tr>
-    <tr><td>Every 90 days</td><td>Re-authorize staging when the bot reminds you: a private profile's permission grant cannot be extended. <span class="tag docs">Meta docs</span></td></tr>
+    <tr><td>Any time</td><td>Create <code>sellsnap.pl</code> (fallback <code>sellsnap_pl</code>) with <a href="#create-account">Create a new account</a>, then steps 3 and 7. The profiles are public. Post nothing by hand.</td></tr>
+    <tr><td>Phase 1 deploy day</td><td>Generate a token for each account (step 8) and send it to the bot with <code>/token &lt;account&gt; &lt;token&gt;</code>, where the account is <code>ua</code> or <code>pl</code>. The bot deletes that message.</td></tr>
+    <tr><td>First real post</td><td>The welcome post on the Ukrainian account.</td></tr>
+    <tr><td>Ukrainian account has 10 posts</td><td>Submit Meta App Review, the same day. I prepare the text.</td></tr>
+    <tr><td>Every 90 days</td><td>Re-authorize a private account when the bot reminds you: a private profile's permission grant cannot be extended. A public profile extends its grant on every token refresh. <span class="tag docs">Meta docs</span></td></tr>
     <tr><td>Before Phase 3</td><td>Photograph about 30 household items.</td></tr>
   </table>
 
@@ -426,7 +422,7 @@ gcloud secrets list --project=sellsnap-6e85c</code></pre>
 
 <script>
 (() => {
-  const STORE = 'sellsnap-threads-setup-2';
+  const STORE = 'sellsnap-threads-setup-3';
   const state = JSON.parse(localStorage.getItem(STORE) || '{}');
   state.checks ??= {}; state.fields ??= {};
   const save = () => localStorage.setItem(STORE, JSON.stringify(state));
@@ -485,8 +481,7 @@ gcloud secrets list --project=sellsnap-6e85c</code></pre>
   document.getElementById('copy-message').addEventListener('click', async () => {
     const text = [
       'Threads setup part 1 done.',
-      `Staging username: ${v('handle')}`,
-      `Threads profile created: ${v('age')}`,
+      `Ukrainian account username: ${v('handle')}`,
       `Threads app ID: ${v('appid')}`,
       `Bot username: @${v('bot').replace(/^@/, '')}`,
       `Telegram user id: ${v('tgid')}`,
