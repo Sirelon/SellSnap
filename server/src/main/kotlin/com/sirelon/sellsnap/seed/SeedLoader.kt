@@ -32,6 +32,8 @@ data class SeedAccount(
     val country: String,
     val timezone: String,
     val codePrefix: String,
+    /** False keeps the account out of the weekly batch. */
+    val batchEnabled: Boolean = true,
 )
 
 /** One entry of a tips list: [key] identifies the tip for idempotent loads. */
@@ -69,6 +71,7 @@ class SeedLoader(private val store: SocialStore, private val clock: Clock) {
                         country = seed.country,
                         timezone = seed.timezone,
                         codePrefix = seed.codePrefix,
+                        batchEnabled = seed.batchEnabled,
                     ) ?: SocialAccount(
                         id = seed.id,
                         handle = seed.handle,
@@ -76,6 +79,7 @@ class SeedLoader(private val store: SocialStore, private val clock: Clock) {
                         country = seed.country,
                         timezone = seed.timezone,
                         codePrefix = seed.codePrefix,
+                        batchEnabled = seed.batchEnabled,
                     ),
                 )
             }

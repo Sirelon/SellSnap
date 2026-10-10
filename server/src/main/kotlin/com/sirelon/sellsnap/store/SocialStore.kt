@@ -4,6 +4,7 @@ import com.sirelon.sellsnap.model.AccountMetrics
 import com.sirelon.sellsnap.model.PostMetrics
 import com.sirelon.sellsnap.model.PostStatus
 import com.sirelon.sellsnap.model.SocialAccount
+import com.sirelon.sellsnap.model.SocialBatch
 import com.sirelon.sellsnap.model.SocialClick
 import com.sirelon.sellsnap.model.SocialEvent
 import com.sirelon.sellsnap.model.SocialPost
@@ -21,6 +22,11 @@ interface SocialStore {
     suspend fun postsOf(accountId: String): List<SocialPost>
 
     suspend fun postsWithStatus(status: PostStatus): List<SocialPost>
+
+    suspend fun batch(week: String): SocialBatch?
+
+    /** The slot markers of [week]'s batch: marker key to the id of the post that the slot produced. */
+    suspend fun slotMarkers(week: String): Map<String, String>
 
     /**
      * Runs [block] atomically. The block may run more than once, so it must have no side effects
@@ -71,6 +77,15 @@ interface StoreTx {
     fun putPost(post: SocialPost)
 
     fun putEvent(event: SocialEvent)
+
+    fun batch(week: String): SocialBatch?
+
+    /** The id of the post that the slot [key] of [week]'s batch produced, or null when the slot has no marker. */
+    fun slotMarker(week: String, key: String): String?
+
+    fun putBatch(batch: SocialBatch)
+
+    fun putSlotMarker(week: String, key: String, postId: String)
 }
 
 /** Moves a post out of [from] with [change]; null when the post is missing or no longer in [from]. */

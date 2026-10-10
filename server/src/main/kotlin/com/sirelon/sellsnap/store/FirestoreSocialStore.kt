@@ -18,6 +18,8 @@ import com.sirelon.sellsnap.model.PostMetrics
 import com.sirelon.sellsnap.model.PostSource
 import com.sirelon.sellsnap.model.PostStatus
 import com.sirelon.sellsnap.model.SocialAccount
+import com.sirelon.sellsnap.model.BatchAccount
+import com.sirelon.sellsnap.model.SocialBatch
 import com.sirelon.sellsnap.model.SocialClick
 import com.sirelon.sellsnap.model.SocialEvent
 import com.sirelon.sellsnap.model.SocialPost
@@ -45,6 +47,14 @@ class FirestoreSocialStore(private val firestore: Firestore) : SocialStore {
     override suspend fun postsWithStatus(status: PostStatus): List<SocialPost> =
         firestore.collection(POSTS).whereEqualTo("status", status.wire()).get().await()
             .documents.mapNotNull { it.postOrNull() }
+
+    override suspend fun batch(week: String): SocialBatch? =
+        batchDoc(week).get().await().takeIf { it.exists() }?.data?.let { batchFromMap(week, it) }
+
+    override suspend fun slotMarkers(week: String): Map<String, String> =
+        batchDoc(week).collection(SLOTS).get().await().documents
+            .mapNotNull { doc -> doc.getString("postId")?.let { doc.id to it } }
+            .toMap()
 
     override suspend fun <T> transaction(block: (StoreTx) -> T): T = withContext(Dispatchers.IO) {
         firestore.runTransaction { tx -> block(FirestoreTx(tx)) }.awaitBlocking()
@@ -100,6 +110,10 @@ class FirestoreSocialStore(private val firestore: Firestore) : SocialStore {
 
     private fun postDoc(id: String) = firestore.collection(POSTS).document(id)
 
+    private fun batchDoc(week: String) = firestore.collection(BATCHES).document(week)
+
+    private fun slotDoc(week: String, key: String) = batchDoc(week).collection(SLOTS).document(key)
+
     private fun eventDoc(id: String) = firestore.collection(EVENTS).document(id)
 
     private fun accountMetricsDoc(id: String) = firestore.collection(ACCOUNT_METRICS).document(id)
@@ -122,6 +136,20 @@ class FirestoreSocialStore(private val firestore: Firestore) : SocialStore {
         override fun putEvent(event: SocialEvent) {
             tx.set(eventDoc(event.id), event.toMap())
         }
+
+        override fun batch(week: String): SocialBatch? =
+            tx.get(batchDoc(week)).get().takeIf { it.exists() }?.data?.let { batchFromMap(week, it) }
+
+        override fun slotMarker(week: String, key: String): String? =
+            tx.get(slotDoc(week, key)).get().takeIf { it.exists() }?.getString("postId")
+
+        override fun putBatch(batch: SocialBatch) {
+            tx.set(batchDoc(batch.week), batch.toMap())
+        }
+
+        override fun putSlotMarker(week: String, key: String, postId: String) {
+            tx.set(slotDoc(week, key), mapOf("postId" to postId))
+        }
     }
 
     internal companion object {
@@ -133,6 +161,8 @@ class FirestoreSocialStore(private val firestore: Firestore) : SocialStore {
         const val METRICS = "social_metrics"
         const val ACCOUNT_METRICS = "social_account_metrics"
         const val SPEND = "social_spend"
+        const val BATCHES = "social_batches"
+        const val SLOTS = "slots"
     }
 }
 
@@ -189,6 +219,7 @@ internal fun SocialAccount.toMap(): Map<String, Any?> = mapOf(
     "permissionsExpireAt" to permissionsExpireAt?.toTimestamp(),
     "postSeq" to postSeq,
     "publishedCount" to publishedCount,
+    "batchEnabled" to batchEnabled,
 )
 
 internal fun accountFromMap(id: String, data: Map<String, Any?>): SocialAccount = SocialAccount(
@@ -209,6 +240,8 @@ internal fun accountFromMap(id: String, data: Map<String, Any?>): SocialAccount 
     permissionsExpireAt = data.instant("permissionsExpireAt"),
     postSeq = data.int("postSeq"),
     publishedCount = data.int("publishedCount"),
+    // An account written before the field existed takes part in batches.
+    batchEnabled = data["batchEnabled"] as Boolean? ?: true,
 )
 
 internal fun SocialPost.toMap(): Map<String, Any?> = mapOf(
@@ -363,6 +396,38 @@ internal fun usageFromMap(data: Map<String, Any?>): Map<String, UsageCounters> =
             thoughtsTokens = count("thoughtsTokens"),
         )
     }
+
+internal fun SocialBatch.toMap(): Map<String, Any?> = mapOf(
+    "runId" to runId,
+    "leaseUntil" to leaseUntil?.toTimestamp(),
+    "startedAt" to startedAt?.toTimestamp(),
+    "finishedAt" to finishedAt?.toTimestamp(),
+    "lastError" to lastError,
+    "accounts" to accounts.mapValues { (_, account) ->
+        mapOf(
+            "done" to account.done,
+            "slotsWritten" to account.slotsWritten,
+            "failedSlots" to account.failedSlots,
+        )
+    },
+)
+
+internal fun batchFromMap(week: String, data: Map<String, Any?>): SocialBatch = SocialBatch(
+    week = week,
+    runId = data.string("runId"),
+    leaseUntil = data.instant("leaseUntil"),
+    startedAt = data.instant("startedAt"),
+    finishedAt = data.instant("finishedAt"),
+    lastError = data.string("lastError"),
+    accounts = (data["accounts"] as Map<*, *>?).orEmpty().entries.associate { (id, value) ->
+        val fields = value as Map<*, *>
+        id as String to BatchAccount(
+            done = fields["done"] as Boolean? ?: false,
+            slotsWritten = (fields["slotsWritten"] as Number?)?.toInt() ?: 0,
+            failedSlots = (fields["failedSlots"] as List<*>?)?.map { it as String } ?: emptyList(),
+        )
+    },
+)
 
 internal fun SocialClick.toMap(): Map<String, Any?> = mapOf(
     "code" to code,

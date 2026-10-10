@@ -2,11 +2,13 @@ package com.sirelon.sellsnap.telegram
 
 import com.sirelon.sellsnap.fakes.FakeTelegramApi
 import com.sirelon.sellsnap.fakes.testPost
+import com.sirelon.sellsnap.model.BatchAccount
 import com.sirelon.sellsnap.model.EventType
 import com.sirelon.sellsnap.model.Pillar
 import com.sirelon.sellsnap.model.PostKind
 import com.sirelon.sellsnap.model.PostSource
 import com.sirelon.sellsnap.model.PostStatus
+import com.sirelon.sellsnap.model.SocialBatch
 import com.sirelon.sellsnap.telegram.BotFixture.Companion.NOW
 import com.sirelon.sellsnap.threads.ThreadsFailure
 import kotlinx.coroutines.test.runTest
@@ -457,6 +459,41 @@ class CommandsTest {
 
         assertEquals(BotText.refreshFailed("Threads rejected the request (HTTP 400, code 190)"), bot.sentTexts().single())
         assertNotNull(bot.account().token)
+    }
+
+    @Test
+    fun postWithoutNowAsksToWaitWhileABatchIsDraftingTheAccount() = runTest {
+        bot.store.put(
+            SocialBatch(
+                "2026-W42",
+                runId = "run-1",
+                leaseUntil = NOW.plusSeconds(120),
+                startedAt = NOW,
+                accounts = mapOf("staging" to BatchAccount(slotsWritten = 3)),
+            ),
+        )
+
+        bot.say("/post staging A tip while the batch writes")
+
+        assertEquals(listOf("A batch is drafting for staging, try again in a few minutes."), bot.sentTexts())
+        assertTrue(bot.store.allPosts.isEmpty())
+        assertEquals(0, bot.account().postSeq)
+    }
+
+    @Test
+    fun postNowIsNotBlockedByABatchAndAFinishedBatchDoesNotBlockPost() = runTest {
+        bot.store.put(
+            SocialBatch("2026-W42", runId = "run-1", leaseUntil = NOW.plusSeconds(120), startedAt = NOW, accounts = mapOf("staging" to BatchAccount())),
+        )
+        bot.say("/post staging now Going out")
+        assertEquals(PostStatus.Published, bot.status("stt0001"))
+
+        // The run finished the account and released the lease.
+        bot.store.put(
+            SocialBatch("2026-W42", leaseUntil = null, startedAt = NOW, accounts = mapOf("staging" to BatchAccount(done = true, slotsWritten = 12))),
+        )
+        bot.say("/post staging A later tip")
+        assertEquals(PostStatus.Pending, bot.status("stt0002"))
     }
 
     private companion object {

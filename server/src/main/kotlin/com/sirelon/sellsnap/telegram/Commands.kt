@@ -1,5 +1,6 @@
 package com.sirelon.sellsnap.telegram
 
+import com.sirelon.sellsnap.batch.batchDrafting
 import com.sirelon.sellsnap.content.ContentRules
 import com.sirelon.sellsnap.content.PostCode
 import com.sirelon.sellsnap.content.occupiedSlots
@@ -115,6 +116,8 @@ class Commands(
     private suspend fun post(message: Message, args: String) {
         val request = parsePost(args) ?: return reply(BotText.POST_USAGE)
         val account = store.account(request.accountId) ?: return reply(BotText.unknownAccount(request.accountId))
+        // A slot taken now could collide with the one the batch is about to draft; `now` takes no slot.
+        if (!request.now && store.batchDrafting(account.id, clock.instant())) return reply(BotText.batchDrafting(account.id))
         if (request.now && account.paused) return reply(BotText.pausedBeforeNow(account.handle, account.id))
         if (request.now && account.token == null) return reply(BotText.NO_TOKEN)
         val photo = message.image()

@@ -18,6 +18,9 @@ enum class Pillar(val letter: Char) {
 
 enum class PostSource { Seed, Owner, Drafter }
 
+/** `skipReason` of a pending post that the next batch dropped because its slot lies before the batch week. */
+const val SKIP_REASON_EXPIRED = "expired"
+
 data class SocialPost(
     val id: String,
     val accountId: String,

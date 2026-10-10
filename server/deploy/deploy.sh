@@ -377,18 +377,33 @@ step8_telegram() {
 }
 
 # Creates one Cloud Scheduler job that posts to the service with an OIDC token for the scheduler account.
-# Usage: create_job NAME SCHEDULE TIMEZONE PATH DEADLINE
+# Usage: create_job NAME SCHEDULE TIMEZONE PATH DEADLINE [extra gcloud flags...]
 create_job() {
-  gcloud scheduler jobs create http "$1" \
+  local name="$1" schedule="$2" zone="$3" path="$4" deadline="$5"
+  shift 5
+  gcloud scheduler jobs create http "$name" \
     --project "$PROJECT" --location "$REGION" \
-    --schedule "$2" --time-zone "$3" \
-    --uri "$URL$4" --http-method POST \
-    --attempt-deadline "$5" \
+    --schedule "$schedule" --time-zone "$zone" \
+    --uri "$URL$path" --http-method POST \
+    --attempt-deadline "$deadline" \
     --oidc-service-account-email "$SCHEDULER_SA" \
-    --oidc-token-audience "$URL"
+    --oidc-token-audience "$URL" \
+    "$@"
 }
 
-# Step 9. Two jobs, both free tier (3 jobs per billing account). OIDC audience = the base URL, no trailing slash.
+# The batch answers 503 while the model is busy and 409 while another run holds the lease, so Scheduler retries:
+# 2 retries, at least 10 minutes apart.
+BATCH_RETRY_FLAGS=(--max-retry-attempts 2 --min-backoff 600s)
+
+batch_retry_is_set() {
+  local count backoff
+  count="$(gcloud scheduler jobs describe sellsnap-batch --location "$REGION" --project "$PROJECT" --format='value(retryConfig.retryCount)')"
+  backoff="$(gcloud scheduler jobs describe sellsnap-batch --location "$REGION" --project "$PROJECT" --format='value(retryConfig.minBackoffDuration)')"
+  [[ "$count" == "2" && "$backoff" == "600s" ]]
+}
+
+# Step 9. Three jobs, all free tier (3 jobs per billing account): the hourly tick, the weekly batch and a manual batch
+# for the Ukrainian account. The batch jobs are created paused. OIDC audience = the base URL, no trailing slash.
 step9_scheduler() {
   log "Step 9: Cloud Scheduler jobs"
   [[ -n "$URL" ]] || derive_url
@@ -405,13 +420,37 @@ step9_scheduler() {
 
   if job_exists sellsnap-batch; then
     echo "job sellsnap-batch exists"
+    if batch_retry_is_set; then
+      echo "job sellsnap-batch retries twice, 600s apart"
+    else
+      # [APPROVE] changes the retry policy of the existing job (free tier)
+      if confirm "Update job sellsnap-batch: retry up to 2 times, at least 600s apart (free tier)"; then
+        gcloud scheduler jobs update http sellsnap-batch --location "$REGION" --project "$PROJECT" "${BATCH_RETRY_FLAGS[@]}"
+      fi
+    fi
   else
     # [APPROVE] creates a job and pauses it at once (free tier)
-    if confirm "Create job sellsnap-batch: 0 9 * * 0 Europe/Kyiv, POST $URL/batch, deadline 1800s, then pause it (free tier)"; then
-      create_job sellsnap-batch "0 9 * * 0" Europe/Kyiv /batch 1800s
+    if confirm "Create job sellsnap-batch: 0 9 * * 0 Europe/Kyiv, POST $URL/batch, deadline 1800s, 2 retries 600s apart, then pause it (free tier)"; then
+      create_job sellsnap-batch "0 9 * * 0" Europe/Kyiv /batch 1800s "${BATCH_RETRY_FLAGS[@]}"
       gcloud scheduler jobs pause sellsnap-batch --location "$REGION" --project "$PROJECT"
     fi
   fi
+
+  if job_exists sellsnap-batch-manual; then
+    echo "job sellsnap-batch-manual exists"
+  else
+    # [APPROVE] creates a job that stays paused; it only ever runs when the owner starts it by hand (free tier)
+    if confirm "Create job sellsnap-batch-manual: POST $URL/batch with {\"accounts\":[\"ua\"]}, deadline 1800s, paused for good (free tier)"; then
+      create_job sellsnap-batch-manual "0 9 * * 0" Europe/Kyiv /batch 1800s \
+        --headers "Content-Type=application/json" --message-body '{"accounts":["ua"]}'
+      gcloud scheduler jobs pause sellsnap-batch-manual --location "$REGION" --project "$PROJECT"
+    fi
+  fi
+
+  # The owner decides when weekly batches start. Not run by this script; run it by hand:
+  #   gcloud scheduler jobs resume sellsnap-batch --location "$REGION" --project "$PROJECT"
+  # A manual batch for the Ukrainian account, at any time:
+  #   gcloud scheduler jobs run sellsnap-batch-manual --location "$REGION" --project "$PROJECT"
 }
 
 # Step 10. Email channel plus a log-match policy on failed tick attempts.

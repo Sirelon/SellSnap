@@ -7,6 +7,8 @@ import com.sirelon.sellsnap.telegram.ReplyMarkup
 import com.sirelon.sellsnap.telegram.TelegramApi
 import com.sirelon.sellsnap.telegram.TelegramFile
 import com.sirelon.sellsnap.telegram.TelegramFailure
+import java.util.Collections
+import java.util.concurrent.atomic.AtomicLong
 
 /** Records every call in [calls]; [failNext] queues failures per method name. */
 class FakeTelegramApi : TelegramApi {
@@ -39,13 +41,14 @@ class FakeTelegramApi : TelegramApi {
         }
     }
 
-    val calls = mutableListOf<Call>()
+    /** Synchronized: the batch previews accounts in parallel. */
+    val calls: MutableList<Call> = Collections.synchronizedList(mutableListOf())
 
     /** File bytes by `file_path`, served by [downloadFile]. */
     val files = mutableMapOf<String, ByteArray>()
 
     private val failures = mutableMapOf<String, ArrayDeque<TelegramFailure>>()
-    private var nextMessageId = 1000L
+    private val nextMessageId = AtomicLong(1000L)
 
     fun failNext(method: String, vararg failure: TelegramFailure) {
         failures.getOrPut(method) { ArrayDeque() }.addAll(failure)
@@ -64,14 +67,14 @@ class FakeTelegramApi : TelegramApi {
         replyToMessageId: Long?,
     ): Message {
         maybeFail("sendMessage")
-        val id = nextMessageId++
+        val id = nextMessageId.getAndIncrement()
         calls += Call.Sent("sendMessage", chatId, id, text, replyMarkup, replyToMessageId)
         return Message(messageId = id, chat = Chat(chatId), text = text)
     }
 
     override suspend fun sendPhoto(chatId: Long, photoUrl: String, caption: String?, replyMarkup: ReplyMarkup?): Message {
         maybeFail("sendPhoto")
-        val id = nextMessageId++
+        val id = nextMessageId.getAndIncrement()
         calls += Call.Sent("sendPhoto", chatId, id, caption, replyMarkup)
         return Message(messageId = id, chat = Chat(chatId), caption = caption)
     }

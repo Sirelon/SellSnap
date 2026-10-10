@@ -1,5 +1,6 @@
 package com.sirelon.sellsnap.tick
 
+import com.sirelon.sellsnap.batch.IsoWeek
 import com.sirelon.sellsnap.insights.InsightsCollector
 import com.sirelon.sellsnap.model.EventType
 import com.sirelon.sellsnap.model.SocialEvent
@@ -17,6 +18,7 @@ import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.withTimeout
 import org.slf4j.LoggerFactory
 import java.time.Clock
+import java.time.LocalTime
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 
@@ -78,6 +80,7 @@ class TickRunner(
                         summary = summary.copy(snapshots = summary.snapshots + snapshot(account.id))
                     }
                 }
+                runQuietly { alertStalledBatches() }
             }
         } catch (e: TimeoutCancellationException) {
             log.error("Tick stopped at the {} time limit", timeout)
@@ -126,6 +129,21 @@ class TickRunner(
             0
         }
 
+    /**
+     * After [STALLED_AFTER] Kyiv time, alerts once a day for every account that the current batch started and has
+     * not finished while no run holds its lease: the run failed, stopped on a busy model or ran out of time.
+     */
+    private suspend fun alertStalledBatches() {
+        val now = clock.instant()
+        if (now.atZone(IsoWeek.KYIV).toLocalTime() < STALLED_AFTER) return
+        val week = IsoWeek.key(IsoWeek.targetMonday(now))
+        val batch = store.batch(week) ?: return
+        if (batch.leaseHeld(now)) return
+        batch.accounts.filterValues { !it.done }.keys.sorted().forEach { accountId ->
+            alerts.sendOnce(AlertRequest(AlertType.BatchStalled, accountId, week = week))
+        }
+    }
+
     /** Records an Error event, logs one redacted line and alerts the owner; none of it may throw. */
     private suspend fun reportFailure(accountId: String, error: Exception) {
         val detail = redact(error.message ?: error::class.simpleName.orEmpty()).replace(Regex("\\s+"), " ").take(MAX_DETAIL_LENGTH)
@@ -151,5 +169,6 @@ class TickRunner(
 
     private companion object {
         const val MAX_DETAIL_LENGTH = 200
+        val STALLED_AFTER: LocalTime = LocalTime.of(11, 0)
     }
 }

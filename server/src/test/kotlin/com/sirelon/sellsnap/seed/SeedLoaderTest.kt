@@ -14,6 +14,7 @@ import java.time.Instant
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class SeedLoaderTest {
@@ -38,6 +39,20 @@ class SeedLoaderTest {
         val pl = store.allAccounts.getValue("pl")
         assertEquals(listOf("sellsnap.pl", "pl", "PL", "Europe/Warsaw", "pl"), listOf(pl.handle, pl.language, pl.country, pl.timezone, pl.codePrefix))
         assertEquals(AccountMode.Approval, ua.mode)
+    }
+
+    @Test
+    fun theSeedFileSetsBatchEnabledOnNewAndExistingAccountsAndAbsentMeansOn() = runTest {
+        val off = """[{"id":"ua","handle":"h","language":"uk","country":"UA","timezone":"Europe/Kyiv","codePrefix":"uk","batchEnabled":false}]"""
+        loader.upsertAccounts(off)
+        assertFalse(store.allAccounts.getValue("ua").batchEnabled)
+
+        val absent = """[{"id":"ua","handle":"h","language":"uk","country":"UA","timezone":"Europe/Kyiv","codePrefix":"uk"}]"""
+        loader.upsertAccounts(absent)
+        assertTrue(store.allAccounts.getValue("ua").batchEnabled)
+
+        loader.upsertAccounts(accountsJson)
+        assertTrue(store.allAccounts.values.all { it.batchEnabled })
     }
 
     @Test

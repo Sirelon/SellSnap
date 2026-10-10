@@ -5,7 +5,8 @@
     "language": "uk",
     "country": "UA",
     "timezone": "Europe/Kyiv",
-    "codePrefix": "uk"
+    "codePrefix": "uk",
+    "batchEnabled": true
   },
   {
     "id": "pl",
@@ -13,6 +14,7 @@
     "language": "pl",
     "country": "PL",
     "timezone": "Europe/Warsaw",
-    "codePrefix": "pl"
+    "codePrefix": "pl",
+    "batchEnabled": true
   }
 ]

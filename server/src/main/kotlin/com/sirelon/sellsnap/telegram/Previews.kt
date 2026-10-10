@@ -8,6 +8,7 @@ import com.sirelon.sellsnap.model.PostKind
 import com.sirelon.sellsnap.model.PostSource
 import com.sirelon.sellsnap.model.PostStatus
 import com.sirelon.sellsnap.model.SocialAccount
+import com.sirelon.sellsnap.model.SKIP_REASON_EXPIRED
 import com.sirelon.sellsnap.model.SocialPost
 import com.sirelon.sellsnap.store.SocialStore
 import kotlinx.coroutines.CancellationException
@@ -85,7 +86,8 @@ class Previews(
 
     private fun body(post: SocialPost, account: SocialAccount): String {
         val slot = post.scheduledAt?.let { BotText.slot(it, account.zone) } ?: BotText.NO_SLOT
-        val header = BotText.header(account.handle, post.code, slot, post.needsAttention)
+        val expired = post.status == PostStatus.Skipped && post.skipReason == SKIP_REASON_EXPIRED
+        val header = BotText.header(account.handle, post.code, slot, post.needsAttention, expired)
         val text = ContentRules.render(post.text, linkUrl(post.code, account.language), account.language)
         return buildString {
             append(header)

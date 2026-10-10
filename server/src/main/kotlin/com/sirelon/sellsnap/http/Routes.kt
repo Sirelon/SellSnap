@@ -1,6 +1,7 @@
 package com.sirelon.sellsnap.http
 
 import com.sirelon.sellsnap.AppGraph
+import com.sirelon.sellsnap.batch.BatchResult
 import com.sirelon.sellsnap.redirect.ClickEvent
 import com.sirelon.sellsnap.telegram.Update
 import com.sirelon.sellsnap.threads.redact
@@ -14,6 +15,7 @@ import kotlinx.serialization.SerializationException
 import io.ktor.utils.io.readRemaining
 import kotlinx.io.readString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 
@@ -34,7 +36,7 @@ fun Application.configureRoutes(graph: AppGraph) {
         post("/batch") {
             call.guarded {
                 if (!call.isScheduler(graph)) return@guarded
-                call.respond(HttpStatusCode.NotImplemented)
+                handleBatch(call, graph)
             }
         }
         post("/telegram") {
@@ -58,6 +60,39 @@ fun Application.configureRoutes(graph: AppGraph) {
             }
         }
     }
+}
+
+/**
+ * `POST /batch`: runs the weekly drafting batch. The optional JSON body `{"accounts": ["ua"]}` limits the run
+ * to those accounts. 200 when the batch is done or was done already; 409 while another run holds the lease;
+ * 503 when the run timed out or stopped on a busy model, so Cloud Scheduler retries; 500 when an account failed.
+ */
+private suspend fun handleBatch(call: ApplicationCall, graph: AppGraph) {
+    val body = call.receiveText()
+    val accounts = if (body.isBlank()) {
+        null
+    } else {
+        parseBatchAccounts(body) ?: return call.respondText("The body must be {\"accounts\": [\"id\", ...]} with at least one id.", status = HttpStatusCode.BadRequest)
+    }
+    val result = graph.batch.run(accounts)
+    val status = when (result) {
+        is BatchResult.Done, is BatchResult.AlreadyDone -> HttpStatusCode.OK
+        is BatchResult.Running -> HttpStatusCode.Conflict
+        is BatchResult.Deferred, is BatchResult.TimedOut -> HttpStatusCode.ServiceUnavailable
+        is BatchResult.Failed -> HttpStatusCode.InternalServerError
+    }
+    call.respondText(result.line(), status = status)
+}
+
+/** The account ids of a batch body, or null when the body is not `{"accounts": [non-empty list of strings]}`. */
+private fun parseBatchAccounts(text: String): List<String>? {
+    val obj = try {
+        updateJson.parseToJsonElement(text) as? JsonObject
+    } catch (e: SerializationException) {
+        null
+    } ?: return null
+    val ids = (obj["accounts"] as? JsonArray)?.map { (it as? JsonPrimitive)?.takeIf { p -> p.isString }?.content ?: return null }
+    return ids?.takeIf { it.isNotEmpty() }
 }
 
 /**

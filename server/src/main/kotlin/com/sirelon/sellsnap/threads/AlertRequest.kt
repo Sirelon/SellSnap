@@ -27,6 +27,12 @@ enum class AlertType(val key: String) {
 
     /** An insights call failed permanently or hit a rate limit; the account is never paused for it. */
     InsightsFailed("insights_failed"),
+
+    /** A batch run stopped drafting an account (the model is busy or at its limit); the next run continues. */
+    BatchDeferred("batch_deferred"),
+
+    /** A batch started for an account but had not finished by 11:00 Kyiv time with no run holding its lease. */
+    BatchStalled("batch_stalled"),
 }
 
 /**
@@ -40,6 +46,8 @@ data class AlertRequest(
     val detail: String? = null,
     /** Token and permission alerts: when the thing expires. */
     val expiresAt: Instant? = null,
+    /** Batch alerts: the ISO week of the batch. */
+    val week: String? = null,
 ) {
     /** `alert_{type}_{account}_{yyyymmdd}`, the id that keeps one alert per type and account per day. */
     fun eventId(at: Instant): String = "alert_${type.key}_${accountId}_${DAY.format(at)}"

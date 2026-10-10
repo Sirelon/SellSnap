@@ -113,6 +113,26 @@ class PromptsTest {
     }
 
     @Test
+    fun aTipMayNameTheAppOnlyWhenTheBriefAllowsIt() {
+        val allowed = Prompts.drafterUser(SlotBrief(Pillar.Tip, "uk", emptyList(), mayMentionApp = true))
+        val barred = Prompts.drafterUser(SlotBrief(Pillar.Tip, "uk", emptyList(), mayMentionApp = false))
+
+        assertTrue("APP MENTION: allowed" in allowed)
+        assertFalse("APP MENTION: not allowed" in allowed)
+        assertTrue("APP MENTION: not allowed. Do not write SellSnap" in barred)
+        assertFalse("APP MENTION: allowed" in barred)
+        assertTrue(SlotBrief(Pillar.Tip, "uk", emptyList()).mayMentionApp, "a tip may name the app unless told otherwise")
+    }
+
+    @Test
+    fun anUpdateAlwaysNamesTheAppWhateverTheCapSays() {
+        val update = Prompts.drafterUser(SlotBrief(Pillar.Update, "uk", emptyList(), release, linkReplyAllowed = true, mayMentionApp = false))
+
+        assertTrue("APP MENTION: required" in update)
+        assertFalse("not allowed. Do not write SellSnap" in update)
+    }
+
+    @Test
     fun anUpdatePromptCarriesTheReleaseNoteInTheAccountLanguage() {
         val prompt = Prompts.drafterUser(updateBrief("uk"))
 

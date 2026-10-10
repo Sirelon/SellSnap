@@ -5,9 +5,11 @@ import com.sirelon.sellsnap.fakes.FakeTelegramApi
 import com.sirelon.sellsnap.fakes.testAccount
 import com.sirelon.sellsnap.fakes.testPost
 import com.sirelon.sellsnap.insights.InsightsCollector
+import com.sirelon.sellsnap.model.BatchAccount
 import com.sirelon.sellsnap.model.EventType
 import com.sirelon.sellsnap.model.PostStatus
 import com.sirelon.sellsnap.model.SocialAccount
+import com.sirelon.sellsnap.model.SocialBatch
 import com.sirelon.sellsnap.model.SocialPost
 import com.sirelon.sellsnap.store.SocialStore
 import com.sirelon.sellsnap.telegram.PreviewSender
@@ -301,5 +303,66 @@ class TickRunnerTest {
         assertTrue(summary.timedOut)
         assertFalse(summary.ok)
         assertEquals(9.minutes.inWholeMilliseconds, testScheduler.currentTime)
+    }
+
+    private fun batchOf(done: Boolean, leaseUntil: java.time.Instant? = null) = SocialBatch(
+        week = "2026-W42",
+        runId = "run-1".takeIf { leaseUntil != null },
+        leaseUntil = leaseUntil,
+        startedAt = java.time.Instant.parse("2026-10-11T06:00:00Z"),
+        accounts = mapOf("staging" to BatchAccount(done = done, slotsWritten = 4)),
+    )
+
+    @Test
+    fun aBatchThatStoppedBeforeElevenKyivTimeAlertsOncePerDayFromThenOn() = runTest {
+        val fx = AgentFixture()
+        fx.memory.put(fx.publishable(testAccount()))
+        fx.memory.put(batchOf(done = false))
+        val tick = runner(fx)
+
+        tick.run()
+        assertEquals(0, fx.sentTexts().count { "did not finish" in it }, "it is 08:00 in Kyiv")
+
+        fx.clock.advance(Duration.ofHours(3))
+        tick.run()
+        tick.run()
+        assertEquals(
+            listOf("The batch for staging, week 2026-W42, did not finish, so run the sellsnap-batch job again to continue it."),
+            fx.sentTexts().filter { "did not finish" in it },
+        )
+
+        fx.clock.advance(Duration.ofHours(24))
+        tick.run()
+        assertEquals(2, fx.sentTexts().count { "did not finish" in it })
+    }
+
+    @Test
+    fun noBatchAlertWhileARunHoldsTheLeaseOrAfterTheAccountIsDone() = runTest {
+        val fx = AgentFixture(now = java.time.Instant.parse("2026-10-12T09:00:00Z"))
+        fx.memory.put(fx.publishable(testAccount()))
+        val tick = runner(fx)
+
+        fx.memory.put(batchOf(done = false, leaseUntil = fx.clock.instant().plusSeconds(60)))
+        tick.run()
+        fx.memory.put(batchOf(done = true))
+        tick.run()
+
+        assertEquals(0, fx.sentTexts().count { "did not finish" in it })
+    }
+
+    @Test
+    fun aTickStillPublishesWhileABatchHoldsTheLeaseButLeavesTheQueueAlone() = runTest {
+        val fx = AgentFixture()
+        fx.memory.put(fx.publishable(testAccount()))
+        fx.put(testPost(id = "stt0001", status = PostStatus.Approved, scheduledAt = AgentFixture.NOW.minusSeconds(60)))
+        fx.put(testPost(id = "stt0002", status = PostStatus.Drafted))
+        fx.memory.put(batchOf(done = false, leaseUntil = AgentFixture.NOW.plusSeconds(60)))
+
+        val summary = runner(fx).run()
+
+        assertEquals(1, summary.published)
+        assertEquals(0, summary.queued)
+        assertEquals(PostStatus.Published, fx.status("stt0001"))
+        assertEquals(PostStatus.Drafted, fx.status("stt0002"))
     }
 }

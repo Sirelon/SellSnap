@@ -40,6 +40,18 @@ class PreviewsTest {
     }
 
     @Test
+    fun anExpiredPostShowsExpiredInItsHeaderAndNoButtons() {
+        val expired = testPost(status = PostStatus.Skipped, scheduledAt = slot).copy(skipReason = "expired")
+        val skipped = testPost(status = PostStatus.Skipped, scheduledAt = slot).copy(skipReason = "skipped_by_owner")
+
+        val preview = previews.build(expired, account)
+
+        assertEquals("@sellsnap.staging | stt0001 | Mon 12 Oct 08:30 | expired\n\nTip text", preview.text)
+        assertNull(preview.keyboard)
+        assertFalse("expired" in previews.build(skipped, account).text)
+    }
+
+    @Test
     fun theHeaderFlagsNeedsAttentionAndAMissingSlot() {
         val preview = previews.build(testPost(status = PostStatus.Pending).copy(needsAttention = true), account)
 

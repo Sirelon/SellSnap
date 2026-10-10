@@ -6,11 +6,13 @@ import com.sirelon.sellsnap.fakes.testAccount
 import com.sirelon.sellsnap.fakes.testPost
 import com.sirelon.sellsnap.model.AccountMetrics
 import com.sirelon.sellsnap.model.AccountMode
+import com.sirelon.sellsnap.model.BatchAccount
 import com.sirelon.sellsnap.model.Pillar
 import com.sirelon.sellsnap.model.PostKind
 import com.sirelon.sellsnap.model.PostMetrics
 import com.sirelon.sellsnap.model.PostSource
 import com.sirelon.sellsnap.model.PostStatus
+import com.sirelon.sellsnap.model.SocialBatch
 import com.sirelon.sellsnap.model.UsageCounters
 import java.time.Instant
 import kotlin.test.Test
@@ -148,6 +150,31 @@ class FirestoreMappingTest {
             usageFromMap(data),
         )
         assertEquals(emptyMap(), usageFromMap(mapOf("day" to "20261020")))
+    }
+
+    @Test
+    fun batchesAndDisabledAccountsSurviveAMapRoundTrip() {
+        val batch = SocialBatch(
+            week = "2026-W43",
+            runId = "run-1",
+            leaseUntil = instant,
+            startedAt = instant.minusSeconds(600),
+            finishedAt = instant.plusSeconds(60),
+            accounts = mapOf(
+                "ua" to BatchAccount(done = true, slotsWritten = 12, failedSlots = listOf("2-2")),
+                "pl" to BatchAccount(),
+            ),
+            lastError = "boom",
+        )
+
+        assertEquals(batch, batchFromMap("2026-W43", batch.toMap()))
+        assertEquals(SocialBatch("2026-W44"), batchFromMap("2026-W44", SocialBatch("2026-W44").toMap()))
+        assertEquals(false, accountFromMap("ua", testAccount().copy(batchEnabled = false).toMap()).batchEnabled)
+    }
+
+    @Test
+    fun anAccountWrittenBeforeBatchEnabledExistedTakesPartInBatches() {
+        assertEquals(true, accountFromMap("a", mapOf("handle" to "h")).batchEnabled)
     }
 
     @Test

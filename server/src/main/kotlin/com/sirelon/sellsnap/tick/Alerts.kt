@@ -58,6 +58,8 @@ class Alerts(
                 AlertType.TokenRefreshFailed -> BotText.alertTokenRefreshFailed(account, detail)
                 AlertType.TickFailed -> BotText.alertTickFailed(account, detail)
                 AlertType.InsightsFailed -> BotText.alertInsightsFailed(account, detail)
+                AlertType.BatchDeferred -> BotText.alertBatchDeferred(account, request.week.orEmpty(), detail)
+                AlertType.BatchStalled -> BotText.alertBatchStalled(account, request.week.orEmpty())
             }
         }
 

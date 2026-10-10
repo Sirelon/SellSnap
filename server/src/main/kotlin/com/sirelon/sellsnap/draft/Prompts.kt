@@ -23,6 +23,11 @@ class SlotBrief(
     val release: ReleaseNotes? = null,
     /** True when the post may carry a link reply (`{link}` in `replyText`). */
     val linkReplyAllowed: Boolean = false,
+    /**
+     * False for a tip that must not mention SellSnap: the batch lets a tip mention the app on every second tip only.
+     * A product update always names the app, so the flag does not apply to it.
+     */
+    val mayMentionApp: Boolean = true,
 ) {
     init {
         require(pillar in DRAFTABLE_PILLARS) { "Pillar $pillar cannot be drafted yet" }
@@ -92,6 +97,7 @@ object Prompts {
         appendLine("PILLAR: ${pillarName(brief.pillar)}")
         appendLine(pillarMeaning(brief.pillar))
         appendLine("LANGUAGE: ${languageName(brief.language)}")
+        appendLine(appMentionLine(brief))
         appendLine(
             if (brief.linkReplyAllowed) {
                 "LINK REPLY: required. Write replyText as a short invitation to try the app. It must contain the {link} placeholder once."
@@ -240,11 +246,18 @@ object Prompts {
         else -> error("Pillar $pillar cannot be drafted yet")
     }
 
+    /** Whether the post may name the app: an update always does, a tip only when the batch allows it. */
+    private fun appMentionLine(brief: SlotBrief): String = when {
+        brief.pillar == Pillar.Update -> "APP MENTION: required. The update is about SellSnap, so name it."
+        brief.mayMentionApp ->
+            "APP MENTION: allowed. Name SellSnap in at most one short phrase, and only with a claim from the feature list."
+        else -> "APP MENTION: not allowed. Do not write SellSnap or name the app. Give the selling idea alone."
+    }
+
     private fun pillarMeaning(pillar: Pillar): String = when (pillar) {
         Pillar.Tip ->
             "A selling tip: one practical idea that helps someone sell a second-hand item faster or for a better price " +
-                "(photos, light, honest condition, price, a clear title, quick replies). It is useful without the app. " +
-                "Mention SellSnap in at most one short phrase, and only with a claim from the feature list."
+                "(photos, light, honest condition, price, a clear title, quick replies). It is useful without the app."
         Pillar.Update ->
             "A product update: tell the readers what is new in the release below, in your own words. " +
                 "Lead with the benefit to a seller. Name only changes that the release lists."

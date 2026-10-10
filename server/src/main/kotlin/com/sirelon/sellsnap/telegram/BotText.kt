@@ -3,10 +3,12 @@ package com.sirelon.sellsnap.telegram
 import com.sirelon.sellsnap.content.ContentRules
 import com.sirelon.sellsnap.model.PostStatus
 import com.sirelon.sellsnap.threads.DeferReason
+import java.time.DayOfWeek
 import java.time.Instant
 import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
+import java.time.format.TextStyle
 import java.util.Locale
 
 /**
@@ -21,9 +23,10 @@ object BotText {
     const val REPLY_TITLE = "↳ reply:"
     const val BACK_TRANSLATION_PREFIX = "EN: "
     const val CHECK_NOTES_PREFIX = "Check: "
+    const val EXPIRED = "expired"
 
-    fun header(handle: String, code: String, slot: String, needsAttention: Boolean): String =
-        listOfNotNull("@$handle", code, slot, NEEDS_ATTENTION.takeIf { needsAttention }).joinToString(" | ")
+    fun header(handle: String, code: String, slot: String, needsAttention: Boolean, expired: Boolean = false): String =
+        listOfNotNull("@$handle", code, slot, NEEDS_ATTENTION.takeIf { needsAttention }, EXPIRED.takeIf { expired }).joinToString(" | ")
 
     // Buttons
     const val APPROVE = "Approve"
@@ -51,6 +54,21 @@ object BotText {
     fun notDeletable(status: PostStatus): String = "A ${status.name.lowercase()} post cannot be deleted."
 
     fun threadsDeleteFailed(reason: String): String = "Threads did not delete it: $reason."
+
+    // Weekly batch
+    fun batchHeader(handle: String, week: String, drafts: Int): String =
+        "@$handle, week $week: $drafts ${if (drafts == 1) "draft" else "drafts"}"
+
+    fun batchClosing(failedSlots: List<String>, aiCalls: Long): String =
+        "Failed slots: ${failedSlots.map(::failedSlot).joinToString(", ").ifEmpty { "none" }}; AI calls today: $aiCalls."
+
+    /** [slot] is `<day of week 1-7>-<slot 1 or 2>`, the form `failedSlots` stores. */
+    private fun failedSlot(slot: String): String {
+        val day = slot.substringBefore('-').toIntOrNull()?.takeIf { it in 1..7 } ?: return slot
+        return "${DayOfWeek.of(day).getDisplayName(TextStyle.SHORT, Locale.ENGLISH)} slot ${slot.substringAfter('-')}"
+    }
+
+    fun batchDrafting(accountId: String): String = "A batch is drafting for $accountId, try again in a few minutes."
 
     // Regenerate
     const val REGENERATING = "Writing a new version…"
@@ -203,6 +221,12 @@ object BotText {
 
     fun alertTickFailed(accountId: String, detail: String): String =
         "The tick failed for $accountId: $detail. The other accounts ran."
+
+    fun alertBatchStalled(accountId: String, week: String): String =
+        "The batch for $accountId, week $week, did not finish, so run the sellsnap-batch job again to continue it."
+
+    fun alertBatchDeferred(accountId: String, week: String, reason: String): String =
+        "Drafting for $accountId, week $week, stopped: $reason, and the next batch run continues where it left off."
 
     fun alertInsightsFailed(accountId: String, detail: String): String =
         "Reading Threads insights for $accountId failed: $detail. The account keeps publishing, and the next tick tries again."

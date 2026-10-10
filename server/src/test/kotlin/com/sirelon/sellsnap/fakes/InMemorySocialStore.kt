@@ -7,6 +7,7 @@ import com.sirelon.sellsnap.model.PostMetrics
 import com.sirelon.sellsnap.model.PostSource
 import com.sirelon.sellsnap.model.PostStatus
 import com.sirelon.sellsnap.model.SocialAccount
+import com.sirelon.sellsnap.model.SocialBatch
 import com.sirelon.sellsnap.model.SocialClick
 import com.sirelon.sellsnap.model.SocialEvent
 import com.sirelon.sellsnap.model.SocialPost
@@ -49,6 +50,16 @@ class InMemorySocialStore : SocialStore {
     @Volatile
     private var usageMap = mapOf<String, Map<String, UsageCounters>>()
 
+    @Volatile
+    private var batchMap = mapOf<String, SocialBatch>()
+
+    /** Slot markers by `week/key`, each holding the id of the post that the slot produced. */
+    @Volatile
+    private var markerMap = mapOf<String, String>()
+
+    val allBatches: Map<String, SocialBatch> get() = batchMap
+    val allMarkers: Map<String, String> get() = markerMap
+
     val allUsage: Map<String, Map<String, UsageCounters>> get() = usageMap
     val allMetrics: Map<String, PostMetrics> get() = metricsMap
     val allAccountMetrics: Map<String, AccountMetrics> get() = accountMetricsMap
@@ -61,6 +72,11 @@ class InMemorySocialStore : SocialStore {
     /** Test setup: writes outside any transaction. */
     fun put(account: SocialAccount) {
         accountMap = accountMap + (account.id to account)
+    }
+
+    /** Test setup: writes outside any transaction. */
+    fun put(batch: SocialBatch) {
+        batchMap = batchMap + (batch.week to batch)
     }
 
     /** Test setup: writes outside any transaction. */
@@ -80,12 +96,19 @@ class InMemorySocialStore : SocialStore {
     override suspend fun postsWithStatus(status: PostStatus): List<SocialPost> =
         postMap.values.filter { it.status == status }
 
+    override suspend fun batch(week: String): SocialBatch? = batchMap[week]
+
+    override suspend fun slotMarkers(week: String): Map<String, String> =
+        markerMap.filterKeys { it.startsWith("$week/") }.mapKeys { it.key.removePrefix("$week/") }
+
     override suspend fun <T> transaction(block: (StoreTx) -> T): T = mutex.withLock {
-        val tx = MemoryTx(accountMap, postMap)
+        val tx = MemoryTx(accountMap, postMap, batchMap, markerMap)
         val result = block(tx)
         accountMap = accountMap + tx.accountWrites
         postMap = postMap + tx.postWrites
         eventMap = eventMap + tx.eventWrites
+        batchMap = batchMap + tx.batchWrites
+        markerMap = markerMap + tx.markerWrites
         result
     }
 
@@ -151,12 +174,17 @@ class InMemorySocialStore : SocialStore {
     private class MemoryTx(
         private val accounts: Map<String, SocialAccount>,
         private val posts: Map<String, SocialPost>,
+        private val batches: Map<String, SocialBatch>,
+        private val markers: Map<String, String>,
     ) : StoreTx {
         val accountWrites = mutableMapOf<String, SocialAccount>()
         val postWrites = mutableMapOf<String, SocialPost>()
         val eventWrites = mutableMapOf<String, SocialEvent>()
+        val batchWrites = mutableMapOf<String, SocialBatch>()
+        val markerWrites = mutableMapOf<String, String>()
 
-        private val wrote get() = accountWrites.isNotEmpty() || postWrites.isNotEmpty() || eventWrites.isNotEmpty()
+        private val wrote get() =
+            accountWrites.isNotEmpty() || postWrites.isNotEmpty() || eventWrites.isNotEmpty() || batchWrites.isNotEmpty() || markerWrites.isNotEmpty()
 
         override fun account(id: String): SocialAccount? {
             check(!wrote) { "Transaction reads must come before writes" }
@@ -178,6 +206,24 @@ class InMemorySocialStore : SocialStore {
 
         override fun putEvent(event: SocialEvent) {
             eventWrites[event.id] = event
+        }
+
+        override fun batch(week: String): SocialBatch? {
+            check(!wrote) { "Transaction reads must come before writes" }
+            return batches[week]
+        }
+
+        override fun slotMarker(week: String, key: String): String? {
+            check(!wrote) { "Transaction reads must come before writes" }
+            return markers["$week/$key"]
+        }
+
+        override fun putBatch(batch: SocialBatch) {
+            batchWrites[batch.week] = batch
+        }
+
+        override fun putSlotMarker(week: String, key: String, postId: String) {
+            markerWrites["$week/$key"] = postId
         }
     }
 }

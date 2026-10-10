@@ -33,6 +33,9 @@ class UsageTracker(
 
     suspend fun callsToday(model: String): Long = store.usageOf(today())[model]?.calls ?: 0
 
+    /** Every model's calls today, added up. */
+    suspend fun callsToday(): Long = store.usageOf(today()).values.sumOf { it.calls }
+
     /** False once [model] has used 90% of the daily call limit, so the batch stops before the API answers 429. */
     suspend fun canCall(model: String): Boolean = callsToday(model) * 10 < dailyCallLimit.toLong() * 9
 

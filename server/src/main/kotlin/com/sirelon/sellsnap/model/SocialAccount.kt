@@ -26,6 +26,11 @@ data class SocialAccount(
     /** Last sequence number handed out to a post code of this account. */
     val postSeq: Int = 0,
     val publishedCount: Int = 0,
+    /** False keeps the account out of the weekly batch; a manual batch run can still name it. */
+    val batchEnabled: Boolean = true,
 ) {
     val zone: ZoneId get() = ZoneId.of(timezone)
+
+    /** True when a new post of this account starts `approved` instead of `pending`: auto mode, and the post needs no attention. */
+    fun autoApproves(needsAttention: Boolean): Boolean = mode == AccountMode.Auto && !needsAttention
 }

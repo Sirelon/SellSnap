@@ -2,6 +2,7 @@ package com.sirelon.sellsnap
 
 import com.google.cloud.firestore.FirestoreOptions
 import com.google.cloud.storage.StorageOptions
+import com.sirelon.sellsnap.batch.BatchRunner
 import com.sirelon.sellsnap.brand.BrandContext
 import com.sirelon.sellsnap.brand.FirestoreReleaseNotesSource
 import com.sirelon.sellsnap.brand.ReleaseNotesSource
@@ -46,6 +47,7 @@ class AppGraph(
     val oidc: OidcVerifier,
     val telegramSecret: TelegramSecret,
     val ticks: TickRunner,
+    val batch: BatchRunner,
     val updates: BotUpdateHandler,
     val redirects: RedirectService,
     val llm: LlmClient,
@@ -93,6 +95,7 @@ class AppGraph(
             val approvals = ApprovalActions(store, telegram, threads, previews, sender, clock, owner, regenerator)
             val publisher = Publisher(store, threads, images, clock, config.postLinkTemplate)
             val tokens = TokenLifecycle(store, threads, clock)
+            val alerts = Alerts(store, telegram, clock, owner)
             val commands = Commands(store, telegram, images, publisher, tokens, previews, sender, approvals, clock, owner)
             val links = StoreLinks(config.playPackage, config.appStoreId, config.appleProviderToken, config.landingUrl)
             return AppGraph(
@@ -104,10 +107,11 @@ class AppGraph(
                     publisher = publisher,
                     filler = QueueFiller(store, sender, previews, clock),
                     previewSender = sender,
-                    alerts = Alerts(store, telegram, clock, owner),
+                    alerts = alerts,
                     insights = InsightsCollector(store, threads, clock),
                     clock = clock,
                 ),
+                batch = BatchRunner(store, pipeline, releases, previews, sender, telegram, alerts, usage, clock, owner),
                 updates = BotUpdateHandler(store, telegram, approvals, commands, clock, owner),
                 redirects = RedirectService(store, links, clock),
                 llm = llm,

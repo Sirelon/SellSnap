@@ -4,10 +4,12 @@ import com.sirelon.sellsnap.llm.LlmClient
 import com.sirelon.sellsnap.llm.LlmRequest
 import com.sirelon.sellsnap.llm.LlmResult
 import com.sirelon.sellsnap.llm.LlmUsage
+import java.util.Collections
 
 /** Scripted [LlmClient]: answers from [replies] in order, then from [fallback]. A reply may be a result or a failure to throw. */
 class FakeLlmClient(private val fallback: (LlmRequest) -> LlmResult = { request -> reply(request.model, "ok") }) : LlmClient {
-    val requests = mutableListOf<LlmRequest>()
+    /** Synchronized: the batch drafts accounts in parallel. */
+    val requests: MutableList<LlmRequest> = Collections.synchronizedList(mutableListOf())
     private val replies = ArrayDeque<Result<LlmResult>>()
 
     fun enqueue(result: LlmResult) {

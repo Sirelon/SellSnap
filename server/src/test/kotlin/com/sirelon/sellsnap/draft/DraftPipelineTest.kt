@@ -120,6 +120,24 @@ class DraftPipelineTest {
     }
 
     @Test
+    fun theAppMentionCapReachesTheDrafterAndStaysThroughARegeneration() = runTest {
+        val noMention = SlotBrief(Pillar.Tip, "uk", emptyList(), mayMentionApp = false)
+        script(draftReply("а".repeat(500)), draftReply(goodUk), checkReply("uk"))
+
+        assertIs<DraftOutcome.Draft>(run(noMention))
+
+        assertEquals(listOf(DRAFT, DRAFT, CHECK), llm.requests.map { it.model })
+        llm.requests.filter { it.model == DRAFT }.forEach {
+            assertTrue("APP MENTION: not allowed" in it.user)
+            assertFalse("APP MENTION: allowed" in it.user)
+        }
+
+        script(draftReply(goodUk), checkReply("uk"))
+        assertIs<DraftOutcome.Draft>(run(ukTip))
+        assertTrue("APP MENTION: allowed" in llm.requests[3].user)
+    }
+
+    @Test
     fun aRuleFailureRegeneratesOnceWithTheViolationsAndThenPasses() = runTest {
         val tooLong = "а".repeat(500)
         script(draftReply(tooLong), draftReply(goodUk), checkReply("uk"))

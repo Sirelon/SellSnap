@@ -25,7 +25,11 @@ suspend fun HttpClient.postTelegram(body: String, secret: String? = AgentFixture
         setBody(body)
     }
 
-suspend fun HttpClient.postScheduler(path: String, token: String? = "scheduler-token"): HttpResponse =
+suspend fun HttpClient.postScheduler(path: String, token: String? = "scheduler-token", body: String? = null): HttpResponse =
     post(path) {
         if (token != null) header(HttpHeaders.Authorization, "Bearer $token")
+        if (body != null) {
+            contentType(ContentType.Application.Json)
+            setBody(body)
+        }
     }

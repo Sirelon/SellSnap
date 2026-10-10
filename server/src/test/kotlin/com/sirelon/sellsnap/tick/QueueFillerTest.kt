@@ -5,14 +5,19 @@ import com.sirelon.sellsnap.fakes.FakeTelegramApi
 import com.sirelon.sellsnap.fakes.testAccount
 import com.sirelon.sellsnap.fakes.testPost
 import com.sirelon.sellsnap.model.AccountMode
+import com.sirelon.sellsnap.model.BatchAccount
+import com.sirelon.sellsnap.model.PostSource
 import com.sirelon.sellsnap.model.PostStatus
+import com.sirelon.sellsnap.model.SocialBatch
 import com.sirelon.sellsnap.telegram.InlineKeyboardMarkup
 import com.sirelon.sellsnap.telegram.PreviewSender
 import com.sirelon.sellsnap.telegram.Previews
 import kotlinx.coroutines.test.runTest
+import java.time.Duration
 import java.time.Instant
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -163,5 +168,81 @@ class QueueFillerTest {
         assertEquals(PostStatus.Pending, fx.status("stt0001"))
         assertEquals(PostStatus.Approved, fx.status("stt0002"))
         assertEquals(setOf(900L, 901L), fx.telegram.callsOf<FakeTelegramApi.Call.Edited>().map { it.messageId }.toSet())
+    }
+
+    private fun batchFor(week: String, done: Boolean, leaseUntil: Instant? = null, runId: String? = null) = SocialBatch(
+        week = week,
+        runId = runId,
+        leaseUntil = leaseUntil,
+        startedAt = Instant.parse("2026-10-11T06:00:00Z"),
+        accounts = mapOf("staging" to BatchAccount(done = done, slotsWritten = 12)),
+    )
+
+    @Test
+    fun seedDraftsAreQueuedOnlyWhileTheWeeksBatchHasNotCoveredTheAccount() = runTest {
+        // The clock is Monday 12 October: the batch that covers this week is 2026-W42.
+        val uncovered = AgentFixture().also { it.memory.put(testAccount()); it.draft("stt0001") }
+        assertEquals(1, filler(uncovered).fill("staging").queued)
+
+        val notDone = AgentFixture().also {
+            it.memory.put(testAccount()); it.draft("stt0001"); it.memory.put(batchFor("2026-W42", done = false))
+        }
+        assertEquals(1, filler(notDone).fill("staging").queued, "a batch that stopped early leaves the reserve in use")
+
+        val otherWeek = AgentFixture().also {
+            it.memory.put(testAccount()); it.draft("stt0001"); it.memory.put(batchFor("2026-W41", done = true))
+        }
+        assertEquals(1, filler(otherWeek).fill("staging").queued)
+
+        val covered = AgentFixture().also {
+            it.memory.put(testAccount()); it.draft("stt0001"); it.memory.put(batchFor("2026-W42", done = true))
+        }
+        val result = filler(covered).fill("staging")
+
+        assertEquals(0, result.queued)
+        assertEquals(PostStatus.Drafted, covered.status("stt0001"))
+        assertNull(covered.post("stt0001").scheduledAt)
+    }
+
+    @Test
+    fun aCoveringBatchDoesNotStopDraftsThatAreNotSeedTips() = runTest {
+        val fx = AgentFixture().also {
+            it.memory.put(testAccount())
+            it.put(testPost(id = "stt0001", status = PostStatus.Drafted).copy(source = PostSource.Drafter))
+            it.memory.put(batchFor("2026-W42", done = true))
+        }
+
+        assertEquals(1, filler(fx).fill("staging").queued)
+    }
+
+    @Test
+    fun aHeldLeaseStopsTheFillForThatAccountOnly() = runTest {
+        val fx = AgentFixture().also {
+            it.memory.put(testAccount())
+            it.memory.put(testAccount(id = "other", codePrefix = "ot"))
+            it.draft("stt0001")
+            it.put(testPost(id = "stt0002", status = PostStatus.Pending, scheduledAt = slot2))
+            it.put(testPost(id = "stt0003", status = PostStatus.Approved, scheduledAt = Instant.parse("2026-10-12T04:00:00Z")))
+            it.put(testPost(id = "stt0004", accountId = "other", status = PostStatus.Drafted))
+            it.memory.put(batchFor("2026-W42", done = false, leaseUntil = AgentFixture.NOW.plusSeconds(60), runId = "run-1"))
+        }
+
+        val held = filler(fx).fill("staging")
+
+        assertEquals(FillResult(batchBusy = true), held)
+        assertEquals(PostStatus.Drafted, fx.status("stt0001"))
+        assertNull(fx.post("stt0002").telegramMessageId, "no preview is sent behind the batch's back")
+        assertEquals(slot2, fx.post("stt0002").scheduledAt)
+        assertEquals(Instant.parse("2026-10-12T04:00:00Z"), fx.post("stt0003").scheduledAt, "an overdue post is not rolled")
+        assertTrue(fx.telegram.calls.isEmpty())
+
+        // Another account is not part of the run, so its queue fills.
+        assertEquals(1, filler(fx).fill("other").queued)
+
+        // Once the lease has lapsed the fill works again.
+        fx.clock.advance(Duration.ofSeconds(61))
+        val lapsed = filler(fx).fill("staging")
+        assertFalse(lapsed.batchBusy)
+        assertEquals(1, lapsed.rolled)
     }
 }
