@@ -9,6 +9,7 @@ import com.sirelon.sellsnap.threads.AlertRequest
 import com.sirelon.sellsnap.threads.AlertType
 import com.sirelon.sellsnap.threads.PublishOutcome
 import com.sirelon.sellsnap.threads.Publisher
+import com.sirelon.sellsnap.threads.ReplyState
 import com.sirelon.sellsnap.threads.TokenLifecycle
 import com.sirelon.sellsnap.threads.redact
 import kotlinx.coroutines.CancellationException
@@ -98,6 +99,9 @@ class TickRunner(
             outcome.alerts.forEach { runQuietly { alerts.sendOnce(it) } }
             if (outcome is PublishOutcome.Published) {
                 published++
+                store.post(outcome.postId)?.let { previewSender.refresh(it) }
+            } else if (outcome is PublishOutcome.Replied && outcome.state == ReplyState.Failed) {
+                // The post is marked "needs attention"; its preview shows that.
                 store.post(outcome.postId)?.let { previewSender.refresh(it) }
             }
         }

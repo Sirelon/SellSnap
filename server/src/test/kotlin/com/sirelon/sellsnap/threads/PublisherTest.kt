@@ -574,9 +574,359 @@ class PublisherTest {
         }
     }
 
+
+    // Link replies
+
+    private val replyTemplate = "Get it: {link}"
+
+    private fun renderedReply(code: String = "stt0001") =
+        ContentRules.render(replyTemplate, "https://go.test/go/$code", "uk")
+
+    private fun withReply(post: SocialPost) = post.copy(replyText = replyTemplate)
+
+    /** A live post whose reply is owed; its claim is stale unless [claimedAgo] says otherwise. */
+    private fun livePost(
+        replyContainerId: String? = null,
+        claimedAgo: Duration = Duration.ofMinutes(16),
+        id: String = "stt0001",
+    ) = testPost(id = id, status = PostStatus.Published).copy(
+        mediaId = "m1",
+        replyText = replyTemplate,
+        replyContainerId = replyContainerId,
+        claimId = "old",
+        publishingClaimedAt = NOW.minus(claimedAgo),
+    )
+
+    @Test
+    fun publishesTheReplyUnderThePostOnceThePostIsLive() = runTest {
+        store.put(withReply(duePost()))
+
+        val outcome = assertIs<PublishOutcome.Published>(publisher().publishDue("staging").single())
+
+        assertEquals(ReplyState.Published, outcome.reply)
+        val containers = threads.callsTo("createContainer").map { it.args[2] as ContainerRequest }
+        assertEquals(2, containers.size)
+        assertNull(containers[0].replyToId)
+        assertEquals("media-2", containers[1].replyToId)
+        assertEquals(PostKind.Text, containers[1].kind)
+        assertEquals(renderedReply(), containers[1].text)
+        assertTrue(ContentRules.INDEPENDENCE_LINE.getValue("uk") in containers[1].text)
+        val saved = post()
+        assertEquals(PostStatus.Published, saved.status)
+        assertEquals("media-2", saved.mediaId)
+        assertEquals("container-3", saved.replyContainerId)
+        assertEquals("media-4", saved.replyMediaId)
+        assertEquals(1, account().publishedCount)
+        assertEquals(1, threads.callsTo("publishingLimit").size)
+    }
+
+    @Test
+    fun savesTheReplyContainerIdBeforeItPublishesTheReply() = runTest {
+        store.put(withReply(duePost()))
+
+        publisher().publishDue("staging")
+
+        val atReplyPublish = threads.callsTo("publish")[1].posts.getValue("stt0001")
+        assertEquals("container-3", atReplyPublish.replyContainerId)
+        assertNull(atReplyPublish.replyMediaId)
+        assertEquals("claim-1", atReplyPublish.claimId)
+        assertEquals(PostStatus.Published, atReplyPublish.status)
+    }
+
+    @Test
+    fun aPostWithoutAReplyMakesNoReplyCall() = runTest {
+        store.put(duePost())
+
+        val outcome = assertIs<PublishOutcome.Published>(publisher().publishDue("staging").single())
+
+        assertEquals(ReplyState.None, outcome.reply)
+        assertEquals(1, threads.callsTo("createContainer").size)
+    }
+
+    @Test
+    fun aPostThatFailsPermanentlyGetsNoReply() = runTest {
+        store.put(withReply(duePost()))
+        threads.failNext("createContainer", ThreadsFailure.Permanent(190, "Threads rejected the request (HTTP 400, code 190)"))
+
+        assertIs<PublishOutcome.Paused>(publisher().publishDue("staging").single())
+
+        assertEquals(1, threads.callsTo("createContainer").size)
+        assertNull(post().replyContainerId)
+    }
+
+    @Test
+    fun publishNowPublishesTheReplyInTheSameRequest() = runTest {
+        store.put(withReply(testPost()))
+
+        val outcome = assertIs<PublishOutcome.Published>(publisher().publishNow("stt0001"))
+
+        assertEquals(ReplyState.Published, outcome.reply)
+        assertEquals("media-4", post().replyMediaId)
+    }
+
+    @Test
+    fun aFinishedReplyContainerIsPublishedWithoutANewOne() = runTest {
+        store.put(livePost(replyContainerId = "rc1"))
+
+        val outcome = assertIs<PublishOutcome.Replied>(publisher().publishDue("staging").single())
+
+        assertEquals(ReplyState.Published, outcome.state)
+        assertTrue(threads.callsTo("createContainer").isEmpty())
+        assertEquals("rc1", threads.callsTo("publish").single().args[2])
+        assertTrue(threads.callsTo("publishingLimit").isEmpty(), "replies have their own quota")
+        val saved = post()
+        assertEquals("media-1", saved.replyMediaId)
+        assertEquals(PostStatus.Published, saved.status)
+        assertEquals(0, account().publishedCount)
+    }
+
+    @Test
+    fun aPublishedPostWhoseReplyWasNeverStartedGetsAContainerOnALaterTick() = runTest {
+        store.put(livePost())
+
+        val outcome = assertIs<PublishOutcome.Replied>(publisher().publishDue("staging").single())
+
+        assertEquals(ReplyState.Published, outcome.state)
+        val request = threads.callsTo("createContainer").single().args[2] as ContainerRequest
+        assertEquals("m1", request.replyToId)
+        assertEquals("container-1", post().replyContainerId)
+        assertEquals("media-2", post().replyMediaId)
+    }
+
+    @Test
+    fun aReplyContainerPublishedBeforeACrashRecoversItsMediaIdFromTheRecentThreads() = runTest {
+        store.put(livePost(replyContainerId = "rc1"))
+        threads.containerStatuses += ContainerStatus(ContainerState.Published)
+        threads.recent = listOf(
+            ThreadSummary("m1", "Tip text", NOW.minusSeconds(900)),
+            ThreadSummary("r9", renderedReply(), NOW.minusSeconds(120)),
+        )
+
+        val outcome = assertIs<PublishOutcome.Replied>(publisher().publishDue("staging").single())
+
+        assertEquals(ReplyState.Published, outcome.state)
+        assertTrue(threads.callsTo("publish").isEmpty())
+        assertEquals("r9", post().replyMediaId)
+        assertFalse(post().needsAttention)
+    }
+
+    @Test
+    fun aReplyPublishedBeforeACrashWithoutAMatchNeedsAttention() = runTest {
+        store.put(livePost(replyContainerId = "rc1"))
+        threads.containerStatuses += ContainerStatus(ContainerState.Published)
+
+        val outcome = assertIs<PublishOutcome.Replied>(publisher().publishDue("staging").single())
+
+        assertEquals(ReplyState.Failed, outcome.state)
+        assertEquals(AlertType.ReplyFailed, outcome.alerts.single().type)
+        val saved = post()
+        assertTrue(saved.needsAttention)
+        assertNull(saved.replyMediaId)
+        assertEquals(PostStatus.Published, saved.status)
+        assertFalse(account().paused)
+        assertEquals(EventType.Error, store.events.getValue("recovery_reply_stt0001").type)
+    }
+
+    @Test
+    fun anExpiredReplyContainerIsReplacedByANewOne() = runTest {
+        store.put(livePost(replyContainerId = "rc1"))
+        threads.containerStatuses += ContainerStatus(ContainerState.Expired)
+
+        assertIs<PublishOutcome.Replied>(publisher().publishDue("staging").single())
+
+        val request = threads.callsTo("createContainer").single().args[2] as ContainerRequest
+        assertEquals("m1", request.replyToId)
+        assertEquals("container-1", post().replyContainerId)
+        assertNotNull(post().replyMediaId)
+    }
+
+    @Test
+    fun aFreshReplyClaimIsLeftAlone() = runTest {
+        store.put(livePost(replyContainerId = "rc1", claimedAgo = Duration.ofMinutes(1)))
+
+        val outcomes = publisher().publishDue("staging")
+
+        assertTrue(outcomes.isEmpty())
+        assertTrue(threads.calls.isEmpty())
+    }
+
+    @Test
+    fun twoConcurrentTicksPublishTheReplyOnce() = runTest {
+        store.put(livePost(replyContainerId = "rc1"))
+        val first = async { publisher(prefix = "a").publishDue("staging") }
+        val second = async { publisher(prefix = "b").publishDue("staging") }
+
+        val outcomes = first.await() + second.await()
+
+        assertEquals(1, threads.callsTo("publish").size)
+        assertEquals(1, outcomes.size)
+    }
+
+    @Test
+    fun aLateWriteFromAnOldReplyClaimIsRejected() = runTest {
+        store.put(withReply(duePost()))
+        val hooked = HookedThreadsApi(threads)
+        hooked.beforeReplyCreate = {
+            // Another publisher takes the reply claim while this one is in the Threads call.
+            store.put(post().copy(claimId = "other", publishingClaimedAt = NOW))
+        }
+
+        val outcome = assertIs<PublishOutcome.Published>(publisher(hooked).publishDue("staging").single())
+
+        assertEquals(ReplyState.Deferred, outcome.reply)
+        assertNull(post().replyContainerId)
+        assertEquals("other", post().claimId)
+        assertTrue(threads.callsTo("publish").size == 1, "only the post was published")
+    }
+
+    @Test
+    fun aPermanentReplyFailureKeepsThePostPublishedAlertsAndDoesNotPause() = runTest {
+        store.put(withReply(duePost()))
+        val message = "Threads rejected the request (HTTP 400, code 10)"
+        threads.failNextReply(ThreadsFailure.Permanent(10, message))
+
+        val outcome = assertIs<PublishOutcome.Published>(publisher().publishDue("staging").single())
+
+        assertEquals(ReplyState.Failed, outcome.reply)
+        assertEquals(AlertRequest(AlertType.ReplyFailed, "staging", "stt0001", message), outcome.alerts.single())
+        val saved = post()
+        assertEquals(PostStatus.Published, saved.status)
+        assertEquals("media-2", saved.mediaId)
+        assertTrue(saved.needsAttention)
+        assertNull(saved.replyMediaId)
+        assertFalse(account().paused)
+        assertEquals(1, account().publishedCount)
+        assertEquals(EventType.Error, store.events.getValue("reply_failed_stt0001_claim-1").type)
+
+        // The reply is given up on: the next tick makes no more calls for it.
+        clock.advance(Duration.ofMinutes(61))
+        assertTrue(publisher().publishDue("staging").isEmpty())
+        assertEquals(2, threads.callsTo("createContainer").size)
+    }
+
+    @Test
+    fun anErroredReplyContainerIsAPermanentReplyFailure() = runTest {
+        store.put(livePost(replyContainerId = "rc1"))
+        threads.containerStatuses += ContainerStatus(ContainerState.Error, "UNKNOWN")
+
+        val outcome = assertIs<PublishOutcome.Replied>(publisher().publishDue("staging").single())
+
+        assertEquals(ReplyState.Failed, outcome.state)
+        assertTrue(post().needsAttention)
+        assertFalse(account().paused)
+        assertEquals("Threads could not process the reply (UNKNOWN)", outcome.alerts.single().detail)
+    }
+
+    @Test
+    fun aTransientReplyFailureIsRetriedByTheNextTick() = runTest {
+        store.put(withReply(duePost()))
+        threads.failNextReply(*Array(4) { ThreadsFailure.Transient("temporary") })
+
+        val first = assertIs<PublishOutcome.Published>(publisher().publishDue("staging").single())
+
+        assertEquals(ReplyState.Deferred, first.reply)
+        assertTrue(first.alerts.isEmpty())
+        val afterFirst = post()
+        assertEquals(PostStatus.Published, afterFirst.status)
+        assertNull(afterFirst.replyMediaId)
+        assertFalse(afterFirst.needsAttention)
+        assertEquals(1, afterFirst.transientFailures)
+        assertFalse(account().paused)
+
+        clock.advance(Duration.ofMinutes(61))
+        val second = assertIs<PublishOutcome.Replied>(publisher().publishDue("staging").single())
+
+        assertEquals(ReplyState.Published, second.state)
+        assertNotNull(post().replyMediaId)
+        assertEquals(0, post().transientFailures)
+    }
+
+    @Test
+    fun aRateLimitedReplyIsRetriedByTheNextTickWithoutACountOrAlert() = runTest {
+        store.put(livePost())
+        threads.failNextReply(ThreadsFailure.RateLimited("limit"))
+
+        val first = assertIs<PublishOutcome.Replied>(publisher().publishDue("staging").single())
+
+        assertEquals(ReplyState.Deferred, first.state)
+        assertTrue(first.alerts.isEmpty())
+        assertEquals(1, threads.callsTo("createContainer").size)
+        assertEquals(0, post().transientFailures)
+
+        clock.advance(Duration.ofMinutes(61))
+        assertEquals(ReplyState.Published, assertIs<PublishOutcome.Replied>(publisher().publishDue("staging").single()).state)
+    }
+
+    @Test
+    fun threeTransientReplyTicksInARowRaiseTheStalledAlert() = runTest {
+        store.put(livePost())
+        val alerts = mutableListOf<List<AlertType>>()
+        repeat(3) {
+            threads.failNextReply(*Array(4) { ThreadsFailure.Transient("temporary") })
+            alerts += publisher().publishDue("staging").single().alerts.map { it.type }
+            clock.advance(Duration.ofMinutes(61))
+        }
+
+        assertEquals(listOf(emptyList(), emptyList(), listOf(AlertType.PublishStalled)), alerts)
+    }
+
+    @Test
+    fun aPausedAccountPublishesNoReplies() = runTest {
+        store.put(livePost())
+        store.put(account().copy(paused = true))
+
+        val outcome = assertIs<PublishOutcome.Deferred>(publisher().publishDue("staging").single())
+
+        assertEquals(DeferReason.AccountPaused, outcome.reason)
+        assertTrue(threads.calls.isEmpty())
+    }
+
+    @Test
+    fun theReplyWaitsWhileThePostItselfIsRateLimited() = runTest {
+        store.put(withReply(duePost("stt0002")))
+        store.put(livePost(id = "stt0001"))
+        threads.failNext("createContainer", ThreadsFailure.RateLimited("limit"))
+
+        val outcomes = publisher().publishDue("staging")
+
+        assertEquals(DeferReason.RateLimited, assertIs<PublishOutcome.Deferred>(outcomes.single()).reason)
+        assertEquals(1, threads.callsTo("createContainer").size)
+    }
+
+    @Test
+    fun aReplyOfAPostWithoutAMediaIdIsNotAttempted() = runTest {
+        store.put(livePost().copy(mediaId = null, needsAttention = true))
+
+        assertTrue(publisher().publishDue("staging").isEmpty())
+        assertTrue(threads.calls.isEmpty())
+    }
+
+    @Test
+    fun noReplyFailurePathOverTheRealClientLeaksATokenOrSecret() = runTest {
+        val leaky = """{"error":{"message":"bad $TOKEN $APP_SECRET","code":10}}"""
+        val localStore = InMemorySocialStore()
+        localStore.put(testAccount().copy(token = TOKEN, threadsUserId = "u1"))
+        localStore.put(livePost())
+        val engine = MockEngine { respond(leaky, HttpStatusCode.BadRequest, headersOf(HttpHeaders.ContentType, "application/json")) }
+        val api = ThreadsHttpClient(HttpClient(engine) { expectSuccess = false }, APP_SECRET)
+
+        val outcomes = Publisher(localStore, api, FakeImageStore(), clock, "https://go.test", newClaimId = { "c" })
+            .publishDue("staging")
+
+        val text = outcomes.toString() + localStore.allPosts + localStore.events +
+            localStore.allAccounts.values.map { it.copy(token = null) }
+        assertFalse(TOKEN in text, text)
+        assertFalse(APP_SECRET in text, text)
+        assertFalse("graph.threads.net" in text, text)
+        assertTrue(localStore.allPosts.getValue("stt0001").needsAttention)
+    }
+
     private class HookedThreadsApi(private val delegate: FakeThreadsApi) : ThreadsApi by delegate {
         var beforeLimit: suspend () -> Unit = {}
         var beforeCreate: suspend () -> Unit = {}
+
+        /** Runs before a reply container is created; `beforeCreate` runs before every container. */
+        var beforeReplyCreate: suspend () -> Unit = {}
 
         override suspend fun publishingLimit(userId: String, token: String): PublishingLimit {
             beforeLimit()
@@ -585,6 +935,7 @@ class PublisherTest {
 
         override suspend fun createContainer(userId: String, token: String, request: ContainerRequest): String {
             beforeCreate()
+            if (request.replyToId != null) beforeReplyCreate()
             return delegate.createContainer(userId, token, request)
         }
     }

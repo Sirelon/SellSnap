@@ -19,14 +19,58 @@ class ContentRulesTest {
         options: List<String> = emptyList(),
         language: String = "uk",
         published: Int = 10,
+        reply: String? = null,
     ): Set<Violation> = ContentRules.check(
-        ContentRules.Candidate(text, kind, pillar, source, options, language, published, linkUrl),
+        ContentRules.Candidate(text, kind, pillar, source, options, language, published, linkUrl, reply),
     )
 
     private fun poll(options: List<String>) = check(kind = PostKind.Poll, pillar = Pillar.Poll, options = options)
 
     // Individual letters of the russian alphabet that Ukrainian and Polish lack.
     private val russianLetters = listOf('ы', 'э', 'ъ', 'ё', 'Ы', 'Э', 'Ъ', 'Ё')
+
+    // Replies
+
+    @Test
+    fun aReplyWithALinkCountsTheLinkAndTheIndependenceLineTowardTheLimit() {
+        val line = ContentRules.threadsLength(ContentRules.INDEPENDENCE_LINE.getValue("uk"))
+        val room = ContentRules.MAX_LENGTH - linkUrl.length - 2 - line
+
+        assertEquals(emptySet(), check(reply = "{link}" + "a".repeat(room), source = PostSource.Owner))
+        assertEquals(setOf(Violation.ReplyTooLong), check(reply = "{link}" + "a".repeat(room + 1), source = PostSource.Owner))
+        // Without the placeholder no line is added, so the same length is fine.
+        assertEquals(emptySet(), check(reply = "a".repeat(ContentRules.MAX_LENGTH)))
+        assertEquals(setOf(Violation.ReplyTooLong), check(reply = "a".repeat(ContentRules.MAX_LENGTH + 1)))
+    }
+
+    @Test
+    fun aRawUrlInAReplyIsRejectedAndLinkIsWrittenAsAPlaceholder() {
+        assertEquals(setOf(Violation.ReplyRawUrl), check(reply = "Get it at https://example.com"))
+        assertEquals(setOf(Violation.ReplyRawUrl), check(reply = "Get it at www.example.com"))
+        assertEquals(emptySet(), check(reply = "Get it: {link}", source = PostSource.Owner))
+    }
+
+    @Test
+    fun aReplyMayCarryALinkFromTheAccountsVeryFirstPost() {
+        assertEquals(emptySet(), check(published = 0, reply = "Get it: {link}", source = PostSource.Owner))
+        assertEquals(emptySet(), check(published = 4, reply = "Get it: {link}", pillar = Pillar.Update, source = PostSource.Seed))
+        // Guardrail 12 still holds for the text.
+        assertEquals(setOf(Violation.LinkTooEarly), check(text = "Get it: {link}", published = 0, source = PostSource.Owner))
+    }
+
+    @Test
+    fun aReplyLinkFollowsThePillarRuleExceptForOwnerPosts() {
+        assertEquals(setOf(Violation.ReplyLinkNotAllowed), check(reply = "{link}", pillar = Pillar.Tip, source = PostSource.Seed))
+        assertEquals(emptySet(), check(reply = "{link}", pillar = Pillar.Update, source = PostSource.Seed))
+        assertEquals(emptySet(), check(reply = "{link}", pillar = Pillar.Tip, source = PostSource.Owner))
+    }
+
+    @Test
+    fun aReplyIsCheckedForEmptyAndRussianOnlyLetters() {
+        assertEquals(setOf(Violation.ReplyEmpty), check(reply = "  "))
+        assertEquals(setOf(Violation.ReplyRussianLetter), check(reply = russianLetters.first().toString()))
+        assertEquals(emptySet(), check(reply = null))
+    }
 
     @Test
     fun plainTextCountsOnePerCodePoint() {

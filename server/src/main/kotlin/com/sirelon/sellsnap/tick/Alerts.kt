@@ -51,6 +51,7 @@ class Alerts(
             return when (request.type) {
                 AlertType.PublishFailed -> BotText.alertPublishFailed(account, request.postId, detail)
                 AlertType.PublishStalled -> BotText.alertPublishStalled(account, request.postId, detail)
+                AlertType.ReplyFailed -> BotText.alertReplyFailed(account, request.postId, detail)
                 AlertType.PostNeedsAttention -> BotText.alertPostNeedsAttention(account, request.postId)
                 AlertType.TokenExpiry -> BotText.alertTokenExpiry(account, request.expiresAt)
                 AlertType.PermissionsExpiry -> BotText.alertPermissionsExpiry(account, request.expiresAt)

@@ -135,6 +135,29 @@ class ApprovalActionsTest {
     }
 
     @Test
+    fun theEditPromptSaysThatTheReplyStaysWhenThePostHasOne() = runTest {
+        bot.store.put(bot.putPending().copy(replyText = "Download: {link}"))
+
+        bot.tap("e:stt0001")
+
+        assertEquals(BotText.editPrompt("stt0001", hasReply = true), bot.sentTexts().single())
+        assertTrue(bot.sentTexts().single().endsWith("Its reply stays as it is."))
+    }
+
+    @Test
+    fun editingTheTextLeavesTheReplyAsItWas() = runTest {
+        bot.store.put(bot.putPending().copy(pillar = Pillar.Update, replyText = "Download: {link}"))
+        bot.tap("e:stt0001")
+
+        bot.say("New text", replyTo = bot.post("stt0001").editPromptMessageId)
+
+        val post = bot.post("stt0001")
+        assertEquals("New text", post.text)
+        assertEquals("Download: {link}", post.replyText)
+        assertEquals(PostStatus.Approved, post.status)
+    }
+
+    @Test
     fun aReplyToThePromptReplacesTheTextApprovesAndResetsTheStreak() = runTest {
         bot.store.put(bot.account().copy(approvalStreak = 9, publishedCount = 6))
         bot.store.put(testPost(status = PostStatus.Pending, scheduledAt = NOW.plusSeconds(3600)).copy(pillar = Pillar.Update, telegramMessageId = 900))
@@ -253,6 +276,51 @@ class ApprovalActionsTest {
         assertEquals(0, bot.account().approvalStreak)
         assertEquals(1, bot.store.events.values.count { it.type == EventType.Delete && it.postId == "stt0001" })
         assertEquals(listOf<String?>(BotText.DELETED), bot.answers())
+    }
+
+    @Test
+    fun deleteAfterPublishRemovesTheReplyFirstThenThePost() = runTest {
+        bot.store.put(publishedPost().copy(replyText = "Download: {link}", replyMediaId = "reply-9"))
+
+        bot.tap("d:stt0001")
+
+        assertEquals(listOf("reply-9", "media-9"), bot.threads.deleted)
+        assertEquals(PostStatus.Deleted, bot.status("stt0001"))
+        assertEquals(listOf<String?>(BotText.DELETED), bot.answers())
+    }
+
+    @Test
+    fun aReplyThatIsAlreadyGoneDoesNotBlockDeletingThePost() = runTest {
+        bot.store.put(publishedPost().copy(replyText = "Download: {link}", replyMediaId = "reply-9"))
+        bot.threads.failNext("delete", ThreadsFailure.Permanent(100, "Threads rejected the request (HTTP 400, code 100)"))
+
+        bot.tap("d:stt0001")
+
+        assertEquals(listOf("media-9"), bot.threads.deleted)
+        assertEquals(listOf("reply-9", "media-9"), bot.threads.callsTo("delete").map { it.args[0] })
+        assertEquals(PostStatus.Deleted, bot.status("stt0001"))
+        assertEquals(listOf<String?>(BotText.DELETED), bot.answers())
+    }
+
+    @Test
+    fun aTemporaryFailureDeletingTheReplyLeavesThePostPublished() = runTest {
+        bot.store.put(publishedPost().copy(replyText = "Download: {link}", replyMediaId = "reply-9"))
+        bot.threads.failNext("delete", ThreadsFailure.Transient("Threads server error (HTTP 500)"))
+
+        bot.tap("d:stt0001")
+
+        assertEquals(PostStatus.Published, bot.status("stt0001"))
+        assertEquals(listOf("reply-9"), bot.threads.callsTo("delete").map { it.args[0] })
+        assertTrue(bot.answers().single().orEmpty().startsWith("Threads did not delete it"))
+    }
+
+    @Test
+    fun aPostWhoseReplyWasNeverPublishedDeletesOnlyThePost() = runTest {
+        bot.store.put(publishedPost().copy(replyText = "Download: {link}"))
+
+        bot.tap("d:stt0001")
+
+        assertEquals(listOf("media-9"), bot.threads.deleted)
     }
 
     @Test

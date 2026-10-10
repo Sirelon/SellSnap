@@ -51,6 +51,13 @@ class FakeThreadsApi(private val store: InMemorySocialStore? = null) : ThreadsAp
         failures.getOrPut(method) { ArrayDeque() }.addAll(failure)
     }
 
+    private val replyFailures = ArrayDeque<Throwable>()
+
+    /** Failures thrown by the next `createContainer` calls that carry a `replyToId`; posts are not touched. */
+    fun failNextReply(vararg failure: Throwable) {
+        replyFailures.addAll(failure)
+    }
+
     fun callsTo(method: String): List<Call> = calls.filter { it.method == method }
 
     private fun record(method: String, vararg args: Any?) {
@@ -80,6 +87,7 @@ class FakeThreadsApi(private val store: InMemorySocialStore? = null) : ThreadsAp
 
     override suspend fun createContainer(userId: String, token: String, request: ContainerRequest): String {
         record("createContainer", userId, token, request)
+        if (request.replyToId != null) replyFailures.removeFirstOrNull()?.let { throw it }
         return "container-${nextId++}"
     }
 

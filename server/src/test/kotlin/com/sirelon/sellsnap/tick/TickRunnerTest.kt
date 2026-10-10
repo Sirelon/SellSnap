@@ -90,6 +90,43 @@ class TickRunnerTest {
     }
 
     @Test
+    fun aFailedReplyAlertsOnceAndNeverPausesTheAccount() = runTest {
+        val fx = AgentFixture()
+        fx.memory.put(fx.publishable(testAccount()))
+        fx.put(testPost(scheduledAt = fx.clock.instant().minusSeconds(60)).copy(replyText = "More: {link}"))
+        fx.threads.failNextReply(ThreadsFailure.Permanent(10, "Threads rejected the request (HTTP 400, code 10)"))
+        val tick = runner(fx)
+
+        val summary = tick.run()
+        fx.clock.advance(Duration.ofMinutes(60))
+        tick.run()
+
+        assertEquals(1, summary.published)
+        assertEquals(PostStatus.Published, fx.status("stt0001"))
+        assertTrue(fx.post("stt0001").needsAttention)
+        assertFalse(fx.account("staging").paused)
+        assertEquals(1, fx.sentTexts().count { "The reply under stt0001 on staging failed" in it })
+        assertEquals(2, fx.threads.callsTo("createContainer").size)
+    }
+
+    @Test
+    fun aReplyThatCouldNotBePublishedIsRetriedByTheNextTick() = runTest {
+        val fx = AgentFixture()
+        fx.memory.put(fx.publishable(testAccount()))
+        fx.put(testPost(scheduledAt = fx.clock.instant().minusSeconds(60)).copy(replyText = "More: {link}"))
+        fx.threads.failNextReply(ThreadsFailure.RateLimited("limit"))
+        val tick = runner(fx)
+
+        tick.run()
+        assertEquals(null, fx.post("stt0001").replyMediaId)
+        fx.clock.advance(Duration.ofMinutes(60))
+        tick.run()
+
+        assertTrue(fx.post("stt0001").replyMediaId != null)
+        assertEquals(1, fx.account("staging").publishedCount)
+    }
+
+    @Test
     fun pausedAccountsAreSkipped() = runTest {
         val fx = AgentFixture()
         fx.memory.put(testAccount().copy(paused = true))

@@ -58,12 +58,16 @@ class IssuedToken(val accessToken: String, val expiresInSeconds: Long)
 
 class Me(val id: String, val username: String)
 
-/** [imageUrl] applies to images, [pollOptions] to polls; polls are text-only posts. */
+/**
+ * [imageUrl] applies to images, [pollOptions] to polls; polls are text-only posts. [replyToId] makes
+ * the container a reply under that media id; a reply is always a text post.
+ */
 class ContainerRequest(
     val kind: PostKind,
     val text: String,
     val imageUrl: String? = null,
     val pollOptions: List<String> = emptyList(),
+    val replyToId: String? = null,
 )
 
 enum class ContainerState { InProgress, Finished, Error, Expired, Published }

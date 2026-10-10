@@ -19,6 +19,7 @@ import com.sirelon.sellsnap.threads.IntakeResult
 import com.sirelon.sellsnap.threads.PublishOutcome
 import com.sirelon.sellsnap.threads.Publisher
 import com.sirelon.sellsnap.threads.RefreshResult
+import com.sirelon.sellsnap.threads.ReplyState
 import com.sirelon.sellsnap.threads.TokenLifecycle
 import com.sirelon.sellsnap.threads.redact
 import kotlinx.coroutines.CancellationException
@@ -35,8 +36,18 @@ fun parseCommand(text: String): ParsedCommand? {
 
 private val COMMAND = Regex("^/([A-Za-z]+)(?:@\\w+)?(?:\\s+(.*))?$", RegexOption.DOT_MATCHES_ALL)
 
-/** The arguments of `/post`: `<account> [now] <text>`, with `? ` lines as poll options. */
-class PostRequest(val accountId: String, val now: Boolean, val text: String, val pollOptions: List<String>)
+/**
+ * The arguments of `/post`: `<account> [now] <text>`, with `? ` lines as poll options. A line that is
+ * only `---` ends the text; everything after the first such line is the reply ([replyText], blank
+ * when nothing follows the line, null when there is no such line).
+ */
+class PostRequest(
+    val accountId: String,
+    val now: Boolean,
+    val text: String,
+    val pollOptions: List<String>,
+    val replyText: String? = null,
+)
 
 fun parsePost(args: String): PostRequest? {
     val parts = args.trim().split(Regex("\\s+"), limit = 2)
@@ -45,11 +56,19 @@ fun parsePost(args: String): PostRequest? {
     val now = NOW_WORD.find(rest)?.also { rest = rest.substring(it.range.last + 1) } != null
     val options = mutableListOf<String>()
     val textLines = mutableListOf<String>()
+    var replyLines: MutableList<String>? = null
     for (line in rest.trim().lines()) {
-        if (line.startsWith("? ")) options += line.removePrefix("? ").trim() else textLines += line
+        when {
+            replyLines != null -> replyLines.add(line)
+            line.trim() == REPLY_SEPARATOR -> replyLines = mutableListOf()
+            line.startsWith("? ") -> options += line.removePrefix("? ").trim()
+            else -> textLines += line
+        }
     }
-    return PostRequest(accountId, now, textLines.joinToString("\n").trim(), options)
+    return PostRequest(accountId, now, textLines.joinToString("\n").trim(), options, replyLines?.joinToString("\n")?.trim())
 }
+
+private const val REPLY_SEPARATOR = "---"
 
 private val NOW_WORD = Regex("^now(?=\\s|$)")
 
@@ -126,6 +145,7 @@ class Commands(
                 language = account.language,
                 publishedCount = account.publishedCount,
                 linkUrl = previews.linkUrl(code),
+                replyText = request.replyText,
             ),
         )
         if (violations.isNotEmpty()) return reply(BotText.postRejected(BotText.violations(violations)))
@@ -153,6 +173,7 @@ class Commands(
                     pillar = pillar,
                     kind = kind,
                     text = request.text,
+                    replyText = request.replyText,
                     imagePaths = imagePaths,
                     pollOptions = request.pollOptions,
                     link = ContentRules.LINK_PLACEHOLDER in request.text,
@@ -184,12 +205,20 @@ class Commands(
         when (val outcome = publisher.publishNow(post.id)) {
             is PublishOutcome.Published -> {
                 val published = store.post(post.id) ?: post
-                val text = if (outcome.needsAttention) BotText.publishedNowNeedsAttention(post.code) else BotText.publishedNow(post.code)
+                val text = when {
+                    outcome.needsAttention -> BotText.publishedNowNeedsAttention(post.code)
+                    outcome.reply == ReplyState.Published -> BotText.publishedNowWithReply(post.code)
+                    outcome.reply == ReplyState.Deferred -> BotText.publishedNowReplyPending(post.code)
+                    outcome.reply == ReplyState.Failed -> BotText.publishedNowReplyFailed(post.code)
+                    else -> BotText.publishedNow(post.code)
+                }
                 sender.sendWithKeyboard(published, text)
             }
             is PublishOutcome.Deferred -> reply(BotText.notPublishedNow(post.code, outcome.reason))
             is PublishOutcome.Paused -> reply(BotText.failedNow(post.code, redact(outcome.reason)))
             is PublishOutcome.ClaimLost -> reply(BotText.claimLost(post.code))
+            // Only the tick's reply retries return this; publishNow never does.
+            is PublishOutcome.Replied -> Unit
         }
     }
 

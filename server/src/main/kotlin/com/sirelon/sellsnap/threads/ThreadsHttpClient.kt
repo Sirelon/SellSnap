@@ -116,6 +116,7 @@ class ThreadsHttpClient(
             }
             if (request.text.isNotEmpty()) add("text" to request.text)
             if (request.kind == PostKind.Poll) add("poll_attachment" to pollAttachment(request.pollOptions))
+            if (request.replyToId != null) add("reply_to_id" to request.replyToId)
             add("access_token" to token)
         }
         return post(listOf(userId, "threads"), fields).requireText("id")

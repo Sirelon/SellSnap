@@ -42,7 +42,7 @@ zero; it does not amplify an existing one.
 | D20 | Handles `sellsnap.ua` and `sellsnap.pl`, fallback `sellsnap_ua` and `sellsnap_pl`. Staging is the owner's existing, empty account `sellsnap.app`, kept private for good; if the handle is ever wanted for a public account, the staging account is renamed. Bio copy is approved as an English key-to-text list before account creation. |
 | D21 | Fixed weekly template (§6.1), variety inside each slot. |
 | D22 | Demo anatomy: carousel of the raw photo and a card rendered by the server from the unedited pipeline output; one-line hook as caption. A pipeline refusal drops the run. |
-| D23 | Only demo and product-update posts carry a link, and never the first five posts of a new account. |
+| D23 | Only demo and product-update posts carry a link, and never in the text of the first five posts of a new account. Owner `/post` posts may carry one, and so may a reply under a post, under the same pillar rule. |
 | D24 | Graduation mechanics: Edit resets the counter, Skip does not. In auto mode the owner still receives every preview with a Delete-before-slot button and, after publishing, a Delete button. Any Delete returns the account to approval mode and resets the counter. One command does the same. |
 | D25 | Replies under own posts: drafted only for questions and problem reports; emoji and praise ignored; nothing hidden or deleted; every draft approved. No auto-likes. |
 | D26 | No automated following, ever. |
@@ -53,7 +53,7 @@ zero; it does not amplify an existing one.
 | D31 | This doc plus epic SIR-139 with one ticket per phase. Independent Fable review of this doc before code (done 2026-10-05, findings folded in). |
 | D32 | Owner hand-work and timing in §11. |
 | D33 | Owner time: about 20 minutes on Sunday plus taps during the week. Less than that and the template drops to five posts a week per account. |
-| D34 | New-account ramp (Inferred: Meta's new-account spam thresholds are not published): the staging account is created first, brand accounts at least a week later; no links in an account's first five posts; the same photo never appears on both brand accounts within 7 days; the tick reads the account's publishing limit before posting. |
+| D34 | New-account ramp (Inferred: Meta's new-account spam thresholds are not published): the staging account is created first, brand accounts at least a week later; no links in the text of an account's first five posts (a reply may carry one); the same photo never appears on both brand accounts within 7 days; the tick reads the account's publishing limit before posting. |
 | T1 | Static keys (Claude, OpenAI, Telegram) in Secret Manager; rotating Threads tokens per account in a Firestore collection readable only by the Admin SDK. |
 | T2 | Public images in the existing Firebase Storage bucket under `social/`, public read on that prefix only, Admin SDK writes only. Live Storage rules are pulled into `storage.rules` first. |
 | T3 | `OpenAIClient` and its models move to `shared/`; the prompt takes country name, language and currency only, decoupled from `OlxCountry`, which embeds per-country OLX client credentials and a composeApp expect/actual. Separate commit. |
@@ -80,7 +80,7 @@ Decision log lines for T1–T5 are in `.claude/decider/decisions.jsonl`.
 ### 3.2 Firestore collections (Admin-only; clients are default-denied)
 
 - `social_accounts/{accountId}` — handle, language, country, timezone, mode (`approval` | `auto`), approvalStreak, paused, pausedReason, threadsUserId, token, tokenExpiresAt, tokenRefreshedAt, permissionsExpireAt (private profiles, §3.6), codePrefix (leading characters of the account's post codes), postSeq, publishedCount.
-- `social_posts/{postId}` — accountId, code, pillar, kind (`text` | `image` | `carousel` | `poll`), text, imagePaths, poll options, scheduledAt, status (`drafted` | `pending` | `approved` | `skipped` | `publishing` | `published` | `failed` | `deleted`), skipReason, containerId, mediaId, telegramMessageId, editPromptMessageId, editedByOwner, needsAttention, autoApproved (auto mode approved the post; a Delete or `/approval` returns such posts to `pending`), pairedPostId (poll reveal), link (the text carries the `{link}` placeholder), source (`seed` | `owner`), seedKey, claimId and publishingClaimedAt (the publisher's claim, §3.4), transientFailures (consecutive ticks that ended in a transient Threads failure; reset on success), publishedAt, createdAt.
+- `social_posts/{postId}` — accountId, code, pillar, kind (`text` | `image` | `carousel` | `poll`), text, replyText (template of an optional reply that the account publishes under the post; may carry `{link}`), imagePaths, poll options, scheduledAt, status (`drafted` | `pending` | `approved` | `skipped` | `publishing` | `published` | `failed` | `deleted`), skipReason, containerId, mediaId, replyContainerId (the reply's container, stored before the reply is published), replyMediaId, telegramMessageId, editPromptMessageId, editedByOwner, needsAttention, autoApproved (auto mode approved the post; a Delete or `/approval` returns such posts to `pending`), pairedPostId (poll reveal), link (the text carries the `{link}` placeholder), source (`seed` | `owner`), seedKey, claimId and publishingClaimedAt (the publisher's claim, §3.4), transientFailures (consecutive ticks that ended in a transient Threads failure; reset on success), publishedAt, createdAt.
 - `social_replies/{replyId}` — accountId, targetMediaId, targetUserHash, targetText, draft, mentionsApp, expiresAt, status, mediaId.
 - `social_batches/{isoWeek}` — startedAt, finishedAt, slotsWritten, lastError.
 - `social_updates/{updateId}` — processed Telegram update ids; `expireAt` (7 days) is the TTL field.
@@ -103,7 +103,9 @@ Decision log lines for T1–T5 are in `.claude/decider/decisions.jsonl`.
 
 ### 3.4 Publish flow
 
-A tick takes every `approved` post whose `scheduledAt` has passed, moves it to `publishing` in a transaction, creates the container, saves `containerId`, publishes, saves `mediaId` and `published`. The owner's preview message gains a Delete button; a Delete calls the Threads delete endpoint, sets `deleted`, returns the account to `approval` mode and resets the streak. Any non-transitory failure sets `failed`, pauses the account, writes `social_events`, alerts.
+A tick takes every `approved` post whose `scheduledAt` has passed, moves it to `publishing` in a transaction, creates the container, saves `containerId`, publishes, saves `mediaId` and `published`. The owner's preview message gains a Delete button; a Delete calls the Threads delete endpoint, first for the reply when `replyMediaId` is set and then for the post (a reply that is already gone does not block it), sets `deleted`, returns the account to `approval` mode and resets the streak. Any non-transitory failure sets `failed`, pauses the account, writes `social_events`, alerts.
+
+A post with a `replyText` is followed by its reply once the post is `published`: a text container with `reply_to_id` set to the post's media id and the rendered reply text, then the publish call. The reply has the post's claim fencing and container recovery, and its `replyContainerId` is saved before the publish call and `replyMediaId` after it. A published post whose reply is still owed is picked up by later ticks. A reply failure never fails or unpublishes the post: a transient failure or a rate limit is retried by the next tick; a permanent failure sets `needsAttention` on the post, alerts the owner once and does not pause the account, and the reply is not retried. The owner writes a reply by ending the `/post` text with a line that holds only `---`, followed by the reply text. The reply is checked like the text (length counted after the link and the independence line are added, no russian-only letters, no raw URL) and follows the same pillar rule for `{link}`; guardrail 12 does not apply to it.
 
 ### 3.5 Graduation
 
@@ -129,6 +131,7 @@ Fetched 2026-10-04 and 2026-10-05 from developers.facebook.com/docs/threads.
 - Polls: `poll_attachment` with `option_a`–`option_d`, 2 to 4 options, each option 1 to 25 characters, text-only posts, results readable on the media object.
 - Deleting own posts is supported since 2025-03-06 (changelog) under the `threads_delete` permission; the troubleshooting page lists a delete quota of 100 per 24 hours (reviewer-fetched).
 - Posting to accounts added as app testers needs no App Review. Keyword search and replying to posts the account does not own need `threads_keyword_search` or `threads_manage_mentions`, which need App Review; without it search covers only the account's own posts. Approved search quota 2,200 queries per 24 hours; 1,000 replies per 24 hours.
+- Replies: a reply is a text container created with `reply_to_id` on `POST /{threads-user-id}/threads` (the docs show `/me/threads`), then published with `threads_publish`; it needs `threads_basic`, `threads_content_publish` and `threads_manage_replies` (Threads docs, Create Replies and Overview, fetched 2026-10-10). Replying to your own post needs no further permission. The limit is 1,000 API-published replies per profile per 24 hours, separate from the 250 posts. Inferred: the account's threads list may not include its replies, so a reply whose media id is lost after a crash is marked `needsAttention`.
 - Tokens: §3.6.
 - Meta Developer Policies: "Don't confuse, deceive, defraud, mislead, spam or surprise anyone." Meta's spam standard covers posting "either manually or automatically, at very high frequencies."
 
@@ -149,7 +152,7 @@ The agent never:
 9. argues with a negative reply — those are drafted for the owner and never auto-sent;
 10. follows, bulk-likes or bulk-interacts;
 11. stores anything about third-party users beyond a hashed id with a 30-day TTL;
-12. puts a link in an account's first five posts (D34);
+12. puts a link in the text of an account's first five posts (D34); a link reply may come with the account's very first post;
 13. posts the same photo on both brand accounts within 7 days (D34).
 
 ## 6. Content system

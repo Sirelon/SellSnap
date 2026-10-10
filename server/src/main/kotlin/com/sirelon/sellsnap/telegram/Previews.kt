@@ -1,6 +1,7 @@
 package com.sirelon.sellsnap.telegram
 
 import com.sirelon.sellsnap.content.ContentRules
+import com.sirelon.sellsnap.content.postLinkUrl
 import com.sirelon.sellsnap.media.ImageStore
 import com.sirelon.sellsnap.model.AccountMode
 import com.sirelon.sellsnap.model.PostKind
@@ -34,10 +35,10 @@ class Previews(
     publicBaseUrl: String,
     private val regenerateAvailable: Boolean = false,
 ) {
-    private val baseUrl = publicBaseUrl.trimEnd('/')
+    private val baseUrl = publicBaseUrl
 
     /** The redirect URL that replaces `{link}` in the post with [code]. */
-    fun linkUrl(code: String): String = "$baseUrl/go/$code"
+    fun linkUrl(code: String): String = postLinkUrl(baseUrl, code)
 
     fun build(post: SocialPost, account: SocialAccount): Preview {
         val photo = post.imagePaths.firstOrNull()?.takeIf { post.kind == PostKind.Image }?.let(images::publicUrl)
@@ -85,6 +86,10 @@ class Previews(
             if (post.kind == PostKind.Poll) {
                 append("\n\n").append(BotText.POLL_OPTIONS_TITLE)
                 post.pollOptions.forEachIndexed { index, option -> append("\n${index + 1}. $option") }
+            }
+            post.replyText?.let { reply ->
+                append("\n\n").append(BotText.REPLY_TITLE).append("\n")
+                append(ContentRules.render(reply, linkUrl(post.code), account.language))
             }
         }
     }

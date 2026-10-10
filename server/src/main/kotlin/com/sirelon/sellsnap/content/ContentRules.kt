@@ -11,7 +11,7 @@ object ContentRules {
     /** Threads allows 500; 10 stay in reserve for counting differences. */
     const val MAX_LENGTH = 490
 
-    /** Guardrail 12: no link in an account's first five posts. */
+    /** Guardrail 12: no link in the main text of an account's first five posts; a reply is exempt (owner decision 2026-10-10). */
     const val MIN_PUBLISHED_BEFORE_LINK = 5
 
     const val POLL_MIN_OPTIONS = 2
@@ -42,6 +42,11 @@ object ContentRules {
         LinkNotAllowed,
         LinkTooEarly,
         RawUrl,
+        ReplyEmpty,
+        ReplyTooLong,
+        ReplyRussianLetter,
+        ReplyLinkNotAllowed,
+        ReplyRawUrl,
     }
 
     class Candidate(
@@ -55,6 +60,8 @@ object ContentRules {
         val publishedCount: Int,
         /** Redirect URL that replaces `{link}`. */
         val linkUrl: String,
+        /** Template of the reply the account publishes under the post; null when there is none. */
+        val replyText: String? = null,
     )
 
     fun check(candidate: Candidate): Set<Violation> = with(candidate) {
@@ -80,7 +87,21 @@ object ContentRules {
                 violations += Violation.PollOptionLength
             }
         }
+        replyText?.let { violations += checkReply(it, pillar, source, linkUrl, language) }
         violations
+    }
+
+    /** The reply follows the text's rules, except guardrail 12: its link may come with an account's first post. */
+    private fun checkReply(reply: String, pillar: Pillar, source: PostSource, linkUrl: String, language: String): Set<Violation> {
+        val violations = linkedSetOf<Violation>()
+        if (reply.isBlank()) violations += Violation.ReplyEmpty
+        if (reply.any { it in RUSSIAN_ONLY_LETTERS }) violations += Violation.ReplyRussianLetter
+        if (RAW_URL.containsMatchIn(reply)) violations += Violation.ReplyRawUrl
+        if (LINK_PLACEHOLDER in reply && pillar !in LINK_PILLARS && source != PostSource.Owner) {
+            violations += Violation.ReplyLinkNotAllowed
+        }
+        if (threadsLength(render(reply, linkUrl, language)) > MAX_LENGTH) violations += Violation.ReplyTooLong
+        return violations
     }
 
     /** Final post text: `{link}` replaced by [linkUrl] and, for a linked post, the independence line appended. */

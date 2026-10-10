@@ -12,6 +12,9 @@ enum class AlertType(val key: String) {
     /** A post failed transiently on three ticks in a row. */
     PublishStalled("publish_stalled"),
 
+    /** A post's link reply failed permanently or went live without a recorded id; the post stays live and the account runs on. */
+    ReplyFailed("reply_failed"),
+
     /** A post went live but its media id could not be recovered. */
     PostNeedsAttention("post_needs_attention"),
 

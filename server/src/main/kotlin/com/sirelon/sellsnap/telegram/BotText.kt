@@ -18,6 +18,7 @@ object BotText {
     const val NEEDS_ATTENTION = "needs attention"
     const val NO_SLOT = "no slot yet"
     const val POLL_OPTIONS_TITLE = "Poll options:"
+    const val REPLY_TITLE = "↳ reply:"
 
     fun header(handle: String, code: String, slot: String, needsAttention: Boolean): String =
         listOfNotNull("@$handle", code, slot, NEEDS_ATTENTION.takeIf { needsAttention }).joinToString(" | ")
@@ -50,7 +51,8 @@ object BotText {
     fun threadsDeleteFailed(reason: String): String = "Threads did not delete it: $reason."
 
     // Edit flow
-    fun editPrompt(code: String): String = "Reply to this message with the new text for $code."
+    fun editPrompt(code: String, hasReply: Boolean = false): String =
+        "Reply to this message with the new text for $code." + if (hasReply) " Its reply stays as it is." else ""
 
     fun editSaved(code: String): String = "Saved and approved $code."
 
@@ -75,7 +77,8 @@ object BotText {
     // Commands
     const val USAGE =
         "Commands: /post <account> [now] <text>, /token <account> <token>, /approval <account>, /resume <account>, /refresh <account>."
-    const val POST_USAGE = "Usage: /post <account> [now] <text>. Start a line with \"? \" to add a poll option."
+    const val POST_USAGE =
+        "Usage: /post <account> [now] <text>. Start a line with \"? \" to add a poll option. A line with only --- ends the text; what follows becomes a reply under the post."
     const val TOKEN_USAGE = "Usage: /token <account> <token>."
     const val POLL_WITH_PHOTO = "A poll cannot have a photo."
     const val NO_PHOTO_FILE = "I could not get that photo from Telegram."
@@ -91,6 +94,12 @@ object BotText {
     fun postRejected(violations: String): String = "The post was not created: $violations."
 
     fun publishedNow(code: String): String = "Published $code."
+
+    fun publishedNowWithReply(code: String): String = "Published $code and its reply."
+
+    fun publishedNowReplyPending(code: String): String = "Published $code. Its reply will follow on the next tick."
+
+    fun publishedNowReplyFailed(code: String): String = "Published $code, but its reply failed. Check it in the Threads app."
 
     fun publishedNowNeedsAttention(code: String): String =
         "Published $code, but its Threads id was not recorded. Check it in the Threads app."
@@ -134,6 +143,11 @@ object BotText {
         ContentRules.Violation.LinkNotAllowed -> "a link is not allowed in this post"
         ContentRules.Violation.LinkTooEarly -> "no link until ${ContentRules.MIN_PUBLISHED_BEFORE_LINK} posts are published"
         ContentRules.Violation.RawUrl -> "write {link} instead of a raw link"
+        ContentRules.Violation.ReplyEmpty -> "the reply is empty"
+        ContentRules.Violation.ReplyTooLong -> "the reply is too long (limit ${ContentRules.MAX_LENGTH})"
+        ContentRules.Violation.ReplyRussianLetter -> "the reply has a letter used only in russian"
+        ContentRules.Violation.ReplyLinkNotAllowed -> "a link is not allowed in this reply"
+        ContentRules.Violation.ReplyRawUrl -> "write {link} in the reply instead of a raw link"
     }
 
     fun violations(violations: Collection<ContentRules.Violation>): String =
@@ -161,6 +175,9 @@ object BotText {
 
     fun alertPostNeedsAttention(accountId: String, postCode: String?): String =
         "${postCode ?: "A post"} is live on $accountId, but its Threads id was not recorded. Check it in the Threads app."
+
+    fun alertReplyFailed(accountId: String, postCode: String?, detail: String): String =
+        "The reply under ${postCode ?: "a post"} on $accountId failed: $detail. The post is live and $accountId keeps publishing. Check the reply in the Threads app."
 
     fun alertTokenExpiry(accountId: String, expiresAt: Instant?): String =
         "The Threads token for $accountId expires ${expiresAt?.let(::date) ?: "soon"}. Send /refresh $accountId, or /token $accountId <token> with a new one."

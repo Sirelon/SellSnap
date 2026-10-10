@@ -69,6 +69,7 @@ class ApprovalActions(
                 language = account.language,
                 publishedCount = account.publishedCount,
                 linkUrl = previews.linkUrl(post.code),
+                replyText = post.replyText,
             ),
         )
         if (violations.isNotEmpty()) {
@@ -204,7 +205,7 @@ class ApprovalActions(
         if (post.status != PostStatus.Pending) return BotText.alreadyStatus(post.status)
         val prompt = telegram.sendMessage(
             ownerChatId,
-            BotText.editPrompt(post.code),
+            BotText.editPrompt(post.code, hasReply = post.replyText != null),
             replyMarkup = ForceReply(true),
             replyToMessageId = post.telegramMessageId,
         )
@@ -288,6 +289,7 @@ class ApprovalActions(
             val mediaId = post.mediaId ?: return BotText.NO_MEDIA_ID
             val token = account.token ?: return BotText.NO_TOKEN
             try {
+                post.replyMediaId?.let { deleteReply(it, token) }
                 threads.delete(mediaId, token)
             } catch (failure: ThreadsFailure) {
                 return BotText.threadsDeleteFailed(redact(failure.message.orEmpty()))
@@ -334,6 +336,19 @@ class ApprovalActions(
                 telegram.sendMessage(ownerChatId, BotText.deletedNotice(move.account.handle, reverted))
                 if (wasPublished) BotText.DELETED else BotText.DELETED_BEFORE_SLOT
             }
+        }
+    }
+
+    /**
+     * Deletes the reply before its post. A permanent failure means the reply is gone already (or the
+     * token is bad, which the delete of the post then reports), so it never blocks the post's delete;
+     * a transient failure or a rate limit does, because the reply may still be live.
+     */
+    private suspend fun deleteReply(replyMediaId: String, token: String) {
+        try {
+            threads.delete(replyMediaId, token)
+        } catch (_: ThreadsFailure.Permanent) {
+            // Already gone.
         }
     }
 

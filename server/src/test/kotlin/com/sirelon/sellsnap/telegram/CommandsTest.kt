@@ -52,6 +52,105 @@ class CommandsTest {
         assertNull(parsePost("   "))
     }
 
+    @Test
+    fun aLineWithOnlyThreeDashesSplitsTheTextFromTheReply() {
+        val split = parsePost("ua now Main text\nsecond line\n---\nDownload: {link}\nmore")!!
+        assertTrue(split.now)
+        assertEquals("Main text\nsecond line", split.text)
+        assertEquals("Download: {link}\nmore", split.replyText)
+
+        assertNull(parsePost("ua Main text")!!.replyText)
+        assertEquals("", parsePost("ua Main text\n---")!!.replyText)
+        // Only an exact line splits; the first one wins and later ones belong to the reply.
+        assertNull(parsePost("ua a --- b\n----")!!.replyText)
+        val twice = parsePost("ua A\n---\nB\n---\nC")!!
+        assertEquals("A", twice.text)
+        assertEquals("B\n---\nC", twice.replyText)
+        // Poll option lines count only before the split.
+        val poll = parsePost("ua Which?\n? Red\n? Blue\n---\n? not an option")!!
+        assertEquals(listOf("Red", "Blue"), poll.pollOptions)
+        assertEquals("? not an option", poll.replyText)
+    }
+
+    @Test
+    fun aReplyIsStoredOnTheNewPostAndShownInItsPreview() = runTest {
+        bot.say("/post staging Check your photos.\n---\nDownload: {link}")
+
+        val post = bot.post("stt0001")
+        assertEquals("Check your photos.", post.text)
+        assertEquals("Download: {link}", post.replyText)
+        assertFalse(post.link, "the flag describes the text only")
+        assertEquals(Pillar.Tip, post.pillar)
+        assertEquals(PostStatus.Pending, post.status)
+        val preview = bot.telegram.callsOf<FakeTelegramApi.Call.Sent>().single().text.orEmpty()
+        assertTrue("Check your photos.\n\n↳ reply:\nDownload: https://go.test/go/stt0001" in preview, preview)
+    }
+
+    @Test
+    fun aLinkReplyIsAllowedOnAnAccountsVeryFirstPost() = runTest {
+        assertEquals(0, bot.account().publishedCount)
+
+        bot.say("/post staging Check your photos.\n---\nDownload: {link}")
+
+        assertEquals(PostStatus.Pending, bot.status("stt0001"))
+    }
+
+    @Test
+    fun aPollAndAnImagePostMayHaveAReply() = runTest {
+        bot.telegram.files["photos/p1.jpg"] = byteArrayOf(1)
+
+        bot.say("/post staging Which one?\n? Red\n? Blue\n---\nVote above")
+        bot.say("/post staging Fresh\n---\nMore: {link}", photoFileId = "p1")
+
+        assertEquals("Vote above", bot.post("stp0001").replyText)
+        assertEquals(PostKind.Poll, bot.post("stp0001").kind)
+        assertEquals("More: {link}", bot.post("stt0002").replyText)
+        assertEquals(PostKind.Image, bot.post("stt0002").kind)
+    }
+
+    @Test
+    fun aBadReplyRejectsThePostWithTheRepliesOwnMessage() = runTest {
+        bot.say("/post staging Fine text\n---\nGet it at https://example.com")
+        bot.say("/post staging Fine text\n---")
+
+        assertTrue(bot.store.allPosts.isEmpty())
+        assertEquals(
+            listOf(
+                BotText.postRejected("write {link} in the reply instead of a raw link"),
+                BotText.postRejected("the reply is empty"),
+            ),
+            bot.sentTexts(),
+        )
+    }
+
+    @Test
+    fun postNowPublishesThePostAndItsReplyInTheSameRequest() = runTest {
+        bot.say("/post staging now Going out\n---\nDownload: {link}")
+
+        val post = bot.post("stt0001")
+        assertEquals(PostStatus.Published, post.status)
+        assertNotNull(post.replyMediaId)
+        val containers = bot.threads.callsTo("createContainer").map { it.args[2] as com.sirelon.sellsnap.threads.ContainerRequest }
+        assertEquals(listOf(null, post.mediaId), containers.map { it.replyToId })
+        assertTrue("https://go.test/go/stt0001" in containers[1].text)
+        assertEquals(BotText.publishedNowWithReply("stt0001"), bot.sentTexts().single())
+    }
+
+    @Test
+    fun postNowSaysWhenTheReplyFailedOrIsPending() = runTest {
+        bot.threads.failNextReply(ThreadsFailure.Permanent(10, "Threads rejected the request (HTTP 400, code 10)"))
+        bot.say("/post staging now One\n---\nreply")
+        bot.threads.failNextReply(ThreadsFailure.RateLimited("limit"))
+        bot.say("/post staging now Two\n---\nreply")
+
+        assertEquals(PostStatus.Published, bot.status("stt0001"))
+        assertEquals(PostStatus.Published, bot.status("stt0002"))
+        assertEquals(
+            listOf(BotText.publishedNowReplyFailed("stt0001"), BotText.publishedNowReplyPending("stt0002")),
+            bot.sentTexts(),
+        )
+    }
+
     // --- /post
 
     @Test

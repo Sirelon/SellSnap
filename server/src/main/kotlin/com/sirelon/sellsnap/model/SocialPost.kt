@@ -43,6 +43,11 @@ data class SocialPost(
     val transientFailures: Int = 0,
     val containerId: String? = null,
     val mediaId: String? = null,
+    /** Template for the account's own reply under the post; may carry `{link}`. Null when the post has no reply. */
+    val replyText: String? = null,
+    /** The reply's media container; stored before the reply is published. */
+    val replyContainerId: String? = null,
+    val replyMediaId: String? = null,
     val publishedAt: Instant? = null,
     val telegramMessageId: Long? = null,
     val editPromptMessageId: Long? = null,

@@ -66,6 +66,34 @@ class ThreadsHttpClientTest {
     }
 
     @Test
+    fun createsAReplyContainerWithReplyToId() = runTest {
+        val client = api { json("""{"id":"17900000000000002"}""") }
+
+        val id = client.createContainer(
+            "1234", TOKEN,
+            ContainerRequest(PostKind.Text, "Download: https://go.test/go/stt0001", replyToId = "17900000000000009"),
+        )
+
+        assertEquals("17900000000000002", id)
+        val request = requests.single()
+        assertEquals(HttpMethod.Post, request.method)
+        assertEquals("https://graph.threads.net/v1.0/1234/threads", request.url.toString())
+        assertEquals(
+            "media_type=TEXT&text=Download%3A+https%3A%2F%2Fgo.test%2Fgo%2Fstt0001&reply_to_id=17900000000000009&access_token=$TOKEN",
+            request.formBody(),
+        )
+    }
+
+    @Test
+    fun aPostContainerCarriesNoReplyToId() = runTest {
+        val client = api { json("""{"id":"c1"}""") }
+
+        client.createContainer("1234", TOKEN, ContainerRequest(PostKind.Text, "Hello"))
+
+        assertFalse("reply_to_id" in requests.single().formBody())
+    }
+
+    @Test
     fun createsAnImageContainerWithTheImageUrl() = runTest {
         val client = api { json("""{"id":"c2"}""") }
 

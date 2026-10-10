@@ -87,6 +87,38 @@ class PreviewsTest {
     }
 
     @Test
+    fun aReplyShowsUnderTheTextAfterAReplyLineRenderedWithItsLink() {
+        val post = testPost(status = PostStatus.Pending).copy(replyText = "Download: {link}")
+
+        val text = previews.build(post, account).text
+
+        val independence = com.sirelon.sellsnap.content.ContentRules.INDEPENDENCE_LINE.getValue("uk")
+        assertTrue(
+            text.endsWith("Tip text\n\n↳ reply:\nDownload: https://go.test/go/stt0001\n\n$independence"),
+            text,
+        )
+    }
+
+    @Test
+    fun aReplyComesAfterAPollsOptions() {
+        val post = testPost(status = PostStatus.Pending)
+            .copy(kind = PostKind.Poll, text = "Which one?", pollOptions = listOf("Red", "Blue"), replyText = "More soon")
+
+        assertTrue(previews.build(post, account).text.endsWith("Poll options:\n1. Red\n2. Blue\n\n↳ reply:\nMore soon"))
+    }
+
+    @Test
+    fun aPostWithoutAReplyHasNoReplyLine() {
+        assertFalse("↳ reply:" in previews.build(testPost(status = PostStatus.Pending), account).text)
+    }
+
+    @Test
+    fun theLinkUrlIsBuiltFromTheBaseAndTheCode() {
+        assertEquals("https://go.test/go/stt0001", previews.linkUrl("stt0001"))
+        assertEquals("https://go.test/go/stt0001", com.sirelon.sellsnap.content.postLinkUrl("https://go.test/", "stt0001"))
+    }
+
+    @Test
     fun regenerateStaysHiddenUnlessTheFlagIsOn() {
         val post = testPost(status = PostStatus.Pending)
 
