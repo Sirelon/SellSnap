@@ -123,6 +123,11 @@ sealed interface AppKey : NavKey, AnalyticsScreen {
     }
 
     @Serializable
+    data object SelectLocation : AppKey {
+        override val screenName = "SelectLocation"
+    }
+
+    @Serializable
     data object PreviewBackInfo : AppKey {
         override val screenName = "PreviewAdBackInfo"
     }

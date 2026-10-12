@@ -79,6 +79,8 @@ import com.sirelon.sellsnap.features.seller.auth.presentation.SellerLandingScree
 import com.sirelon.sellsnap.features.seller.auth.presentation.rememberOlxAuthLauncher
 import com.sirelon.sellsnap.features.seller.categories.domain.OlxCategory
 import com.sirelon.sellsnap.features.seller.categories.presentation.CategoryPickerSheet
+import com.sirelon.sellsnap.features.seller.location.OlxLocation
+import com.sirelon.sellsnap.features.seller.location.presentation.LocationPickerSheet
 import com.sirelon.sellsnap.features.seller.drafts.ui.DraftsScreenRoute
 import com.sirelon.sellsnap.features.seller.my_ads.ui.MyAdvertsScreenRoute
 import com.sirelon.sellsnap.features.seller.onboarding.OnboardingScreen
@@ -184,6 +186,7 @@ fun App() {
             val notificationsPromptViewModel: NotificationsPromptViewModel = koinViewModel()
             val reviewPromptCoordinator: ReviewPromptCoordinator = koinInject()
             var pendingCategory by remember { mutableStateOf<OlxCategory?>(null) }
+            var pendingLocation by remember { mutableStateOf<OlxLocation?>(null) }
             var isGeneratingAd by remember { mutableStateOf(false) }
             var isPreviewPublishing by remember { mutableStateOf(false) }
             val authLauncher = rememberOlxAuthLauncher(
@@ -200,6 +203,7 @@ fun App() {
 
             fun leaveSellerFlowToLanding() {
                 pendingCategory = null
+                pendingLocation = null
                 navVm.replaceWith(AppKey.SellerLanding)
             }
 
@@ -485,6 +489,9 @@ fun App() {
                                     onChangeCategoryClick = { navVm.backStack.add(AppKey.SelectCategory) },
                                     pendingCategory = pendingCategory,
                                     onCategoryConsumed = { pendingCategory = null },
+                                    onChangeLocationClick = { navVm.backStack.add(AppKey.SelectLocation) },
+                                    pendingLocation = pendingLocation,
+                                    onLocationConsumed = { pendingLocation = null },
                                     onConnectOlxClick = {
                                         navVm.backStack.add(AppKey.Profile(reason = connectOlxReason))
                                     },
@@ -627,6 +634,17 @@ fun App() {
                             )
                         }
 
+                        entry<AppKey.SelectLocation>(
+                            metadata = BottomSheetSceneStrategy.bottomSheet(),
+                        ) {
+                            LocationPickerSheet(
+                                onLocationSelected = { location ->
+                                    navVm.popDestination()
+                                    pendingLocation = location
+                                },
+                            )
+                        }
+
                         entry<AppKey.Profile>(metadata = topLevelMetadata) { destination ->
                             ProfileScreenRoute(
                                 onBack = if (destination.reason == null) {
@@ -654,6 +672,9 @@ fun App() {
                                 onDisconnectRequested = { localIndex ->
                                     navVm.navigateTo(AppKey.DisconnectOlxAccountConfirm(localIndex))
                                 },
+                                onChangeLocationClick = { navVm.backStack.add(AppKey.SelectLocation) },
+                                pendingLocation = pendingLocation,
+                                onLocationConsumed = { pendingLocation = null },
                                 reason = destination.reason,
                             )
                         }
@@ -892,6 +913,7 @@ private fun AppKey.isOverlayEntry(): Boolean = when (this) {
     AppKey.OlxAccountAuthFailed,
     is AppKey.DisconnectOlxAccountConfirm,
     AppKey.SelectCategory,
+    AppKey.SelectLocation,
     AppKey.WhatsNewPrompt,
     AppKey.NotificationsPrompt,
     AppKey.PreviewPublishConfirm,

@@ -255,12 +255,21 @@
     <string name="ad_category_label">Категория</string>
     <string name="ad_location_label">Местоположение</string>
     <string name="location_detecting">Намираме те…</string>
-    <string name="location_not_available">Не можем да намерим местоположението ти</string>
+    <string name="location_not_available">Докосни, за да избереш града си</string>
     <string name="location_rationale_title">Нужно ни е местоположението ти</string>
     <string name="location_rationale_message">За да предложим най-близкия град за обявата ти, трябва да видим местоположението ти.</string>
     <string name="location_settings_title">Включи местоположението в настройките</string>
     <string name="location_settings_message_android">Местоположението е блокирано. Отвори настройките на приложението и го включи за SellSnap.</string>
-    <string name="location_settings_message_ios">Местоположението е блокирано. Отиди в Настройки → Поверителност → Услуги за местоположение и включи SellSnap.</string>
+    <string name="location_settings_message_ios">Местоположението е блокирано. Докосни Отвори настройките, после Местоположение → Докато приложението се използва.</string>
+    <string name="location_services_off_title">Местоположението е изключено на телефона ти</string>
+    <string name="location_services_off_message_android">Включи местоположението в настройките на телефона или потърси града си.</string>
+    <string name="location_services_off_message_ios">Включи Услуги за местоположение в Настройки → Поверителност и сигурност или потърси града си.</string>
+    <string name="location_picker_title">Къде продаваш?</string>
+    <string name="location_picker_use_current">Използвай текущото ми местоположение</string>
+    <string name="location_picker_search_placeholder">Потърси град</string>
+    <string name="location_picker_no_results">Няма градове, съвпадащи с „%1$s“</string>
+    <string name="location_picker_search_failed">Сега не можем да търсим.</string>
+    <string name="got_it">Разбрах</string>
 
     <!-- Error Messages -->
     <string name="error_location_fetch_failed">Не можах да намеря местоположението ти.</string>

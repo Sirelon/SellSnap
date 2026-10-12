@@ -24,7 +24,6 @@ interface ProfileContract {
     data class ProfileState(
         val isLoading: Boolean = true,
         val isAuthenticating: Boolean = false,
-        val isLocationLoading: Boolean = false,
         val user: OlxUser? = null,
         val location: OlxLocation? = null,
         val errorMessage: String? = null,
@@ -50,7 +49,7 @@ interface ProfileContract {
     sealed interface ProfileEvent {
         data object LoginClicked : ProfileEvent
         data object LogoutClicked : ProfileEvent
-        data object ChangeLocationClicked : ProfileEvent
+        data class LocationSelected(val location: OlxLocation) : ProfileEvent
         data object RefreshClicked : ProfileEvent
 
         // SIR-83

@@ -255,12 +255,21 @@
     <string name="ad_category_label">Санат</string>
     <string name="ad_location_label">Орын</string>
     <string name="location_detecting">Орның анықталуда…</string>
-    <string name="location_not_available">Орнынды таба алмадық</string>
+    <string name="location_not_available">Қалаңды таңдау үшін бас</string>
     <string name="location_rationale_title">Орныңды білу керек</string>
     <string name="location_rationale_message">Хабарландырың үшін жақын қаланы ұсыну мақсатында орныңа қысқаша қарауымыз керек.</string>
     <string name="location_settings_title">Параметрлерден орынды қос</string>
     <string name="location_settings_message_android">Орын бұғатталған. Қолданба параметрлерін ашып, SellSnap үшін қос.</string>
-    <string name="location_settings_message_ios">Орын бұғатталған. Параметрлер → Құпиялылық → Орын қызметтеріне өт және SellSnap-ты қос.</string>
+    <string name="location_settings_message_ios">Орын бұғатталған. Параметрлерді ашу түймесін басып, Орын → Қолданба пайдаланылғанда дегенді таңда.</string>
+    <string name="location_services_off_title">Телефоныңда орын өшірулі</string>
+    <string name="location_services_off_message_android">Телефон параметрлерінде орынды қос немесе қалаңды іздеп тап.</string>
+    <string name="location_services_off_message_ios">Параметрлер → Құпиялылық және қауіпсіздік ішінде Орын қызметтерін қос немесе қалаңды іздеп тап.</string>
+    <string name="location_picker_title">Қайда сатасың?</string>
+    <string name="location_picker_use_current">Қазіргі орнымды пайдалану</string>
+    <string name="location_picker_search_placeholder">Қала іздеу</string>
+    <string name="location_picker_no_results">«%1$s» сұрауына сәйкес қала жоқ</string>
+    <string name="location_picker_search_failed">Қазір іздей алмадық.</string>
+    <string name="got_it">Түсінікті</string>
 
     <!-- Error Messages -->
     <string name="error_location_fetch_failed">Орыныңды таба алмадық.</string>

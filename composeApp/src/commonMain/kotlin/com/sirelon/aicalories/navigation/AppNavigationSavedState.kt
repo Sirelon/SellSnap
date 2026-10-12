@@ -34,6 +34,7 @@ val appNavigationSavedStateConfiguration: SavedStateConfiguration =
                 subclass(AppKey.ImagesPreview::class, AppKey.ImagesPreview.serializer())
                 subclass(AppKey.PreviewAd::class, AppKey.PreviewAd.serializer())
                 subclass(AppKey.SelectCategory::class, AppKey.SelectCategory.serializer())
+                subclass(AppKey.SelectLocation::class, AppKey.SelectLocation.serializer())
                 subclass(AppKey.PreviewBackInfo::class, AppKey.PreviewBackInfo.serializer())
                 subclass(AppKey.PreviewPublishConfirm::class, AppKey.PreviewPublishConfirm.serializer())
                 subclass(AppKey.PreviewAccountPicker::class, AppKey.PreviewAccountPicker.serializer())

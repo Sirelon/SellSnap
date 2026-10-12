@@ -255,12 +255,21 @@
     <string name="ad_category_label">Categorie</string>
     <string name="ad_location_label">Locație</string>
     <string name="location_detecting">Te localizăm…</string>
-    <string name="location_not_available">Nu îți găsim locația</string>
+    <string name="location_not_available">Atinge pentru a-ți alege orașul</string>
     <string name="location_rationale_title">Avem nevoie de locația ta</string>
     <string name="location_rationale_message">Pentru a sugera cel mai apropiat oraș pentru anunțul tău, avem nevoie să îți accesăm locația.</string>
     <string name="location_settings_title">Activează locația în setări</string>
     <string name="location_settings_message_android">Locația este blocată. Deschide setările aplicației și activează-o pentru SellSnap.</string>
-    <string name="location_settings_message_ios">Locația este blocată. Mergi la Setări → Confidențialitate → Servicii de localizare și activează SellSnap.</string>
+    <string name="location_settings_message_ios">Locația este blocată. Atinge Deschide setările, apoi Locație → În timpul utilizării aplicației.</string>
+    <string name="location_services_off_title">Locația este dezactivată pe telefonul tău</string>
+    <string name="location_services_off_message_android">Activează locația în setările telefonului sau caută-ți orașul.</string>
+    <string name="location_services_off_message_ios">Activează Servicii de localizare în Setări → Confidențialitate și securitate sau caută-ți orașul.</string>
+    <string name="location_picker_title">Unde vinzi?</string>
+    <string name="location_picker_use_current">Folosește locația mea curentă</string>
+    <string name="location_picker_search_placeholder">Caută un oraș</string>
+    <string name="location_picker_no_results">Niciun oraș nu se potrivește cu „%1$s”</string>
+    <string name="location_picker_search_failed">Nu putem căuta acum.</string>
+    <string name="got_it">Am înțeles</string>
 
     <!-- Error Messages -->
     <string name="error_location_fetch_failed">Nu am putut găsi locația ta.</string>
