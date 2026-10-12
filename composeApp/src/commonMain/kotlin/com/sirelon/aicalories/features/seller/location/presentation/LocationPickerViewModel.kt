@@ -41,6 +41,9 @@ class LocationPickerViewModel(
     override fun onEvent(event: LocationPickerEvent) {
         when (event) {
             is LocationPickerEvent.QueryChanged -> {
+                // iOS re-sends the unchanged text when the field loses focus - which a tap on a
+                // city does. Treating it as an edit would cancel that city and search again.
+                if (event.query == currentState().query) return
                 closeDistricts()
                 setState { it.copy(query = event.query) }
                 search(event.query, debounce = true)
