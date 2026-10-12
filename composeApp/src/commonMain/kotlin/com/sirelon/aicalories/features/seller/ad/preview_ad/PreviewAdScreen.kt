@@ -623,7 +623,7 @@ private fun LocationPermissionsBlock(
     )
 
     LaunchedEffect(Unit) {
-        locationPermissionController.requestPermission {
+        locationPermissionController.requestPermission(quiet = true) {
             onEvent(PreviewAdEvent.FetchLocation)
         }
     }
