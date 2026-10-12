@@ -3,6 +3,7 @@ package com.sirelon.sellsnap.features.seller.auth.presentation
 import androidx.lifecycle.viewModelScope
 import com.sirelon.sellsnap.analytics.Analytics
 import com.sirelon.sellsnap.analytics.AnalyticsEvents
+import com.sirelon.sellsnap.analytics.reportShownError
 import com.sirelon.sellsnap.features.common.presentation.BaseViewModel
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAuthRepository
 import com.sirelon.sellsnap.features.seller.auth.data.OlxCountryStore
@@ -122,6 +123,11 @@ class SellerAuthViewModel(
                 }
                 .onFailure { error ->
                     analytics.logEvent(AnalyticsEvents.AUTH_FAILED, authParams(reason = error.authFailureReason()))
+                    analytics.reportShownError(
+                        screen = AnalyticsScreenCode,
+                        reason = "auth_complete_failed:${error.authFailureReason()}",
+                        throwable = error,
+                    )
                     showError(getString(Res.string.error_olx_auth_complete_failed))
                 }
         }
@@ -146,8 +152,9 @@ class SellerAuthViewModel(
                 }
                 postEffect(SellerAuthContract.SellerAuthEffect.LaunchOlxAuthFlow(request.url))
             }
-            .onFailure {
+            .onFailure { error ->
                 analytics.logEvent(AnalyticsEvents.AUTH_FAILED, authParams(reason = "prepare_failed"))
+                analytics.reportShownError(screen = AnalyticsScreenCode, reason = "auth_prepare_failed", throwable = error)
                 showError(getString(Res.string.error_olx_auth_prepare_failed))
             }
     }
@@ -174,6 +181,8 @@ class SellerAuthViewModel(
     }
 
     private companion object {
+        const val AnalyticsScreenCode = "seller_landing"
+
         // If app data flows change (OLX scope, Supabase, location, camera, new SDKs),
         // update these pages before the next release.
         const val TERMS_AND_CONDITIONS_URL = "https://sirelon.github.io/SellSnap/terms-and-conditions/"

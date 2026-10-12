@@ -6,6 +6,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModelStore
 import com.sirelon.sellsnap.analytics.Analytics
 import com.sirelon.sellsnap.analytics.AnalyticsEvents
+import com.sirelon.sellsnap.analytics.ShownErrorException
 import com.sirelon.sellsnap.features.auth.data.InMemoryOlxKeyValueStore
 import com.sirelon.sellsnap.features.common.presentation.awaitEffect
 import com.sirelon.sellsnap.features.media.upload.DraftMediaFileStore
@@ -36,6 +37,8 @@ import com.sirelon.sellsnap.features.seller.auth.data.OlxRedirectHandler
 import com.sirelon.sellsnap.features.seller.auth.data.OlxRemoteErrorParser
 import com.sirelon.sellsnap.features.seller.auth.data.createOlxAuthorizedHttpClient
 import com.sirelon.sellsnap.features.seller.auth.data.createOlxHttpClient
+import com.sirelon.sellsnap.features.seller.auth.domain.OlxApiError
+import com.sirelon.sellsnap.features.seller.auth.domain.OlxApiException
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxAuthCallback
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxCountry
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxTokens
@@ -274,17 +277,18 @@ class PreviewAdViewModelTest {
             viewModel.onEvent(PreviewAdEvent.ListingCopied)
             advanceUntilIdle()
             assertEquals(5, harness.reviewPromptStore.copiedListingCount())
-            assertTrue(harness.analytics.events.isEmpty(), "no ask at the tap")
+            // error_shown: the harness's category suggestion fails, unrelated to the review ask.
+            val reviewEvents = {
+                harness.analytics.events.map { it.first }.filter { it != AnalyticsEvents.ERROR_SHOWN }
+            }
+            assertTrue(reviewEvents().isEmpty(), "no ask at the tap")
 
             viewModel.onEvent(PreviewAdEvent.CopyFeedbackFinished)
             viewModel.onEvent(PreviewAdEvent.CopyFeedbackFinished)
             advanceUntilIdle()
             viewModel.effects.awaitEffect<PreviewAdEffect.RequestStoreReview>()
             // The second finish is not decided again: a repeat would log a cooldown skip.
-            assertEquals(
-                listOf(AnalyticsEvents.REVIEW_PROMPT_REQUESTED),
-                harness.analytics.events.map { it.first },
-            )
+            assertEquals(listOf(AnalyticsEvents.REVIEW_PROMPT_REQUESTED), reviewEvents())
         }
 
     @Test
@@ -479,6 +483,34 @@ class PreviewAdViewModelTest {
         assertTrue(effects.none { it is PreviewAdEffect.PublishFailure })
         val failed = harness.analytics.events.single { it.first == AnalyticsEvents.AD_PUBLISH_FAILED }
         assertEquals("validation:district_id", failed.second["reason"])
+        // SIR-155: the seller was shown this, so it is reported loudly - once.
+        // The harness's title also gets a category suggestion OLX cannot answer, which is shown
+        // and reported on its own; only the publish's report is under test here.
+        val shown = harness.analytics.events.single {
+            it.first == AnalyticsEvents.ERROR_SHOWN && it.second["reason"] != "category_not_supported"
+        }
+        assertEquals(mapOf("screen" to "preview_ad", "reason" to "validation:district_id"), shown.second)
+        val recorded = harness.analytics.exceptions.filterIsInstance<OlxApiException>().single()
+        assertEquals("district_id", (recorded.error as OlxApiError.ValidationError).field)
+    }
+
+    @Test
+    fun `a too-short title is reported as shown but records no non-fatal`() = runTest(testDispatcher) {
+        val engine = buildEngine {
+            addHandler { respond("{}", status = HttpStatusCode.OK, headers = jsonHeaders()) }
+        }
+        val harness = harness(engine, OlxAccountStore(InMemoryOlxKeyValueStore(), testJson))
+        val viewModel = buildViewModel(harness)
+        viewModel.titleState.setTextAndPlaceCursorAtEnd("Short")
+
+        viewModel.onEvent(PreviewAdEvent.Publish)
+        viewModel.effects.awaitEffect<PreviewAdEffect.ShowMessage>()
+
+        val shown = harness.analytics.events.single {
+            it.first == AnalyticsEvents.ERROR_SHOWN && it.second["reason"] == "title_too_short"
+        }
+        assertEquals("preview_ad", shown.second["screen"])
+        assertTrue(harness.analytics.exceptions.none { it is ShownErrorException })
     }
 
     @Test
@@ -1502,12 +1534,15 @@ class PreviewAdViewModelTest {
 
     private class FakeAnalytics : Analytics {
         val events = mutableListOf<Pair<String, Map<String, Any>>>()
+        val exceptions = mutableListOf<Throwable>()
         override fun logEvent(name: String, params: Map<String, Any>) {
             events += name to params
         }
         override fun setUserId(userId: String?) {}
         override fun setUserProperty(name: String, value: String?) {}
-        override fun recordException(throwable: Throwable, message: String?) {}
+        override fun recordException(throwable: Throwable, message: String?) {
+            exceptions += throwable
+        }
         override fun log(message: String) {}
         override fun setAnalyticsCollectionEnabled(enabled: Boolean) {}
         override fun setCrashlyticsCollectionEnabled(enabled: Boolean) {}

@@ -19,7 +19,7 @@ val profileModule = module {
     single { LocationStore(get()) }
     singleOf(::LocationRepository)
     // Spelled out rather than viewModelOf: the district city is an optional parameter.
-    viewModel { params -> LocationPickerViewModel(locationRepository = get(), districtsOf = params.getOrNull()) }
+    viewModel { params -> LocationPickerViewModel(locationRepository = get(), analytics = get(), districtsOf = params.getOrNull()) }
     single {
         SellerAccountRepository(
             authRepository = get(),

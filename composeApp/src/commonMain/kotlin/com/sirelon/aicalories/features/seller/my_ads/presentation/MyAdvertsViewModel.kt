@@ -3,6 +3,7 @@ package com.sirelon.sellsnap.features.seller.my_ads.presentation
 import androidx.lifecycle.viewModelScope
 import com.sirelon.sellsnap.analytics.Analytics
 import com.sirelon.sellsnap.analytics.AnalyticsEvents
+import com.sirelon.sellsnap.analytics.reportShownError
 import com.sirelon.sellsnap.features.common.presentation.BaseViewModel
 import com.sirelon.sellsnap.features.seller.ad.publish_success.AdvertStatus
 import com.sirelon.sellsnap.features.seller.auth.data.AdvertCommand
@@ -12,6 +13,7 @@ import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountsRecord
 import com.sirelon.sellsnap.features.seller.auth.data._currentOlxCountry
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxApiError
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxApiException
+import com.sirelon.sellsnap.features.seller.auth.domain.shownErrorCause
 import com.sirelon.sellsnap.features.seller.my_ads.data.AccountNeedsReconnect
 import com.sirelon.sellsnap.features.seller.my_ads.data.AdvertDeactivatedNotDeleted
 import com.sirelon.sellsnap.features.seller.my_ads.data.AdvertLifecycleRepository
@@ -273,6 +275,10 @@ class MyAdvertsViewModel internal constructor(
             return
         }
 
+        reportShownError(
+            reason = "${if (isLoadMore) "load_more_failed" else "load_failed"}:${error.shownErrorCause}",
+            throwable = error,
+        )
         val message = if (error is OlxApiException) {
             getString(Res.string.my_ads_load_failed_account, accountNameFor(localIndex))
         } else {
@@ -367,7 +373,8 @@ class MyAdvertsViewModel internal constructor(
                         it.copy(statistics = statistics, isLoadingStatistics = false, statisticsFailed = false)
                     }
                 }
-                .onFailure {
+                .onFailure { error ->
+                    reportShownError(reason = "statistics_failed:${error.shownErrorCause}", throwable = error)
                     updateSheet(advertId) { it.copy(isLoadingStatistics = false, statisticsFailed = true) }
                 }
         }
@@ -603,9 +610,8 @@ class MyAdvertsViewModel internal constructor(
         action: AdvertAction,
         error: Throwable,
     ) {
-        analytics.recordException(error, AnalyticsEvents.ADVERT_ACTION)
-
         if (error is AdvertDeactivatedNotDeleted) {
+            reportShownError(reason = "delete_partial", throwable = error)
             // Half of the delete landed. Saying "couldn't delete" alone would leave the seller
             // thinking their listing is still live when it is already down.
             logAction(action, advert.status, "partial")
@@ -615,6 +621,7 @@ class MyAdvertsViewModel internal constructor(
             return
         }
 
+        reportShownError(reason = "${action.name.lowercase()}_failed:${error.shownErrorCause}", throwable = error)
         val olxError = (error as? OlxApiException)?.error
         logAction(action, advert.status, if (olxError is OlxApiError.ValidationError) "rejected" else "failed")
         updateSheet(advert.id) { it.copy(pendingAction = null) }
@@ -699,8 +706,9 @@ class MyAdvertsViewModel internal constructor(
                         )
                     }
                 }
-                .onFailure {
+                .onFailure { error ->
                     if (!isEditing(advert.id)) return@onFailure
+                    reportShownError(reason = "edit_load_failed:${error.shownErrorCause}", throwable = error)
                     editSnapshot = null
                     setState { state ->
                         state.copy(advertEdit = state.advertEdit?.copy(isLoading = false, loadFailed = true))
@@ -776,7 +784,7 @@ class MyAdvertsViewModel internal constructor(
                     fetchPage(edit.localIndex)
                 }
                 .onFailure { error ->
-                    analytics.recordException(error, AnalyticsEvents.ADVERT_ACTION)
+                    reportShownError(reason = "edit_failed:${error.shownErrorCause}", throwable = error)
                     val olxError = (error as? OlxApiException)?.error
                     logAction(
                         AdvertAction.Edit,
@@ -794,6 +802,10 @@ class MyAdvertsViewModel internal constructor(
                     }
                 }
         }
+    }
+
+    private fun reportShownError(reason: String, throwable: Throwable) {
+        analytics.reportShownError(screen = "my_adverts", reason = reason, throwable = throwable)
     }
 
     /** A no-op once the seller has closed the sheet or opened a different advert in it. */

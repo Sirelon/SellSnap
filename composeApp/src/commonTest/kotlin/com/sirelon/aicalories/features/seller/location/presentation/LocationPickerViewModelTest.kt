@@ -197,7 +197,7 @@ class LocationPickerViewModelTest {
             locationStore = store,
             countryStore = countryStore,
         )
-        return LocationPickerViewModel(repository, districtsOf)
+        return LocationPickerViewModel(repository, NoOpAnalytics(), districtsOf)
     }
 
     private val kyiv = OlxLocation(cityId = 268, cityName = "Kyiv", districtId = null, districtName = null)

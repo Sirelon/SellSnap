@@ -8,6 +8,7 @@ import com.mohamedrejeb.calf.io.getName
 import com.mohamedrejeb.calf.io.readByteArray
 import com.sirelon.sellsnap.analytics.Analytics
 import com.sirelon.sellsnap.analytics.AnalyticsEvents
+import com.sirelon.sellsnap.analytics.reportShownError
 import com.sirelon.sellsnap.features.common.presentation.BaseViewModel
 import com.sirelon.sellsnap.features.media.SharedImagesBridge
 import com.sirelon.sellsnap.features.media.ui.MAX_PHOTOS
@@ -76,6 +77,7 @@ private const val GuestProcessingStepCount = 3
 private const val AuthenticatedProcessingStepCount = 5
 private const val GenerateAdSavedStateKey = "generate_ad_saved_state"
 private const val OpenAIRequestFailedPrefix = "OpenAI request failed:"
+private const val AnalyticsScreenCode = "generate_ad"
 
 /**
  * How long the model gets to answer before the generation is called off.
@@ -397,12 +399,13 @@ class GenerateAdViewModel(
                     )
                 }
                 outcomeLogged = true
-                analytics.recordException(error, AnalyticsEvents.AD_GENERATION_FAILED)
+                val failureReason = error.toFailureReason()
                 analytics.logEvent(
                     AnalyticsEvents.AD_GENERATION_FAILED,
                     buildGenerationStageParams(startedAt.elapsedNow().inWholeMilliseconds, photoCount, uploadMs, uploadBytes, modelMs, attributesMs) +
-                        mapOf("reason" to error.toFailureReason(), "retry_count" to retryCount),
+                        mapOf("reason" to failureReason, "retry_count" to retryCount),
                 )
+                reportShownError(reason = "generation_failed:$failureReason", throwable = error)
                 setState { it.copy(isLoading = false) }
                 showError(message)
             }
@@ -518,6 +521,7 @@ class GenerateAdViewModel(
                     }
                     if (dropped.isNotEmpty()) {
                         draftMediaFileStore.delete(dropped.map { it.photo })
+                        reportShownError(reason = "photo_limit_reached", recordNonFatal = false)
                         postEffect(
                             GenerateAdContract.GenerateAdEffect.ShowMessage(
                                 getString(Res.string.photos_limit_kept_message, MAX_PHOTOS)
@@ -526,6 +530,7 @@ class GenerateAdViewModel(
                     }
                 }
                 .onFailure { error ->
+                    reportShownError(reason = "photos_process_failed", throwable = error)
                     showError(getString(Res.string.error_selected_files_process_failed))
                 }
         }
@@ -564,11 +569,12 @@ class GenerateAdViewModel(
             }
 
             is MediaUploadUpdate.Failure -> {
-                analytics.recordException(update.cause, AnalyticsEvents.PHOTO_UPLOAD_FAILED)
+                reportShownError(reason = "photo_upload_failed", throwable = update.cause)
                 handleUploadFailure(file = update.file, message = getString(Res.string.error_upload_file_failed))
             }
 
             is MediaUploadUpdate.Error -> {
+                reportShownError(reason = "photo_upload_error")
                 showError(getString(Res.string.error_upload_file_failed))
             }
         }
@@ -638,7 +644,17 @@ class GenerateAdViewModel(
             AnalyticsEvents.AD_GENERATION_PHOTOS_UNUSABLE,
             mapOf("reason" to reason.code, "duration_ms" to durationMs),
         )
+        reportShownError(reason = "photos_unusable:${reason.code}")
         showError(getString(reason.messageRes))
+    }
+
+    private fun reportShownError(reason: String, throwable: Throwable? = null, recordNonFatal: Boolean = true) {
+        analytics.reportShownError(
+            screen = AnalyticsScreenCode,
+            reason = reason,
+            throwable = throwable,
+            recordNonFatal = recordNonFatal,
+        )
     }
 
     private fun showError(message: String) {

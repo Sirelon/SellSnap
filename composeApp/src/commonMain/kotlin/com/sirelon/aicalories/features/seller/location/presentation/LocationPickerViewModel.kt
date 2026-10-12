@@ -1,7 +1,10 @@
 package com.sirelon.sellsnap.features.seller.location.presentation
 
 import androidx.lifecycle.viewModelScope
+import com.sirelon.sellsnap.analytics.Analytics
+import com.sirelon.sellsnap.analytics.reportShownError
 import com.sirelon.sellsnap.features.common.presentation.BaseViewModel
+import com.sirelon.sellsnap.features.seller.auth.domain.shownErrorCause
 import com.sirelon.sellsnap.features.seller.location.OlxLocation
 import com.sirelon.sellsnap.features.seller.location.data.LocationRepository
 import com.sirelon.sellsnap.features.seller.location.presentation.LocationPickerContract.LocationPickerEffect
@@ -18,6 +21,7 @@ import kotlinx.coroutines.launch
  */
 class LocationPickerViewModel(
     private val locationRepository: LocationRepository,
+    private val analytics: Analytics,
     districtsOf: OlxLocation? = null,
 ) : BaseViewModel<LocationPickerState, LocationPickerEvent, LocationPickerEffect>() {
 
@@ -65,6 +69,7 @@ class LocationPickerViewModel(
                 if (locationRepository.isLocationServicesEnabled()) {
                     postEffect(LocationPickerEffect.RequestLocationPermission)
                 } else {
+                    reportShownError(reason = "location_services_off", recordNonFatal = false)
                     setState { it.copy(showServicesOffDialog = true) }
                 }
             }
@@ -101,6 +106,7 @@ class LocationPickerViewModel(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
+                reportShownError(reason = "city_search_failed:${e.shownErrorCause}", throwable = e)
                 setState {
                     it.copy(isSearching = false, searchFailed = true, searchedQuery = null, results = emptyList())
                 }
@@ -120,6 +126,7 @@ class LocationPickerViewModel(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
+                reportShownError(reason = "districts_failed:${e.shownErrorCause}", throwable = e)
                 setState { it.copy(isLoadingDistricts = false, districtsFailed = true) }
                 return@launch
             }
@@ -146,15 +153,32 @@ class LocationPickerViewModel(
 
     private suspend fun detectLocation() {
         setState { it.copy(isDetecting = true, detectFailed = false) }
+        var failure: Exception? = null
         val location = try {
             locationRepository.fetchUserLocation()
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
+            failure = e
             null
+        }
+        if (location == null) {
+            reportShownError(
+                reason = if (failure == null) "location_detect_empty" else "location_detect_failed",
+                throwable = failure,
+            )
         }
         setState { it.copy(isDetecting = false, detectFailed = location == null) }
         if (location != null) postEffect(LocationPickerEffect.LocationChosen(location))
+    }
+
+    private fun reportShownError(reason: String, throwable: Throwable? = null, recordNonFatal: Boolean = true) {
+        analytics.reportShownError(
+            screen = "select_location",
+            reason = reason,
+            throwable = throwable,
+            recordNonFatal = recordNonFatal,
+        )
     }
 
     private companion object {

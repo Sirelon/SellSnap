@@ -1,11 +1,16 @@
 package com.sirelon.sellsnap.features.seller.profile.presentation
 
 import androidx.lifecycle.viewModelScope
+import com.sirelon.sellsnap.analytics.Analytics
+import com.sirelon.sellsnap.analytics.reportShownError
 import com.sirelon.sellsnap.features.common.presentation.BaseViewModel
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountRecord
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountState
 import com.sirelon.sellsnap.features.seller.auth.data.OlxCountryStore
 import com.sirelon.sellsnap.features.seller.auth.data._currentOlxCountry
+import com.sirelon.sellsnap.features.seller.auth.domain.OlxApiException
+import com.sirelon.sellsnap.features.seller.auth.domain.analyticsReason
+import com.sirelon.sellsnap.features.seller.profile.data.AddAccountFailureReason
 import com.sirelon.sellsnap.features.seller.profile.data.AddAccountOutcome
 import com.sirelon.sellsnap.features.seller.profile.data.SellerAccountRepository
 import com.sirelon.sellsnap.features.seller.profile.presentation.ProfileContract.ProfileEffect
@@ -25,6 +30,7 @@ import org.jetbrains.compose.resources.getString
 class ProfileViewModel(
     private val accountRepository: SellerAccountRepository,
     private val olxCountryStore: OlxCountryStore,
+    private val analytics: Analytics,
 ) : BaseViewModel<ProfileState, ProfileEvent, ProfileEffect>() {
 
     init {
@@ -120,6 +126,7 @@ class ProfileViewModel(
                 }
 
                 is AddAccountOutcome.Failed -> {
+                    reportAddAccountFailure(outcome.reason)
                     setState { it.copy(isAuthenticating = false) }
                     postEffect(ProfileEffect.AuthorizationFailed)
                 }
@@ -137,6 +144,7 @@ class ProfileViewModel(
             }
                 .onSuccess { (profileResult, location) ->
                     profileResult.onFailure { error ->
+                        reportShownError(reason = "profile_fetch_failed", throwable = error)
                         showError(getString(Res.string.error_user_profile_fetch_failed))
                     }
                     setState {
@@ -148,6 +156,7 @@ class ProfileViewModel(
                     }
                 }
                 .onFailure { error ->
+                    reportShownError(reason = "profile_fetch_failed", throwable = error)
                     showError(getString(Res.string.error_user_profile_fetch_failed))
                     setState { it.copy(isLoading = false) }
                 }
@@ -163,6 +172,7 @@ class ProfileViewModel(
                     postEffect(ProfileEffect.LaunchOlxAuthFlow(request.url, forceReauth))
                 }
                 .onFailure { error ->
+                    reportShownError(reason = "auth_prepare_failed", throwable = error)
                     showError(getString(Res.string.error_olx_auth_prepare_failed))
                     setState { it.copy(isAuthenticating = false) }
                 }
@@ -194,6 +204,8 @@ class ProfileViewModel(
     private fun reconnect(localIndex: Int) {
         val countryCode = _currentOlxCountry.code
         if (accountRepository.remainingCooldownSeconds(localIndex = null, countryCode = countryCode) > 0) {
+            // The failure that started the cooldown already recorded its non-fatal.
+            reportShownError(reason = "auth_cooldown", recordNonFatal = false)
             postEffect(ProfileEffect.AuthorizationFailed)
             return
         }
@@ -207,11 +219,35 @@ class ProfileViewModel(
         }
     }
 
+    private fun reportAddAccountFailure(reason: AddAccountFailureReason) {
+        when (reason) {
+            AddAccountFailureReason.AccountLimitReached ->
+                reportShownError(reason = "add_account_failed:account_limit_reached")
+
+            // The repository keeps only the mapped OlxApiError, so the non-fatal is rebuilt from it.
+            is AddAccountFailureReason.Authorization -> reportShownError(
+                reason = "add_account_failed:${reason.error.analyticsReason}",
+                throwable = OlxApiException(reason.error),
+            )
+        }
+    }
+
+    private fun reportShownError(reason: String, throwable: Throwable? = null, recordNonFatal: Boolean = true) {
+        analytics.reportShownError(
+            screen = AnalyticsScreenCode,
+            reason = reason,
+            throwable = throwable,
+            recordNonFatal = recordNonFatal,
+        )
+    }
+
     private fun showError(message: String) {
         setState { it.copy(errorMessage = message) }
         postEffect(ProfileEffect.ShowMessage(message))
     }
 }
+
+private const val AnalyticsScreenCode = "profile"
 
 private fun OlxAccountRecord.toUiModel(isActive: Boolean): SellerAccountUiModel {
     val snapshot = profile

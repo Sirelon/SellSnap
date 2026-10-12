@@ -199,4 +199,13 @@ object AnalyticsEvents {
      * reported.
      */
     const val NOTIFICATION_PROMPT_ANSWERED = "notification_prompt_answered"
+
+    /**
+     * The seller was shown an error. Logged only through `reportShownError`, which also records the
+     * Crashlytics non-fatal. `screen` is a snake_case screen code (`preview_ad`, `generate_ad`,
+     * `my_adverts`, ...) and `reason` a stable code, optionally `kind:detail` - an OLX validation
+     * refusal carries the rejected field, `validation:district_id`. Both are capped at 100
+     * characters. Logged in addition to any feature event such as `ad_publish_failed`.
+     */
+    const val ERROR_SHOWN = "error_shown"
 }
