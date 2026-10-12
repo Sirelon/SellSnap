@@ -154,6 +154,22 @@ class LocationPickerViewModelTest {
     }
 
     @Test
+    fun `the same query sent again keeps the picked city's district step`() = runTest(testDispatcher) {
+        val provider = FakeLocationProvider()
+        val viewModel = createViewModel(provider, districtsJson = KYIV_DISTRICTS_JSON)
+        viewModel.onEvent(LocationPickerEvent.QueryChanged("Kyiv"))
+        advanceUntilIdle()
+
+        viewModel.onEvent(LocationPickerEvent.CitySelected(CitySuggestion(kyiv, region = "Kyiv")))
+        viewModel.onEvent(LocationPickerEvent.QueryChanged("Kyiv"))
+        advanceUntilIdle()
+
+        assertEquals(kyiv, viewModel.state.value.districtCity)
+        assertEquals(2, viewModel.state.value.districts.size)
+        assertEquals(1, provider.searchQueries.size)
+    }
+
+    @Test
     fun `a one-letter query does not search`() = runTest(testDispatcher) {
         val provider = FakeLocationProvider()
         val viewModel = createViewModel(provider)
