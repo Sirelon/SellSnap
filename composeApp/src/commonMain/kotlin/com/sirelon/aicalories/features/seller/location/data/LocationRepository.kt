@@ -51,8 +51,9 @@ class LocationRepository(
 
     /**
      * OLX has no city search, so the platform geocoder turns [query] into points and OLX maps each
-     * point to its city. The district is dropped: the geocoder returns a city's centre, and the
-     * district there says nothing about where the seller is.
+     * point to its city. The district is the one OLX returns for the city's centre, so it may differ
+     * from where the seller lives. It is kept anyway: OLX rejects an advert in a city with districts
+     * (e.g. Kyiv) when `district_id` is missing.
      */
     suspend fun searchCities(query: String): List<CitySuggestion> = coroutineScope {
         val country = countryStore.current
@@ -63,7 +64,7 @@ class LocationRepository(
                         latitude = place.location.latitude,
                         longitude = place.location.longitude,
                     ).firstNotNullOfOrNull { it.toOlxLocation() }
-                        ?.let { CitySuggestion(it.copy(districtId = null, districtName = null), place.region) }
+                        ?.let { CitySuggestion(it, place.region) }
                 }
             }
             .awaitAll()

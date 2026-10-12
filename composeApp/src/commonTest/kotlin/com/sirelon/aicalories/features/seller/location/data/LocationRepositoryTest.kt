@@ -78,7 +78,7 @@ class LocationRepositoryTest {
     }
 
     @Test
-    fun `searchCities maps each geocoded place to one OLX city without the district`() = runBlocking {
+    fun `searchCities maps each geocoded place to one OLX city and keeps its district`() = runBlocking {
         val store = LocationStore(InMemoryOlxKeyValueStore(), testJson)
         val provider = FakeLocationProvider(
             places = listOf(
@@ -103,7 +103,7 @@ class LocationRepositoryTest {
 
         val cities = repository.searchCities("Kyiv")
 
-        assertEquals(listOf(CitySuggestion(OlxLocation(1, "Kyiv", null, null), region = "Kyiv")), cities)
+        assertEquals(listOf(CitySuggestion(OlxLocation(1, "Kyiv", 10, "Pechersk"), region = "Kyiv")), cities)
         assertEquals(listOf("Kyiv, Ukraine" to "ua"), provider.searchQueries)
         assertNull(store.read())
     }
