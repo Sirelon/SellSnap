@@ -140,6 +140,20 @@ class LocationPickerViewModelTest {
     }
 
     @Test
+    fun `picking a city cancels a search still waiting to run`() = runTest(testDispatcher) {
+        val provider = FakeLocationProvider()
+        val viewModel = createViewModel(provider, districtsJson = KYIV_DISTRICTS_JSON)
+
+        viewModel.onEvent(LocationPickerEvent.QueryChanged("Kyiv"))
+        viewModel.onEvent(LocationPickerEvent.CitySelected(CitySuggestion(kyiv, region = "Kyiv")))
+        advanceUntilIdle()
+
+        assertTrue(provider.searchQueries.isEmpty())
+        assertEquals(false, viewModel.state.value.isSearching)
+        assertEquals(kyiv, viewModel.state.value.districtCity)
+    }
+
+    @Test
     fun `a one-letter query does not search`() = runTest(testDispatcher) {
         val provider = FakeLocationProvider()
         val viewModel = createViewModel(provider)

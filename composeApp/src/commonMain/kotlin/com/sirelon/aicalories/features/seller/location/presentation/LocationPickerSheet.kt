@@ -196,7 +196,9 @@ private fun LocationPickerContent(
 
         Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
             when {
-                state.isSearching || state.isLoadingDistricts -> CircularProgressIndicator(
+                // A new search keeps the previous results on screen: swapping them for the spinner
+                // mid-tap made the seller's tap land on nothing.
+                state.isLoadingDistricts || (state.isSearching && state.results.isEmpty()) -> CircularProgressIndicator(
                     modifier = Modifier
                         .align(Alignment.TopCenter)
                         .padding(top = AppDimens.Spacing.xl5),

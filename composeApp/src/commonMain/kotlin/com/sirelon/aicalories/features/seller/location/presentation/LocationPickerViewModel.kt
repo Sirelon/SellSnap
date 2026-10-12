@@ -44,7 +44,12 @@ class LocationPickerViewModel(
 
             LocationPickerEvent.RetrySearch -> search(currentState().query, debounce = false)
 
-            is LocationPickerEvent.CitySelected -> loadDistricts(event.city.location, saveIfNone = true)
+            is LocationPickerEvent.CitySelected -> {
+                // A search still pending would swap the list for its own results under the step.
+                searchJob?.cancel()
+                setState { it.copy(isSearching = false) }
+                loadDistricts(event.city.location, saveIfNone = true)
+            }
 
             is LocationPickerEvent.DistrictSelected -> viewModelScope.launch { choose(event.district) }
 
