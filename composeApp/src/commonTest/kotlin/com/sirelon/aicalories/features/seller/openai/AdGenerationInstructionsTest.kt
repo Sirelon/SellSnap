@@ -6,18 +6,18 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 /**
- * Pins the v4 guardrails into the instructions text. Whether the model honours them can only be
+ * Pins the guardrails into the instructions text. Whether the model honours them can only be
  * judged against real generations, not offline.
  */
 class AdGenerationInstructionsTest {
 
     @Test
-    fun promptVersionIsV4() {
-        assertEquals("v4", AD_GENERATION_PROMPT_VERSION)
+    fun promptVersionIsV5() {
+        assertEquals("v5", AD_GENERATION_PROMPT_VERSION)
     }
 
     @Test
-    fun instructionsCarryTheV4Guardrails() {
+    fun instructionsCarryTheGuardrails() {
         val instructions = adGenerationInstructions(OlxCountry.PL)
         val terms = listOf(
             // Claims a photo cannot support.
@@ -28,6 +28,8 @@ class AdGenerationInstructionsTest {
             "Never put a placeholder for an unknown value in the title", "r. brak",
             // Length target, and when shorter is right.
             "3 to 6 short sentences", "truly show little",
+            // The text describes the item, never the photos of it.
+            "never the pictures of it", "na zdjęciu",
             // Earlier guardrails stay.
             "Do not invent brand, size, material, defects, or condition.",
             "Do not infer the season of clothing",

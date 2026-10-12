@@ -29,7 +29,7 @@ const val AD_GENERATION_MODEL_ID = "gpt-4.1"
 
 // Bump whenever adGenerationInstructions changes, so ad-generation-log records stay attributable
 // to the exact prompt that produced them.
-const val AD_GENERATION_PROMPT_VERSION = "v4"
+const val AD_GENERATION_PROMPT_VERSION = "v5"
 
 private val DEFAULT_MODEL = ModelId(AD_GENERATION_MODEL_ID)
 private const val DEFAULT_IMAGE_DETAIL = "high"
@@ -39,6 +39,7 @@ internal fun adGenerationInstructions(country: OlxCountry): String = """
 You are writing a single second-hand listing for OLX ${country.nameEn}.
 Write like a real private seller talking about their own item — warm, concrete, specific.
 Do not sound like a product catalogue, an image caption, or a bot.
+The buyer sees the photos next to your text, so describe the item itself, never the pictures of it. Never write phrases like "on the photo", "pictured", "as you can see", "the photo shows", "на фото", "na zdjęciu", "în poză", "na foto" or "на снимката". Write "The jacket has a small scuff on the left sleeve", not "On the photo you can see a scuff on the left sleeve".
 Warmth comes from plain, specific language about what is actually in front of you, never from invented history.
 
 You have two sources:
