@@ -48,6 +48,7 @@ import com.mohamedrejeb.calf.picker.coil.KmpFileFetcher
 import com.sirelon.sellsnap.analytics.Analytics
 import com.sirelon.sellsnap.analytics.AnalyticsEvents
 import com.sirelon.sellsnap.analytics.TrackScreenViews
+import com.sirelon.sellsnap.analytics.reportShownError
 import com.sirelon.sellsnap.designsystem.AppTheme
 import com.sirelon.sellsnap.designsystem.ObserveAsEvents
 import com.sirelon.sellsnap.designsystem.screens.ImagesPreview
@@ -665,6 +666,12 @@ fun App() {
                                     // instead.
                                     val countryCode = _currentOlxCountry.code
                                     if (accountRepository.remainingCooldownSeconds(null, countryCode) > 0) {
+                                        // The failure that started the cooldown already recorded its non-fatal.
+                                        analytics.reportShownError(
+                                            screen = "profile",
+                                            reason = "auth_cooldown",
+                                            recordNonFatal = false,
+                                        )
                                         navVm.navigateTo(AppKey.OlxAccountAuthFailed)
                                     } else {
                                         navVm.navigateTo(AppKey.AddOlxAccountConfirm)

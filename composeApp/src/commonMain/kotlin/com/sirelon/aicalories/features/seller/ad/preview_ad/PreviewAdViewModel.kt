@@ -7,6 +7,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.sirelon.sellsnap.analytics.Analytics
 import com.sirelon.sellsnap.analytics.AnalyticsEvents
+import com.sirelon.sellsnap.analytics.reportShownError
 import com.sirelon.sellsnap.features.common.presentation.BaseViewModel
 import com.sirelon.sellsnap.features.review.ReviewPromptCoordinator
 import com.sirelon.sellsnap.features.review.ReviewPromptTrigger
@@ -101,6 +102,7 @@ import org.jetbrains.compose.resources.getString
 private const val TitleMinLength = 10
 private const val DescriptionMinLength = 30
 private const val PreviewAdSavedStateKey = "preview_ad_saved_state"
+private const val AnalyticsScreenCode = "preview_ad"
 
 /** SIR-122: one entry in [PreviewAdViewModel.removedImages] - [index] is where [url] sat in
  * [PreviewAdContract.PreviewAdState.images] before it was removed. */
@@ -302,7 +304,12 @@ class PreviewAdViewModel internal constructor(
                 updateSelectedCategory(category = it)
             }
             .catch { error ->
-                val message = if (error is UnsupportedOlxCategoryException) {
+                val unsupported = error is UnsupportedOlxCategoryException
+                reportShownError(
+                    reason = if (unsupported) "category_not_supported" else "category_suggestion_failed",
+                    throwable = error,
+                )
+                val message = if (unsupported) {
                     getString(Res.string.error_category_not_supported)
                 } else {
                     getString(Res.string.error_category_suggestion_failed)
@@ -332,7 +339,8 @@ class PreviewAdViewModel internal constructor(
                 }
                 logAttributesLoaded(attributeItems)
             }
-            .catch {
+            .catch { error ->
+                reportShownError(reason = "attributes_load_failed", throwable = error)
                 setState { state ->
                     state.copy(
                         attributeItems = emptyList(),
@@ -508,6 +516,7 @@ class PreviewAdViewModel internal constructor(
             val location = locationRepository.fetchUserLocation()
             setState { it.copy(location = location ?: it.location, locationLoading = false) }
         } catch (e: Exception) {
+            reportShownError(reason = "location_fetch_failed", throwable = e)
             setState { it.copy(locationLoading = false) }
             postEffect(ShowMessage(getString(Res.string.error_location_fetch_failed)))
         }
@@ -519,10 +528,12 @@ class PreviewAdViewModel internal constructor(
         val title = titleState.text.toString()
         val description = descriptionState.text.toString()
         if (title.trim().length < TitleMinLength) {
+            reportShownError(reason = "title_too_short", recordNonFatal = false)
             postEffect(ShowMessage(getString(Res.string.validation_error_title_too_short)))
             return
         }
         if (description.trim().length < DescriptionMinLength) {
+            reportShownError(reason = "description_too_short", recordNonFatal = false)
             postEffect(ShowMessage(getString(Res.string.validation_error_desc_too_short)))
             return
         }
@@ -530,6 +541,7 @@ class PreviewAdViewModel internal constructor(
         val category = s.selectedCategory
         val location = s.location
         if (category == null || location == null) {
+            reportShownError(reason = "missing_category_or_location", recordNonFatal = false)
             postEffect(ShowMessage(getString(Res.string.error_publish_missing_category_or_location)))
             return
         }
@@ -540,6 +552,7 @@ class PreviewAdViewModel internal constructor(
         // until the fetch has actually landed - a category with genuinely zero attributes still
         // reaches Loaded and publishes normally.
         if (s.attributesLoadState != AttributesLoadState.Loaded) {
+            reportShownError(reason = "attributes_not_loaded:${s.attributesLoadState.name.lowercase()}")
             postEffect(ShowMessage(getString(Res.string.error_attributes_load_failed)))
             return
         }
@@ -557,8 +570,12 @@ class PreviewAdViewModel internal constructor(
                 )?.reason
             item.copy(error = error)
         }
-        val hasErrors = validatedItems.any { it.error != null }
-        if (hasErrors) {
+        val invalidCodes = validatedItems.filter { it.error != null }.map { it.attribute.code }
+        if (invalidCodes.isNotEmpty()) {
+            reportShownError(
+                reason = "attributes_invalid:${invalidCodes.joinToString(",")}",
+                recordNonFatal = false,
+            )
             setState { it.copy(attributeItems = validatedItems) }
             postEffect(ShowMessage(getString(Res.string.error_publish_failed)))
             return
@@ -609,6 +626,7 @@ class PreviewAdViewModel internal constructor(
                     AnalyticsEvents.PUBLISH_ACCOUNT_MISMATCH_ABORTED,
                     mapOf("account_count" to accountCount),
                 )
+                reportShownError(reason = "account_mismatch")
                 setState { it.copy(isPublishing = false) }
                 postEffect(PreviewAdEffect.PublishAccountMismatch(getString(Res.string.error_publish_account_mismatch)))
                 return
@@ -616,6 +634,7 @@ class PreviewAdViewModel internal constructor(
 
             val contactName = user.name
             if (contactName.isBlank()) {
+                reportShownError(reason = "missing_contact_name")
                 setState { it.copy(isPublishing = false) }
                 postEffect(PreviewAdEffect.NavigateToProfile(getString(Res.string.error_publish_missing_contact_name)))
                 return
@@ -688,13 +707,17 @@ class PreviewAdViewModel internal constructor(
             setState { it.copy(isPublishing = false) }
             postEffect(PreviewAdEffect.PublishSuccess(successData))
         } catch (error: Throwable) {
+            // Leaving the screen mid-publish cancels it; that is not a failed publish.
+            if (error is CancellationException) throw error
             val olxError = (error as? OlxApiException)?.error
             reviewPromptCoordinator.onPublishFailed()
-            analytics.recordException(error, AnalyticsEvents.AD_PUBLISH_FAILED)
+            val failureReason = publishFailureReason(error, olxError)
             analytics.logEvent(
                 AnalyticsEvents.AD_PUBLISH_FAILED,
-                mapOf("account_index" to accountIndex, "reason" to publishFailureReason(error, olxError)),
+                mapOf("account_index" to accountIndex, "reason" to failureReason),
             )
+            // Same reason as ad_publish_failed, so the two events join on it.
+            reportShownError(reason = failureReason, throwable = error)
             setState { it.copy(isPublishing = false) }
             when {
                 olxError is OlxApiError.ValidationError && olxError.field.startsWith("contact.") ->
@@ -882,6 +905,15 @@ class PreviewAdViewModel internal constructor(
         )
     }
 
+    private fun reportShownError(reason: String, throwable: Throwable? = null, recordNonFatal: Boolean = true) {
+        analytics.reportShownError(
+            screen = AnalyticsScreenCode,
+            reason = reason,
+            throwable = throwable,
+            recordNonFatal = recordNonFatal,
+        )
+    }
+
     private suspend fun displayAccountName(account: OlxAccountRecord?): String {
         val name = account?.profile?.name
         return if (!name.isNullOrBlank()) name else getString(Res.string.publish_target_account_fallback_name)
@@ -952,6 +984,7 @@ class PreviewAdViewModel internal constructor(
                 is AdAnalysis.Generated -> analysis.advertisement
                 is AdAnalysis.Unusable -> {
                     analytics.logEvent(AnalyticsEvents.AD_DESCRIPTION_REGENERATE_FAILED)
+                    reportShownError(reason = "regenerate_photos_unusable:${analysis.reason.code}")
                     postEffect(ShowMessage(getString(Res.string.error_regenerate_description_failed)))
                     return
                 }
@@ -988,8 +1021,9 @@ class PreviewAdViewModel internal constructor(
             // Leaving the screen mid-request is not a failure and must not skew the metric.
             throw error
         } catch (error: Throwable) {
-            analytics.recordException(error, AnalyticsEvents.AD_DESCRIPTION_REGENERATE_FAILED)
+            if (error is CancellationException) throw error
             analytics.logEvent(AnalyticsEvents.AD_DESCRIPTION_REGENERATE_FAILED)
+            reportShownError(reason = "regenerate_failed", throwable = error)
             postEffect(ShowMessage(getString(Res.string.error_regenerate_description_failed)))
         } finally {
             setState { it.copy(isRegeneratingDescription = false) }
