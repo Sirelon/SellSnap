@@ -413,6 +413,10 @@
         if (attr && key && dict[key] != null) el.setAttribute(attr, dict[key]);
       });
     });
+    document.querySelectorAll('a[href^="https://apps.apple.com/"]').forEach((link) => {
+      // Keeps any ?ct= post code; Apple's redirect to the full product URL keeps it too.
+      link.href = link.getAttribute("href").replace(APP_STORE_PATH, "https://apps.apple.com/" + APP_STORE_COUNTRY[lang] + "/app/id6776001373");
+    });
     document.querySelectorAll("[data-mock-price]").forEach((el) => { el.textContent = MOCK_PRICE[lang]; });
     document.title = dict.page_title;
     const meta = document.querySelector('meta[name="description"]');
@@ -424,6 +428,12 @@
 
   // The mock listing's price, in the currency of each language's OLX market.
   const MOCK_PRICE = { uk: "3 500 ₴", en: "€90", bg: "90 €", kk: "45 000 ₸", pl: "350 zł", pt: "90 €", ro: "450 lei" };
+
+  // App Store country per language. The app is not on the Kazakh or US storefront (iTunes lookup,
+  // 2026-10-12), so kk and en keep the Ukrainian one. On iOS the App Store app shows the visitor's
+  // own storefront anyway; this matters for the web page a desktop browser opens.
+  const APP_STORE_COUNTRY = { uk: "ua", en: "ua", bg: "bg", kk: "ua", pl: "pl", pt: "pt", ro: "ro" };
+  const APP_STORE_PATH = /^https:\/\/apps\.apple\.com\/[a-z]{2}\/app\/[^?]*/;
 
   // Display headings drop the trailing emoji; the copy itself stays as in the app.
   const EMOJI_TAIL = /\s*[\p{Extended_Pictographic}\uFE0F\u200D]+$/u;
