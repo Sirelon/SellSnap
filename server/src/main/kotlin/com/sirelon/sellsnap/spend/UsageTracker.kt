@@ -15,7 +15,7 @@ import java.time.format.DateTimeFormatter
 class UsageTracker(
     private val store: SocialStore,
     private val clock: Clock,
-    private val dailyCallLimit: Int,
+    val dailyCallLimit: Int,
 ) {
     /** Adds one call and its tokens to today's counters of [usage]'s model. */
     suspend fun record(usage: LlmUsage) {

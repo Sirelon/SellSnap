@@ -7,7 +7,7 @@
 #
 #   OWNER_TELEGRAM_ID   the owner's numeric Telegram user id (the only user the bot obeys)
 #   OWNER_EMAIL         receives the Cloud Monitoring alert when a tick fails
-#   [step ...]          run only these steps (1-12); with no argument steps 1-9, 11 and 12 run in order
+#   [step ...]          run only these steps (1-13); with no argument steps 1-9 and 11-13 run in order
 #
 # Every step looks at the live state first and skips what already exists, so the script is safe to
 # run again. Each step that creates a billable or public resource, changes IAM, or changes live
@@ -48,6 +48,9 @@ APIS=(
   cloudscheduler.googleapis.com
   monitoring.googleapis.com
 )
+
+# The Firebase Analytics export that the install attribution reads (design §7).
+ANALYTICS_DATASET=analytics_538260747
 
 LOG_EXCLUSION_NAME=sellsnap-agent-go-requests
 LOG_EXCLUSION_FILTER='resource.type="cloud_run_revision" AND resource.labels.service_name="sellsnap-agent" AND (httpRequest.requestUrl:"/go/" OR httpRequest.requestUrl:"/click")'
@@ -532,6 +535,36 @@ step12_image_cleanup() {
   rm -f "$policy"
 }
 
+# Step 13. The install attribution sync (the closing step of the weekly batch) reads the Firebase Analytics export
+# with one BigQuery query. It needs bigquery.jobUser on the project to run the query and bigquery.dataViewer on the
+# analytics dataset to read it. The dataset grant is an access-list entry with role READER, which is how a dataset
+# stores bigquery.dataViewer. Both are read-only and free: the weekly query scans about 1 MB, far inside BigQuery's
+# free 1 TB of queries a month.
+step13_bigquery_access() {
+  log "Step 13: BigQuery read access for the install attribution"
+  service_account_exists "$AGENT_SA" || { echo "no $AGENT_SA, skipping its BigQuery roles"; return 0; }
+
+  local project_policy dataset
+  project_policy="$(gcloud projects get-iam-policy "$PROJECT" --format=json)"
+  WANT=()
+  member_has_role "$project_policy" roles/bigquery.jobUser "serviceAccount:$AGENT_SA" \
+    || WANT+=("project|$PROJECT|roles/bigquery.jobUser")
+  # [APPROVE] bigquery.jobUser on the project (free)
+  apply_wanted "BigQuery job access"
+
+  dataset="$(api GET "https://bigquery.googleapis.com/bigquery/v2/projects/$PROJECT/datasets/$ANALYTICS_DATASET")"
+  jq -e '.access' <<<"$dataset" >/dev/null || die "could not read the access list of dataset $ANALYTICS_DATASET"
+  if jq -e --arg e "$AGENT_SA" '[.access[]? | select(.role == "READER" and .userByEmail == $e)] | length > 0' <<<"$dataset" >/dev/null; then
+    echo "$AGENT_SA can already read dataset $ANALYTICS_DATASET"
+    return 0
+  fi
+  # [APPROVE] gives the agent read access to the analytics dataset (free, read-only)
+  confirm "Give $AGENT_SA read access (roles/bigquery.dataViewer) to dataset $PROJECT:$ANALYTICS_DATASET, the Firebase Analytics export (free)" || return 0
+  jq --arg e "$AGENT_SA" '{access: (.access + [{role: "READER", userByEmail: $e}])}' <<<"$dataset" \
+    | api PATCH "https://bigquery.googleapis.com/bigquery/v2/projects/$PROJECT/datasets/$ANALYTICS_DATASET" --data-binary @- \
+    | jq '{id, error}'
+}
+
 main() {
   local tool step
   trap '[[ -z "$SECRET_TMP" ]] || rm -f "$SECRET_TMP"' EXIT
@@ -544,7 +577,7 @@ main() {
   local steps=("$@")
   # Step 10 (Cloud Monitoring alert) is off by default: the project runs frugal, and the bot alerts on
   # failures itself. Run it explicitly when the project can afford monitoring.
-  if (( ${#steps[@]} == 0 )); then steps=(1 2 3 4 5 6 7 8 9 11 12); fi
+  if (( ${#steps[@]} == 0 )); then steps=(1 2 3 4 5 6 7 8 9 11 12 13); fi
 
   derive_url
   for step in "${steps[@]}"; do
@@ -561,7 +594,8 @@ main() {
       10) step10_alerting ;;
       11) step11_storage_rules ;;
       12) step12_image_cleanup ;;
-      *) die "unknown step $step (1-12)" ;;
+      13) step13_bigquery_access ;;
+      *) die "unknown step $step (1-13)" ;;
     esac
   done
   log "Done. Smoke test: gcloud scheduler jobs run sellsnap-tick --location $REGION --project $PROJECT"

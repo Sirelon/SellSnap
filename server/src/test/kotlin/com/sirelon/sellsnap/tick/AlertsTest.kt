@@ -51,10 +51,15 @@ class AlertsTest {
         val expires = Instant.parse("2026-11-01T00:00:00Z")
         for (type in AlertType.entries) {
             val text = Alerts.render(AlertRequest(type, "staging", postId = "stt0001", detail = "boom", expiresAt = expires))
-            assertTrue("staging" in text, type.name)
+            // The install sync alert belongs to no account.
+            if (type != AlertType.InstallSyncFailed) assertTrue("staging" in text, type.name)
             assertFalse('\n' in text, type.name)
             assertTrue(text.length < 250, type.name)
         }
+        assertEquals(
+            "Reading Android install attribution from BigQuery failed: HTTP 403 PERMISSION_DENIED. The digest shows the installs synced so far, and the next batch run tries again.",
+            Alerts.render(AlertRequest(AlertType.InstallSyncFailed, AlertRequest.INSTALL_SYNC_ACCOUNT, detail = "HTTP 403 PERMISSION_DENIED")),
+        )
         assertTrue("1 Nov 2026" in Alerts.render(AlertRequest(AlertType.TokenExpiry, "staging", expiresAt = expires)))
     }
 

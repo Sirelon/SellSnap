@@ -33,6 +33,9 @@ enum class AlertType(val key: String) {
 
     /** A batch started for an account but had not finished by 11:00 Kyiv time with no run holding its lease. */
     BatchStalled("batch_stalled"),
+
+    /** The install attribution read failed; it belongs to no account, so [AlertRequest.accountId] is [AlertRequest.INSTALL_SYNC_ACCOUNT]. */
+    InstallSyncFailed("install_sync_failed"),
 }
 
 /**
@@ -52,7 +55,10 @@ data class AlertRequest(
     /** `alert_{type}_{account}_{yyyymmdd}`, the id that keeps one alert per type and account per day. */
     fun eventId(at: Instant): String = "alert_${type.key}_${accountId}_${DAY.format(at)}"
 
-    private companion object {
-        val DAY: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMdd").withZone(ZoneOffset.UTC)
+    companion object {
+        /** The `accountId` of an alert that belongs to no account. */
+        const val INSTALL_SYNC_ACCOUNT = "install-sync"
+
+        private val DAY: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMdd").withZone(ZoneOffset.UTC)
     }
 }

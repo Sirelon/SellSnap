@@ -21,7 +21,9 @@ import com.sirelon.sellsnap.model.SocialAccount
 import com.sirelon.sellsnap.model.BatchAccount
 import com.sirelon.sellsnap.model.SocialBatch
 import com.sirelon.sellsnap.model.SocialClick
+import com.sirelon.sellsnap.model.EventType
 import com.sirelon.sellsnap.model.SocialEvent
+import com.sirelon.sellsnap.model.SocialInstall
 import com.sirelon.sellsnap.model.SocialPost
 import com.sirelon.sellsnap.model.UsageCounters
 import kotlinx.coroutines.Dispatchers
@@ -73,6 +75,14 @@ class FirestoreSocialStore(private val firestore: Firestore) : SocialStore {
         firestore.collection(CLICKS).document(click.id).set(click.toMap()).await()
     }
 
+    override suspend fun clicksSince(since: Instant): List<SocialClick> =
+        firestore.collection(CLICKS).whereGreaterThanOrEqualTo("ts", since.toTimestamp()).get().await()
+            .documents.map { socialClickFromMap(it.id, it.data) }
+
+    override suspend fun eventsSince(since: Instant): List<SocialEvent> =
+        firestore.collection(EVENTS).whereGreaterThanOrEqualTo("at", since.toTimestamp()).get().await()
+            .documents.mapNotNull { socialEventFromMap(it.id, it.data) }
+
     override suspend fun saveMetrics(metrics: PostMetrics) {
         firestore.collection(METRICS).document(metrics.id).set(metrics.toMap()).await()
     }
@@ -84,12 +94,24 @@ class FirestoreSocialStore(private val firestore: Firestore) : SocialStore {
     override suspend fun accountMetrics(accountId: String, day: String): AccountMetrics? =
         accountMetricsDoc("${accountId}_$day").get().await().takeIf { it.exists() }?.data?.let(::accountMetricsFromMap)
 
+    override suspend fun accountMetricsOf(accountId: String): List<AccountMetrics> =
+        firestore.collection(ACCOUNT_METRICS).whereEqualTo("accountId", accountId).get().await()
+            .documents.map { accountMetricsFromMap(it.data) }
+
     override suspend fun claimAccountDay(metrics: AccountMetrics): Boolean =
         createIfAbsent(accountMetricsDoc(metrics.id), metrics.toMap())
 
     override suspend fun saveAccountMetrics(metrics: AccountMetrics) {
         accountMetricsDoc(metrics.id).set(metrics.toMap()).await()
     }
+
+    override suspend fun saveInstall(install: SocialInstall) {
+        firestore.collection(INSTALLS).document(install.id).set(install.toMap()).await()
+    }
+
+    override suspend fun installsOf(accountId: String): List<SocialInstall> =
+        firestore.collection(INSTALLS).whereEqualTo("accountId", accountId).get().await()
+            .documents.map { installFromMap(it.data) }
 
     override suspend fun addUsage(day: String, model: String, delta: UsageCounters) {
         firestore.collection(SPEND).document(day).set(usageIncrements(day, model, delta), SetOptions.merge()).await()
@@ -161,6 +183,7 @@ class FirestoreSocialStore(private val firestore: Firestore) : SocialStore {
         const val METRICS = "social_metrics"
         const val ACCOUNT_METRICS = "social_account_metrics"
         const val SPEND = "social_spend"
+        const val INSTALLS = "social_installs"
         const val BATCHES = "social_batches"
         const val SLOTS = "slots"
     }
@@ -403,6 +426,7 @@ internal fun SocialBatch.toMap(): Map<String, Any?> = mapOf(
     "startedAt" to startedAt?.toTimestamp(),
     "finishedAt" to finishedAt?.toTimestamp(),
     "lastError" to lastError,
+    "digestSent" to digestSent.sorted(),
     "accounts" to accounts.mapValues { (_, account) ->
         mapOf(
             "done" to account.done,
@@ -419,6 +443,7 @@ internal fun batchFromMap(week: String, data: Map<String, Any?>): SocialBatch = 
     startedAt = data.instant("startedAt"),
     finishedAt = data.instant("finishedAt"),
     lastError = data.string("lastError"),
+    digestSent = data.strings("digestSent").toSet(),
     accounts = (data["accounts"] as Map<*, *>?).orEmpty().entries.associate { (id, value) ->
         val fields = value as Map<*, *>
         id as String to BatchAccount(
@@ -427,6 +452,44 @@ internal fun batchFromMap(week: String, data: Map<String, Any?>): SocialBatch = 
             failedSlots = (fields["failedSlots"] as List<*>?)?.map { it as String } ?: emptyList(),
         )
     },
+)
+
+internal fun SocialInstall.toMap(): Map<String, Any?> = mapOf(
+    "accountId" to accountId,
+    "code" to code,
+    "day" to day,
+    "installs" to installs,
+    "syncedAt" to syncedAt.toTimestamp(),
+)
+
+internal fun installFromMap(data: Map<String, Any?>): SocialInstall = SocialInstall(
+    accountId = data.string("accountId").orEmpty(),
+    code = data.string("code").orEmpty(),
+    day = data.string("day").orEmpty(),
+    installs = data.long("installs") ?: 0,
+    syncedAt = data.instant("syncedAt") ?: Instant.EPOCH,
+)
+
+/** Null for an event of a type this version does not know, so a newer writer never breaks a reader. */
+internal fun socialEventFromMap(id: String, data: Map<String, Any?>): SocialEvent? {
+    val type = EventType.entries.firstOrNull { it.wire() == data.string("type") } ?: return null
+    return SocialEvent(
+        id = id,
+        accountId = data.string("accountId").orEmpty(),
+        type = type,
+        at = data.instant("at") ?: Instant.EPOCH,
+        postId = data.string("postId"),
+        detail = data.string("detail"),
+    )
+}
+
+internal fun socialClickFromMap(id: String, data: Map<String, Any?>): SocialClick = SocialClick(
+    id = id,
+    code = data.string("code").orEmpty(),
+    ts = data.instant("ts") ?: Instant.EPOCH,
+    store = data.string("store").orEmpty(),
+    uaFamily = data.string("uaFamily").orEmpty(),
+    countryFromIp = data.string("countryFromIp"),
 )
 
 internal fun SocialClick.toMap(): Map<String, Any?> = mapOf(

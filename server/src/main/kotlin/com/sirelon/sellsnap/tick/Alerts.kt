@@ -60,6 +60,7 @@ class Alerts(
                 AlertType.InsightsFailed -> BotText.alertInsightsFailed(account, detail)
                 AlertType.BatchDeferred -> BotText.alertBatchDeferred(account, request.week.orEmpty(), detail)
                 AlertType.BatchStalled -> BotText.alertBatchStalled(account, request.week.orEmpty())
+                AlertType.InstallSyncFailed -> BotText.alertInstallSyncFailed(detail)
             }
         }
 

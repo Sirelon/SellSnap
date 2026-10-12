@@ -6,10 +6,13 @@ import com.sirelon.sellsnap.content.ContentRules
 import com.sirelon.sellsnap.content.PostCode
 import com.sirelon.sellsnap.content.WeekPlanner
 import com.sirelon.sellsnap.content.occupiedSlots
+import com.sirelon.sellsnap.digest.DigestBuilder
 import com.sirelon.sellsnap.draft.DraftOutcome
 import com.sirelon.sellsnap.draft.DraftPipeline
 import com.sirelon.sellsnap.draft.Prompts
 import com.sirelon.sellsnap.draft.SlotBrief
+import com.sirelon.sellsnap.insights.InstallSync
+import com.sirelon.sellsnap.insights.InsightsCollector
 import com.sirelon.sellsnap.model.BatchAccount
 import com.sirelon.sellsnap.model.Pillar
 import com.sirelon.sellsnap.model.PostKind
@@ -41,6 +44,7 @@ import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withTimeoutOrNull
 import org.slf4j.LoggerFactory
 import java.time.Clock
 import java.time.DateTimeException
@@ -131,9 +135,13 @@ class BatchRunner(
     private val telegram: TelegramApi,
     private val alerts: Alerts,
     private val usage: UsageTracker,
+    private val insights: InsightsCollector,
+    private val installSync: InstallSync,
+    private val digests: DigestBuilder,
     private val clock: Clock,
     private val ownerChatId: Long,
     private val timeout: kotlin.time.Duration = 28.minutes,
+    private val closingTimeout: kotlin.time.Duration = 2.minutes,
     private val newRunId: () -> String = { UUID.randomUUID().toString() },
 ) {
     private val log = LoggerFactory.getLogger(BatchRunner::class.java)
@@ -148,8 +156,24 @@ class BatchRunner(
         class Taken(val accountIds: Set<String>) : Claim
     }
 
-    /** [accountIds] null means every account with a token that is not paused and has `batchEnabled`. */
+    /**
+     * [accountIds] null means every account with a token that is not paused and has `batchEnabled`. However drafting
+     * ends, the closing step sends the Sunday digests, unless another run holds the lease and sends them itself.
+     */
     suspend fun run(accountIds: List<String>? = null): BatchResult {
+        val week = IsoWeek.key(IsoWeek.targetMonday(clock.instant()))
+        var result: BatchResult? = null
+        try {
+            result = draft(accountIds)
+            return result
+        } finally {
+            if (result !is BatchResult.Running) {
+                withContext(NonCancellable) { closing(week, accountIds) }
+            }
+        }
+    }
+
+    private suspend fun draft(accountIds: List<String>?): BatchResult {
         val start = clock.instant()
         val monday = IsoWeek.targetMonday(start)
         val week = IsoWeek.key(monday)
@@ -454,6 +478,76 @@ class BatchRunner(
             quietly { telegram.sendMessage(ownerChatId, BotText.batchClosing(failed, usage.callsToday())) }
         }
     }
+
+    /**
+     * The closing step: sends the Sunday digest to every account in [accountIds] (every account when null) that
+     * has a token and has not got this week's digest. Paused accounts and accounts with `batchEnabled = false` get it too.
+     * Each account is claimed in `social_batches/{week}.digestSent` before anything is read, so two runs never both send;
+     * a digest that cannot be built or sent gives its claim back, and a later run tries again.
+     * Order: claim, one forced insights collection per claimed account, one install sync, then the digests.
+     * No step here throws, and the whole step stops at [closingTimeout].
+     */
+    private suspend fun closing(week: String, accountIds: List<String>?) {
+        // Claimed and not sent; whatever is left here after the step goes back, so the next run sends it.
+        val unsent = mutableSetOf<String>()
+        try {
+            withTimeoutOrNull(closingTimeout) {
+                val accounts = store.accounts().sortedBy { it.id }
+                    .filter { it.token != null && (accountIds == null || it.id in accountIds) }
+                val claimed = accounts.filter { claimDigest(week, it.id) }
+                unsent += claimed.map { it.id }
+                if (claimed.isEmpty()) return@withTimeoutOrNull
+                for (account in claimed) {
+                    attempt("insights for ${account.id}") {
+                        insights.collect(account.id, force = true).alerts.forEach { alert -> attempt("an insights alert") { alerts.sendOnce(alert) } }
+                    }
+                }
+                attempt("the install sync") { installSync.run() }
+                for (account in claimed) {
+                    val sent = attempt("the digest for ${account.id}") {
+                        telegram.sendMessage(ownerChatId, digests.build(account, usage.dailyCallLimit))
+                    }
+                    if (sent) unsent -= account.id
+                }
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            log.error("The closing step of batch {} failed: {}", week, e::class.simpleName)
+        } finally {
+            for (id in unsent) attempt("giving back the digest claim of $id") { releaseDigest(week, id) }
+        }
+    }
+
+    /** True when this call recorded the digest of [accountId] as sent; false when an earlier call did. */
+    private suspend fun claimDigest(week: String, accountId: String): Boolean = store.transaction { tx ->
+        val current = tx.batch(week) ?: SocialBatch(week)
+        if (accountId in current.digestSent) {
+            false
+        } else {
+            tx.putBatch(current.copy(digestSent = current.digestSent + accountId))
+            true
+        }
+    }
+
+    private suspend fun releaseDigest(week: String, accountId: String) {
+        store.transaction { tx ->
+            val current = tx.batch(week)
+            if (current != null) tx.putBatch(current.copy(digestSent = current.digestSent - accountId))
+        }
+    }
+
+    /** Runs a closing step; any failure is logged without detail that could hold a secret, and the result says whether the step worked. */
+    private suspend fun attempt(what: String, block: suspend () -> Unit): Boolean =
+        try {
+            block()
+            true
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            log.warn("Batch closing: {} failed: {}: {}", what, e::class.simpleName, redact(e.message.orEmpty()).take(MAX_DETAIL))
+            false
+        }
 
     /** Runs a Telegram step; a [TelegramFailure] is logged and dropped. */
     private suspend fun quietly(block: suspend () -> Unit) {

@@ -4,6 +4,8 @@ import com.sirelon.sellsnap.AgentFixture
 import com.sirelon.sellsnap.brand.BrandContext
 import com.sirelon.sellsnap.brand.ReleaseChange
 import com.sirelon.sellsnap.brand.ReleaseNotes
+import com.sirelon.sellsnap.brand.ReleaseNotesSource
+import com.sirelon.sellsnap.digest.DigestBuilder
 import com.sirelon.sellsnap.draft.DraftChecker
 import com.sirelon.sellsnap.draft.DraftPipeline
 import com.sirelon.sellsnap.draft.Drafter
@@ -12,6 +14,9 @@ import com.sirelon.sellsnap.fakes.FakeReleaseNotesSource
 import com.sirelon.sellsnap.fakes.FakeTelegramApi
 import com.sirelon.sellsnap.fakes.testAccount
 import com.sirelon.sellsnap.fakes.testPost
+import com.sirelon.sellsnap.insights.InsightsCollector
+import com.sirelon.sellsnap.insights.InstallRow
+import com.sirelon.sellsnap.insights.InstallSync
 import com.sirelon.sellsnap.llm.LlmClient
 import com.sirelon.sellsnap.llm.LlmRequest
 import com.sirelon.sellsnap.llm.LlmResult
@@ -26,6 +31,7 @@ import com.sirelon.sellsnap.spend.UsageTracker
 import com.sirelon.sellsnap.telegram.InlineKeyboardMarkup
 import com.sirelon.sellsnap.telegram.PreviewSender
 import com.sirelon.sellsnap.telegram.Previews
+import com.sirelon.sellsnap.telegram.TelegramFailure
 import com.sirelon.sellsnap.tick.Alerts
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runTest
@@ -91,10 +97,11 @@ class BatchRunnerTest {
 
         val texts = fx.sentTexts()
         assertEquals("@sellsnap.ua, week 2026-W43: 12 drafts", texts.first())
-        assertEquals(14, texts.size)
+        assertEquals(15, texts.size)
         assertTrue(texts[1].startsWith("@sellsnap.ua | ukt0001 | Mon 19 Oct 08:30"))
         assertTrue(texts[12].startsWith("@sellsnap.ua | ukt0012 | Sun 25 Oct 08:30"))
-        assertEquals("Failed slots: none; AI calls today: 24.", texts.last())
+        assertEquals("Failed slots: none; AI calls today: 24.", texts[13])
+        assertTrue(texts.last().startsWith("@sellsnap.ua, digest for "))
         assertEquals(listOf("Approve", "Edit", "Skip"), buttons(fx.telegram.callsOf<FakeTelegramApi.Call.Sent>()[1]).take(3))
     }
 
@@ -145,7 +152,9 @@ class BatchRunnerTest {
         assertEquals(setOf("2026-W43/ua_1-1", "2026-W43/ua_1-2"), fx.memory.allMarkers.keys)
         val afterFirst = fx.sentTexts()
         assertTrue(afterFirst.none { it.startsWith("@sellsnap.ua, week") }, "no previews while drafting is unfinished")
-        assertTrue(afterFirst.single().startsWith("Drafting for ua, week 2026-W43, stopped: The model is busy"))
+        assertEquals(2, afterFirst.size)
+        assertTrue(afterFirst.first().startsWith("Drafting for ua, week 2026-W43, stopped: The model is busy"))
+        assertTrue(afterFirst.last().startsWith("@sellsnap.ua, digest for "), "the digest closes even an unfinished run")
 
         val second = fx.graph.batch.run()
 
@@ -251,6 +260,9 @@ class BatchRunnerTest {
             telegram = fx.telegram,
             alerts = Alerts(fx.store, fx.telegram, fx.clock, AgentFixture.OWNER),
             usage = usage,
+            insights = InsightsCollector(fx.store, fx.threads, fx.clock),
+            installSync = InstallSync(fx.store, fx.installs, Alerts(fx.store, fx.telegram, fx.clock, AgentFixture.OWNER), fx.clock),
+            digests = DigestBuilder(fx.store, fx.clock),
             clock = fx.clock,
             ownerChatId = AgentFixture.OWNER,
             timeout = 1.minutes,
@@ -372,7 +384,7 @@ class BatchRunnerTest {
         val entry = fx.memory.allBatches.getValue("2026-W43").accounts.getValue("ua")
         assertTrue(entry.done)
         assertEquals(listOf("2-2"), entry.failedSlots)
-        assertEquals("Failed slots: Tue slot 2; AI calls today: 24.", fx.sentTexts().last())
+        assertEquals("Failed slots: Tue slot 2; AI calls today: 24.", fx.sentTexts().single { it.startsWith("Failed slots") })
 
         llm.tooLongSlots.clear()
         val rerun = fx.graph.batch.run()
@@ -430,6 +442,155 @@ class BatchRunnerTest {
 
         assertTrue(llm.draftRequests.none { "PILLAR: product update" in it.user })
         assertEquals(12, fx.batchPosts("ua").count { it.pillar == Pillar.Tip })
+    }
+
+    private fun AgentFixture.digests() = sentTexts().filter { ", digest for " in it }
+
+    /** A runner over [fx] that reads releases from [releases], for tests that need a release store that fails. */
+    private fun runnerWith(fx: AgentFixture, releases: ReleaseNotesSource): BatchRunner {
+        val usage = UsageTracker(fx.store, fx.clock, fx.config.dailyCallLimit)
+        val brand = BrandContext.load()
+        val pipeline = DraftPipeline(Drafter(llm.client, usage, brand, fx.config.draftModel), DraftChecker(llm.client, usage, brand, fx.config.checkModel))
+        val previews = Previews(fx.images, fx.config.postLinkTemplate)
+        val alerts = Alerts(fx.store, fx.telegram, fx.clock, AgentFixture.OWNER)
+        return BatchRunner(
+            store = fx.store,
+            pipeline = pipeline,
+            releases = releases,
+            previews = previews,
+            sender = PreviewSender(fx.telegram, previews, fx.store, AgentFixture.OWNER),
+            telegram = fx.telegram,
+            alerts = alerts,
+            usage = usage,
+            insights = InsightsCollector(fx.store, fx.threads, fx.clock),
+            installSync = InstallSync(fx.store, fx.installs, alerts, fx.clock),
+            digests = DigestBuilder(fx.store, fx.clock),
+            clock = fx.clock,
+            ownerChatId = AgentFixture.OWNER,
+        )
+    }
+
+    @Test
+    fun theDigestClosesTheBatchAfterTheClosingLineWithFreshInsightsAndInstalls() = runTest {
+        val fx = fixture().also { it.ua() }
+        fx.installs.rows = listOf(InstallRow("20261016", "ukt0001", 2), InstallRow("20261016", "zzz0001", 7))
+
+        val result = fx.graph.batch.run()
+
+        assertIs<BatchResult.Done>(result)
+        val texts = fx.sentTexts()
+        assertEquals(15, texts.size)
+        assertEquals("Failed slots: none; AI calls today: 24.", texts[13])
+        val digest = texts.last()
+        assertTrue(digest.startsWith("@sellsnap.ua, digest for 11 Oct 2026 to 18 Oct 2026\n"), digest)
+        assertEquals(1, fx.digests().size)
+        // One forced collection of the account's day, before the digest read the follower count.
+        assertEquals(1, fx.threads.callsTo("followersCount").size)
+        assertTrue("Followers now: 1234." in digest, digest)
+        // One install sync; the install of the drafted post counts, the unknown code does not.
+        assertEquals(1, fx.installs.windows.size)
+        assertEquals(setOf("20261016_ukt0001"), fx.memory.allInstalls.keys)
+        assertTrue("Android installs from Threads: 2 (ukt0001: 2)." in digest, digest)
+        assertTrue("gemini-3.8-flash: " in digest, digest)
+        assertEquals(setOf("ua"), fx.memory.allBatches.getValue("2026-W43").digestSent)
+        assertTrue(digest.length < 4096)
+    }
+
+    @Test
+    fun theDigestIsStillSentWhenDraftingFails() = runTest {
+        val fx = fixture().also { it.ua() }
+        val brokenReleases = object : ReleaseNotesSource {
+            override suspend fun activeReleases(): List<ReleaseNotes> = error("the release store is down")
+        }
+
+        val result = runnerWith(fx, brokenReleases).run()
+
+        assertIs<BatchResult.Failed>(result)
+        assertEquals(AccountStatus.Failed, result.accounts.single().status)
+        assertEquals(0, fx.batchPosts("ua").size)
+        assertEquals(1, fx.digests().size)
+        assertEquals(setOf("ua"), fx.memory.allBatches.getValue("2026-W43").digestSent)
+    }
+
+    @Test
+    fun theDigestIsStillSentWhenTheRunStoppedOnABusyModel() = runTest {
+        val fx = fixture().also { it.ua() }
+        llm.failOnCall += 1
+
+        assertIs<BatchResult.Deferred>(fx.graph.batch.run())
+
+        assertEquals(1, fx.digests().size)
+    }
+
+    @Test
+    fun aPausedAccountAndOneWithBatchesOffGetTheDigestAndOneWithoutATokenDoesNot() = runTest {
+        val fx = fixture()
+        fx.ua { it.copy(paused = true) }
+        fx.pl { it.copy(batchEnabled = false) }
+        fx.memory.put(testAccount(id = "other", codePrefix = "ot", language = "uk"))
+
+        val result = fx.graph.batch.run()
+
+        assertEquals(BatchResult.Done("2026-W43", emptyList()), result)
+        assertEquals(0, llm.calls)
+        assertEquals(listOf("@sellsnap.pl", "@sellsnap.ua"), fx.digests().map { it.substringBefore(",") }.sorted())
+        assertEquals(setOf("pl", "ua"), fx.memory.allBatches.getValue("2026-W43").digestSent)
+        // Every digest account got its own forced collection.
+        assertEquals(2, fx.threads.callsTo("followersCount").size)
+    }
+
+    @Test
+    fun aRerunDoesNotSendTheDigestAgain() = runTest {
+        val fx = fixture().also { it.ua() }
+        fx.graph.batch.run()
+        val sent = fx.telegram.calls.size
+        val followerCalls = fx.threads.callsTo("followersCount").size
+
+        assertIs<BatchResult.AlreadyDone>(fx.graph.batch.run())
+
+        assertEquals(1, fx.digests().size)
+        assertEquals(sent, fx.telegram.calls.size)
+        assertEquals(followerCalls, fx.threads.callsTo("followersCount").size, "no new collection for an account that has its digest")
+        assertEquals(1, fx.installs.windows.size)
+    }
+
+    @Test
+    fun aDigestThatTelegramRefusesGivesItsClaimBackAndTheNextRunSendsIt() = runTest {
+        val fx = fixture()
+        fx.ua { it.copy(paused = true) }
+        fx.telegram.failNext("sendMessage", TelegramFailure("Telegram is down"))
+
+        fx.graph.batch.run()
+
+        assertEquals(0, fx.digests().size)
+        assertEquals(emptySet(), fx.memory.allBatches.getValue("2026-W43").digestSent)
+
+        fx.graph.batch.run()
+        fx.graph.batch.run()
+
+        assertEquals(1, fx.digests().size)
+        assertEquals(setOf("ua"), fx.memory.allBatches.getValue("2026-W43").digestSent)
+    }
+
+    @Test
+    fun aManualRunSendsTheDigestOnlyToTheAccountsItNames() = runTest {
+        val fx = fixture().also { it.ua(); it.pl() }
+
+        fx.graph.batch.run(listOf("ua"))
+
+        assertEquals(listOf("@sellsnap.ua"), fx.digests().map { it.substringBefore(",") })
+        assertEquals(setOf("ua"), fx.memory.allBatches.getValue("2026-W43").digestSent)
+    }
+
+    @Test
+    fun aRunThatFindsTheLeaseHeldSendsNoDigest() = runTest {
+        val fx = fixture().also { it.ua() }
+        fx.memory.put(SocialBatch("2026-W43", runId = "other", leaseUntil = SUNDAY.plusSeconds(120), startedAt = SUNDAY, accounts = mapOf("ua" to BatchAccount())))
+
+        assertEquals(BatchResult.Running("2026-W43"), fx.graph.batch.run())
+
+        assertEquals(0, fx.digests().size)
+        assertEquals(emptySet(), fx.memory.allBatches.getValue("2026-W43").digestSent)
     }
 
     private companion object {

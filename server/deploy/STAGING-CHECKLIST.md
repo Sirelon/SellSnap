@@ -77,20 +77,28 @@ Meta's docs do not say whether a private profile can publish through the API. Th
 19. Send `/token ua <valid token>`. Expect `Token saved for ua.`
 20. Send `/resume ua`. Expect `@sellsnap.app is resumed.` Then `/post ua now Check four: recovered` publishes. Delete it with its Delete button.
 
-## 8. Redirect `/go`
+## 8. Website links
 
-21. Take a published code from the previous steps. `/go` answers GET only (a HEAD request, such as `curl -I`, gets 404). In a terminal:
+Posts link to the website, which reports visits and store taps to `POST /click`. Take a published code from the steps above, for example `ukt0001`; it stays `<code>` below.
 
-    ```bash
-    curl -s -o /dev/null -D - -A 'Mozilla/5.0 (Linux; Android 14; Pixel 8)' "$URL/go/<code>"
-    ```
+21. On an Android phone open `https://sirelon.github.io/SellSnap/?lang=uk&p=<code>`. The page loads in Ukrainian. Tap the Google Play button. Expect the Play Store page and, before leaving the page, the button's `href` reading `https://play.google.com/store/apps/details?id=com.sirelon.sellsnap&referrer=utm_source%3Dthreads%26utm_medium%3Dsocial%26utm_campaign%3Duk%26utm_content%3D<code>`. Check the `href` in a desktop browser's inspector on the same URL if the phone hides it.
+22. On an iPhone open the same URL and tap the App Store button. Expect the App Store page `apps.apple.com/app/id6776001373`, and the button's `href` carrying `ct=<code>`.
+23. In a desktop browser open the same URL and tap both store buttons. Expect each button to open its store page and to carry the rewritten `href` of steps 21 and 22.
+24. Firestore `social_clicks` holds one `landing` document per page load and one `play` or `appstore` document per tap, with the `uaFamily` of the device (`android`, `ios`, `other`), all with `code` `<code>`: after steps 21 to 23, three `landing`, two `play` and two `appstore` documents. `https://sirelon.github.io/SellSnap/?lang=uk` without `p`, and a page with an unknown code such as `p=ukt9999`, add no document and leave the store `href`s as they are.
+25. Cloud Logging has no request log for `/click` or `/go`: `gcloud logging read 'resource.type="cloud_run_revision" AND (httpRequest.requestUrl:"/click" OR httpRequest.requestUrl:"/go/")' --freshness=1h --limit=3 --project sellsnap-6e85c` prints nothing.
 
-    Expect `302`, `cache-control: no-store`, no `set-cookie`, and `location: https://play.google.com/store/apps/details?id=com.sirelon.sellsnap&referrer=utm_source%3Dthreads%26utm_medium%3Dsocial%26utm_campaign%3D...`.
-22. Open `$URL/go/<code>` on an iPhone. It lands on the App Store page `apps.apple.com/app/id6776001373?ct=<code>`.
-23. Open it in a desktop browser. It lands on `https://sirelon.github.io/SellSnap/`.
-24. `curl -s -o /dev/null -D - "$URL/go/stt9999"` (an unknown code) goes to the landing page. Firestore `social_clicks` holds one document per step 21 to 23 and none for the unknown code or for the Threads link-preview bot.
-25. Cloud Logging has no request log for `/go`: `gcloud logging read 'resource.type="cloud_run_revision" AND httpRequest.requestUrl:"/go/"' --freshness=1h --limit=3 --project sellsnap-6e85c` prints nothing.
+## 9. Weekly batch, previews, regenerate and digest
 
-## 9. Clean up
+Needs the `GEMINI_API_KEY` secret on the service, and `server/deploy/deploy.sh 13` done for the install line of the digest. The manual job `sellsnap-batch-manual` runs the batch for `ua` only.
 
-26. Delete every test post still on `@sellsnap.app` with its Delete button, then send `/approval ua`. The seed tips stay queued.
+26. `gcloud scheduler jobs run sellsnap-batch-manual --location europe-west1 --project sellsnap-6e85c`. Within a few minutes the bot chat receives, in this order: one header `@sellsnap.app, week <yyyy>-W<nn>: <n> drafts`, one preview per draft (each header line holds the account, the code, the slot and, when the checks found something, `needs attention`; the buttons are Approve, Edit, Skip and Regenerate), the closing line `Failed slots: none; AI calls today: <n>.`, then the digest. Firestore `social_batches/<week>` shows `accounts.ua.done: true` and `digestSent` holding `ua`.
+27. Polish back-translation. For a Polish account that has a token, point the manual job at it for one run: `gcloud scheduler jobs update http sellsnap-batch-manual --location europe-west1 --project sellsnap-6e85c --message-body '{"accounts":["pl"]}'`, run it as in step 26, then set the body back to `{"accounts":["ua"]}`. Every Polish preview ends with a line `EN: <English back-translation>`; a draft whose checks found a problem also ends with `Check: <notes>` and carries `needs attention` in its header.
+28. Regenerate. Tap Regenerate under one preview. The bot answers `Writing a new version…` and the preview's text is replaced within a minute; Firestore `social_posts/<code>.regenerations` is `1`. The fourth tap on the same post answers `No more new versions for this post.`
+29. Approve. Tap Approve under a preview. Expect `Approved.` and the buttons change to Cancel; Firestore `social_posts/<code>.status` is `approved`. The post publishes at its slot.
+30. The digest message starts `@sellsnap.app, digest for <d MMM yyyy> to <d MMM yyyy>` and holds every line: `Follower change` (in the first week `n/a (first snapshot on <date>)` and `Followers now: <n>.`), `Posts published`, `Views` and `Replies`, `Clicks on all posts` split into landing, play and appstore, `Top 3 by views` and `Bottom <n> by views` with each post's code, the start of its text, its views, replies and clicks, `Android installs from Threads`, `Events` (errors, pauses, resumes, mode changes, deletes) and `Model use, last 7 UTC days` with calls and tokens per model against the daily call limit. Without any views figure the lists read `by likes + replies (views unavailable)`.
+31. Run step 26 again. No second digest arrives, and no new draft: the batch answers `already done`. To see the digest again, remove `ua` from `digestSent` of `social_batches/<week>` in the console and run the job.
+32. Install attribution. On an Android phone with SellSnap uninstalled, open `https://sirelon.github.io/SellSnap/?lang=uk&p=<code>`, tap the Google Play button, install, and open the app once. The Firebase export lists the install after about a day: remove `ua` from `digestSent` as in step 31 and run the manual job again, then check that Firestore `social_installs/<yyyymmdd>_<code>` exists with `installs: 1` and that the next digest's `Android installs from Threads` line names `<code>`. Android installs only; iOS installs are not attributed.
+
+## 10. Clean up
+
+33. Delete every test post still on `@sellsnap.app` with its Delete button, then send `/approval ua`. The seed tips stay queued.

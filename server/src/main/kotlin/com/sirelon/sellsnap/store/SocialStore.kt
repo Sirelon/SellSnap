@@ -7,6 +7,7 @@ import com.sirelon.sellsnap.model.SocialAccount
 import com.sirelon.sellsnap.model.SocialBatch
 import com.sirelon.sellsnap.model.SocialClick
 import com.sirelon.sellsnap.model.SocialEvent
+import com.sirelon.sellsnap.model.SocialInstall
 import com.sirelon.sellsnap.model.SocialPost
 import com.sirelon.sellsnap.model.UsageCounters
 import java.time.Instant
@@ -42,6 +43,12 @@ interface SocialStore {
 
     suspend fun logClick(click: SocialClick)
 
+    /** Every click logged at or after [since], for all codes. */
+    suspend fun clicksSince(since: Instant): List<SocialClick>
+
+    /** Every event recorded at or after [since], for all accounts. */
+    suspend fun eventsSince(since: Instant): List<SocialEvent>
+
     /** Writes the post's snapshot for its day, replacing an earlier one of the same day. */
     suspend fun saveMetrics(metrics: PostMetrics)
 
@@ -50,11 +57,20 @@ interface SocialStore {
 
     suspend fun accountMetrics(accountId: String, day: String): AccountMetrics?
 
+    /** Every follower snapshot of [accountId]. */
+    suspend fun accountMetricsOf(accountId: String): List<AccountMetrics>
+
     /** Writes the account-day document unless it exists; true when written. This marks the day as collected. */
     suspend fun claimAccountDay(metrics: AccountMetrics): Boolean
 
     /** Writes the account-day document, replacing an existing one; used by a forced collection. */
     suspend fun saveAccountMetrics(metrics: AccountMetrics)
+
+    /** Writes the install count of its day and code, replacing an earlier one. */
+    suspend fun saveInstall(install: SocialInstall)
+
+    /** Every install count of [accountId]'s posts. */
+    suspend fun installsOf(accountId: String): List<SocialInstall>
 
     /** Adds [delta] to [model]'s counters in `social_spend/{day}` (`yyyyMMdd`, UTC) atomically; concurrent calls never lose an increment. */
     suspend fun addUsage(day: String, model: String, delta: UsageCounters)

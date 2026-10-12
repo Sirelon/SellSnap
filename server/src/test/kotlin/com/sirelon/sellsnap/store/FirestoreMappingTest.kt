@@ -12,7 +12,11 @@ import com.sirelon.sellsnap.model.PostKind
 import com.sirelon.sellsnap.model.PostMetrics
 import com.sirelon.sellsnap.model.PostSource
 import com.sirelon.sellsnap.model.PostStatus
+import com.sirelon.sellsnap.model.EventType
 import com.sirelon.sellsnap.model.SocialBatch
+import com.sirelon.sellsnap.model.SocialClick
+import com.sirelon.sellsnap.model.SocialEvent
+import com.sirelon.sellsnap.model.SocialInstall
 import com.sirelon.sellsnap.model.UsageCounters
 import java.time.Instant
 import kotlin.test.Test
@@ -165,11 +169,28 @@ class FirestoreMappingTest {
                 "pl" to BatchAccount(),
             ),
             lastError = "boom",
+            digestSent = setOf("ua", "pl"),
         )
 
         assertEquals(batch, batchFromMap("2026-W43", batch.toMap()))
         assertEquals(SocialBatch("2026-W44"), batchFromMap("2026-W44", SocialBatch("2026-W44").toMap()))
         assertEquals(false, accountFromMap("ua", testAccount().copy(batchEnabled = false).toMap()).batchEnabled)
+    }
+
+    @Test
+    fun installsEventsAndClicksSurviveAMapRoundTrip() {
+        val install = SocialInstall("ua", "ukt0001", "20261016", 3, instant)
+        assertEquals(install, installFromMap(install.toMap()))
+        assertEquals("20261016_ukt0001", install.id)
+
+        val event = SocialEvent("e1", "ua", EventType.ModeChange, instant, postId = "ukt0001", detail = "auto")
+        val stored = event.toMap()
+        assertEquals("modechange", stored["type"])
+        assertEquals(event, socialEventFromMap("e1", stored))
+        assertEquals(null, socialEventFromMap("e2", stored + ("type" to "from_the_future")), "an unknown event type is left out")
+
+        val click = SocialClick("c1", "ukt0001", instant, "play", "android", "UA")
+        assertEquals(click, socialClickFromMap("c1", click.toMap()))
     }
 
     @Test

@@ -10,6 +10,7 @@ import com.sirelon.sellsnap.model.SocialAccount
 import com.sirelon.sellsnap.model.SocialBatch
 import com.sirelon.sellsnap.model.SocialClick
 import com.sirelon.sellsnap.model.SocialEvent
+import com.sirelon.sellsnap.model.SocialInstall
 import com.sirelon.sellsnap.model.SocialPost
 import com.sirelon.sellsnap.model.UsageCounters
 import com.sirelon.sellsnap.store.SocialStore
@@ -51,6 +52,9 @@ class InMemorySocialStore : SocialStore {
     private var usageMap = mapOf<String, Map<String, UsageCounters>>()
 
     @Volatile
+    private var installMap = mapOf<String, SocialInstall>()
+
+    @Volatile
     private var batchMap = mapOf<String, SocialBatch>()
 
     /** Slot markers by `week/key`, each holding the id of the post that the slot produced. */
@@ -59,6 +63,18 @@ class InMemorySocialStore : SocialStore {
 
     val allBatches: Map<String, SocialBatch> get() = batchMap
     val allMarkers: Map<String, String> get() = markerMap
+
+    val allInstalls: Map<String, SocialInstall> get() = installMap
+
+    /** Test setup: writes outside any transaction. */
+    fun put(event: SocialEvent) {
+        eventMap = eventMap + (event.id to event)
+    }
+
+    /** Test setup: writes outside any transaction. */
+    fun put(click: SocialClick) {
+        clickList = clickList + click
+    }
 
     val allUsage: Map<String, Map<String, UsageCounters>> get() = usageMap
     val allMetrics: Map<String, PostMetrics> get() = metricsMap
@@ -134,6 +150,10 @@ class InMemorySocialStore : SocialStore {
         clickList = clickList + click
     }
 
+    override suspend fun clicksSince(since: Instant): List<SocialClick> = clickList.filter { !it.ts.isBefore(since) }
+
+    override suspend fun eventsSince(since: Instant): List<SocialEvent> = eventMap.values.filter { !it.at.isBefore(since) }
+
     override suspend fun saveMetrics(metrics: PostMetrics) = mutex.withLock {
         metricsMap = metricsMap + (metrics.id to metrics)
     }
@@ -143,6 +163,9 @@ class InMemorySocialStore : SocialStore {
 
     override suspend fun accountMetrics(accountId: String, day: String): AccountMetrics? =
         accountMetricsMap["${accountId}_$day"]
+
+    override suspend fun accountMetricsOf(accountId: String): List<AccountMetrics> =
+        accountMetricsMap.values.filter { it.accountId == accountId }
 
     override suspend fun claimAccountDay(metrics: AccountMetrics): Boolean = mutex.withLock {
         if (metrics.id in accountMetricsMap) {
@@ -156,6 +179,13 @@ class InMemorySocialStore : SocialStore {
     override suspend fun saveAccountMetrics(metrics: AccountMetrics) = mutex.withLock {
         accountMetricsMap = accountMetricsMap + (metrics.id to metrics)
     }
+
+    override suspend fun saveInstall(install: SocialInstall) = mutex.withLock {
+        installMap = installMap + (install.id to install)
+    }
+
+    override suspend fun installsOf(accountId: String): List<SocialInstall> =
+        installMap.values.filter { it.accountId == accountId }
 
     override suspend fun addUsage(day: String, model: String, delta: UsageCounters) = mutex.withLock {
         val models = usageMap[day].orEmpty()

@@ -5,6 +5,7 @@ import com.sirelon.sellsnap.model.PostStatus
 import com.sirelon.sellsnap.threads.DeferReason
 import java.time.DayOfWeek
 import java.time.Instant
+import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
@@ -67,6 +68,51 @@ object BotText {
         val day = slot.substringBefore('-').toIntOrNull()?.takeIf { it in 1..7 } ?: return slot
         return "${DayOfWeek.of(day).getDisplayName(TextStyle.SHORT, Locale.ENGLISH)} slot ${slot.substringAfter('-')}"
     }
+
+    // Sunday digest. A plain-text report of up to a few dozen short lines, not a one-line reply.
+    const val DIGEST_NO_USAGE = "Model use: no calls this week."
+    const val DIGEST_NO_FOLLOWER_SNAPSHOT = "Follower change: unavailable, there is no follower snapshot yet."
+    const val DIGEST_FOLLOWERS_UNAVAILABLE = "Follower change: unavailable, Threads returned no follower count today."
+
+    fun digestHeader(handle: String, from: LocalDate, to: LocalDate): String =
+        "@$handle, digest for ${day(from)} to ${day(to)}"
+
+    fun digestFollowerChange(change: Long, since: LocalDate, now: Long): String =
+        "Follower change: ${if (change > 0) "+" else ""}$change since ${day(since)} (now $now)."
+
+    fun digestFollowerFirstSnapshot(first: LocalDate, now: Long): String =
+        "Follower change: n/a (first snapshot on ${day(first)}). Followers now: $now."
+
+    fun digestPosts(published: Int, views: Long, viewsMissing: Int, replies: Long): String =
+        "Posts published: $published. Views: $views" +
+            (if (viewsMissing > 0) " ($viewsMissing without a views figure)" else "") +
+            ". Replies: $replies."
+
+    fun digestRankingTitle(top: Boolean, count: Int, byViews: Boolean): String =
+        "${if (top) "Top" else "Bottom"} $count by ${if (byViews) "views" else "likes + replies (views unavailable)"}:"
+
+    fun digestPostLine(rank: Int, code: String, start: String, figures: String, landing: Int, play: Int, appStore: Int): String =
+        "$rank. $code \"$start\" - $figures; clicks: landing $landing, play $play, appstore $appStore."
+
+    fun digestFigures(byViews: Boolean, views: Long?, likes: Long, replies: Long): String =
+        if (byViews) "${count(views ?: 0, "view", "views")}, ${count(replies, "reply", "replies")}"
+        else "${count(likes, "like", "likes")}, ${count(replies, "reply", "replies")}"
+
+    private fun count(n: Long, one: String, many: String): String = "$n ${if (n == 1L) one else many}"
+
+    fun digestClicks(landing: Int, play: Int, appStore: Int): String =
+        "Clicks on all posts: landing $landing, play $play, appstore $appStore."
+
+    fun digestInstalls(total: Long, byCode: List<Pair<String, Long>>): String =
+        "Android installs from Threads: $total" + if (byCode.isEmpty()) "." else " (${byCode.joinToString(", ") { "${it.first}: ${it.second}" }})."
+
+    fun digestEvents(errors: Int, pauses: Int, resumes: Int, modeChanges: Int, deletes: Int): String =
+        "Events: errors $errors, pauses $pauses, resumes $resumes, mode changes $modeChanges, deletes $deletes."
+
+    fun digestModel(model: String, calls: Long, tokens: Long, peakCalls: Long, dailyLimit: Int): String =
+        "$model: $calls calls, $tokens tokens, busiest day $peakCalls of $dailyLimit calls"
+
+    fun digestUsage(models: List<String>): String = "Model use, last 7 UTC days, all accounts: ${models.joinToString("; ")}."
 
     fun batchDrafting(accountId: String): String = "A batch is drafting for $accountId, try again in a few minutes."
 
@@ -231,8 +277,14 @@ object BotText {
     fun alertInsightsFailed(accountId: String, detail: String): String =
         "Reading Threads insights for $accountId failed: $detail. The account keeps publishing, and the next tick tries again."
 
+    fun alertInstallSyncFailed(detail: String): String =
+        "Reading Android install attribution from BigQuery failed: $detail. The digest shows the installs synced so far, and the next batch run tries again."
+
     // Formatting
     private val DATE: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMM yyyy", Locale.ENGLISH).withZone(ZoneOffset.UTC)
+    private val DAY: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMM yyyy", Locale.ENGLISH)
+
+    fun day(date: LocalDate): String = DAY.format(date)
     private val SLOT: DateTimeFormatter = DateTimeFormatter.ofPattern("EEE d MMM HH:mm", Locale.ENGLISH)
 
     fun date(at: Instant): String = DATE.format(at)

@@ -15,6 +15,11 @@ data class SocialBatch(
     val finishedAt: Instant? = null,
     val accounts: Map<String, BatchAccount> = emptyMap(),
     val lastError: String? = null,
+    /**
+     * Ids of the accounts whose Sunday digest went out for this batch week. It is a set of its own, not part of
+     * [accounts]: a paused account gets the digest but takes no part in drafting, and an entry in [accounts] would count as unfinished drafting.
+     */
+    val digestSent: Set<String> = emptySet(),
 ) {
     fun leaseHeld(now: Instant): Boolean = runId != null && leaseUntil?.isAfter(now) == true
 }

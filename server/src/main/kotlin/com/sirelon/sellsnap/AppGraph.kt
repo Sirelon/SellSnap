@@ -6,13 +6,18 @@ import com.sirelon.sellsnap.batch.BatchRunner
 import com.sirelon.sellsnap.brand.BrandContext
 import com.sirelon.sellsnap.brand.FirestoreReleaseNotesSource
 import com.sirelon.sellsnap.brand.ReleaseNotesSource
+import com.sirelon.sellsnap.digest.DigestBuilder
 import com.sirelon.sellsnap.draft.DraftChecker
 import com.sirelon.sellsnap.draft.DraftPipeline
 import com.sirelon.sellsnap.draft.Drafter
 import com.sirelon.sellsnap.http.GoogleOidcVerifier
 import com.sirelon.sellsnap.http.OidcVerifier
 import com.sirelon.sellsnap.http.TelegramSecret
+import com.sirelon.sellsnap.insights.BigQueryInstallSource
 import com.sirelon.sellsnap.insights.InsightsCollector
+import com.sirelon.sellsnap.insights.InstallSource
+import com.sirelon.sellsnap.insights.InstallSync
+import com.sirelon.sellsnap.insights.bigQueryHttpClient
 import com.sirelon.sellsnap.llm.GeminiLlmClient
 import com.sirelon.sellsnap.llm.LlmClient
 import com.sirelon.sellsnap.llm.geminiHttpClient
@@ -65,6 +70,7 @@ class AppGraph(
                 images = GcsImageStore(StorageOptions.getDefaultInstance().service, config.storageBucket),
                 llm = GeminiLlmClient(geminiHttpClient(), config.geminiApiKey),
                 releases = FirestoreReleaseNotesSource(firestore),
+                installs = BigQueryInstallSource(bigQueryHttpClient()),
                 oidc = GoogleOidcVerifier(config.oidcAudience, config.schedulerSaEmail),
                 clock = clock,
             )
@@ -79,6 +85,7 @@ class AppGraph(
             images: ImageStore,
             llm: LlmClient,
             releases: ReleaseNotesSource,
+            installs: InstallSource,
             oidc: OidcVerifier,
             clock: Clock,
         ): AppGraph {
@@ -97,6 +104,7 @@ class AppGraph(
             val tokens = TokenLifecycle(store, threads, clock)
             val alerts = Alerts(store, telegram, clock, owner)
             val commands = Commands(store, telegram, images, publisher, tokens, previews, sender, approvals, clock, owner)
+            val insights = InsightsCollector(store, threads, clock)
             val links = StoreLinks(config.playPackage, config.appStoreId, config.appleProviderToken, config.landingUrl)
             return AppGraph(
                 oidc = oidc,
@@ -108,10 +116,13 @@ class AppGraph(
                     filler = QueueFiller(store, sender, previews, clock),
                     previewSender = sender,
                     alerts = alerts,
-                    insights = InsightsCollector(store, threads, clock),
+                    insights = insights,
                     clock = clock,
                 ),
-                batch = BatchRunner(store, pipeline, releases, previews, sender, telegram, alerts, usage, clock, owner),
+                batch = BatchRunner(
+                    store, pipeline, releases, previews, sender, telegram, alerts, usage,
+                    insights, InstallSync(store, installs, alerts, clock), DigestBuilder(store, clock), clock, owner,
+                ),
                 updates = BotUpdateHandler(store, telegram, approvals, commands, clock, owner),
                 redirects = RedirectService(store, links, clock),
                 llm = llm,

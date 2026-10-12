@@ -2,6 +2,7 @@ package com.sirelon.sellsnap
 
 import com.sirelon.sellsnap.brand.ReleaseNotes
 import com.sirelon.sellsnap.fakes.FakeImageStore
+import com.sirelon.sellsnap.fakes.FakeInstallSource
 import com.sirelon.sellsnap.fakes.FakeLlmClient
 import com.sirelon.sellsnap.fakes.FakeOidcVerifier
 import com.sirelon.sellsnap.fakes.FakeReleaseNotesSource
@@ -40,6 +41,7 @@ class AgentFixture(
     wrapStore: (InMemorySocialStore) -> SocialStore = { it },
     val llm: FakeLlmClient = FakeLlmClient(),
     releases: List<ReleaseNotes> = emptyList(),
+    val installs: FakeInstallSource = FakeInstallSource(),
 ) {
     val clock = MutableClock(now)
     val memory = InMemorySocialStore()
@@ -49,7 +51,7 @@ class AgentFixture(
     val images = FakeImageStore()
     val oidc = FakeOidcVerifier()
     val config = testConfig(appleProviderToken)
-    val graph = AppGraph.assemble(config, store, telegram, threads, images, llm, FakeReleaseNotesSource(releases), oidc, clock)
+    val graph = AppGraph.assemble(config, store, telegram, threads, images, llm, FakeReleaseNotesSource(releases), installs, oidc, clock)
 
     fun account(id: String) = memory.allAccounts.getValue(id)
 
