@@ -101,8 +101,6 @@ import com.sirelon.sellsnap.designsystem.dismissKeyboardOnTapOutside
 import com.sirelon.sellsnap.designsystem.pager.ImagesCarousel
 import com.sirelon.sellsnap.designsystem.rememberKeyboardDismissAction
 import com.sirelon.sellsnap.features.media.PermissionController
-import com.sirelon.sellsnap.features.media.PermissionDialogContent
-import com.sirelon.sellsnap.features.media.PermissionDialogs
 import com.sirelon.sellsnap.features.media.rememberPermissionController
 import com.sirelon.sellsnap.features.seller.ad.formatFriendlyElapsedTime
 import com.sirelon.sellsnap.features.seller.ad.screenshotMode
@@ -126,7 +124,6 @@ import com.sirelon.sellsnap.generated.resources.bullet_item
 import com.sirelon.sellsnap.generated.resources.ad_your_price
 import com.sirelon.sellsnap.generated.resources.back
 import com.sirelon.sellsnap.generated.resources.banner_ready_in
-import com.sirelon.sellsnap.generated.resources.cancel
 import com.sirelon.sellsnap.generated.resources.copy_pill_copied
 import com.sirelon.sellsnap.generated.resources.copy_pill_default
 import com.sirelon.sellsnap.generated.resources.regenerate_pill_default
@@ -151,20 +148,12 @@ import com.sirelon.sellsnap.generated.resources.ic_refresh_cw
 import com.sirelon.sellsnap.generated.resources.ic_sparkles
 import com.sirelon.sellsnap.generated.resources.location_detecting
 import com.sirelon.sellsnap.generated.resources.location_not_available
-import com.sirelon.sellsnap.generated.resources.location_rationale_message
-import com.sirelon.sellsnap.generated.resources.location_rationale_title
-import com.sirelon.sellsnap.generated.resources.location_settings_message_android
-import com.sirelon.sellsnap.generated.resources.location_settings_message_ios
-import com.sirelon.sellsnap.generated.resources.location_settings_title
-import com.sirelon.sellsnap.generated.resources.not_now
-import com.sirelon.sellsnap.generated.resources.open_settings
 import com.sirelon.sellsnap.generated.resources.publish_errors
 import com.sirelon.sellsnap.generated.resources.publish_on_olx
 import com.sirelon.sellsnap.generated.resources.account_business_badge
 import com.sirelon.sellsnap.generated.resources.ic_user
 import com.sirelon.sellsnap.generated.resources.publish_target_account_fallback_name
 import com.sirelon.sellsnap.generated.resources.publish_target_account_label
-import com.sirelon.sellsnap.generated.resources.retry
 import com.sirelon.sellsnap.generated.resources.validation_all_valid
 import com.sirelon.sellsnap.generated.resources.validation_error_desc_too_short
 import com.sirelon.sellsnap.generated.resources.validation_error_no_category
@@ -196,6 +185,9 @@ internal fun PreviewAdContentRoute(
     onChangeCategoryClick: () -> Unit,
     pendingCategory: OlxCategory?,
     onCategoryConsumed: () -> Unit,
+    onChangeLocationClick: () -> Unit,
+    pendingLocation: OlxLocation?,
+    onLocationConsumed: () -> Unit,
     onConnectOlxClick: () -> Unit,
     onPublishConfirmationRequested: () -> Unit,
     onTargetAccountRowClick: () -> Unit,
@@ -212,8 +204,15 @@ internal fun PreviewAdContentRoute(
         }
     }
 
+    LaunchedEffect(pendingLocation) {
+        if (pendingLocation != null) {
+            viewModel.onEvent(PreviewAdEvent.LocationSelected(pendingLocation))
+            onLocationConsumed()
+        }
+    }
+
     if (state.isSessionResolved && !state.isGuest) {
-        LocationPermissionsBlock(viewModel::onEvent, locationPermissionController)
+        AutoDetectLocation(viewModel::onEvent, locationPermissionController)
     }
 
     val titleTooShortLabel = stringResource(Res.string.validation_error_title_too_short)
@@ -388,7 +387,7 @@ internal fun PreviewAdContentRoute(
                 state = state,
                 titleState = viewModel.titleState,
                 descriptionState = viewModel.descriptionState,
-                locationPermissionController = if (state.isSessionResolved && !state.isGuest) locationPermissionController else null,
+                onLocationClick = if (state.isSessionResolved && !state.isGuest) onChangeLocationClick else null,
                 autoOpenAttributeCode = autoOpenAttributeCode,
                 autoOpenAttributeRequest = autoOpenAttributeRequest,
                 autoOpenAttributeModifier = Modifier.bringIntoViewRequester(invalidAttributeBringIntoViewRequester),
@@ -595,33 +594,15 @@ private fun GuestCopyHint() {
     )
 }
 
+/**
+ * Detects the city on open, without any dialog: a denied permission here stays silent, and the
+ * seller sets the city from the Location card instead.
+ */
 @Composable
-private fun LocationPermissionsBlock(
+private fun AutoDetectLocation(
     onEvent: (PreviewAdEvent) -> Unit,
     locationPermissionController: PermissionController,
 ) {
-    PermissionDialogs(
-        controller = locationPermissionController,
-        rationaleContent = PermissionDialogContent(
-            title = Res.string.location_rationale_title,
-            message = Res.string.location_rationale_message,
-            confirmText = Res.string.retry,
-            dismissText = Res.string.not_now,
-        ),
-        settingsContentProvider = { isIos ->
-            PermissionDialogContent(
-                title = Res.string.location_settings_title,
-                message = if (isIos) {
-                    Res.string.location_settings_message_ios
-                } else {
-                    Res.string.location_settings_message_android
-                },
-                confirmText = Res.string.open_settings,
-                dismissText = Res.string.cancel,
-            )
-        },
-    )
-
     LaunchedEffect(Unit) {
         locationPermissionController.requestPermission(quiet = true) {
             onEvent(PreviewAdEvent.FetchLocation)
@@ -638,7 +619,7 @@ private fun PreviewAdContent(
     autoOpenAttributeCode: String?,
     autoOpenAttributeRequest: Int,
     autoOpenAttributeModifier: Modifier,
-    locationPermissionController: PermissionController? = null,
+    onLocationClick: (() -> Unit)? = null,
 ) {
     val titleText = titleState.text.toString()
     val descriptionText = descriptionState.text.toString()
@@ -732,11 +713,7 @@ private fun PreviewAdContent(
                 location = state.location,
                 isLoading = state.locationLoading,
                 modifier = Modifier.testTag("preview_ad_location_card"),
-                onRefreshClick = {
-                    locationPermissionController?.requestPermission {
-                        onEvent(PreviewAdEvent.RefreshLocationClicked)
-                    }
-                },
+                onClick = { onLocationClick?.invoke() },
             )
         }
     }
@@ -1065,13 +1042,13 @@ private fun AdAttributesCard(
 private fun AdLocationCard(
     location: OlxLocation?,
     isLoading: Boolean,
-    onRefreshClick: () -> Unit = {},
+    onClick: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     PreviewSectionClickableCard(
         label = stringResource(Res.string.ad_location_label),
         modifier = modifier,
-        onClick = onRefreshClick,
+        onClick = onClick,
         icon = rememberVectorPainter(Icons.Default.LocationOn),
         content = {
             when {

@@ -255,12 +255,21 @@
     <string name="ad_category_label">Kategoria</string>
     <string name="ad_location_label">Lokalizacja</string>
     <string name="location_detecting">Szukamy Cię…</string>
-    <string name="location_not_available">Nie można znaleźć lokalizacji</string>
+    <string name="location_not_available">Dotknij, aby wybrać swoje miasto</string>
     <string name="location_rationale_title">Potrzebujemy Twojej lokalizacji</string>
     <string name="location_rationale_message">Aby zaproponować najbliższe miasto dla Twojego ogłoszenia, potrzebujemy dostępu do lokalizacji.</string>
     <string name="location_settings_title">Włącz lokalizację w ustawieniach</string>
     <string name="location_settings_message_android">Lokalizacja jest zablokowana. Otwórz ustawienia aplikacji i włącz ją dla SellSnap.</string>
-    <string name="location_settings_message_ios">Lokalizacja jest zablokowana. Przejdź do Ustawień → Prywatność → Usługi lokalizacji i włącz SellSnap.</string>
+    <string name="location_settings_message_ios">Lokalizacja jest zablokowana. Dotknij Otwórz ustawienia, a potem Lokalizacja → Podczas używania aplikacji.</string>
+    <string name="location_services_off_title">Lokalizacja jest wyłączona w Twoim telefonie</string>
+    <string name="location_services_off_message_android">Włącz lokalizację w ustawieniach telefonu albo wyszukaj swoje miasto.</string>
+    <string name="location_services_off_message_ios">Włącz Usługi lokalizacji w Ustawienia → Prywatność i ochrona albo wyszukaj swoje miasto.</string>
+    <string name="location_picker_title">Gdzie sprzedajesz?</string>
+    <string name="location_picker_use_current">Użyj mojej aktualnej lokalizacji</string>
+    <string name="location_picker_search_placeholder">Szukaj miasta</string>
+    <string name="location_picker_no_results">Brak miast pasujących do „%1$s”</string>
+    <string name="location_picker_search_failed">Nie możemy teraz wyszukać.</string>
+    <string name="got_it">Jasne</string>
 
     <!-- Error Messages -->
     <string name="error_location_fetch_failed">Nie udało się znaleźć Twojej lokalizacji.</string>

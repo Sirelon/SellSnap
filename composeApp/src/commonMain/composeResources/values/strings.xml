@@ -257,12 +257,21 @@
     <string name="ad_category_label">Category</string>
     <string name="ad_location_label">Location</string>
     <string name="location_detecting">Finding you…</string>
-    <string name="location_not_available">Can't find your spot</string>
+    <string name="location_not_available">Tap to pick your city</string>
     <string name="location_rationale_title">We need your location</string>
     <string name="location_rationale_message">To suggest the closest city for your listing, we need a peek at your location.</string>
     <string name="location_settings_title">Turn on location in settings</string>
     <string name="location_settings_message_android">Location's blocked. Open app settings and switch it on for SellSnap.</string>
-    <string name="location_settings_message_ios">Location's blocked. Head to Settings → Privacy → Location Services and toggle SellSnap on.</string>
+    <string name="location_settings_message_ios">Location's blocked. Tap Open settings, then Location → While Using the App.</string>
+    <string name="location_services_off_title">Location is off on your phone</string>
+    <string name="location_services_off_message_android">Turn on location in your phone settings, or search for your city instead.</string>
+    <string name="location_services_off_message_ios">Turn on Location Services in Settings → Privacy &amp; Security, or search for your city instead.</string>
+    <string name="location_picker_title">Where are you selling?</string>
+    <string name="location_picker_use_current">Use my current location</string>
+    <string name="location_picker_search_placeholder">Search for a city</string>
+    <string name="location_picker_no_results">No cities match “%1$s”</string>
+    <string name="location_picker_search_failed">Couldn't search right now.</string>
+    <string name="got_it">Got it</string>
 
     <!-- Error Messages -->
     <string name="error_location_fetch_failed">Couldn't find your location.</string>

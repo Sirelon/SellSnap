@@ -24,7 +24,6 @@ import com.sirelon.sellsnap.features.seller.ad.preview_ad.PreviewAdContract.Prev
 import com.sirelon.sellsnap.features.seller.ad.preview_ad.PreviewAdContract.PreviewAdEvent.CategorySelected
 import com.sirelon.sellsnap.features.seller.ad.preview_ad.PreviewAdContract.PreviewAdEvent.FetchLocation
 import com.sirelon.sellsnap.features.seller.ad.preview_ad.PreviewAdContract.PreviewAdEvent.Publish
-import com.sirelon.sellsnap.features.seller.ad.preview_ad.PreviewAdContract.PreviewAdEvent.RefreshLocationClicked
 import com.sirelon.sellsnap.features.seller.ad.preview_ad.PreviewAdContract.PreviewAdEvent.RegenerateDescription
 import com.sirelon.sellsnap.features.seller.ad.preview_ad.PreviewAdContract.PreviewAdEvent.VoteGeneratedContent
 import com.sirelon.sellsnap.features.seller.ad.preview_ad.PreviewAdContract.PreviewAdState
@@ -391,13 +390,13 @@ class PreviewAdViewModel internal constructor(
                 }
             }
 
-            FetchLocation -> viewModelScope.launch {
-                fetchUserLocation()
-            }
+            // A city the seller already set (saved default or this draft's) wins over GPS; they
+            // change it from the Location card.
+            FetchLocation -> if (currentState().location == null) {
+                viewModelScope.launch { fetchUserLocation() }
+            } else Unit
 
-            RefreshLocationClicked -> viewModelScope.launch {
-                fetchUserLocation()
-            }
+            is PreviewAdEvent.LocationSelected -> setState { it.copy(location = event.location) }
 
             PreviewAdEvent.OnChangeCategoryClick -> postEffect(PreviewAdEffect.GoToGategoryPicker)
 
@@ -507,7 +506,7 @@ class PreviewAdViewModel internal constructor(
         setState { it.copy(locationLoading = true) }
         try {
             val location = locationRepository.fetchUserLocation()
-            setState { it.copy(location = location, locationLoading = false) }
+            setState { it.copy(location = location ?: it.location, locationLoading = false) }
         } catch (e: Exception) {
             setState { it.copy(locationLoading = false) }
             postEffect(ShowMessage(getString(Res.string.error_location_fetch_failed)))

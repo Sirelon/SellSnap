@@ -255,12 +255,21 @@
     <string name="ad_category_label">Categoria</string>
     <string name="ad_location_label">Localização</string>
     <string name="location_detecting">A localizar…</string>
-    <string name="location_not_available">Não foi possível encontrar a sua localização</string>
+    <string name="location_not_available">Toque para escolher a sua cidade</string>
     <string name="location_rationale_title">Precisamos da sua localização</string>
     <string name="location_rationale_message">Para sugerir a cidade mais próxima para o seu anúncio, precisamos de aceder à sua localização.</string>
     <string name="location_settings_title">Ative a localização nas definições</string>
     <string name="location_settings_message_android">A localização está bloqueada. Abra as definições da app e ative-a para o SellSnap.</string>
-    <string name="location_settings_message_ios">A localização está bloqueada. Vá a Definições → Privacidade → Serviços de Localização e ative o SellSnap.</string>
+    <string name="location_settings_message_ios">A localização está bloqueada. Toque em Abrir definições e depois em Localização → Ao Usar a App.</string>
+    <string name="location_services_off_title">A localização está desativada no seu telemóvel</string>
+    <string name="location_services_off_message_android">Ative a localização nas definições do telemóvel ou pesquise a sua cidade.</string>
+    <string name="location_services_off_message_ios">Ative os Serviços de Localização em Definições → Privacidade e Segurança ou pesquise a sua cidade.</string>
+    <string name="location_picker_title">Onde está a vender?</string>
+    <string name="location_picker_use_current">Usar a minha localização atual</string>
+    <string name="location_picker_search_placeholder">Pesquisar uma cidade</string>
+    <string name="location_picker_no_results">Nenhuma cidade corresponde a “%1$s”</string>
+    <string name="location_picker_search_failed">Não foi possível pesquisar agora.</string>
+    <string name="got_it">Entendi</string>
 
     <!-- Error Messages -->
     <string name="error_location_fetch_failed">Não foi possível encontrar a sua localização.</string>

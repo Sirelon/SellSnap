@@ -13,7 +13,6 @@ import com.sirelon.sellsnap.features.seller.profile.presentation.ProfileContract
 import com.sirelon.sellsnap.features.seller.profile.presentation.ProfileContract.ProfileState
 import com.sirelon.sellsnap.features.seller.profile.presentation.ProfileContract.SellerAccountUiModel
 import com.sirelon.sellsnap.generated.resources.Res
-import com.sirelon.sellsnap.generated.resources.error_location_fetch_failed
 import com.sirelon.sellsnap.generated.resources.error_olx_auth_prepare_failed
 import com.sirelon.sellsnap.generated.resources.error_user_profile_fetch_failed
 import com.sirelon.sellsnap.generated.resources.profile_olx_account
@@ -81,7 +80,7 @@ class ProfileViewModel(
         when (event) {
             ProfileEvent.LoginClicked -> startAuthorization(forceReauth = false)
             ProfileEvent.LogoutClicked -> logout()
-            ProfileEvent.ChangeLocationClicked -> updateLocation()
+            is ProfileEvent.LocationSelected -> setState { it.copy(location = event.location) }
             ProfileEvent.RefreshClicked -> refresh()
             is ProfileEvent.SetActiveAccountClicked -> setActiveAccount(event.localIndex)
             is ProfileEvent.NeedsReconnectRowClicked -> toggleReconnectRow(event.localIndex)
@@ -205,28 +204,6 @@ class ProfileViewModel(
         viewModelScope.launch {
             accountRepository.logout()
             postEffect(ProfileEffect.NavigateToLanding)
-        }
-    }
-
-    private fun updateLocation() {
-        viewModelScope.launch {
-            setState { it.copy(isLocationLoading = true, errorMessage = null) }
-            runCatching { accountRepository.refreshLocationFromDevice() }
-                .onSuccess { location ->
-                    if (location == null) {
-                        postEffect(ProfileEffect.ShowMessage(getString(Res.string.error_location_fetch_failed)))
-                    }
-                    setState {
-                        it.copy(
-                            isLocationLoading = false,
-                            location = location ?: it.location,
-                        )
-                    }
-                }
-                .onFailure { error ->
-                    setState { it.copy(isLocationLoading = false) }
-                    showError(getString(Res.string.error_location_fetch_failed))
-                }
         }
     }
 

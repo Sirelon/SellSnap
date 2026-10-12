@@ -1,41 +1,84 @@
 package com.sirelon.sellsnap.features.seller.location.data
 
 import com.sirelon.sellsnap.features.seller.auth.data.OlxApiClient
+import com.sirelon.sellsnap.features.seller.auth.data.OlxCountryStore
 import com.sirelon.sellsnap.features.seller.location.LocationProvider
 import com.sirelon.sellsnap.features.seller.location.OlxLocation
+import com.sirelon.sellsnap.features.seller.location.data.response.OlxLocationResponse
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+
+/** A city found by name search. [region] comes from the geocoder and tells same-named cities apart. */
+data class CitySuggestion(
+    val location: OlxLocation,
+    val region: String?,
+)
 
 class LocationRepository(
     private val locationProvider: LocationProvider,
     private val olxApiClient: OlxApiClient,
     private val locationStore: LocationStore,
+    private val countryStore: OlxCountryStore,
 ) {
     suspend fun getSavedLocation(): OlxLocation? = locationStore.read()
+
+    suspend fun saveLocation(location: OlxLocation) {
+        locationStore.write(location)
+    }
 
     suspend fun clearSavedLocation() {
         locationStore.clear()
     }
 
+    suspend fun isLocationServicesEnabled(): Boolean = locationProvider.isLocationServicesEnabled()
+
+    fun openLocationServicesSettings() {
+        locationProvider.openLocationServicesSettings()
+    }
+
     suspend fun fetchUserLocation(): OlxLocation? {
         val deviceLocation = locationProvider.getCurrentLocation() ?: return null
 
-        val locations = olxApiClient.getLocations(
+        val firstValidLocation = olxApiClient.getLocations(
             latitude = deviceLocation.latitude,
             longitude = deviceLocation.longitude,
-        )
-
-        val firstValidLocation = locations.firstNotNullOfOrNull { location ->
-            val cityId = location.city?.id ?: return@firstNotNullOfOrNull null
-            val cityName = location.city.name ?: return@firstNotNullOfOrNull null
-
-            OlxLocation(
-                cityId = cityId,
-                cityName = cityName,
-                districtId = location.district?.id,
-                districtName = location.district?.name,
-            )
-        }
+        ).firstNotNullOfOrNull { it.toOlxLocation() }
 
         firstValidLocation?.let { locationStore.write(it) }
         return firstValidLocation
+    }
+
+    /**
+     * OLX has no city search, so the platform geocoder turns [query] into points and OLX maps each
+     * point to its city. The district is dropped: the geocoder returns a city's centre, and the
+     * district there says nothing about where the seller is.
+     */
+    suspend fun searchCities(query: String): List<CitySuggestion> = coroutineScope {
+        val country = countryStore.current
+        locationProvider.searchPlaces(query = "$query, ${country.nameEn}", countryCode = country.code)
+            .map { place ->
+                async {
+                    olxApiClient.getLocations(
+                        latitude = place.location.latitude,
+                        longitude = place.location.longitude,
+                    ).firstNotNullOfOrNull { it.toOlxLocation() }
+                        ?.let { CitySuggestion(it.copy(districtId = null, districtName = null), place.region) }
+                }
+            }
+            .awaitAll()
+            .filterNotNull()
+            .distinctBy { it.location.cityId }
+    }
+
+    private fun OlxLocationResponse.toOlxLocation(): OlxLocation? {
+        val cityId = city?.id ?: return null
+        val cityName = city.name ?: return null
+        return OlxLocation(
+            cityId = cityId,
+            cityName = cityName,
+            districtId = district?.id,
+            districtName = district?.name,
+        )
     }
 }

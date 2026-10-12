@@ -28,8 +28,7 @@ import com.sirelon.sellsnap.features.seller.auth.domain.OlxCountry
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxTokens
 import com.sirelon.sellsnap.features.seller.drafts.Draft
 import com.sirelon.sellsnap.features.seller.drafts.InMemoryDraftsRepository
-import com.sirelon.sellsnap.features.seller.location.LocationProvider
-import com.sirelon.sellsnap.features.seller.location.DeviceLocation
+import com.sirelon.sellsnap.features.seller.location.FakeLocationProvider
 import com.sirelon.sellsnap.features.seller.location.data.LocationRepository
 import com.sirelon.sellsnap.features.seller.location.data.LocationStore
 import com.sirelon.sellsnap.features.seller.profile.data.AddAccountFailureReason
@@ -539,11 +538,10 @@ class SellerAccountRepositoryTest {
             applicationScope = CoroutineScope(Dispatchers.Default),
         )
         val locationRepository = LocationRepository(
-            locationProvider = object : LocationProvider {
-                override suspend fun getCurrentLocation(): DeviceLocation? = null
-            },
+            locationProvider = FakeLocationProvider(),
             olxApiClient = olxApiClient,
             locationStore = LocationStore(InMemoryOlxKeyValueStore(), testJson),
+            countryStore = countryStore,
         )
         val draftsRepository = InMemoryDraftsRepository()
         val repository = SellerAccountRepository(

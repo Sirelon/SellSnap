@@ -334,9 +334,6 @@ class SellerAccountRepository internal constructor(
 
     suspend fun savedLocation(): OlxLocation? = locationRepository.getSavedLocation()
 
-    suspend fun refreshLocationFromDevice(): OlxLocation? =
-        locationRepository.fetchUserLocation()
-
     /**
      * Usable access token for one stored account (My Ads pager, SIR-87): refreshes + persists
      * first when [forceRefresh] or when the cached token is within [TOKEN_REFRESH_SKEW_SECONDS]

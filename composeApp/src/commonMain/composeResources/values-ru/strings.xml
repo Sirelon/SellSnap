@@ -258,12 +258,21 @@
     <string name="ad_category_label">Категорія</string>
     <string name="ad_location_label">Місцезнаходження</string>
     <string name="location_detecting">Шукаємо вас…</string>
-    <string name="location_not_available">Не вдалося визначити локацію</string>
+    <string name="location_not_available">Торкніться, щоб обрати своє місто</string>
     <string name="location_rationale_title">Дозвольте доступ до геолокації</string>
     <string name="location_rationale_message">Щоб підставити ваше місто в оголошення, потрібен доступ до геолокації.</string>
     <string name="location_settings_title">Увімкніть геолокацію в налаштуваннях</string>
     <string name="location_settings_message_android">Геолокацію заблоковано. Відкрийте налаштування додатка й увімкніть її для SellSnap.</string>
-    <string name="location_settings_message_ios">Геолокацію заблоковано. Відкрийте Налаштування → Конфіденційність → Служби геолокації та увімкніть SellSnap.</string>
+    <string name="location_settings_message_ios">Геолокацію заблоковано. Натисніть Відкрити налаштування, потім Геолокація → Під час використання програми.</string>
+    <string name="location_services_off_title">Геолокацію вимкнено на вашому телефоні</string>
+    <string name="location_services_off_message_android">Увімкніть геолокацію в налаштуваннях телефона або знайдіть своє місто через пошук.</string>
+    <string name="location_services_off_message_ios">Увімкніть Служби геолокації в Налаштування → Конфіденційність і безпека або знайдіть своє місто через пошук.</string>
+    <string name="location_picker_title">Де ви продаєте?</string>
+    <string name="location_picker_use_current">Використати мою поточну геолокацію</string>
+    <string name="location_picker_search_placeholder">Знайти місто</string>
+    <string name="location_picker_no_results">Немає міст за запитом «%1$s»</string>
+    <string name="location_picker_search_failed">Зараз не вдалося виконати пошук.</string>
+    <string name="got_it">Зрозуміло</string>
 
     <!-- Error Messages -->
     <string name="error_location_fetch_failed">Не вдалося знайти ваше місцезнаходження.</string>

@@ -97,7 +97,7 @@ interface PreviewAdContract {
         value class OnPriceChanged(val price: Float) : PreviewAdEvent
 
         data object FetchLocation : PreviewAdEvent
-        data object RefreshLocationClicked : PreviewAdEvent
+        data class LocationSelected(val location: OlxLocation) : PreviewAdEvent
         data object RegenerateDescription : PreviewAdEvent
 
         data class AttributeValueChanged(

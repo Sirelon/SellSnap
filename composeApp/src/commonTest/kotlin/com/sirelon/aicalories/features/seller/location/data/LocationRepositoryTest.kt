@@ -14,7 +14,8 @@ import com.sirelon.sellsnap.features.seller.auth.data.createOlxHttpClient
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxCountry
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxTokens
 import com.sirelon.sellsnap.features.seller.location.DeviceLocation
-import com.sirelon.sellsnap.features.seller.location.LocationProvider
+import com.sirelon.sellsnap.features.seller.location.FakeLocationProvider
+import com.sirelon.sellsnap.features.seller.location.GeocodedPlace
 import com.sirelon.sellsnap.features.seller.location.OlxLocation
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
@@ -31,45 +32,24 @@ import kotlinx.serialization.json.Json
 class LocationRepositoryTest {
 
     private val testJson = Json { ignoreUnknownKeys = true; isLenient = true; explicitNulls = false }
+    private val countryStore = OlxCountryStore(InMemoryOlxKeyValueStore(), FakeAnalytics())
 
     @Test
     fun `fetchUserLocation persists valid olx location`() = runBlocking {
         val store = LocationStore(InMemoryOlxKeyValueStore(), testJson)
         val repository = LocationRepository(
-            locationProvider = TestLocationProvider(DeviceLocation(latitude = 50.45, longitude = 30.52)),
+            locationProvider = FakeLocationProvider(DeviceLocation(latitude = 50.45, longitude = 30.52)),
             olxApiClient = createApiClient(
                 MockEngine {
                     respond(
-                        content = """
-                            {
-                              "data": [
-                                {
-                                  "city": {
-                                    "id": 1,
-                                    "region_id": 2,
-                                    "name": "Kyiv",
-                                    "county": null,
-                                    "municipality": null,
-                                    "latitude": 50.45,
-                                    "longitude": 30.52
-                                  },
-                                  "district": {
-                                    "id": 10,
-                                    "city_id": 1,
-                                    "name": "Pechersk",
-                                    "latitude": 50.43,
-                                    "longitude": 30.54
-                                  }
-                                }
-                              ]
-                            }
-                        """.trimIndent(),
+                        content = KYIV_LOCATIONS_JSON,
                         status = HttpStatusCode.OK,
                         headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
                     )
                 },
             ),
             locationStore = store,
+            countryStore = countryStore,
         )
 
         val location = repository.fetchUserLocation()
@@ -85,15 +65,47 @@ class LocationRepositoryTest {
             write(saved)
         }
         val repository = LocationRepository(
-            locationProvider = TestLocationProvider(null),
+            locationProvider = FakeLocationProvider(),
             olxApiClient = createApiClient(MockEngine { error("No OLX request expected.") }),
             locationStore = store,
+            countryStore = countryStore,
         )
 
         val location = repository.fetchUserLocation()
 
         assertNull(location)
         assertEquals(saved, store.read())
+    }
+
+    @Test
+    fun `searchCities maps each geocoded place to one OLX city without the district`() = runBlocking {
+        val store = LocationStore(InMemoryOlxKeyValueStore(), testJson)
+        val provider = FakeLocationProvider(
+            places = listOf(
+                GeocodedPlace(DeviceLocation(latitude = 50.45, longitude = 30.52), region = "Kyiv"),
+                GeocodedPlace(DeviceLocation(latitude = 50.44, longitude = 30.51), region = "Kyiv"),
+            ),
+        )
+        val repository = LocationRepository(
+            locationProvider = provider,
+            olxApiClient = createApiClient(
+                MockEngine {
+                    respond(
+                        content = KYIV_LOCATIONS_JSON,
+                        status = HttpStatusCode.OK,
+                        headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
+                    )
+                },
+            ),
+            locationStore = store,
+            countryStore = countryStore,
+        )
+
+        val cities = repository.searchCities("Kyiv")
+
+        assertEquals(listOf(CitySuggestion(OlxLocation(1, "Kyiv", null, null), region = "Kyiv")), cities)
+        assertEquals(listOf("Kyiv, Ukraine" to "ua"), provider.searchQueries)
+        assertNull(store.read())
     }
 
     private suspend fun createApiClient(engine: MockEngine): OlxApiClient {
@@ -120,7 +132,7 @@ class LocationRepositoryTest {
                 nextLocalIndex = 2,
             ),
         )
-        val countryStore = OlxCountryStore(InMemoryOlxKeyValueStore(), FakeAnalytics()).apply { save(OlxCountry.UA) }
+        countryStore.save(OlxCountry.UA)
         val errorParser = OlxRemoteErrorParser(testJson)
         return OlxApiClient(
             httpClient = createOlxAuthorizedHttpClient(
@@ -134,12 +146,6 @@ class LocationRepositoryTest {
             json = testJson,
             errorParser = errorParser,
         )
-    }
-
-    private class TestLocationProvider(
-        private val location: DeviceLocation?,
-    ) : LocationProvider {
-        override suspend fun getCurrentLocation(): DeviceLocation? = location
     }
 
     private class TestCredentialsProvider : OlxCredentialsProvider {
@@ -156,5 +162,32 @@ class LocationRepositoryTest {
         override fun log(message: String) {}
         override fun setAnalyticsCollectionEnabled(enabled: Boolean) {}
         override fun setCrashlyticsCollectionEnabled(enabled: Boolean) {}
+    }
+
+    private companion object {
+        val KYIV_LOCATIONS_JSON = """
+            {
+              "data": [
+                {
+                  "city": {
+                    "id": 1,
+                    "region_id": 2,
+                    "name": "Kyiv",
+                    "county": null,
+                    "municipality": null,
+                    "latitude": 50.45,
+                    "longitude": 30.52
+                  },
+                  "district": {
+                    "id": 10,
+                    "city_id": 1,
+                    "name": "Pechersk",
+                    "latitude": 50.43,
+                    "longitude": 30.54
+                  }
+                }
+              ]
+            }
+        """.trimIndent()
     }
 }
