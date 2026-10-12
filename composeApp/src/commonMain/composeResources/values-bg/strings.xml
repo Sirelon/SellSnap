@@ -269,6 +269,7 @@
     <string name="location_picker_search_placeholder">Потърси град</string>
     <string name="location_picker_no_results">Няма градове, съвпадащи с „%1$s“</string>
     <string name="location_picker_search_failed">Сега не можем да търсим.</string>
+    <string name="location_picker_district_title">Избери район: %1$s</string>
     <string name="got_it">Разбрах</string>
 
     <!-- Error Messages -->

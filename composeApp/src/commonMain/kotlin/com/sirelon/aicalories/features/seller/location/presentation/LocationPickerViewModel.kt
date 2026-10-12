@@ -2,6 +2,7 @@ package com.sirelon.sellsnap.features.seller.location.presentation
 
 import androidx.lifecycle.viewModelScope
 import com.sirelon.sellsnap.features.common.presentation.BaseViewModel
+import com.sirelon.sellsnap.features.seller.location.OlxLocation
 import com.sirelon.sellsnap.features.seller.location.data.LocationRepository
 import com.sirelon.sellsnap.features.seller.location.presentation.LocationPickerContract.LocationPickerEffect
 import com.sirelon.sellsnap.features.seller.location.presentation.LocationPickerContract.LocationPickerEvent
@@ -11,26 +12,46 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+/**
+ * [districtsOf] opens the picker on that city's district step, for a publish OLX would reject
+ * without a district.
+ */
 class LocationPickerViewModel(
     private val locationRepository: LocationRepository,
+    districtsOf: OlxLocation? = null,
 ) : BaseViewModel<LocationPickerState, LocationPickerEvent, LocationPickerEffect>() {
 
     private var searchJob: Job? = null
+    private var districtsJob: Job? = null
+
+    // A city picked from the search is saved as is when it has no districts. The [districtsOf]
+    // city is the one already in use, so without districts the seller is left on the search.
+    private var saveCityWithoutDistricts = false
+
+    init {
+        districtsOf?.let { loadDistricts(it, saveIfNone = false) }
+    }
 
     override fun initialState() = LocationPickerState()
 
     override fun onEvent(event: LocationPickerEvent) {
         when (event) {
             is LocationPickerEvent.QueryChanged -> {
+                closeDistricts()
                 setState { it.copy(query = event.query) }
                 search(event.query, debounce = true)
             }
 
             LocationPickerEvent.RetrySearch -> search(currentState().query, debounce = false)
 
-            is LocationPickerEvent.CitySelected -> viewModelScope.launch {
-                locationRepository.saveLocation(event.city.location)
-                postEffect(LocationPickerEffect.LocationChosen(event.city.location))
+            is LocationPickerEvent.CitySelected -> loadDistricts(event.city.location, saveIfNone = true)
+
+            is LocationPickerEvent.DistrictSelected -> viewModelScope.launch { choose(event.district) }
+
+            LocationPickerEvent.BackToCitySearch -> closeDistricts()
+
+            LocationPickerEvent.RetryDistricts -> currentState().districtCity?.let {
+                loadDistricts(it, saveCityWithoutDistricts)
             }
 
             LocationPickerEvent.UseCurrentLocationClicked -> viewModelScope.launch {
@@ -80,6 +101,42 @@ class LocationPickerViewModel(
                 }
             }
         }
+    }
+
+    private fun loadDistricts(city: OlxLocation, saveIfNone: Boolean) {
+        districtsJob?.cancel()
+        saveCityWithoutDistricts = saveIfNone
+        setState {
+            it.copy(districtCity = city, districts = emptyList(), isLoadingDistricts = true, districtsFailed = false)
+        }
+        districtsJob = viewModelScope.launch {
+            val districts = try {
+                locationRepository.getCityDistricts(city)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                setState { it.copy(isLoadingDistricts = false, districtsFailed = true) }
+                return@launch
+            }
+            if (districts.isNotEmpty()) {
+                setState { it.copy(isLoadingDistricts = false, districts = districts) }
+            } else {
+                setState { it.copy(isLoadingDistricts = false, districtCity = null) }
+                if (saveIfNone) choose(city)
+            }
+        }
+    }
+
+    private fun closeDistricts() {
+        districtsJob?.cancel()
+        setState {
+            it.copy(districtCity = null, districts = emptyList(), isLoadingDistricts = false, districtsFailed = false)
+        }
+    }
+
+    private suspend fun choose(location: OlxLocation) {
+        locationRepository.saveLocation(location)
+        postEffect(LocationPickerEffect.LocationChosen(location))
     }
 
     private suspend fun detectLocation() {

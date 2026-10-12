@@ -564,6 +564,24 @@ class PreviewAdViewModel internal constructor(
             return
         }
 
+        // A city with districts (e.g. Kyiv) needs one, or OLX rejects the advert. A failed lookup
+        // does not block: OLX's own `district_id` error still leads to the picker below.
+        if (location.districtId == null) {
+            setState { it.copy(isPublishing = true) }
+            val districts = try {
+                locationRepository.getCityDistricts(location)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                emptyList()
+            }
+            if (districts.isNotEmpty()) {
+                setState { it.copy(isPublishing = false) }
+                postEffect(PreviewAdEffect.PickDistrict(location))
+                return
+            }
+        }
+
         // SIR-83 D6/A5: snapshot which account this screen told the seller it would publish to,
         // and the switch epoch, BEFORE the network calls below - not after. Comparing at delivery
         // time (rather than trusting the account is still the one active when postAdvert() is
@@ -681,6 +699,10 @@ class PreviewAdViewModel internal constructor(
             when {
                 olxError is OlxApiError.ValidationError && olxError.field.startsWith("contact.") ->
                     postEffect(PreviewAdEffect.NavigateToProfile(getString(Res.string.error_publish_missing_contact_name)))
+
+                olxError is OlxApiError.ValidationError &&
+                    (olxError.field == "district_id" || olxError.field.startsWith("location")) ->
+                    postEffect(PreviewAdEffect.PickDistrict(location))
 
                 // Dead active-account token (terminal refresh failure surfacing here rather than
                 // as a silent background reconnect-mark): never auto-launch OAuth mid-publish,

@@ -453,6 +453,9 @@ fun App() {
                                     is PreviewAdContract.PreviewAdEffect.NavigateToProfile ->
                                         navVm.backStack.add(AppKey.Profile(effect.reason))
 
+                                    is PreviewAdContract.PreviewAdEffect.PickDistrict ->
+                                        navVm.backStack.add(AppKey.SelectLocation(districtsOf = effect.city))
+
                                     PreviewAdContract.PreviewAdEffect.RequestStoreReview ->
                                         requestReview()
 
@@ -489,7 +492,7 @@ fun App() {
                                     onChangeCategoryClick = { navVm.backStack.add(AppKey.SelectCategory) },
                                     pendingCategory = pendingCategory,
                                     onCategoryConsumed = { pendingCategory = null },
-                                    onChangeLocationClick = { navVm.backStack.add(AppKey.SelectLocation) },
+                                    onChangeLocationClick = { navVm.backStack.add(AppKey.SelectLocation()) },
                                     pendingLocation = pendingLocation,
                                     onLocationConsumed = { pendingLocation = null },
                                     onConnectOlxClick = {
@@ -636,8 +639,9 @@ fun App() {
 
                         entry<AppKey.SelectLocation>(
                             metadata = BottomSheetSceneStrategy.bottomSheet(),
-                        ) {
+                        ) { key ->
                             LocationPickerSheet(
+                                districtsOf = key.districtsOf,
                                 onLocationSelected = { location ->
                                     navVm.popDestination()
                                     pendingLocation = location
@@ -672,7 +676,7 @@ fun App() {
                                 onDisconnectRequested = { localIndex ->
                                     navVm.navigateTo(AppKey.DisconnectOlxAccountConfirm(localIndex))
                                 },
-                                onChangeLocationClick = { navVm.backStack.add(AppKey.SelectLocation) },
+                                onChangeLocationClick = { navVm.backStack.add(AppKey.SelectLocation()) },
                                 pendingLocation = pendingLocation,
                                 onLocationConsumed = { pendingLocation = null },
                                 reason = destination.reason,
@@ -913,7 +917,7 @@ private fun AppKey.isOverlayEntry(): Boolean = when (this) {
     AppKey.OlxAccountAuthFailed,
     is AppKey.DisconnectOlxAccountConfirm,
     AppKey.SelectCategory,
-    AppKey.SelectLocation,
+    is AppKey.SelectLocation,
     AppKey.WhatsNewPrompt,
     AppKey.NotificationsPrompt,
     AppKey.PreviewPublishConfirm,

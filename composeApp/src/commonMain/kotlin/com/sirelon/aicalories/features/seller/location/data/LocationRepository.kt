@@ -51,9 +51,9 @@ class LocationRepository(
 
     /**
      * OLX has no city search, so the platform geocoder turns [query] into points and OLX maps each
-     * point to its city. The district is the one OLX returns for the city's centre, so it may differ
-     * from where the seller lives. It is kept anyway: OLX rejects an advert in a city with districts
-     * (e.g. Kyiv) when `district_id` is missing.
+     * point to its city. The suggestions carry no district: the one OLX returns for a point is the
+     * district of the city's centre, not where the seller lives. The seller picks it from
+     * [getCityDistricts] instead.
      */
     suspend fun searchCities(query: String): List<CitySuggestion> = coroutineScope {
         val country = countryStore.current
@@ -64,13 +64,27 @@ class LocationRepository(
                         latitude = place.location.latitude,
                         longitude = place.location.longitude,
                     ).firstNotNullOfOrNull { it.toOlxLocation() }
-                        ?.let { CitySuggestion(it, place.region) }
+                        ?.let { CitySuggestion(it.copy(districtId = null, districtName = null), place.region) }
                 }
             }
             .awaitAll()
             .filterNotNull()
             .distinctBy { it.location.cityId }
     }
+
+    /**
+     * The districts of [city] as locations ready to save, sorted by name; empty for a city without
+     * districts. Observed on the live API (2026-10): `POST adverts` in a city with districts
+     * (e.g. Kyiv) fails with a `district_id` validation error when no district is sent.
+     */
+    suspend fun getCityDistricts(city: OlxLocation): List<OlxLocation> =
+        olxApiClient.getCityDistricts(city.cityId)
+            .mapNotNull { district ->
+                val id = district.id ?: return@mapNotNull null
+                val name = district.name ?: return@mapNotNull null
+                city.copy(districtId = id, districtName = name)
+            }
+            .sortedBy { it.districtName }
 
     private fun OlxLocationResponse.toOlxLocation(): OlxLocation? {
         val cityId = city?.id ?: return null

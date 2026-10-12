@@ -10,6 +10,7 @@ import com.sirelon.sellsnap.features.seller.location.presentation.LocationPicker
 import com.sirelon.sellsnap.features.seller.profile.data.SellerAccountRepository
 import com.sirelon.sellsnap.features.seller.profile.presentation.ProfileViewModel
 import org.koin.core.module.dsl.singleOf
+import org.koin.core.module.dsl.viewModel
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
 
@@ -17,7 +18,8 @@ val profileModule = module {
     single { createLocationProvider() }
     single { LocationStore(get()) }
     singleOf(::LocationRepository)
-    viewModelOf(::LocationPickerViewModel)
+    // Spelled out rather than viewModelOf: the district city is an optional parameter.
+    viewModel { params -> LocationPickerViewModel(locationRepository = get(), districtsOf = params.getOrNull()) }
     single {
         SellerAccountRepository(
             authRepository = get(),

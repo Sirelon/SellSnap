@@ -269,6 +269,7 @@
     <string name="location_picker_search_placeholder">Pesquisar uma cidade</string>
     <string name="location_picker_no_results">Nenhuma cidade corresponde a “%1$s”</string>
     <string name="location_picker_search_failed">Não foi possível pesquisar agora.</string>
+    <string name="location_picker_district_title">Escolha a zona: %1$s</string>
     <string name="got_it">Entendi</string>
 
     <!-- Error Messages -->

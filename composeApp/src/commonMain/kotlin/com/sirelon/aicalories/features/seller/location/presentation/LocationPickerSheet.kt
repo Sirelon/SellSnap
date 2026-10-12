@@ -3,6 +3,7 @@ package com.sirelon.sellsnap.features.seller.location.presentation
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -10,11 +11,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -42,10 +45,12 @@ import com.sirelon.sellsnap.features.seller.location.presentation.LocationPicker
 import com.sirelon.sellsnap.features.seller.location.presentation.LocationPickerContract.LocationPickerEvent
 import com.sirelon.sellsnap.features.seller.location.presentation.LocationPickerContract.LocationPickerState
 import com.sirelon.sellsnap.generated.resources.Res
+import com.sirelon.sellsnap.generated.resources.back
 import com.sirelon.sellsnap.generated.resources.cancel
 import com.sirelon.sellsnap.generated.resources.error_location_fetch_failed
 import com.sirelon.sellsnap.generated.resources.got_it
 import com.sirelon.sellsnap.generated.resources.location_detecting
+import com.sirelon.sellsnap.generated.resources.location_picker_district_title
 import com.sirelon.sellsnap.generated.resources.location_picker_no_results
 import com.sirelon.sellsnap.generated.resources.location_picker_search_failed
 import com.sirelon.sellsnap.generated.resources.location_picker_search_placeholder
@@ -65,16 +70,19 @@ import com.sirelon.sellsnap.generated.resources.retry
 import com.sirelon.sellsnap.platform.PlatformTargets
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
+import org.koin.core.parameter.parametersOf
 
 /**
- * Sets the selling city, by device location or by name. The chosen city becomes the saved
- * default and is passed to [onLocationSelected].
+ * Sets the selling city, by device location or by name. A city picked by name that has districts
+ * asks for the district next. The chosen location becomes the saved default and is passed to
+ * [onLocationSelected]. [districtsOf] opens the sheet on that city's district step.
  */
 @Composable
 fun LocationPickerSheet(
     onLocationSelected: (OlxLocation) -> Unit,
+    districtsOf: OlxLocation? = null,
 ) {
-    val viewModel: LocationPickerViewModel = koinViewModel()
+    val viewModel: LocationPickerViewModel = koinViewModel { parametersOf(districtsOf) }
     val state by viewModel.state.collectAsStateWithLifecycle()
     val permissionController = rememberPermissionController(permission = Permission.CoarseLocation)
 
@@ -117,7 +125,12 @@ fun LocationPickerSheet(
         LocationServicesOffDialog(onEvent = viewModel::onEvent)
     }
 
-    LocationPickerContent(state = state, onEvent = viewModel::onEvent)
+    val districtCity = state.districtCity
+    if (districtCity != null && state.districts.isNotEmpty()) {
+        DistrictStepContent(city = districtCity, districts = state.districts, onEvent = viewModel::onEvent)
+    } else {
+        LocationPickerContent(state = state, onEvent = viewModel::onEvent)
+    }
 }
 
 @Composable
@@ -183,13 +196,13 @@ private fun LocationPickerContent(
 
         Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
             when {
-                state.isSearching -> CircularProgressIndicator(
+                state.isSearching || state.isLoadingDistricts -> CircularProgressIndicator(
                     modifier = Modifier
                         .align(Alignment.TopCenter)
                         .padding(top = AppDimens.Spacing.xl5),
                 )
 
-                state.searchFailed -> Column(
+                state.searchFailed || state.districtsFailed -> Column(
                     modifier = Modifier
                         .align(Alignment.TopCenter)
                         .padding(AppDimens.Spacing.xl5),
@@ -201,7 +214,17 @@ private fun LocationPickerContent(
                         style = t.body,
                         color = c.onSurfaceMuted,
                     )
-                    TextButton(onClick = { onEvent(LocationPickerEvent.RetrySearch) }) {
+                    TextButton(
+                        onClick = {
+                            onEvent(
+                                if (state.districtsFailed) {
+                                    LocationPickerEvent.RetryDistricts
+                                } else {
+                                    LocationPickerEvent.RetrySearch
+                                },
+                            )
+                        },
+                    ) {
                         Text(stringResource(Res.string.retry))
                     }
                 }
@@ -235,6 +258,59 @@ private fun LocationPickerContent(
                             HorizontalDivider(color = c.outlineVariant.copy(alpha = 0.13f))
                         }
                     }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DistrictStepContent(
+    city: OlxLocation,
+    districts: List<OlxLocation>,
+    onEvent: (LocationPickerEvent) -> Unit,
+) {
+    val c = AppTheme.colors
+    val t = AppTheme.typography
+
+    Column(modifier = Modifier.fillMaxHeight(0.92f)) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(
+                start = AppDimens.Spacing.xl,
+                end = AppDimens.Spacing.xl5,
+                top = AppDimens.Spacing.m,
+                bottom = AppDimens.Spacing.m,
+            ),
+        ) {
+            IconButton(onClick = { onEvent(LocationPickerEvent.BackToCitySearch) }) {
+                Icon(
+                    imageVector = Icons.Filled.ArrowBack,
+                    contentDescription = stringResource(Res.string.back),
+                    tint = c.onSurface,
+                )
+            }
+            Text(
+                text = stringResource(Res.string.location_picker_district_title, city.cityName),
+                style = t.title,
+                color = c.onSurface,
+            )
+        }
+
+        LazyColumn(modifier = Modifier.weight(1f).fillMaxWidth()) {
+            itemsIndexed(districts, key = { _, district -> district.districtId ?: 0 }) { index, district ->
+                Cell(
+                    headline = {
+                        Text(
+                            text = district.districtName.orEmpty(),
+                            style = t.body.copy(fontWeight = FontWeight.Medium),
+                            color = c.onSurface,
+                        )
+                    },
+                    onClick = { onEvent(LocationPickerEvent.DistrictSelected(district)) },
+                )
+                if (index < districts.lastIndex) {
+                    HorizontalDivider(color = c.outlineVariant.copy(alpha = 0.13f))
                 }
             }
         }

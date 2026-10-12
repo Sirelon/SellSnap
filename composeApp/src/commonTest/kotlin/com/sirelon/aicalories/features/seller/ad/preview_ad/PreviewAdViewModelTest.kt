@@ -390,6 +390,98 @@ class PreviewAdViewModelTest {
     }
 
     @Test
+    fun `publish without a district in a city with districts opens the district step instead of posting`() =
+        runTest(testDispatcher) {
+            val accountStore = OlxAccountStore(InMemoryOlxKeyValueStore(), testJson)
+            accountStore.write(
+                OlxAccountsRecord(
+                    accounts = listOf(account(localIndex = 1, olxUserId = 100L, accessToken = "token-a")),
+                    activeByCountry = mapOf("ua" to 1),
+                    nextLocalIndex = 2,
+                ),
+            )
+            var postAdvertRequests = 0
+            val engine = buildEngine {
+                addHandler { request ->
+                    when {
+                        request.url.encodedPath.endsWith("cities/1/districts") ->
+                            respond(
+                                """{"data":[{"id":1,"city_id":1,"name":"Holosiivskyi","latitude":50.35,"longitude":30.51}]}""",
+                                status = HttpStatusCode.OK,
+                                headers = jsonHeaders(),
+                            )
+
+                        request.url.encodedPath.contains("users/me") ->
+                            respond(userJson(id = 100L, name = "Seller One"), status = HttpStatusCode.OK, headers = jsonHeaders())
+
+                        request.url.encodedPath.contains("adverts") && request.method == HttpMethod.Post -> {
+                            postAdvertRequests++
+                            respond(postAdvertJson(id = 1L), status = HttpStatusCode.OK, headers = jsonHeaders())
+                        }
+
+                        else -> respond("{}", status = HttpStatusCode.OK, headers = jsonHeaders())
+                    }
+                }
+            }
+            val harness = harness(engine, accountStore)
+            val viewModel = buildViewModel(harness)
+            viewModel.setState { it.copy(selectedCategory = testCategory, location = testLocation, attributesLoadState = AttributesLoadState.Loaded) }
+            val effects = mutableListOf<PreviewAdEffect>()
+            backgroundScope.launch { viewModel.effects.collect { effects += it } }
+
+            viewModel.onEvent(PreviewAdEvent.Publish)
+            advanceUntilIdle()
+
+            assertEquals(0, postAdvertRequests, "OLX rejects an advert in a city with districts that has none")
+            assertTrue(effects.contains(PreviewAdEffect.PickDistrict(testLocation)))
+            assertTrue(effects.none { it is PreviewAdEffect.PublishFailure })
+            assertFalse(viewModel.state.value.isPublishing)
+        }
+
+    @Test
+    fun `an OLX district_id rejection opens the district step, not the generic failure`() = runTest(testDispatcher) {
+        val accountStore = OlxAccountStore(InMemoryOlxKeyValueStore(), testJson)
+        accountStore.write(
+            OlxAccountsRecord(
+                accounts = listOf(account(localIndex = 1, olxUserId = 100L, accessToken = "token-a")),
+                activeByCountry = mapOf("ua" to 1),
+                nextLocalIndex = 2,
+            ),
+        )
+        val engine = buildEngine {
+            addHandler { request ->
+                when {
+                    request.url.encodedPath.contains("users/me") ->
+                        respond(userJson(id = 100L, name = "Seller One"), status = HttpStatusCode.OK, headers = jsonHeaders())
+
+                    request.url.encodedPath.contains("adverts") && request.method == HttpMethod.Post ->
+                        respond(
+                            """{"error":{"status":400,"validation":[{"field":"district_id","detail":"Invalid district."}]}}""",
+                            status = HttpStatusCode.BadRequest,
+                            headers = jsonHeaders(),
+                        )
+
+                    // The districts lookup before the POST finds none, so the POST goes out.
+                    else -> respond("""{"data":[]}""", status = HttpStatusCode.OK, headers = jsonHeaders())
+                }
+            }
+        }
+        val harness = harness(engine, accountStore)
+        val viewModel = buildViewModel(harness)
+        viewModel.setState { it.copy(selectedCategory = testCategory, location = testLocation, attributesLoadState = AttributesLoadState.Loaded) }
+        val effects = mutableListOf<PreviewAdEffect>()
+        backgroundScope.launch { viewModel.effects.collect { effects += it } }
+
+        viewModel.onEvent(PreviewAdEvent.Publish)
+        advanceUntilIdle()
+
+        assertTrue(effects.contains(PreviewAdEffect.PickDistrict(testLocation)))
+        assertTrue(effects.none { it is PreviewAdEffect.PublishFailure })
+        val failed = harness.analytics.events.single { it.first == AnalyticsEvents.AD_PUBLISH_FAILED }
+        assertEquals("validation:district_id", failed.second["reason"])
+    }
+
+    @Test
     fun `publish aborts when the active account switches mid-flight even though the fetched id still matches the original target`() =
         runTest(testDispatcher) {
             val accountStore = OlxAccountStore(InMemoryOlxKeyValueStore(), testJson)

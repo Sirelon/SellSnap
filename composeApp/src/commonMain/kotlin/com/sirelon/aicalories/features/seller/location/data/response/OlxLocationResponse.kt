@@ -9,6 +9,11 @@ internal class OlxLocationsRootResponse(
     val data: List<OlxLocationResponse>?,
 )
 
+@Serializable
+internal class OlxDistrictsRootResponse(
+    @SerialName("data")
+    val data: List<OlxDistrictResponse>?,
+)
 
 @Serializable
 internal class OlxLocationResponse(

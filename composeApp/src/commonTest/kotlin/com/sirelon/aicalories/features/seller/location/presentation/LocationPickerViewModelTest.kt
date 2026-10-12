@@ -14,6 +14,12 @@ import com.sirelon.sellsnap.features.seller.location.presentation.LocationPicker
 import com.sirelon.sellsnap.features.seller.location.presentation.LocationPickerContract.LocationPickerEvent
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
+import io.ktor.client.engine.mock.MockEngineConfig
+import io.ktor.client.engine.mock.respond
+import io.ktor.http.ContentType
+import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.headersOf
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -27,6 +33,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class LocationPickerViewModelTest {
@@ -67,8 +74,8 @@ class LocationPickerViewModelTest {
     }
 
     @Test
-    fun `picking a city saves it as the default`() = runTest(testDispatcher) {
-        val viewModel = createViewModel(FakeLocationProvider())
+    fun `picking a city without districts saves it as the default`() = runTest(testDispatcher) {
+        val viewModel = createViewModel(FakeLocationProvider(), districtsJson = NO_DISTRICTS_JSON)
         val lviv = OlxLocation(cityId = 5, cityName = "Lviv", districtId = null, districtName = null)
 
         viewModel.onEvent(LocationPickerEvent.CitySelected(CitySuggestion(lviv, region = "Lviv Oblast")))
@@ -76,6 +83,60 @@ class LocationPickerViewModelTest {
 
         assertEquals(LocationPickerEffect.LocationChosen(lviv), viewModel.effects.first())
         assertEquals(lviv, store.read())
+        assertNull(viewModel.state.value.districtCity)
+    }
+
+    @Test
+    fun `picking a city with districts asks for the district before saving`() = runTest(testDispatcher) {
+        val viewModel = createViewModel(FakeLocationProvider(), districtsJson = KYIV_DISTRICTS_JSON)
+
+        viewModel.onEvent(LocationPickerEvent.CitySelected(CitySuggestion(kyiv, region = "Kyiv")))
+        advanceUntilIdle()
+
+        val state = viewModel.state.value
+        assertEquals(kyiv, state.districtCity)
+        assertEquals(listOf("Holosiivskyi", "Pecherskyi"), state.districts.map { it.districtName })
+        assertNull(store.read(), "the city alone must not be saved while it needs a district")
+    }
+
+    @Test
+    fun `picking a district saves the city with that district`() = runTest(testDispatcher) {
+        val viewModel = createViewModel(FakeLocationProvider(), districtsJson = KYIV_DISTRICTS_JSON)
+        viewModel.onEvent(LocationPickerEvent.CitySelected(CitySuggestion(kyiv, region = "Kyiv")))
+        advanceUntilIdle()
+
+        val pechersk = viewModel.state.value.districts.single { it.districtId == 3 }
+        viewModel.onEvent(LocationPickerEvent.DistrictSelected(pechersk))
+        advanceUntilIdle()
+
+        val expected = OlxLocation(cityId = 268, cityName = "Kyiv", districtId = 3, districtName = "Pecherskyi")
+        assertEquals(LocationPickerEffect.LocationChosen(expected), viewModel.effects.first())
+        assertEquals(expected, store.read())
+    }
+
+    @Test
+    fun `opened for a city it starts on that city's district step`() = runTest(testDispatcher) {
+        val viewModel = createViewModel(
+            FakeLocationProvider(),
+            districtsJson = KYIV_DISTRICTS_JSON,
+            districtsOf = kyiv,
+        )
+        advanceUntilIdle()
+
+        assertEquals(kyiv, viewModel.state.value.districtCity)
+        assertEquals(2, viewModel.state.value.districts.size)
+    }
+
+    @Test
+    fun `back from the district step returns to the city search`() = runTest(testDispatcher) {
+        val viewModel = createViewModel(FakeLocationProvider(), districtsJson = KYIV_DISTRICTS_JSON)
+        viewModel.onEvent(LocationPickerEvent.CitySelected(CitySuggestion(kyiv, region = "Kyiv")))
+        advanceUntilIdle()
+
+        viewModel.onEvent(LocationPickerEvent.BackToCitySearch)
+
+        assertNull(viewModel.state.value.districtCity)
+        assertTrue(viewModel.state.value.districts.isEmpty())
     }
 
     @Test
@@ -90,19 +151,50 @@ class LocationPickerViewModelTest {
         assertEquals(null, viewModel.state.value.searchedQuery)
     }
 
-    private suspend fun createViewModel(provider: FakeLocationProvider): LocationPickerViewModel {
+    private fun createViewModel(
+        provider: FakeLocationProvider,
+        districtsJson: String? = null,
+        districtsOf: OlxLocation? = null,
+    ): LocationPickerViewModel {
         val countryStore = OlxCountryStore(InMemoryOlxKeyValueStore(), NoOpAnalytics())
+        val engine = MockEngine(
+            MockEngineConfig().apply {
+                dispatcher = testDispatcher
+                addHandler { request ->
+                    if (districtsJson != null && request.url.encodedPath.endsWith("/districts")) {
+                        respond(
+                            content = districtsJson,
+                            status = HttpStatusCode.OK,
+                            headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
+                        )
+                    } else {
+                        error("No OLX request expected.")
+                    }
+                }
+            },
+        )
         val repository = LocationRepository(
             locationProvider = provider,
             olxApiClient = OlxApiClient(
-                httpClient = HttpClient(MockEngine { error("No OLX request expected.") }),
+                httpClient = HttpClient(engine),
                 json = testJson,
                 errorParser = OlxRemoteErrorParser(testJson),
             ),
             locationStore = store,
             countryStore = countryStore,
         )
-        return LocationPickerViewModel(repository)
+        return LocationPickerViewModel(repository, districtsOf)
+    }
+
+    private val kyiv = OlxLocation(cityId = 268, cityName = "Kyiv", districtId = null, districtName = null)
+
+    private companion object {
+        const val NO_DISTRICTS_JSON = """{"data":[]}"""
+        const val KYIV_DISTRICTS_JSON =
+            """{"data":[""" +
+                """{"id":3,"city_id":268,"name":"Pecherskyi","latitude":50.42,"longitude":30.55},""" +
+                """{"id":1,"city_id":268,"name":"Holosiivskyi","latitude":50.35684,"longitude":30.51985}""" +
+                """]}"""
     }
 
     private class NoOpAnalytics : Analytics {
