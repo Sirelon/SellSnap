@@ -271,6 +271,7 @@
     <string name="location_picker_search_placeholder">Search for a city</string>
     <string name="location_picker_no_results">No cities match “%1$s”</string>
     <string name="location_picker_search_failed">Couldn't search right now.</string>
+    <string name="location_picker_district_title">Pick a district in %1$s</string>
     <string name="got_it">Got it</string>
 
     <!-- Error Messages -->

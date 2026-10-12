@@ -269,6 +269,7 @@
     <string name="location_picker_search_placeholder">Қала іздеу</string>
     <string name="location_picker_no_results">«%1$s» сұрауына сәйкес қала жоқ</string>
     <string name="location_picker_search_failed">Қазір іздей алмадық.</string>
+    <string name="location_picker_district_title">Ауданды таңда: %1$s</string>
     <string name="got_it">Түсінікті</string>
 
     <!-- Error Messages -->

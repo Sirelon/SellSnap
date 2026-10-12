@@ -26,6 +26,7 @@ import io.ktor.http.headersOf
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 
@@ -78,7 +79,7 @@ class LocationRepositoryTest {
     }
 
     @Test
-    fun `searchCities maps each geocoded place to one OLX city and keeps its district`() = runBlocking {
+    fun `searchCities maps each geocoded place to one OLX city without the centre district`() = runBlocking {
         val store = LocationStore(InMemoryOlxKeyValueStore(), testJson)
         val provider = FakeLocationProvider(
             places = listOf(
@@ -103,9 +104,60 @@ class LocationRepositoryTest {
 
         val cities = repository.searchCities("Kyiv")
 
-        assertEquals(listOf(CitySuggestion(OlxLocation(1, "Kyiv", 10, "Pechersk"), region = "Kyiv")), cities)
+        assertEquals(listOf(CitySuggestion(OlxLocation(1, "Kyiv", null, null), region = "Kyiv")), cities)
         assertEquals(listOf("Kyiv, Ukraine" to "ua"), provider.searchQueries)
         assertNull(store.read())
+    }
+
+    @Test
+    fun `getCityDistricts returns the city's districts sorted by name`() = runBlocking {
+        val requestedPaths = mutableListOf<String>()
+        val repository = LocationRepository(
+            locationProvider = FakeLocationProvider(),
+            olxApiClient = createApiClient(
+                MockEngine { request ->
+                    requestedPaths += request.url.encodedPath
+                    respond(
+                        content = KYIV_DISTRICTS_JSON,
+                        status = HttpStatusCode.OK,
+                        headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
+                    )
+                },
+            ),
+            locationStore = LocationStore(InMemoryOlxKeyValueStore(), testJson),
+            countryStore = countryStore,
+        )
+
+        val districts = repository.getCityDistricts(OlxLocation(268, "Kyiv", null, null))
+
+        assertEquals(
+            listOf(
+                OlxLocation(268, "Kyiv", 1, "Holosiivskyi"),
+                OlxLocation(268, "Kyiv", 3, "Pecherskyi"),
+            ),
+            districts,
+        )
+        assertTrue(requestedPaths.single().endsWith("cities/268/districts"))
+    }
+
+    @Test
+    fun `getCityDistricts is empty for a city without districts`() = runBlocking {
+        val repository = LocationRepository(
+            locationProvider = FakeLocationProvider(),
+            olxApiClient = createApiClient(
+                MockEngine {
+                    respond(
+                        content = """{"data":[]}""",
+                        status = HttpStatusCode.OK,
+                        headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
+                    )
+                },
+            ),
+            locationStore = LocationStore(InMemoryOlxKeyValueStore(), testJson),
+            countryStore = countryStore,
+        )
+
+        assertEquals(emptyList(), repository.getCityDistricts(OlxLocation(31893, "Bucha", null, null)))
     }
 
     private suspend fun createApiClient(engine: MockEngine): OlxApiClient {
@@ -165,6 +217,16 @@ class LocationRepositoryTest {
     }
 
     private companion object {
+        // Shape of the live `GET cities/268/districts` response, out of name order.
+        val KYIV_DISTRICTS_JSON = """
+            {
+              "data": [
+                {"id": 3, "city_id": 268, "name": "Pecherskyi", "latitude": 50.42, "longitude": 30.55},
+                {"id": 1, "city_id": 268, "name": "Holosiivskyi", "latitude": 50.35684, "longitude": 30.51985}
+              ]
+            }
+        """.trimIndent()
+
         val KYIV_LOCATIONS_JSON = """
             {
               "data": [

@@ -21,6 +21,8 @@ import com.sirelon.sellsnap.features.seller.categories.data.response.OlxCategory
 import com.sirelon.sellsnap.features.seller.currency.data.response.OlxCurrenciesRootResponse
 import com.sirelon.sellsnap.features.seller.currency.data.response.OlxCurrencyResponse
 import com.sirelon.sellsnap.features.seller.currency.domain.OlxCurrency
+import com.sirelon.sellsnap.features.seller.location.data.response.OlxDistrictResponse
+import com.sirelon.sellsnap.features.seller.location.data.response.OlxDistrictsRootResponse
 import com.sirelon.sellsnap.features.seller.location.data.response.OlxLocationResponse
 import com.sirelon.sellsnap.features.seller.location.data.response.OlxLocationsRootResponse
 import io.ktor.client.HttpClient
@@ -308,6 +310,14 @@ class OlxApiClient(
         response.ensureSuccess()
 
         return response.decodeBody<OlxLocationsRootResponse>("locations").data.orEmpty()
+    }
+
+    /** `GET cities/{cityId}/districts`. Empty for a city that has no districts. */
+    internal suspend fun getCityDistricts(cityId: Int): List<OlxDistrictResponse> {
+        val response = httpClient.get("cities/$cityId/districts")
+        response.ensureSuccess()
+
+        return response.decodeBody<OlxDistrictsRootResponse>("city districts").data.orEmpty()
     }
 
     /**

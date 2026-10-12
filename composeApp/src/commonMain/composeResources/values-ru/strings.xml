@@ -272,6 +272,7 @@
     <string name="location_picker_search_placeholder">Знайти місто</string>
     <string name="location_picker_no_results">Немає міст за запитом «%1$s»</string>
     <string name="location_picker_search_failed">Зараз не вдалося виконати пошук.</string>
+    <string name="location_picker_district_title">Оберіть район: %1$s</string>
     <string name="got_it">Зрозуміло</string>
 
     <!-- Error Messages -->

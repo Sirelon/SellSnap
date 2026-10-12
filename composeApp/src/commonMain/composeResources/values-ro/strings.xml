@@ -269,6 +269,7 @@
     <string name="location_picker_search_placeholder">Caută un oraș</string>
     <string name="location_picker_no_results">Niciun oraș nu se potrivește cu „%1$s”</string>
     <string name="location_picker_search_failed">Nu putem căuta acum.</string>
+    <string name="location_picker_district_title">Alege zona: %1$s</string>
     <string name="got_it">Am înțeles</string>
 
     <!-- Error Messages -->

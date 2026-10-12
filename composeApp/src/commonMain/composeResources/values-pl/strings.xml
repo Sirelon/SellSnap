@@ -269,6 +269,7 @@
     <string name="location_picker_search_placeholder">Szukaj miasta</string>
     <string name="location_picker_no_results">Brak miast pasujących do „%1$s”</string>
     <string name="location_picker_search_failed">Nie możemy teraz wyszukać.</string>
+    <string name="location_picker_district_title">Wybierz dzielnicę: %1$s</string>
     <string name="got_it">Jasne</string>
 
     <!-- Error Messages -->

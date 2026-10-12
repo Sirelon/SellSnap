@@ -161,6 +161,9 @@ interface PreviewAdContract {
         data class PublishFailure(val message: String) : PreviewAdEffect
         data class NavigateToProfile(val reason: String) : PreviewAdEffect
 
+        /** OLX needs a district for [city]: the screen opens the location picker on its district step. */
+        data class PickDistrict(val city: OlxLocation) : PreviewAdEffect
+
         /** The review gate granted a request: the screen calls the platform requester. */
         data object RequestStoreReview : PreviewAdEffect
 

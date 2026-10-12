@@ -17,12 +17,21 @@ interface LocationPickerContract {
         val isDetecting: Boolean = false,
         val detectFailed: Boolean = false,
         val showServicesOffDialog: Boolean = false,
+        /** The city whose districts are loading or shown; null on the city search. */
+        val districtCity: OlxLocation? = null,
+        /** [districtCity]'s districts. Non-empty means the picker shows the district step. */
+        val districts: List<OlxLocation> = emptyList(),
+        val isLoadingDistricts: Boolean = false,
+        val districtsFailed: Boolean = false,
     )
 
     sealed interface LocationPickerEvent {
         data class QueryChanged(val query: String) : LocationPickerEvent
         data object RetrySearch : LocationPickerEvent
         data class CitySelected(val city: CitySuggestion) : LocationPickerEvent
+        data class DistrictSelected(val district: OlxLocation) : LocationPickerEvent
+        data object BackToCitySearch : LocationPickerEvent
+        data object RetryDistricts : LocationPickerEvent
         data object UseCurrentLocationClicked : LocationPickerEvent
 
         /** Sent by the screen once the location permission is granted. */

@@ -4,6 +4,7 @@ import androidx.navigation3.runtime.NavKey
 import com.sirelon.sellsnap.analytics.AnalyticsScreen
 import com.sirelon.sellsnap.features.seller.ad.AdvertisementWithAttributes
 import com.sirelon.sellsnap.features.seller.ad.publish_success.PublishSuccessData
+import com.sirelon.sellsnap.features.seller.location.OlxLocation
 import kotlinx.serialization.Serializable
 
 /**
@@ -122,8 +123,9 @@ sealed interface AppKey : NavKey, AnalyticsScreen {
         override val screenName = "SelectCategory"
     }
 
+    /** [districtsOf] opens the picker on that city's district step. */
     @Serializable
-    data object SelectLocation : AppKey {
+    data class SelectLocation(val districtsOf: OlxLocation? = null) : AppKey {
         override val screenName = "SelectLocation"
     }
 
