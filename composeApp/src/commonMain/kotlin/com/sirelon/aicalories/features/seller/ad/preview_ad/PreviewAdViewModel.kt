@@ -707,6 +707,8 @@ class PreviewAdViewModel internal constructor(
             setState { it.copy(isPublishing = false) }
             postEffect(PreviewAdEffect.PublishSuccess(successData))
         } catch (error: Throwable) {
+            // Leaving the screen mid-publish cancels it; that is not a failed publish.
+            if (error is CancellationException) throw error
             val olxError = (error as? OlxApiException)?.error
             reviewPromptCoordinator.onPublishFailed()
             val failureReason = publishFailureReason(error, olxError)
@@ -1019,6 +1021,7 @@ class PreviewAdViewModel internal constructor(
             // Leaving the screen mid-request is not a failure and must not skew the metric.
             throw error
         } catch (error: Throwable) {
+            if (error is CancellationException) throw error
             analytics.logEvent(AnalyticsEvents.AD_DESCRIPTION_REGENERATE_FAILED)
             reportShownError(reason = "regenerate_failed", throwable = error)
             postEffect(ShowMessage(getString(Res.string.error_regenerate_description_failed)))
