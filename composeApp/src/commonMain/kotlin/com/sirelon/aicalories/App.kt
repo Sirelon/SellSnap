@@ -74,6 +74,7 @@ import com.sirelon.sellsnap.features.seller.ad.preview_ad.ui.PublishingScreen
 import com.sirelon.sellsnap.features.seller.ad.publish_success.PublishSuccessScreen
 import com.sirelon.sellsnap.features.seller.ad.screenshotMode
 import com.sirelon.sellsnap.features.seller.auth.data._currentOlxCountry
+import com.sirelon.sellsnap.features.seller.auth.domain.shownErrorCause
 import com.sirelon.sellsnap.features.seller.auth.presentation.OlxAuthDismissReason
 import com.sirelon.sellsnap.features.seller.auth.presentation.OlxCountryPickerScreenRoute
 import com.sirelon.sellsnap.features.seller.auth.presentation.SellerLandingScreenRoute
@@ -98,6 +99,7 @@ import com.sirelon.sellsnap.features.whatsnew.presentation.WhatsNewViewModel
 import com.sirelon.sellsnap.features.whatsnew.ui.AllReleasesScreenRoute
 import com.sirelon.sellsnap.features.whatsnew.ui.WhatsNewPromptSheet
 import com.sirelon.sellsnap.generated.resources.Res
+import com.sirelon.sellsnap.generated.resources.generic_error_retry
 import com.sirelon.sellsnap.generated.resources.guest_connect_olx_cta
 import com.sirelon.sellsnap.generated.resources.ic_camera
 import com.sirelon.sellsnap.generated.resources.ic_tag
@@ -115,6 +117,7 @@ import com.sirelon.sellsnap.navigation.rememberSharedViewModelStoreNavEntryDecor
 import com.sirelon.sellsnap.platform.openUrl
 import com.sirelon.sellsnap.startup.AppNavigationViewModel
 import com.sirelon.sellsnap.startup.AppThemeRepository
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.StringResource
@@ -162,20 +165,16 @@ fun App() {
             }
             var isDeletingAccountData by remember { mutableStateOf(false) }
             var isDisconnectingAccount by remember { mutableStateOf(false) }
+            var deleteAccountDataError by remember { mutableStateOf<String?>(null) }
+            var disconnectAccountError by remember { mutableStateOf<String?>(null) }
+            val genericError = stringResource(Res.string.generic_error_retry)
             val uriHandler = LocalUriHandler.current
-            // SIR-83: add-account/reconnect must force a fresh OLX login (D5). This sheet-level
-            // launcher is independent of the one the Profile entry threads into ProfileScreenRoute
-            // for its own inline Reconnect action - both are stateless wrappers around the same
-            // platform mechanism, so having two instances is harmless (see OlxExternalAuthLauncher).
-            val addAccountAuthLauncher = rememberOlxAuthLauncher(
-                forceReauth = true,
-                onDismissed = logAuthAbandoned,
-            )
+            // SIR-83: add-account/reconnect must force a fresh OLX login (D5). The Profile entry
+            // under the sheets starts it (ProfileViewModel owns the request, the launcher and the
+            // error message), this flag only hands the request over once a sheet has closed.
+            var addOrReconnectRequested by remember { mutableStateOf(false) }
             fun startAddOrReconnectAuthorization() {
-                coroutineScope.launch {
-                    runCatching { accountRepository.createAuthorizationRequest(forceReauth = true) }
-                        .onSuccess { request -> addAccountAuthLauncher(request.url) }
-                }
+                addOrReconnectRequested = true
             }
 
             // Seller-flow state, scoped for as long as the App composable is alive (it's never
@@ -686,6 +685,8 @@ fun App() {
                                 onChangeLocationClick = { navVm.backStack.add(AppKey.SelectLocation()) },
                                 pendingLocation = pendingLocation,
                                 onLocationConsumed = { pendingLocation = null },
+                                addOrReconnectRequested = addOrReconnectRequested,
+                                onAddOrReconnectConsumed = { addOrReconnectRequested = false },
                                 reason = destination.reason,
                             )
                         }
@@ -766,17 +767,24 @@ fun App() {
                                     if (!isDeletingAccountData) {
                                         coroutineScope.launch {
                                             isDeletingAccountData = true
-                                            runCatching {
+                                            deleteAccountDataError = null
+                                            try {
                                                 accountRepository.deleteSellSnapAccountData()
-                                            }.onSuccess {
                                                 // Drop cached copies of the user's listing photos too.
                                                 SingletonImageLoader.get(platformContext).apply {
                                                     memoryCache?.clear()
                                                     diskCache?.clear()
                                                 }
                                                 leaveSellerFlowToLanding()
-                                            }.onFailure { error ->
-                                                error.printStackTrace()
+                                            } catch (e: CancellationException) {
+                                                throw e
+                                            } catch (e: Exception) {
+                                                analytics.reportShownError(
+                                                    screen = "delete_account_data",
+                                                    reason = "delete_failed:${e.shownErrorCause}",
+                                                    throwable = e,
+                                                )
+                                                deleteAccountDataError = genericError
                                             }
                                             isDeletingAccountData = false
                                         }
@@ -784,10 +792,12 @@ fun App() {
                                 },
                                 onDismiss = {
                                     if (!isDeletingAccountData) {
+                                        deleteAccountDataError = null
                                         navVm.popDestination()
                                     }
                                 },
                                 isDeleting = isDeletingAccountData,
+                                errorMessage = deleteAccountDataError,
                             )
                         }
 
@@ -842,18 +852,29 @@ fun App() {
                             DisconnectOlxAccountConfirmSheet(
                                 accountName = account?.profile?.name,
                                 isDisconnecting = isDisconnectingAccount,
+                                errorMessage = disconnectAccountError,
                                 onConfirm = {
                                     if (!isDisconnectingAccount) {
                                         coroutineScope.launch {
                                             isDisconnectingAccount = true
-                                            runCatching {
+                                            disconnectAccountError = null
+                                            try {
                                                 accountRepository.disconnectAccount(
                                                     countryCode = account?.countryCode ?: _currentOlxCountry.code,
                                                     localIndex = destination.localIndex,
                                                 )
+                                                navVm.popDestination()
+                                            } catch (e: CancellationException) {
+                                                throw e
+                                            } catch (e: Exception) {
+                                                analytics.reportShownError(
+                                                    screen = "disconnect_account",
+                                                    reason = "disconnect_failed:${e.shownErrorCause}",
+                                                    throwable = e,
+                                                )
+                                                disconnectAccountError = genericError
                                             }
                                             isDisconnectingAccount = false
-                                            navVm.popDestination()
                                         }
                                     }
                                 },
@@ -867,6 +888,7 @@ fun App() {
                                 },
                                 onDismiss = {
                                     if (!isDisconnectingAccount) {
+                                        disconnectAccountError = null
                                         navVm.popDestination()
                                     }
                                 },

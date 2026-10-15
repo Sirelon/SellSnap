@@ -140,6 +140,9 @@ fun ProfileScreenRoute(
     onChangeLocationClick: () -> Unit,
     pendingLocation: OlxLocation?,
     onLocationConsumed: () -> Unit,
+    // Set by the add-account/reconnect confirm sheets over this screen; see ProfileEvent.AddAccountConfirmed.
+    addOrReconnectRequested: Boolean,
+    onAddOrReconnectConsumed: () -> Unit,
     reason: String? = null,
 ) {
     val viewModel: ProfileViewModel = koinViewModel()
@@ -150,6 +153,13 @@ fun ProfileScreenRoute(
         if (pendingLocation != null) {
             viewModel.onEvent(ProfileEvent.LocationSelected(pendingLocation))
             onLocationConsumed()
+        }
+    }
+
+    LaunchedEffect(addOrReconnectRequested) {
+        if (addOrReconnectRequested) {
+            viewModel.onEvent(ProfileEvent.AddAccountConfirmed)
+            onAddOrReconnectConsumed()
         }
     }
 
@@ -630,6 +640,7 @@ fun DeleteAccountDataConfirmSheet(
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
     isDeleting: Boolean,
+    errorMessage: String? = null,
 ) {
     Column(
         modifier = Modifier
@@ -658,6 +669,13 @@ fun DeleteAccountDataConfirmSheet(
                     color = AppTheme.colors.primary,
                 )
             }
+        }
+        if (errorMessage != null) {
+            Text(
+                text = errorMessage,
+                style = AppTheme.typography.body,
+                color = AppTheme.colors.error,
+            )
         }
         AppButton(
             modifier = Modifier.fillMaxWidth(),
@@ -835,6 +853,7 @@ fun DisconnectOlxAccountConfirmSheet(
     onConfirm: () -> Unit,
     onOpenOlxSettings: () -> Unit,
     onDismiss: () -> Unit,
+    errorMessage: String? = null,
 ) {
     val displayName = accountName?.takeIf { it.isNotBlank() } ?: stringResource(Res.string.profile_olx_account)
     Column(
@@ -867,6 +886,13 @@ fun DisconnectOlxAccountConfirmSheet(
                     color = AppTheme.colors.primary,
                 )
             }
+        }
+        if (errorMessage != null) {
+            Text(
+                text = errorMessage,
+                style = AppTheme.typography.body,
+                color = AppTheme.colors.error,
+            )
         }
         AppButton(
             modifier = Modifier.fillMaxWidth(),

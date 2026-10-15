@@ -33,7 +33,7 @@ class CategoriesRepository(
 
     // Errors are wrapped as Result so the sharing coroutine is never cancelled by a network failure.
     // Callers unwrap with getOrThrow(), propagating the exception to their own collector/caller.
-    private val categoriesCache: SharedFlow<Result<List<OlxCategory>>> = flow {
+    private fun newCategoriesCache(): SharedFlow<Result<List<OlxCategory>>> = flow {
         emit(runCatching { loadSupportedCategories() })
     }.shareIn(
         scope = scope,
@@ -41,7 +41,15 @@ class CategoriesRepository(
         replay = 1,
     )
 
-    fun loadCategories(): Flow<List<OlxCategory>> = categoriesCache.map { it.getOrThrow() }
+    private var categoriesCache = newCategoriesCache()
+
+    // A failure is handed out once and then dropped, so the next call (a retry) loads again
+    // instead of replaying the cached failure.
+    fun loadCategories(): Flow<List<OlxCategory>> = flow {
+        val result = categoriesCache.first()
+        if (result.isFailure) categoriesCache = newCategoriesCache()
+        emit(result.getOrThrow())
+    }
 
     fun getRootCategories(): Flow<List<OlxCategory>> =
         loadCategories().map { all -> all.filter { it.parentId == null } }
