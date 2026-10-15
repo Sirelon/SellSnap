@@ -94,6 +94,10 @@ private val AdGenerationTimeout = 2.minutes
  * a failure the seller can be told about and retry. */
 internal class AdGenerationTimeoutException : Exception("Ad generation exceeded $AdGenerationTimeout")
 
+/** A photo upload failed during generation. [GenerateAdViewModel.handleUploadUpdate] has already shown
+ * and reported it, so the generation failure path only ends the run and adds nothing for the seller. */
+internal class PhotoUploadFailedException(message: String) : Exception(message)
+
 class GenerateAdViewModel(
     private val mediaUploadHelper: MediaUploadHelper,
     private val draftMediaFileStore: DraftMediaFileStore,
@@ -391,10 +395,10 @@ class GenerateAdViewModel(
                 postEffect(GenerateAdContract.GenerateAdEffect.OpenAdPreview(ad = ad))
             }
             .catch { error ->
-                val message = if (error is UnsupportedOlxCategoryException) {
-                    getString(Res.string.error_category_not_supported)
-                } else {
-                    error.toGenerateAdErrorMessage(
+                val message = when (error) {
+                    is PhotoUploadFailedException -> null
+                    is UnsupportedOlxCategoryException -> getString(Res.string.error_category_not_supported)
+                    else -> error.toGenerateAdErrorMessage(
                         defaultMessage = getString(Res.string.error_generate_ad_failed),
                     )
                 }
@@ -405,9 +409,11 @@ class GenerateAdViewModel(
                     buildGenerationStageParams(startedAt.elapsedNow().inWholeMilliseconds, photoCount, uploadMs, uploadBytes, modelMs, attributesMs) +
                         mapOf("reason" to failureReason, "retry_count" to retryCount),
                 )
-                reportShownError(reason = "generation_failed:$failureReason", throwable = error)
                 setState { it.copy(isLoading = false) }
-                showError(message)
+                if (message != null) {
+                    reportShownError(reason = "generation_failed:$failureReason", throwable = error)
+                    showError(message)
+                }
             }
             .onCompletion {
                 if (!outcomeLogged) {
@@ -473,8 +479,8 @@ class GenerateAdViewModel(
                 .mapNotNull { update ->
                     when (update) {
                         is MediaUploadUpdate.Success -> update.file to update.uploadedFile
-                        is MediaUploadUpdate.Failure -> throw IllegalStateException(update.message)
-                        is MediaUploadUpdate.Error -> throw IllegalStateException(update.message)
+                        is MediaUploadUpdate.Failure -> throw PhotoUploadFailedException(update.message)
+                        is MediaUploadUpdate.Error -> throw PhotoUploadFailedException(update.message)
                         else -> null
                     }
                 }
@@ -673,6 +679,7 @@ class GenerateAdViewModel(
 
     private fun Throwable.toFailureReason(): String = when {
         this is UnsupportedOlxCategoryException -> "unsupported_category"
+        this is PhotoUploadFailedException -> "photo_upload"
         this is IncompleteGeneratedAdException -> if (isEmptyOutput) "empty_output" else "incomplete_ad"
         this is AdGenerationTimeoutException || this is OpenAITimeoutException -> "timeout"
         message?.startsWith(OpenAIRequestFailedPrefix) == true -> "openai_error"

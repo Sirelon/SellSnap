@@ -91,6 +91,7 @@ class ProfileViewModel(
             is ProfileEvent.SetActiveAccountClicked -> setActiveAccount(event.localIndex)
             is ProfileEvent.NeedsReconnectRowClicked -> toggleReconnectRow(event.localIndex)
             is ProfileEvent.ReconnectClicked -> reconnect(event.localIndex)
+            ProfileEvent.AddAccountConfirmed -> startAuthorization(forceReauth = true)
             is ProfileEvent.CountrySelected -> viewModelScope.launch {
                 olxCountryStore.save(event.country)
                 setState { it.copy(country = event.country) }

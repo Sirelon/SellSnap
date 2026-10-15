@@ -57,6 +57,9 @@ interface ProfileContract {
         data class NeedsReconnectRowClicked(val localIndex: Int) : ProfileEvent
         data class ReconnectClicked(val localIndex: Int) : ProfileEvent
         data class CountrySelected(val country: OlxCountry) : ProfileEvent
+
+        /** The seller confirmed in a sheet over this screen: start a forced-fresh-login authorization. */
+        data object AddAccountConfirmed : ProfileEvent
     }
 
     sealed interface ProfileEffect {

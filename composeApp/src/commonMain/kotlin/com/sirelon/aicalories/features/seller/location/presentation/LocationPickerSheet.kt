@@ -29,6 +29,9 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigationevent.NavigationEventInfo
+import androidx.navigationevent.compose.NavigationBackHandler
+import androidx.navigationevent.compose.rememberNavigationEventState
 import com.mohamedrejeb.calf.permissions.CoarseLocation
 import com.mohamedrejeb.calf.permissions.Permission
 import com.sirelon.sellsnap.designsystem.AppDimens
@@ -126,7 +129,16 @@ fun LocationPickerSheet(
     }
 
     val districtCity = state.districtCity
-    if (districtCity != null && state.districts.isNotEmpty()) {
+    val onDistrictStep = districtCity != null && state.districts.isNotEmpty()
+
+    // Back on the district step goes to the city search, like the arrow, instead of closing the sheet.
+    NavigationBackHandler(
+        state = rememberNavigationEventState(currentInfo = NavigationEventInfo.None),
+        isBackEnabled = onDistrictStep,
+        onBackCompleted = { viewModel.onEvent(LocationPickerEvent.BackToCitySearch) },
+    )
+
+    if (districtCity != null && onDistrictStep) {
         DistrictStepContent(city = districtCity, districts = state.districts, onEvent = viewModel::onEvent)
     } else {
         LocationPickerContent(state = state, onEvent = viewModel::onEvent)
