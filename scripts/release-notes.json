@@ -1,5 +1,132 @@
 [
   {
+    "version": "3.4",
+    "date": "2026-10-07",
+    "active": true,
+    "changes": [
+      {
+        "id": "drafts",
+        "icon": "feature",
+        "title": {
+          "en": "Drafts",
+          "uk": "Чернетки",
+          "pl": "Szkice",
+          "ro": "Ciorne",
+          "bg": "Чернови",
+          "pt": "Rascunhos",
+          "kk": "Жобалар",
+          "ru": "Чернетки"
+        },
+        "summary": {
+          "en": "Every generated listing is saved to Drafts, so you can come back to it later",
+          "uk": "Кожне згенероване оголошення зберігається в «Чернетках» — до нього можна повернутися пізніше",
+          "pl": "Każde wygenerowane ogłoszenie trafia do Szkiców, więc możesz do niego wrócić później",
+          "ro": "Fiecare anunț generat se salvează în Ciorne, ca să revii la el mai târziu",
+          "bg": "Всяка генерирана обява се запазва в Чернови, за да се върнеш към нея по-късно",
+          "pt": "Cada anúncio gerado fica guardado em Rascunhos, para voltar a ele mais tarde",
+          "kk": "Әр жасалған хабарландыру «Жобалар» бөліміне сақталады — оған кейін қайта оралуға болады",
+          "ru": "Кожне згенероване оголошення зберігається в «Чернетках» — до нього можна повернутися пізніше"
+        }
+      },
+      {
+        "id": "cancel-and-undo",
+        "icon": "improvement",
+        "title": {
+          "en": "Cancel and undo",
+          "uk": "Скасування й відновлення",
+          "pl": "Anulowanie i cofanie",
+          "ro": "Anulare și revenire",
+          "bg": "Отмяна и връщане",
+          "pt": "Cancelar e desfazer",
+          "kk": "Тоқтату және қайтару",
+          "ru": "Скасування й відновлення"
+        },
+        "summary": {
+          "en": "Cancel a generation anytime, and undo removing a photo before you publish",
+          "uk": "Генерацію можна скасувати будь-коли, а видалене фото — повернути перед публікацією",
+          "pl": "Generowanie możesz anulować w każdej chwili, a usunięte zdjęcie przywrócić przed publikacją",
+          "ro": "Poți anula oricând o generare și poți readuce o poză ștearsă înainte de publicare",
+          "bg": "Можеш да отмениш генерирането по всяко време и да върнеш изтрита снимка преди публикуване",
+          "pt": "Pode cancelar a geração a qualquer momento e recuperar uma foto removida antes de publicar",
+          "kk": "Жасауды кез келген уақытта тоқтатып, жойылған суретті жарияламас бұрын қайтаруға болады",
+          "ru": "Генерацію можна скасувати будь-коли, а видалене фото — повернути перед публікацією"
+        }
+      },
+      {
+        "id": "faster-uploads-local-prices",
+        "icon": "upload",
+        "title": {
+          "en": "Faster photos, local prices",
+          "uk": "Швидші фото, ціни у вашій валюті",
+          "pl": "Szybsze zdjęcia, ceny w Twojej walucie",
+          "ro": "Poze mai rapide, prețuri în moneda ta",
+          "bg": "По-бързи снимки, цени в твоята валута",
+          "pt": "Fotos mais rápidas, preços na sua moeda",
+          "kk": "Жылдам суреттер, өз валютаңыздағы бағалар",
+          "ru": "Швидші фото, ціни у вашій валюті"
+        },
+        "summary": {
+          "en": "Photos upload faster, and prices come out in your own currency, rounded like real market prices",
+          "uk": "Фото завантажуються швидше, а ціни — у вашій валюті й округлені, як на ринку",
+          "pl": "Zdjęcia wysyłają się szybciej, a ceny są w Twojej walucie i zaokrąglone jak na rynku",
+          "ro": "Pozele se încarcă mai repede, iar prețurile apar în moneda ta, rotunjite ca pe piață",
+          "bg": "Снимките се качват по-бързо, а цените са в твоята валута и закръглени като на пазара",
+          "pt": "As fotos carregam mais depressa e os preços surgem na sua moeda, arredondados como no mercado",
+          "kk": "Суреттер жылдамырақ жүктеледі, ал бағалар сіздің валютаңызда және нарықтағыдай дөңгелектенеді",
+          "ru": "Фото завантажуються швидше, а ціни — у вашій валюті й округлені, як на ринку"
+        }
+      },
+      {
+        "id": "guest-mode-country-switch",
+        "icon": "improvement",
+        "title": {
+          "en": "Guest mode and country switch",
+          "uk": "Гостьовий режим і вибір країни",
+          "pl": "Tryb gościa i zmiana kraju",
+          "ro": "Mod invitat și schimbarea țării",
+          "bg": "Режим за гости и смяна на държава",
+          "pt": "Modo convidado e mudança de país",
+          "kk": "Қонақ режимі және елді ауыстыру",
+          "ru": "Гостьовий режим і вибір країни"
+        },
+        "summary": {
+          "en": "No OLX account? Guest mode now offers itself when you close the login, and you can change country in Profile",
+          "uk": "Немає акаунта OLX? Гостьовий режим тепер пропонується, якщо ви закрили вхід, а країну можна змінити в Профілі",
+          "pl": "Nie masz konta OLX? Tryb gościa pojawia się teraz po zamknięciu logowania, a kraj zmienisz w Profilu",
+          "ro": "Nu ai cont OLX? Modul invitat apare acum când închizi autentificarea, iar țara o poți schimba din Profil",
+          "bg": "Нямаш OLX акаунт? Режимът за гости вече се предлага, когато затвориш входа, а държавата се сменя от Профил",
+          "pt": "Sem conta OLX? O modo convidado é agora sugerido quando fecha o início de sessão, e pode mudar de país no Perfil",
+          "kk": "OLX аккаунтыңыз жоқ па? Кіруді жапқанда енді қонақ режимі ұсынылады, ал елді Профильде өзгертуге болады",
+          "ru": "Немає акаунта OLX? Гостьовий режим тепер пропонується, якщо ви закрили вхід, а країну можна змінити в Профілі"
+        }
+      },
+      {
+        "id": "no-duplicate-listings",
+        "icon": "fix",
+        "title": {
+          "en": "No more duplicate listings",
+          "uk": "Без дублікатів оголошень",
+          "pl": "Koniec z powielonymi ogłoszeniami",
+          "ro": "Fără anunțuri duplicate",
+          "bg": "Без дублирани обяви",
+          "pt": "Sem anúncios duplicados",
+          "kk": "Қайталанған хабарландырулар жоқ",
+          "ru": "Без дублікатів оголошень"
+        },
+        "summary": {
+          "en": "Fixed duplicate listings appearing on OLX",
+          "uk": "Виправлено дублікати оголошень на OLX",
+          "pl": "Naprawiono powielone ogłoszenia na OLX",
+          "ro": "Am rezolvat anunțurile duplicate pe OLX",
+          "bg": "Поправени дублирани обяви в OLX",
+          "pt": "Corrigidos anúncios duplicados no OLX",
+          "kk": "OLX-тегі қайталанған хабарландырулар түзетілді",
+          "ru": "Виправлено дублікати оголошень на OLX"
+        }
+      }
+    ]
+  },
+  {
     "version": "3.3",
     "date": "2026-09-13",
     "active": true,

@@ -2,7 +2,7 @@
 
 Copy-paste text for every listing field. The app ships 8 in-app languages, but this doc
 only has 7 sections — russian shares Ukrainian's in-app UI and has no separate store
-listing (see the "No russian store listing" note below). Written for SellSnap 3.3 (build 15).
+listing (see the "No russian store listing" note below). Written for SellSnap 3.4 (build 16).
 
 The per-language **What's New** blocks below match what's pushed to the stores automatically from `.claude/tmp/release-metadata/` (gitignored, regenerated fresh each release): Android reads `android/<locale>/changelogs/<version_code>.txt`, iOS reads `ios/<locale>/release_notes.txt` (App Store) and the same file feeds TestFlight's localized build info. The `sellsnap-release` skill regenerates both those files and this section on every release.
 
@@ -73,13 +73,16 @@ From snap to live on OLX in about a minute. Download SellSnap and turn your clut
 SellSnap is an independent app and is not affiliated with or endorsed by OLX. Publishing requires an OLX account.
 ```
 
-**What's New (v3.3):**
+**What's New (v3.4):**
 
 ```
-SellSnap 3.3 — clearer guidance when a photo won't work
+SellSnap 3.4 — drafts, faster listings, more control
 
-• Blurry, dark, or unclear photos, or photos of different items, now get a specific message telling you what to fix
-• Ad generation no longer falls back to placeholder text when it can't write a real listing — you get a clear retry instead
+• Every generated listing is saved to Drafts, so you can come back to it later
+• Cancel a generation anytime, and undo removing a photo before you publish
+• Photos upload faster, and prices come out in your own currency, rounded like real market prices
+• No OLX account? Guest mode now offers itself when you close the login, and you can change country in Profile
+• Fixed duplicate listings appearing on OLX
 ```
 
 ---
@@ -127,13 +130,16 @@ SellSnap підтримує OLX в Україні, Польщі, Румунії,
 SellSnap — незалежний застосунок, не афілійований з OLX. Для публікації потрібен акаунт OLX.
 ```
 
-**What's New (v3.3):**
+**What's New (v3.4):**
 
 ```
-SellSnap 3.3 — чіткіші підказки, якщо фото не підходить
+SellSnap 3.4 — чернетки, швидші оголошення, більше контролю
 
-• Розмиті, темні чи нерозпізнані фото, а також фото різних товарів — тепер із конкретним поясненням, що виправити
-• Генерація оголошення більше не підставляє текст-заглушку замість реального опису — ви одразу бачите чітку пропозицію спробувати ще раз
+• Кожне згенероване оголошення зберігається в «Чернетках» — до нього можна повернутися пізніше
+• Генерацію можна скасувати будь-коли, а видалене фото — повернути перед публікацією
+• Фото завантажуються швидше, а ціни — у вашій валюті й округлені, як на ринку
+• Немає акаунта OLX? Гостьовий режим тепер пропонується, якщо ви закрили вхід, а країну можна змінити в Профілі
+• Виправлено дублікати оголошень на OLX
 ```
 
 ---
@@ -181,13 +187,16 @@ Od zdjęcia do ogłoszenia na OLX w około minutę. Pobierz SellSnap i zamień n
 SellSnap to niezależna aplikacja, niepowiązana z OLX. Do publikacji wymagane jest konto OLX.
 ```
 
-**What's New (v3.3):**
+**What's New (v3.4):**
 
 ```
-SellSnap 3.3 — jaśniejsze wskazówki, gdy zdjęcie nie działa
+SellSnap 3.4 — szkice, szybsze ogłoszenia, więcej kontroli
 
-• Rozmazane, ciemne lub nierozpoznane zdjęcia, a także zdjęcia różnych przedmiotów, pokazują teraz dokładny komunikat, co poprawić
-• Generowanie ogłoszenia nie wstawia już tekstu zastępczego, gdy nie może napisać prawdziwej treści — zamiast tego od razu możesz spróbować ponownie
+• Każde wygenerowane ogłoszenie trafia do Szkiców, więc możesz do niego wrócić później
+• Generowanie możesz anulować w każdej chwili, a usunięte zdjęcie przywrócić przed publikacją
+• Zdjęcia wysyłają się szybciej, a ceny są w Twojej walucie i zaokrąglone jak na rynku
+• Nie masz konta OLX? Tryb gościa pojawia się teraz po zamknięciu logowania, a kraj zmienisz w Profilu
+• Naprawiono powielone ogłoszenia na OLX
 ```
 
 ---
@@ -235,13 +244,16 @@ De la poză la anunț publicat pe OLX în aproximativ un minut. Descarcă SellSn
 SellSnap este o aplicație independentă, neafiliată cu OLX. Publicarea necesită un cont OLX.
 ```
 
-**What's New (v3.3):**
+**What's New (v3.4):**
 
 ```
-SellSnap 3.3 — indicații mai clare când o poză nu e potrivită
+SellSnap 3.4 — ciorne, anunțuri mai rapide, mai mult control
 
-• Pozele neclare, întunecate sau nerecunoscute, ori pozele cu articole diferite, arată acum un mesaj exact despre ce trebuie corectat
-• Generarea anunțului nu mai completează cu text de rezervă atunci când nu poate scrie un anunț real — primești în schimb o reîncercare clară
+• Fiecare anunț generat se salvează în Ciorne, ca să revii la el mai târziu
+• Poți anula oricând o generare și poți readuce o poză ștearsă înainte de publicare
+• Pozele se încarcă mai repede, iar prețurile apar în moneda ta, rotunjite ca pe piață
+• Nu ai cont OLX? Modul invitat apare acum când închizi autentificarea, iar țara o poți schimba din Profil
+• Am rezolvat anunțurile duplicate pe OLX
 ```
 
 ---
@@ -289,13 +301,16 @@ SellSnap поддържа OLX в България, Украйна, Полша, �
 SellSnap е независимо приложение и не е свързано с OLX. За публикуване е необходим акаунт в OLX.
 ```
 
-**What's New (v3.3):**
+**What's New (v3.4):**
 
 ```
-SellSnap 3.3 — по-ясни насоки, когато снимката не върши работа
+SellSnap 3.4 — чернови, по-бързи обяви, повече контрол
 
-• Размазани, тъмни или неразпознати снимки, както и снимки на различни артикули, вече показват точно съобщение какво да поправиш
-• Генерирането на обява вече не вмъква резервен текст, когато не може да напише истинска обява — вместо това получаваш ясна покана да опиташ отново
+• Всяка генерирана обява се запазва в Чернови, за да се върнеш към нея по-късно
+• Можеш да отмениш генерирането по всяко време и да върнеш изтрита снимка преди публикуване
+• Снимките се качват по-бързо, а цените са в твоята валута и закръглени като на пазара
+• Нямаш OLX акаунт? Режимът за гости вече се предлага, когато затвориш входа, а държавата се сменя от Профил
+• Поправени дублирани обяви в OLX
 ```
 
 ---
@@ -343,13 +358,16 @@ Da foto ao anúncio publicado no OLX em cerca de um minuto. Descarregue o SellSn
 O SellSnap é uma aplicação independente, sem qualquer afiliação com o OLX. Para publicar é necessária uma conta OLX.
 ```
 
-**What's New (v3.3):**
+**What's New (v3.4):**
 
 ```
-SellSnap 3.3 — indicações mais claras quando uma foto não resulta
+SellSnap 3.4 — rascunhos, anúncios mais rápidos, mais controlo
 
-• Fotos desfocadas, escuras ou não reconhecidas, ou fotos de artigos diferentes, mostram agora uma mensagem exata sobre o que corrigir
-• A geração do anúncio deixa de inserir texto de substituição quando não consegue escrever um anúncio real — em vez disso, é convidado a tentar de novo
+• Cada anúncio gerado fica guardado em Rascunhos, para voltar a ele mais tarde
+• Pode cancelar a geração a qualquer momento e recuperar uma foto removida antes de publicar
+• As fotos carregam mais depressa e os preços surgem na sua moeda, arredondados como no mercado
+• Sem conta OLX? O modo convidado é agora sugerido quando fecha o início de sessão, e pode mudar de país no Perfil
+• Corrigidos anúncios duplicados no OLX
 ```
 
 ---
@@ -395,11 +413,14 @@ OLX аккаунтыңыз жоқ па? Қонақ режимін пайдала
 SellSnap — OLX-пен байланысы жоқ тәуелсіз қосымша. Жариялау үшін OLX аккаунты қажет.
 ```
 
-**What's New (v3.3):**
+**What's New (v3.4):**
 
 ```
-SellSnap 3.3 — фото сәтсіз болғанда нақтырақ түсініктеме
+SellSnap 3.4 — жобалар, жылдамырақ хабарландырулар, көбірек бақылау
 
-• Бұлдыр, қараңғы немесе танылмаған суреттер, сондай-ақ әртүрлі заттардың суреттері енді нені түзету керектігі туралы нақты хабарлама көрсетеді
-• Хабарландыру жасау нақты мәтін жаза алмағанда енді орнына толтырғыш мәтін қоймайды — оның орнына қайта әрекет жасауға нақты ұсыныс аласыз
+• Әр жасалған хабарландыру «Жобалар» бөліміне сақталады — оған кейін қайта оралуға болады
+• Жасауды кез келген уақытта тоқтатып, жойылған суретті жарияламас бұрын қайтаруға болады
+• Суреттер жылдамырақ жүктеледі, ал бағалар сіздің валютаңызда және нарықтағыдай дөңгелектенеді
+• OLX аккаунтыңыз жоқ па? Кіруді жапқанда енді қонақ режимі ұсынылады, ал елді Профильде өзгертуге болады
+• OLX-тегі қайталанған хабарландырулар түзетілді
 ```
