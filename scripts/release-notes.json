@@ -1,5 +1,128 @@
 [
   {
+    "version": "3.5",
+    "date": "2026-10-16",
+    "active": true,
+    "changes": [
+      {
+        "id": "city-picker",
+        "icon": "feature",
+        "title": {
+          "en": "Pick your city",
+          "uk": "Оберіть своє місто",
+          "ru": "Оберіть своє місто",
+          "bg": "Избери своя град",
+          "kk": "Қаланды таңда",
+          "pl": "Wybierz swoje miasto",
+          "pt": "Escolha a sua cidade",
+          "ro": "Alege-ți orașul"
+        },
+        "summary": {
+          "en": "Search for your city and choose your district by hand, even with location turned off",
+          "uk": "Знайдіть своє місто й оберіть район вручну, навіть якщо геолокацію вимкнено",
+          "ru": "Знайдіть своє місто й оберіть район вручну, навіть якщо геолокацію вимкнено",
+          "bg": "Потърси своя град и избери район ръчно, дори когато местоположението е изключено",
+          "kk": "Қаланы іздеп, ауданды қолмен таңда, тіпті геолокация өшірулі болса да",
+          "pl": "Wyszukaj swoje miasto i wybierz dzielnicę ręcznie, nawet gdy lokalizacja jest wyłączona",
+          "pt": "Pesquise a sua cidade e escolha a zona manualmente, mesmo com a localização desativada",
+          "ro": "Caută-ți orașul și alege zona manual, chiar și cu locația oprită"
+        },
+        "detail": {
+          "en": "In cities with districts, SellSnap now asks for the district before publishing, so OLX no longer rejects the listing.",
+          "uk": "У містах із районами SellSnap тепер запитує район перед публікацією, тож OLX більше не відхиляє оголошення.",
+          "ru": "У містах із районами SellSnap тепер запитує район перед публікацією, тож OLX більше не відхиляє оголошення.",
+          "bg": "В градове с райони SellSnap вече пита за района преди публикуване, така че OLX повече не отхвърля обявата.",
+          "kk": "Аудандары бар қалаларда SellSnap енді жарияламас бұрын ауданды сұрайды, сондықтан OLX хабарландыруды енді қабылдамай тастамайды.",
+          "pl": "W miastach z dzielnicami SellSnap pyta teraz o dzielnicę przed publikacją, więc OLX nie odrzuca już ogłoszenia.",
+          "pt": "Nas cidades com zonas, o SellSnap pergunta agora a zona antes de publicar, por isso o OLX já não rejeita o anúncio.",
+          "ro": "În orașele cu zone, SellSnap te întreabă acum zona înainte de publicare, așa că OLX nu mai respinge anunțul."
+        }
+      },
+      {
+        "id": "notifications",
+        "icon": "feature",
+        "title": {
+          "en": "Notifications",
+          "uk": "Сповіщення",
+          "ru": "Сповіщення",
+          "bg": "Известия",
+          "kk": "Хабарламалар",
+          "pl": "Powiadomienia",
+          "pt": "Notificações",
+          "ro": "Notificări"
+        },
+        "summary": {
+          "en": "Turn on notifications to hear about new features and tips from SellSnap",
+          "uk": "Увімкніть сповіщення, щоб дізнаватися від SellSnap про нові функції та поради",
+          "ru": "Увімкніть сповіщення, щоб дізнаватися від SellSnap про нові функції та поради",
+          "bg": "Включи известията, за да научаваш от SellSnap за нови функции и съвети",
+          "kk": "Хабарламаларды қосып, SellSnap-тан жаңа функциялар мен кеңестерді біліп отыр",
+          "pl": "Włącz powiadomienia, żeby dostawać od SellSnap wieści o nowych funkcjach i wskazówki",
+          "pt": "Ative as notificações para saber das novidades e dicas do SellSnap",
+          "ro": "Activează notificările ca să afli de la SellSnap despre funcții noi și sfaturi"
+        },
+        "detail": {
+          "en": "You can switch them on or off anytime in Settings.",
+          "uk": "Увімкнути або вимкнути їх можна будь-коли в налаштуваннях.",
+          "ru": "Увімкнути або вимкнути їх можна будь-коли в налаштуваннях.",
+          "bg": "Можеш да ги включиш или изключиш по всяко време в Настройки.",
+          "kk": "Оларды кез келген уақытта баптаулардан қосуға немесе өшіруге болады.",
+          "pl": "Możesz je włączyć lub wyłączyć w każdej chwili w Ustawieniach.",
+          "pt": "Pode ativá-las ou desativá-las a qualquer momento nas Definições.",
+          "ro": "Le poți porni sau opri oricând din Setări."
+        }
+      },
+      {
+        "id": "item-focused-descriptions",
+        "icon": "magic",
+        "title": {
+          "en": "Descriptions about the item",
+          "uk": "Описи про сам товар",
+          "ru": "Описи про сам товар",
+          "bg": "Описания за самия артикул",
+          "kk": "Заттың өзі туралы сипаттамалар",
+          "pl": "Opisy o samym przedmiocie",
+          "pt": "Descrições sobre o artigo",
+          "ro": "Descrieri despre articolul în sine"
+        },
+        "summary": {
+          "en": "Generated descriptions talk about the item itself, not its photos, like a real seller would",
+          "uk": "Згенеровані описи розповідають про сам товар, а не про фото, як це зробив би справжній продавець",
+          "ru": "Згенеровані описи розповідають про сам товар, а не про фото, як це зробив би справжній продавець",
+          "bg": "Генерираните описания говорят за самия артикул, а не за снимките му, както би направил истински продавач",
+          "kk": "Жасалған сипаттамалар нағыз сатушы сияқты фотолар туралы емес, заттың өзі туралы айтады",
+          "pl": "Wygenerowane opisy mówią o samym przedmiocie, a nie o zdjęciach, tak jak zrobiłby to prawdziwy sprzedawca",
+          "pt": "As descrições geradas falam do próprio artigo, não das fotografias, como faria um vendedor a sério",
+          "ro": "Descrierile generate vorbesc despre articolul în sine, nu despre poze, așa cum ar face un vânzător adevărat"
+        }
+      },
+      {
+        "id": "clearer-errors",
+        "icon": "fix",
+        "title": {
+          "en": "Clearer errors",
+          "uk": "Зрозуміліші помилки",
+          "ru": "Зрозуміліші помилки",
+          "bg": "По-ясни грешки",
+          "kk": "Түсінікті қателер",
+          "pl": "Czytelniejsze błędy",
+          "pt": "Erros mais claros",
+          "ro": "Erori mai clare"
+        },
+        "summary": {
+          "en": "When something goes wrong, you now see what happened and can try again",
+          "uk": "Коли щось іде не так, ви тепер бачите, що сталося, і можете спробувати ще раз",
+          "ru": "Коли щось іде не так, ви тепер бачите, що сталося, і можете спробувати ще раз",
+          "bg": "Когато нещо се обърка, вече виждаш какво се е случило и можеш да опиташ отново",
+          "kk": "Бірдеңе дұрыс болмаса, енді не болғанын көріп, қайталап көре аласың",
+          "pl": "Gdy coś pójdzie nie tak, widzisz teraz, co się stało, i możesz spróbować ponownie",
+          "pt": "Quando algo corre mal, vê agora o que aconteceu e pode tentar novamente",
+          "ro": "Când ceva nu merge, vezi acum ce s-a întâmplat și poți încerca din nou"
+        }
+      }
+    ]
+  },
+  {
     "version": "3.4",
     "date": "2026-10-07",
     "active": true,
