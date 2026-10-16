@@ -2,7 +2,7 @@
 
 Copy-paste text for every listing field. The app ships 8 in-app languages, but this doc
 only has 7 sections — russian shares Ukrainian's in-app UI and has no separate store
-listing (see the "No russian store listing" note below). Written for SellSnap 3.4 (build 16).
+listing (see the "No russian store listing" note below). Written for SellSnap 3.5 (build 17).
 
 The per-language **What's New** blocks below match what's pushed to the stores automatically from `.claude/tmp/release-metadata/` (gitignored, regenerated fresh each release): Android reads `android/<locale>/changelogs/<version_code>.txt`, iOS reads `ios/<locale>/release_notes.txt` (App Store) and the same file feeds TestFlight's localized build info. The `sellsnap-release` skill regenerates both those files and this section on every release.
 
@@ -73,16 +73,15 @@ From snap to live on OLX in about a minute. Download SellSnap and turn your clut
 SellSnap is an independent app and is not affiliated with or endorsed by OLX. Publishing requires an OLX account.
 ```
 
-**What's New (v3.4):**
+**What's New (v3.5):**
 
 ```
-SellSnap 3.4 — drafts, faster listings, more control
+SellSnap 3.5 — pick your city, get the news
 
-• Every generated listing is saved to Drafts, so you can come back to it later
-• Cancel a generation anytime, and undo removing a photo before you publish
-• Photos upload faster, and prices come out in your own currency, rounded like real market prices
-• No OLX account? Guest mode now offers itself when you close the login, and you can change country in Profile
-• Fixed duplicate listings appearing on OLX
+• Pick your city and district by hand, even with location off — listings in cities with districts now publish without errors
+• Turn on notifications to hear about new features first
+• Descriptions talk about the item itself, like a real seller would
+• Clear errors with a retry instead of silent failures
 ```
 
 ---
@@ -130,16 +129,15 @@ SellSnap підтримує OLX в Україні, Польщі, Румунії,
 SellSnap — незалежний застосунок, не афілійований з OLX. Для публікації потрібен акаунт OLX.
 ```
 
-**What's New (v3.4):**
+**What's New (v3.5):**
 
 ```
-SellSnap 3.4 — чернетки, швидші оголошення, більше контролю
+SellSnap 3.5 — вибір міста й сповіщення
 
-• Кожне згенероване оголошення зберігається в «Чернетках» — до нього можна повернутися пізніше
-• Генерацію можна скасувати будь-коли, а видалене фото — повернути перед публікацією
-• Фото завантажуються швидше, а ціни — у вашій валюті й округлені, як на ринку
-• Немає акаунта OLX? Гостьовий режим тепер пропонується, якщо ви закрили вхід, а країну можна змінити в Профілі
-• Виправлено дублікати оголошень на OLX
+• Місто й район тепер можна обрати вручну, навіть без геолокації — оголошення в містах з районами публікуються без помилок
+• Увімкніть сповіщення, щоб першими дізнаватися про новинки
+• Описи розповідають про сам товар, як у справжнього продавця
+• Зрозумілі помилки з повторною спробою замість тихих збоїв
 ```
 
 ---
@@ -187,16 +185,15 @@ Od zdjęcia do ogłoszenia na OLX w około minutę. Pobierz SellSnap i zamień n
 SellSnap to niezależna aplikacja, niepowiązana z OLX. Do publikacji wymagane jest konto OLX.
 ```
 
-**What's New (v3.4):**
+**What's New (v3.5):**
 
 ```
-SellSnap 3.4 — szkice, szybsze ogłoszenia, więcej kontroli
+SellSnap 3.5 — wybór miasta i powiadomienia
 
-• Każde wygenerowane ogłoszenie trafia do Szkiców, więc możesz do niego wrócić później
-• Generowanie możesz anulować w każdej chwili, a usunięte zdjęcie przywrócić przed publikacją
-• Zdjęcia wysyłają się szybciej, a ceny są w Twojej walucie i zaokrąglone jak na rynku
-• Nie masz konta OLX? Tryb gościa pojawia się teraz po zamknięciu logowania, a kraj zmienisz w Profilu
-• Naprawiono powielone ogłoszenia na OLX
+• Miasto i dzielnicę wybierzesz ręcznie, nawet bez lokalizacji — ogłoszenia w miastach z dzielnicami publikują się bez błędów
+• Włącz powiadomienia, żeby pierwszy dowiadywać się o nowościach
+• Opisy mówią o samym przedmiocie, jak u prawdziwego sprzedawcy
+• Jasne komunikaty o błędach z ponowieniem zamiast cichych awarii
 ```
 
 ---
@@ -244,16 +241,15 @@ De la poză la anunț publicat pe OLX în aproximativ un minut. Descarcă SellSn
 SellSnap este o aplicație independentă, neafiliată cu OLX. Publicarea necesită un cont OLX.
 ```
 
-**What's New (v3.4):**
+**What's New (v3.5):**
 
 ```
-SellSnap 3.4 — ciorne, anunțuri mai rapide, mai mult control
+SellSnap 3.5 — alegi orașul, afli noutățile
 
-• Fiecare anunț generat se salvează în Ciorne, ca să revii la el mai târziu
-• Poți anula oricând o generare și poți readuce o poză ștearsă înainte de publicare
-• Pozele se încarcă mai repede, iar prețurile apar în moneda ta, rotunjite ca pe piață
-• Nu ai cont OLX? Modul invitat apare acum când închizi autentificarea, iar țara o poți schimba din Profil
-• Am rezolvat anunțurile duplicate pe OLX
+• Poți alege manual orașul și zona, chiar și fără localizare — anunțurile din orașele cu zone se publică fără erori
+• Activează notificările ca să afli primul de noutăți
+• Descrierile vorbesc despre obiect, ca la un vânzător adevărat
+• Erori clare, cu reîncercare, în loc de eșecuri tăcute
 ```
 
 ---
@@ -301,16 +297,15 @@ SellSnap поддържа OLX в България, Украйна, Полша, �
 SellSnap е независимо приложение и не е свързано с OLX. За публикуване е необходим акаунт в OLX.
 ```
 
-**What's New (v3.4):**
+**What's New (v3.5):**
 
 ```
-SellSnap 3.4 — чернови, по-бързи обяви, повече контрол
+SellSnap 3.5 — избор на град и известия
 
-• Всяка генерирана обява се запазва в Чернови, за да се върнеш към нея по-късно
-• Можеш да отмениш генерирането по всяко време и да върнеш изтрита снимка преди публикуване
-• Снимките се качват по-бързо, а цените са в твоята валута и закръглени като на пазара
-• Нямаш OLX акаунт? Режимът за гости вече се предлага, когато затвориш входа, а държавата се сменя от Профил
-• Поправени дублирани обяви в OLX
+• Можеш да избереш град и район ръчно, дори без местоположение — обявите в градове с райони се публикуват без грешки
+• Включи известията, за да научаваш първи за новостите
+• Описанията говорят за самия предмет, като истински продавач
+• Ясни грешки с повторен опит вместо тихи сривове
 ```
 
 ---
@@ -358,16 +353,15 @@ Da foto ao anúncio publicado no OLX em cerca de um minuto. Descarregue o SellSn
 O SellSnap é uma aplicação independente, sem qualquer afiliação com o OLX. Para publicar é necessária uma conta OLX.
 ```
 
-**What's New (v3.4):**
+**What's New (v3.5):**
 
 ```
-SellSnap 3.4 — rascunhos, anúncios mais rápidos, mais controlo
+SellSnap 3.5 — escolha a cidade, receba novidades
 
-• Cada anúncio gerado fica guardado em Rascunhos, para voltar a ele mais tarde
-• Pode cancelar a geração a qualquer momento e recuperar uma foto removida antes de publicar
-• As fotos carregam mais depressa e os preços surgem na sua moeda, arredondados como no mercado
-• Sem conta OLX? O modo convidado é agora sugerido quando fecha o início de sessão, e pode mudar de país no Perfil
-• Corrigidos anúncios duplicados no OLX
+• Escolha a cidade e a zona à mão, mesmo sem localização — os anúncios em cidades com zonas são publicados sem erros
+• Ative as notificações para saber primeiro das novidades
+• As descrições falam do próprio artigo, como um vendedor real
+• Erros claros, com nova tentativa, em vez de falhas silenciosas
 ```
 
 ---
@@ -413,14 +407,13 @@ OLX аккаунтыңыз жоқ па? Қонақ режимін пайдала
 SellSnap — OLX-пен байланысы жоқ тәуелсіз қосымша. Жариялау үшін OLX аккаунты қажет.
 ```
 
-**What's New (v3.4):**
+**What's New (v3.5):**
 
 ```
-SellSnap 3.4 — жобалар, жылдамырақ хабарландырулар, көбірек бақылау
+SellSnap 3.5 — қаланы таңдау және хабарламалар
 
-• Әр жасалған хабарландыру «Жобалар» бөліміне сақталады — оған кейін қайта оралуға болады
-• Жасауды кез келген уақытта тоқтатып, жойылған суретті жарияламас бұрын қайтаруға болады
-• Суреттер жылдамырақ жүктеледі, ал бағалар сіздің валютаңызда және нарықтағыдай дөңгелектенеді
-• OLX аккаунтыңыз жоқ па? Кіруді жапқанда енді қонақ режимі ұсынылады, ал елді Профильде өзгертуге болады
-• OLX-тегі қайталанған хабарландырулар түзетілді
+• Қала мен ауданды геолокациясыз да қолмен таңдауға болады — аудандары бар қалалардағы хабарландырулар қатесіз жарияланады
+• Жаңалықтарды бірінші білу үшін хабарламаларды қосыңыз
+• Сипаттамалар нағыз сатушыдай заттың өзі туралы жазылады
+• Үнсіз ақаулардың орнына қайталап көруге болатын түсінікті қателер
 ```
