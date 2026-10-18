@@ -1,6 +1,8 @@
 package com.sirelon.sellsnap.network
 
 import com.aallam.openai.api.http.Timeout
+import com.aallam.openai.api.logging.LogLevel
+import com.aallam.openai.client.LoggingConfig
 import com.aallam.openai.client.OpenAI
 import com.aallam.openai.client.OpenAIConfig
 import com.aallam.openai.client.OpenAIHost
@@ -48,6 +50,8 @@ fun createOpenAI(endpoint: OpenAIEndpoint, engine: HttpClientEngine? = null): Op
             socket = 60.seconds,
         ),
         retry = RetryStrategy(maxRetries = 5, base = 2.0, maxDelay = 60.seconds),
+        // The client's default logs every header, App Check token included, to stdout in release.
+        logging = LoggingConfig(logLevel = LogLevel.None),
         engine = engine,
         httpClientConfig = {
             endpoint.appCheck?.let { install(appCheckHeaderPlugin(it)) }
