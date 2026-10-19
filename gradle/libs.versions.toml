@@ -35,7 +35,7 @@ logback = "1.6.5"
 # https://mvnrepository.com/artifact/org.jetbrains.compose.material3/material3
 material3 = "1.13.0-alpha01"
 # https://mvnrepository.com/artifact/org.jetbrains.compose.material3.adaptive/adaptive
-material3-adaptive = "1.3.0-rc01"
+material3-adaptive = "1.3.0"
 materialIconsExtended = "1.7.3"
 # https://developer.android.com/jetpack/androidx/releases/navigation3#1.1.2
 navigation3Runtime = "1.2.0-alpha07"
