@@ -39,7 +39,12 @@ val appCheckDebugToken = localProperties.getProperty("APP_CHECK_DEBUG_TOKEN").or
 
 android {
     namespace = "com.sirelon.sellsnap"
-    compileSdk = libs.versions.android.compileSdk.get().toInt()
+    // Compose 1.13 alphas ship AARs that require the 37.1 minor SDK to compile against.
+    compileSdk {
+        version = release(libs.versions.android.compileSdk.get().toInt()) {
+            minorApiLevel = libs.versions.android.compileSdkMinor.get().toInt()
+        }
+    }
 
     defaultConfig {
         applicationId = "com.sirelon.sellsnap"
