@@ -260,6 +260,24 @@ The iOS framework's release link is the peak-memory task in the build and needs
 `org.gradle.jvmargs=-Xmx8g`; at 4g it died with a Kotlin/Native `OutOfMemoryError` partway
 through the archive, after Android had already uploaded.
 
+### Copy the App Store banners onto the new version
+
+App Store banners (the product-page header and search-results images) are placements on
+one version, and a new version starts with none. Once step 9 has prepared the App Store
+draft, copy them over:
+
+```bash
+ruby .claude/skills/sellsnap-release/copy-banners.rb
+```
+
+It takes the newest iOS version as target and the newest earlier version with banners as
+source, per locale, and skips placements the target already has. The draft
+(`PREPARE_FOR_SUBMISSION`) accepts them at once and they go live with that release. A
+version in review rejects placements (409 `waitingForReview`): if the App Store step was
+skipped because a version was in review, run the script again once that version is
+released, passing its version string. Making or replacing a banner belongs to the
+`store-banners` skill.
+
 ## 10. Hand off for in-app What's New
 
 After a real version bump ships — skip this for a build-only/hotfix bump where
@@ -279,6 +297,6 @@ testers). Confirm the Play and TestFlight uploads succeeded. Remind them that
 `version.properties` and `store/copy/store-listing.md` are modified but not committed —
 committing is their call, not automatic (the release-metadata files themselves are
 gitignored, so they never show up in `git status` at all). Tell them the App Store draft
-is prepared and populated but NOT submitted — submitting for review, and promoting on
+is prepared and populated, banners included, but NOT submitted — submitting for review, and promoting on
 Play, are the two steps that stay theirs — and that step 10 (in-app What's New) is a
 separate hand-off, not automatic.
