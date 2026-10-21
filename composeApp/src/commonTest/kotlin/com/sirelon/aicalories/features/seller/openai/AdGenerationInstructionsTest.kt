@@ -12,8 +12,8 @@ import kotlin.test.assertTrue
 class AdGenerationInstructionsTest {
 
     @Test
-    fun promptVersionIsV5() {
-        assertEquals("v5", AD_GENERATION_PROMPT_VERSION)
+    fun promptVersionIsV6() {
+        assertEquals("v6", AD_GENERATION_PROMPT_VERSION)
     }
 
     @Test
@@ -30,6 +30,8 @@ class AdGenerationInstructionsTest {
             "3 to 6 short sentences", "truly show little",
             // The text describes the item, never the photos of it.
             "never the pictures of it", "na zdjęciu",
+            // Every seller fact reaches the listing.
+            "Every fact in the seller note must reach the listing",
             // Earlier guardrails stay.
             "Do not invent brand, size, material, defects, or condition.",
             "Do not infer the season of clothing",

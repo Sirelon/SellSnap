@@ -29,7 +29,7 @@ const val AD_GENERATION_MODEL_ID = "gpt-4.1"
 
 // Bump whenever adGenerationInstructions changes, so ad-generation-log records stay attributable
 // to the exact prompt that produced them.
-const val AD_GENERATION_PROMPT_VERSION = "v5"
+const val AD_GENERATION_PROMPT_VERSION = "v6"
 
 private val DEFAULT_MODEL = ModelId(AD_GENERATION_MODEL_ID)
 private const val DEFAULT_IMAGE_DETAIL = "high"
@@ -62,6 +62,7 @@ If the seller note is present, treat it as the source of truth.
 - Preserve the seller's exact tokens for brand, model, size, condition, and purchase age.
 - Carry over meaningful personal context: reason for selling, how long it was used, occasion bought for, who used it. Weave it into the description naturally. Do not copy the note verbatim.
 - If the seller mentions something the photos do not show (e.g. "used on two trips"), keep it — the seller knows their item.
+- Every fact in the seller note must reach the listing, in the title or the description: size, brand, model, condition, defects, purchase age, what is included, and personal context. Drop a fact only when the note itself contradicts it. A seller fact always outranks a visible detail for a place in the description.
 
 Use the photos to add concrete visible details that support the seller's facts: colour, visible wear, accessories included, distinguishing features. If the seller note contradicts the photos, trust the seller.
 
@@ -114,6 +115,44 @@ Return ONLY valid JSON with this exact shape:
   {"attributes":[{"code":"string","valueCodes":["string"],"valueText":"string","confidence":"high|medium|low"}]}
 The response must start with `{` and end with `}`.
 """
+
+/**
+ * Maps a model answer (an option code, or label text) to one allowed option. Matching runs from
+ * strict to loose across all options, so an exact code wins over an earlier option whose text only
+ * contains it: with first-substring matching, a correct "xl" resolved to "L / 50-52" and "s" to
+ * "XXXS / 40". The loose tiers return a match only when it is unambiguous.
+ */
+internal fun resolveAllowedValue(
+    allowedValues: List<OlxAttributeValue>,
+    candidate: String,
+): OlxAttributeValue? {
+    val normalizedCandidate = normalizeForMatching(candidate)
+    if (normalizedCandidate.isEmpty()) return null
+
+    allowedValues.firstOrNull { normalizeForMatching(it.code) == normalizedCandidate }?.let { return it }
+    allowedValues.firstOrNull { normalizeForMatching(it.label) == normalizedCandidate }?.let { return it }
+
+    // OLX size labels combine sizing systems, e.g. "42 / XL / 50" or "L / 50-52".
+    allowedValues
+        .filter { value -> value.label.split('/').any { normalizeForMatching(it) == normalizedCandidate } }
+        .singleOrNull()
+        ?.let { return it }
+
+    return allowedValues
+        .filter { value ->
+            listOf(value.code, value.label)
+                .map(::normalizeForMatching)
+                .filter { it.isNotEmpty() }
+                .any { it.contains(normalizedCandidate) || normalizedCandidate.contains(it) }
+        }
+        .singleOrNull()
+}
+
+private fun normalizeForMatching(value: String): String = buildString {
+    value.lowercase().forEach { char ->
+        if (char.isLetterOrDigit()) append(char)
+    }
+}
 
 /**
  * Why the model declined to write a listing rather than inventing one. [code] is the wire value
@@ -404,7 +443,7 @@ class OpenAIClient(
         suggestion.valueCodes
             .orEmpty()
             .forEach { candidate ->
-                resolveAllowedValue(attribute, candidate)?.let(::add)
+                resolveAllowedValue(attribute.allowedValues, candidate)?.let(::add)
             }
 
         suggestion.valueText
@@ -412,29 +451,9 @@ class OpenAIClient(
             ?.let(::splitSuggestedValues)
             .orEmpty()
             .forEach { candidate ->
-                resolveAllowedValue(attribute, candidate)?.let(::add)
+                resolveAllowedValue(attribute.allowedValues, candidate)?.let(::add)
             }
     }.distinctBy { it.code }
-
-    private fun resolveAllowedValue(
-        attribute: OlxAttribute,
-        candidate: String,
-    ): OlxAttributeValue? {
-        val normalizedCandidate = normalizeForMatching(candidate)
-        if (normalizedCandidate.isEmpty()) return null
-
-        return attribute.allowedValues.firstOrNull { value ->
-            val normalizedCode = normalizeForMatching(value.code)
-            val normalizedLabel = normalizeForMatching(value.label)
-
-            normalizedCandidate == normalizedCode ||
-                normalizedCandidate == normalizedLabel ||
-                normalizedCandidate.contains(normalizedCode) ||
-                normalizedCandidate.contains(normalizedLabel) ||
-                normalizedCode.contains(normalizedCandidate) ||
-                normalizedLabel.contains(normalizedCandidate)
-        }
-    }
 
     private fun splitSuggestedValues(valueText: String): List<String> = valueText
         .split(",", ";", "/", "\n")
@@ -448,12 +467,6 @@ class OpenAIClient(
             NUMBER_PATTERN.find(numericText)?.value
         }
         ?.takeIf { it.isNotBlank() }
-
-    private fun normalizeForMatching(value: String): String = buildString {
-        value.lowercase().forEach { char ->
-            if (char.isLetterOrDigit()) append(char)
-        }
-    }
 
     private fun AttributeInputType.toOpenAIType(): String = when (this) {
         AttributeInputType.SingleSelect -> "single_select"
