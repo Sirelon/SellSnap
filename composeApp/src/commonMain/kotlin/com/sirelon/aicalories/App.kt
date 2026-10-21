@@ -26,6 +26,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextOverflow
@@ -169,6 +170,7 @@ fun App() {
             var disconnectAccountError by remember { mutableStateOf<String?>(null) }
             val genericError = stringResource(Res.string.generic_error_retry)
             val uriHandler = LocalUriHandler.current
+            val focusManager = LocalFocusManager.current
             // SIR-83: add-account/reconnect must force a fresh OLX login (D5). The Profile entry
             // under the sheets starts it (ProfileViewModel owns the request, the launcher and the
             // error message), this flag only hands the request over once a sheet has closed.
@@ -317,6 +319,8 @@ fun App() {
                             isDeletingAccountData -> Unit
                             isPreviewPublishing -> Unit
                             top is AppKey.PreviewAd -> {
+                                // Same Compose iOS text-field crash as PreviewAdContentRoute's dismissKeyboard.
+                                focusManager.clearFocus(force = true)
                                 if (screenshotMode) {
                                     navVm.popDestination()
                                 } else {

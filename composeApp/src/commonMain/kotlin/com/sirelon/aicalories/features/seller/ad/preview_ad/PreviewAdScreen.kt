@@ -262,6 +262,9 @@ internal fun PreviewAdContentRoute(
     val scrollState = rememberScrollState()
     val coroutineScope = rememberCoroutineScope()
     val invalidAttributeBringIntoViewRequester = remember { BringIntoViewRequester() }
+    // Compose 1.13.0-alpha crashes on iOS when a focused text field leaves composition
+    // (TextFieldDecoratorModifierNode.disposeInputSession, Crashlytics 98f22a15), so every
+    // exit from this screen drops focus first. Remove once Compose fixes it.
     val dismissKeyboard = rememberKeyboardDismissAction()
 
     LaunchedEffect(autoOpenAttributeRequest) {
@@ -293,7 +296,10 @@ internal fun PreviewAdContentRoute(
                         modifier = Modifier.fillMaxWidth(),
                         style = AppButtonDefaults.primary(),
                         text = stringResource(Res.string.guest_connect_olx_cta),
-                        onClick = onConnectOlxClick,
+                        onClick = {
+                            dismissKeyboard()
+                            onConnectOlxClick()
+                        },
                     )
                 } else if (state.isSessionResolved) {
                     AppButton(
@@ -318,6 +324,7 @@ internal fun PreviewAdContentRoute(
                                 }
                             } else {
                                 hapticFeedback.performSuccessFeedback()
+                                dismissKeyboard()
                                 onPublishConfirmationRequested()
                             }
                         },
@@ -341,6 +348,7 @@ internal fun PreviewAdContentRoute(
             ImagesCarousel(
                 images = state.images,
                 onImageClick = {
+                    dismissKeyboard()
                     showImagesPreview(state.images, it)
                 },
             )
@@ -365,7 +373,10 @@ internal fun PreviewAdContentRoute(
                 if (state.showTargetAccountRow && targetAccount != null) {
                     PublishTargetAccountRow(
                         account = targetAccount,
-                        onClick = onTargetAccountRowClick,
+                        onClick = {
+                            dismissKeyboard()
+                            onTargetAccountRowClick()
+                        },
                         modifier = Modifier.padding(horizontal = AppDimens.Spacing.xl3),
                     )
                 }
@@ -387,7 +398,14 @@ internal fun PreviewAdContentRoute(
                 state = state,
                 titleState = viewModel.titleState,
                 descriptionState = viewModel.descriptionState,
-                onLocationClick = if (state.isSessionResolved && !state.isGuest) onChangeLocationClick else null,
+                onLocationClick = if (state.isSessionResolved && !state.isGuest) {
+                    {
+                        dismissKeyboard()
+                        onChangeLocationClick()
+                    }
+                } else {
+                    null
+                },
                 autoOpenAttributeCode = autoOpenAttributeCode,
                 autoOpenAttributeRequest = autoOpenAttributeRequest,
                 autoOpenAttributeModifier = Modifier.bringIntoViewRequester(invalidAttributeBringIntoViewRequester),
@@ -404,7 +422,10 @@ internal fun PreviewAdContentRoute(
         }
 
             IconButton(
-                onClick = onBack,
+                onClick = {
+                    dismissKeyboard()
+                    onBack()
+                },
                 modifier = Modifier
                     .align(Alignment.TopStart)
                     .systemBarsPadding()
@@ -626,6 +647,7 @@ private fun PreviewAdContent(
     val isTitleInvalid = remember(titleText) { titleText.trim().length < TitleMinLength }
     val isDescriptionInvalid =
         remember(descriptionText) { descriptionText.trim().length < DescriptionMinLength }
+    val dismissKeyboard = rememberKeyboardDismissAction()
 
     Column(
         modifier = Modifier.padding(horizontal = AppDimens.Spacing.xl3),
@@ -694,7 +716,10 @@ private fun PreviewAdContent(
         if (state.isSessionResolved && !state.isGuest) {
             AdCategoryCard(
                 categoryLabel = state.categoryLabel,
-                onChangeClick = { onEvent(PreviewAdEvent.OnChangeCategoryClick) },
+                onChangeClick = {
+                    dismissKeyboard()
+                    onEvent(PreviewAdEvent.OnChangeCategoryClick)
+                },
             )
 
             if (state.attributeItems.isNotEmpty()) {
