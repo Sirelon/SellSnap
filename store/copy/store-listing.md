@@ -76,11 +76,12 @@ SellSnap is an independent app and is not affiliated with or endorsed by OLX. Pu
 **What's New (v3.6):**
 
 ```
-SellSnap 3.6 — steadier under the hood
+SellSnap 3.6 — your details, kept
 
-• Sharper crash and error reports, so we can fix problems faster
-• Updated libraries for a smoother, more stable app
-• Small privacy and security improvements
+• Listings now keep everything you write about the item, like the exact clothing size
+• Fixed a crash on iPhone when leaving the listing screen with the keyboard open
+• Deleting a listing that is already gone no longer shows an error
+• Sharper error reports, so we can fix problems faster
 ```
 
 ---
@@ -131,11 +132,12 @@ SellSnap — незалежний застосунок, не афілійова�
 **What's New (v3.6):**
 
 ```
-SellSnap 3.6 — стабільніше всередині
+SellSnap 3.6 — ваші деталі на місці
 
-• Точніші звіти про збої та помилки, щоб ми виправляли проблеми швидше
-• Оновлені бібліотеки для плавнішої та стабільнішої роботи
-• Невеликі покращення приватності й безпеки
+• Оголошення тепер зберігає все, що ви написали про річ, наприклад точний розмір одягу
+• Виправлено збій на iPhone, коли ви виходили з екрана оголошення з відкритою клавіатурою
+• Видалення оголошення, якого вже немає, більше не показує помилку
+• Точніші звіти про помилки, щоб ми виправляли проблеми швидше
 ```
 
 ---
@@ -186,11 +188,12 @@ SellSnap to niezależna aplikacja, niepowiązana z OLX. Do publikacji wymagane j
 **What's New (v3.6):**
 
 ```
-SellSnap 3.6 — stabilniej pod maską
+SellSnap 3.6 — Twoje szczegóły zostają
 
-• Dokładniejsze raporty o awariach i błędach, żebyśmy szybciej naprawiali problemy
-• Zaktualizowane biblioteki dla płynniejszej i stabilniejszej aplikacji
-• Drobne usprawnienia prywatności i bezpieczeństwa
+• Ogłoszenie zachowuje teraz wszystko, co napiszesz o przedmiocie, np. dokładny rozmiar ubrania
+• Naprawiono awarię na iPhonie przy wychodzeniu z ekranu ogłoszenia z otwartą klawiaturą
+• Usuwanie ogłoszenia, którego już nie ma, nie pokazuje już błędu
+• Dokładniejsze raporty o błędach, żebyśmy szybciej naprawiali problemy
 ```
 
 ---
@@ -241,11 +244,12 @@ SellSnap este o aplicație independentă, neafiliată cu OLX. Publicarea necesit
 **What's New (v3.6):**
 
 ```
-SellSnap 3.6 — mai stabil pe dinăuntru
+SellSnap 3.6 — detaliile tale rămân
 
+• Anunțul păstrează acum tot ce scrii despre produs, de exemplu mărimea exactă a hainei
+• Am reparat o eroare pe iPhone la ieșirea din ecranul anunțului cu tastatura deschisă
+• Ștergerea unui anunț care nu mai există nu mai afișează o eroare
 • Rapoarte de erori mai precise, ca să rezolvăm problemele mai repede
-• Biblioteci actualizate pentru o aplicație mai fluidă și mai stabilă
-• Mici îmbunătățiri de confidențialitate și securitate
 ```
 
 ---
@@ -296,11 +300,12 @@ SellSnap е независимо приложение и не е свързан�
 **What's New (v3.6):**
 
 ```
-SellSnap 3.6 — по-стабилно отвътре
+SellSnap 3.6 — вашите детайли остават
 
-• По-точни доклади за сривове и грешки, за да оправяме проблемите по-бързо
-• Обновени библиотеки за по-гладко и стабилно приложение
-• Малки подобрения в поверителността и сигурността
+• Обявата вече запазва всичко, което напишете за вещта, например точния размер на дрехата
+• Поправен е срив на iPhone при излизане от екрана на обявата с отворена клавиатура
+• Изтриването на обява, която вече я няма, вече не показва грешка
+• По-точни доклади за грешки, за да оправяме проблемите по-бързо
 ```
 
 ---
@@ -351,11 +356,12 @@ O SellSnap é uma aplicação independente, sem qualquer afiliação com o OLX. 
 **What's New (v3.6):**
 
 ```
-SellSnap 3.6 — mais estável por dentro
+SellSnap 3.6 — os seus detalhes ficam
 
-• Relatórios de falhas e erros mais precisos, para resolvermos problemas mais depressa
-• Bibliotecas atualizadas para uma app mais fluida e estável
-• Pequenas melhorias de privacidade e segurança
+• O anúncio guarda agora tudo o que escreve sobre o artigo, como o tamanho exato da roupa
+• Corrigimos uma falha no iPhone ao sair do ecrã do anúncio com o teclado aberto
+• Apagar um anúncio que já não existe deixou de mostrar um erro
+• Relatórios de erros mais precisos, para resolvermos problemas mais depressa
 ```
 
 ---
@@ -404,9 +410,10 @@ SellSnap — OLX-пен байланысы жоқ тәуелсіз қосымш�
 **What's New (v3.6):**
 
 ```
-SellSnap 3.6 — ішінен тұрақтырақ
+SellSnap 3.6 — сіздің мәліметтеріңіз сақталады
 
-• Ақаулар мен қателер туралы нақтырақ есептер — мәселелерді тезірек түзетеміз
-• Жаңартылған кітапханалар — қолданба біркелкі әрі тұрақты жұмыс істейді
-• Құпиялылық пен қауіпсіздіктің шағын жақсартулары
+• Хабарландыру енді зат туралы жазғаныңыздың бәрін сақтайды, мысалы киімнің нақты өлшемін
+• Пернетақта ашық кезде хабарландыру экранынан шыққанда iPhone-дағы ақау түзетілді
+• Бұрыннан жоқ хабарландыруды өшіру енді қате көрсетпейді
+• Қателер туралы нақтырақ есептер — мәселелерді тезірек түзетеміз
 ```
