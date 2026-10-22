@@ -11,6 +11,12 @@ data class GeocodedPlace(
     val region: String?,
 )
 
+/**
+ * The phone has no geocoder, so city search cannot work on it. An expected device limitation, not
+ * a bug: the seller still sees that search failed, but it is not reported to Crashlytics.
+ */
+class GeocoderUnavailableException : Exception("No geocoder on this device")
+
 interface LocationProvider {
     suspend fun getCurrentLocation(): DeviceLocation?
 

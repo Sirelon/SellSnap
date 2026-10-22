@@ -4,6 +4,7 @@ import androidx.lifecycle.viewModelScope
 import com.sirelon.sellsnap.analytics.Analytics
 import com.sirelon.sellsnap.analytics.reportShownError
 import com.sirelon.sellsnap.features.common.presentation.BaseViewModel
+import com.sirelon.sellsnap.features.seller.location.GeocoderUnavailableException
 import com.sirelon.sellsnap.features.seller.auth.domain.shownErrorCause
 import com.sirelon.sellsnap.features.seller.location.OlxLocation
 import com.sirelon.sellsnap.features.seller.location.data.LocationRepository
@@ -109,7 +110,11 @@ class LocationPickerViewModel(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                reportShownError(reason = "city_search_failed:${e.shownErrorCause}", throwable = e)
+                reportShownError(
+                    reason = "city_search_failed:${e.shownErrorCause}",
+                    throwable = e,
+                    recordNonFatal = e !is GeocoderUnavailableException,
+                )
                 setState {
                     it.copy(isSearching = false, searchFailed = true, searchedQuery = null, results = emptyList())
                 }

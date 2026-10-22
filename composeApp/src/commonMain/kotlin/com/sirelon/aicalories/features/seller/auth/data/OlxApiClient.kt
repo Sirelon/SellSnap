@@ -188,9 +188,13 @@ class OlxApiClient(
      * `DELETE adverts/{id}` (SIR-98). 204 on success. OLX rejects this while the advert is still
      * active, with `field: "ad", title: "Invalid status"` - the caller is responsible for
      * deactivating first, and for telling the seller when only that half succeeded.
+     *
+     * A 404 means the advert is already gone, which is what the seller asked for. It happens when
+     * OLX's list still shows a just-deleted advert and the seller deletes it again.
      */
     internal suspend fun deleteAdvert(accessToken: String, advertId: Long) {
         val response = httpClient.delete("adverts/$advertId") { bearerAuth(accessToken) }
+        if (response.status == HttpStatusCode.NotFound) return
         response.ensureSuccess()
     }
 

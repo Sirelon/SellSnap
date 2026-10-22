@@ -115,6 +115,19 @@ class AdvertLifecycleApiTest {
     }
 
     @Test
+    fun `deleteAdvert treats an advert OLX no longer has as deleted`() = runBlocking {
+        val engine = MockEngine {
+            respond(
+                content = """{"error":{"status":404,"title":"Not Found","detail":"Оголошення не знайдено"}}""",
+                status = HttpStatusCode.NotFound,
+                headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
+            )
+        }
+
+        apiClient(engine).deleteAdvert(accessToken = "token", advertId = 42)
+    }
+
+    @Test
     fun `deleteAdvert surfaces OLX's own reason when the advert is still active`() = runBlocking {
         // OLX rejects DELETE on an active advert with field "ad" and no "detail", only "title" -
         // OlxRemoteErrorParser must fall back to title, and the UI quotes that text verbatim.

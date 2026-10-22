@@ -60,7 +60,7 @@ class AndroidLocationProvider : LocationProvider, KoinComponent {
     }
 
     override suspend fun searchPlaces(query: String, countryCode: String): List<GeocodedPlace> {
-        if (!Geocoder.isPresent()) throw IOException("No geocoder on this device")
+        if (!Geocoder.isPresent()) throw GeocoderUnavailableException()
         val geocoder = Geocoder(context)
         val addresses = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             suspendCancellableCoroutine { cont ->
