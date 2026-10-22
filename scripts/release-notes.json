@@ -1,5 +1,94 @@
 [
   {
+    "version": "3.6",
+    "date": "2026-10-22",
+    "active": true,
+    "changes": [
+      {
+        "id": "keep-seller-details",
+        "icon": "improvement",
+        "title": {
+          "en": "Your details, kept",
+          "uk": "Ваші деталі збережено",
+          "ru": "Ваші деталі збережено",
+          "bg": "Твоите детайли се запазват",
+          "kk": "Жазғаның сақталады",
+          "pl": "Twoje szczegóły zostają",
+          "pt": "Os seus detalhes ficam",
+          "ro": "Detaliile tale rămân"
+        },
+        "summary": {
+          "en": "The listing now keeps everything you write about the item, like the exact clothing size",
+          "uk": "Оголошення тепер зберігає все, що ви пишете про річ, як-от точний розмір одягу",
+          "ru": "Оголошення тепер зберігає все, що ви пишете про річ, як-от точний розмір одягу",
+          "bg": "Обявата вече запазва всичко, което напишеш за вещта, например точния размер на дрехата",
+          "kk": "Хабарландыру енді заты туралы жазғаныңның бәрін сақтайды, мысалы киімнің нақты өлшемін",
+          "pl": "Ogłoszenie zachowuje teraz wszystko, co napiszesz o przedmiocie, np. dokładny rozmiar ubrania",
+          "pt": "O anúncio passa a guardar tudo o que escrever sobre o artigo, como o tamanho exato da roupa",
+          "ro": "Anunțul păstrează acum tot ce scrii despre obiect, de exemplu mărimea exactă a hainei"
+        },
+        "detail": {
+          "en": "Write the size, brand or condition in your note and it stays in the title, description and filled-in details. Before, a size like XL could end up as L.",
+          "uk": "Напишіть розмір, бренд чи стан у своїй нотатці, і вони залишаться в заголовку, описі та заповнених деталях. Раніше розмір на кшталт XL міг перетворитися на L.",
+          "ru": "Напишіть розмір, бренд чи стан у своїй нотатці, і вони залишаться в заголовку, описі та заповнених деталях. Раніше розмір на кшталт XL міг перетворитися на L.",
+          "bg": "Напиши размера, марката или състоянието в бележката си и те остават в заглавието, описанието и попълнените детайли. Преди размер като XL можеше да се превърне в L.",
+          "kk": "Өлшемін, брендін немесе жағдайын жазбаңа жаз, олар тақырыпта, сипаттамада және толтырылған мәліметтерде қалады. Бұрын XL сияқты өлшем L болып кетуі мүмкін еді.",
+          "pl": "Wpisz rozmiar, markę lub stan w swojej notatce, a zostaną w tytule, opisie i uzupełnionych szczegółach. Wcześniej rozmiar taki jak XL mógł zamienić się w L.",
+          "pt": "Escreva o tamanho, a marca ou o estado na sua nota e ficam no título, na descrição e nos detalhes preenchidos. Antes, um tamanho como XL podia acabar como L.",
+          "ro": "Scrie mărimea, marca sau starea în notița ta și rămân în titlu, în descriere și în detaliile completate. Înainte, o mărime ca XL putea ajunge L."
+        }
+      },
+      {
+        "id": "iphone-keyboard-crash",
+        "icon": "fix",
+        "title": {
+          "en": "No more crash when leaving",
+          "uk": "Більше без збою при виході",
+          "ru": "Більше без збою при виході",
+          "bg": "Край на срива при излизане",
+          "kk": "Шыққанда енді қате болмайды",
+          "pl": "Koniec z awarią przy wychodzeniu",
+          "pt": "Sem falhas ao sair",
+          "ro": "Gata cu blocarea la ieșire"
+        },
+        "summary": {
+          "en": "Fixed a crash on iPhone when you left the listing screen with the keyboard open",
+          "uk": "Виправили збій на iPhone, коли ви виходили з екрана оголошення з відкритою клавіатурою",
+          "ru": "Виправили збій на iPhone, коли ви виходили з екрана оголошення з відкритою клавіатурою",
+          "bg": "Поправихме срив на iPhone, когато излизаше от екрана на обявата с отворена клавиатура",
+          "kk": "iPhone-да пернетақта ашық күйде хабарландыру экранынан шыққанда болатын қате түзетілді",
+          "pl": "Naprawiliśmy awarię na iPhonie, gdy wychodziłeś z ekranu ogłoszenia z otwartą klawiaturą",
+          "pt": "Corrigimos uma falha no iPhone ao sair do ecrã do anúncio com o teclado aberto",
+          "ro": "Am reparat o blocare pe iPhone când ieșeai din ecranul anunțului cu tastatura deschisă"
+        }
+      },
+      {
+        "id": "delete-already-gone",
+        "icon": "fix",
+        "title": {
+          "en": "Smoother deleting",
+          "uk": "Плавніше видалення",
+          "ru": "Плавніше видалення",
+          "bg": "По-гладко изтриване",
+          "kk": "Жою енді ыңғайлырақ",
+          "pl": "Płynniejsze usuwanie",
+          "pt": "Eliminar sem sobressaltos",
+          "ro": "Ștergere mai lină"
+        },
+        "summary": {
+          "en": "Deleting a listing that is already gone no longer shows an error",
+          "uk": "Видалення оголошення, якого вже немає, більше не показує помилку",
+          "ru": "Видалення оголошення, якого вже немає, більше не показує помилку",
+          "bg": "Изтриването на обява, която вече я няма, вече не показва грешка",
+          "kk": "Бұрыннан жоқ хабарландыруды жойғанда енді қате көрсетілмейді",
+          "pl": "Usunięcie ogłoszenia, którego już nie ma, nie pokazuje już błędu",
+          "pt": "Eliminar um anúncio que já não existe deixa de mostrar um erro",
+          "ro": "Ștergerea unui anunț care nu mai există nu mai afișează o eroare"
+        }
+      }
+    ]
+  },
+  {
     "version": "3.5",
     "date": "2026-10-16",
     "active": true,
