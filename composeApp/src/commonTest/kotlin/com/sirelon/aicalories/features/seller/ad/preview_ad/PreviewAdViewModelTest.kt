@@ -2,6 +2,7 @@ package com.sirelon.sellsnap.features.seller.ad.preview_ad
 
 import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.runtime.snapshots.Snapshot
+import androidx.compose.ui.text.TextRange
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModelStore
 import com.sirelon.sellsnap.analytics.Analytics
@@ -95,6 +96,11 @@ private const val TestSessionId = "test-session"
 
 // Old enough that a rewrite of the seeded draft, which stamps the current time, is visible.
 private const val SeededDraftEpochSeconds = 1_000L
+
+// One required attribute, the shape OLX returns for a category that needs `state`.
+private const val STATE_ATTRIBUTE_JSON = """{"data":[
+    {"code":"state","label":"Стан","unit":"","validation":{"type":"attribute","required":true,"numeric":false,"min":null,"max":null,"allow_multiple_values":false},"values":[{"code":"used","label":"Вживане"}]}
+]}"""
 
 /**
  * SIR-83 D6/A5: the identity assertion before publish is the primary defence against publishing
@@ -947,6 +953,99 @@ class PreviewAdViewModelTest {
     }
 
     @Test
+    fun `picking the category already shown keeps its attributes loaded`() = runTest(testDispatcher) {
+        var attributeRequests = 0
+        val engine = buildEngine {
+            addHandler { request ->
+                when {
+                    request.url.encodedPath.contains("attributes") -> {
+                        attributeRequests += 1
+                        respond(STATE_ATTRIBUTE_JSON, status = HttpStatusCode.OK, headers = jsonHeaders())
+                    }
+
+                    else -> respond("{}", status = HttpStatusCode.OK, headers = jsonHeaders())
+                }
+            }
+        }
+        val harness = harness(engine, loggedInAccountStore())
+        val viewModel = buildViewModel(harness)
+        advanceUntilIdle()
+
+        viewModel.onEvent(PreviewAdEvent.CategorySelected(testCategory))
+        advanceUntilIdle()
+        // The same category again, as a repeated OLX suggestion for the title delivers it. It
+        // used to clear the attributes and never fetch them again: the preview showed no details
+        // and "Не вдалося завантажити деталі", and publish stayed blocked.
+        viewModel.onEvent(PreviewAdEvent.CategorySelected(testCategory))
+        advanceUntilIdle()
+
+        assertEquals(AttributesLoadState.Loaded, viewModel.state.value.attributesLoadState)
+        assertEquals(listOf("state"), viewModel.state.value.attributeItems.map { it.attribute.code })
+        assertEquals(1, attributeRequests, "a category already loaded needs no second fetch")
+    }
+
+    @Test
+    fun `a failed attributes fetch does not stop the next pick from loading`() = runTest(testDispatcher) {
+        var attributeRequests = 0
+        val engine = buildEngine {
+            addHandler { request ->
+                when {
+                    request.url.encodedPath.contains("attributes") -> {
+                        attributeRequests += 1
+                        if (attributeRequests == 1) {
+                            respond("{}", status = HttpStatusCode.InternalServerError, headers = jsonHeaders())
+                        } else {
+                            respond(STATE_ATTRIBUTE_JSON, status = HttpStatusCode.OK, headers = jsonHeaders())
+                        }
+                    }
+
+                    else -> respond("{}", status = HttpStatusCode.OK, headers = jsonHeaders())
+                }
+            }
+        }
+        val harness = harness(engine, loggedInAccountStore())
+        val viewModel = buildViewModel(harness)
+        advanceUntilIdle()
+
+        viewModel.onEvent(PreviewAdEvent.CategorySelected(testCategory))
+        advanceUntilIdle()
+        assertEquals(AttributesLoadState.Failed, viewModel.state.value.attributesLoadState)
+
+        // Picking the category again is the seller's way to retry.
+        viewModel.onEvent(PreviewAdEvent.CategorySelected(testCategory))
+        advanceUntilIdle()
+
+        assertEquals(AttributesLoadState.Loaded, viewModel.state.value.attributesLoadState)
+        assertEquals(listOf("state"), viewModel.state.value.attributeItems.map { it.attribute.code })
+    }
+
+    @Test
+    fun `moving the cursor in the title does not ask OLX for a category again`() = runTest(testDispatcher) {
+        var suggestionRequests = 0
+        val engine = buildEngine {
+            addHandler { request ->
+                if (request.url.encodedPath.contains("categories/suggestion")) suggestionRequests += 1
+                respond("{}", status = HttpStatusCode.OK, headers = jsonHeaders())
+            }
+        }
+        val harness = harness(engine, loggedInAccountStore())
+        val viewModel = buildViewModel(harness)
+        advanceUntilIdle()
+        assertEquals(1, suggestionRequests, "the generated title gets one suggestion on open")
+
+        viewModel.titleState.edit { selection = TextRange(0) }
+        Snapshot.sendApplyNotifications()
+        advanceUntilIdle()
+        assertEquals(1, suggestionRequests, "a cursor move is not a new title")
+
+        // The harness's suggestion fails; a later real edit must still be asked about.
+        viewModel.titleState.setTextAndPlaceCursorAtEnd("Another title for the advert")
+        Snapshot.sendApplyNotifications()
+        advanceUntilIdle()
+        assertEquals(2, suggestionRequests)
+    }
+
+    @Test
     fun `price starts in the country's currency before OLX's currency list arrives`() = runTest(testDispatcher) {
         val engine = buildEngine {
             addHandler { respond(content = "", status = HttpStatusCode.InternalServerError) }
@@ -1332,6 +1431,17 @@ class PreviewAdViewModelTest {
     }
 
     // --- test harness -----------------------------------------------------------------------
+
+    private suspend fun loggedInAccountStore(): OlxAccountStore =
+        OlxAccountStore(InMemoryOlxKeyValueStore(), testJson).apply {
+            write(
+                OlxAccountsRecord(
+                    accounts = listOf(account(localIndex = 1, olxUserId = 100L, accessToken = "token-a")),
+                    activeByCountry = mapOf("ua" to 1),
+                    nextLocalIndex = 2,
+                ),
+            )
+        }
 
     private fun buildEngine(block: MockEngineConfig.() -> Unit): MockEngine {
         val config = MockEngineConfig().apply(block)

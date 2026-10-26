@@ -78,6 +78,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
@@ -85,7 +86,6 @@ import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
@@ -175,7 +175,9 @@ class PreviewAdViewModel internal constructor(
     val titleState = TextFieldState(restoredSavedState.title ?: advertisement.title)
     val descriptionState = TextFieldState(restoredSavedState.description ?: advertisement.description)
 
-    private val selectedCategoryId = MutableStateFlow<Int?>(null)
+    // A SharedFlow, not a StateFlow: picking the category already shown has to fetch its
+    // attributes again, because updateSelectedCategory has just cleared them.
+    private val selectedCategoryId = MutableSharedFlow<Int>(replay = 1)
     private val publishSuccessData = MutableStateFlow(restoredSavedState.publishSuccessData)
     // From the saved state, else from the draft: a reopened draft whose publish may have landed
     // has to ask OLX before posting again, exactly like a process-death restore.
@@ -286,7 +288,9 @@ class PreviewAdViewModel internal constructor(
             .onEach { updateAccountUiState(it) }
             .launchIn(viewModelScope)
 
-        snapshotFlow { titleState.text }
+        // The text only: TextFieldState's value also changes with the cursor, the selection and the
+        // IME composition, and none of those is a new title to ask OLX about.
+        snapshotFlow { titleState.text.toString() }
             .distinctUntilChanged()
             .debounce(300L)
             .filter {
@@ -297,57 +301,57 @@ class PreviewAdViewModel internal constructor(
                     true
                 }
             }
-            .flatMapLatest {
-                categoriesRepository.categorySuggestion(it.toString())
-            }
-            .onEach {
-                updateSelectedCategory(category = it)
-            }
-            .catch { error ->
-                val unsupported = error is UnsupportedOlxCategoryException
-                reportShownError(
-                    reason = if (unsupported) "category_not_supported" else "category_suggestion_failed",
-                    throwable = error,
-                )
-                val message = if (unsupported) {
-                    getString(Res.string.error_category_not_supported)
-                } else {
-                    getString(Res.string.error_category_suggestion_failed)
-                }
-                postEffect(ShowMessage(message))
+            // As with attributes below, a failed suggestion ends only that request, not the stream.
+            .flatMapLatest { title ->
+                categoriesRepository.categorySuggestion(title)
+                    .onEach { updateSelectedCategory(category = it) }
+                    .catch { error ->
+                        val unsupported = error is UnsupportedOlxCategoryException
+                        reportShownError(
+                            reason = if (unsupported) "category_not_supported" else "category_suggestion_failed",
+                            throwable = error,
+                        )
+                        val message = if (unsupported) {
+                            getString(Res.string.error_category_not_supported)
+                        } else {
+                            getString(Res.string.error_category_suggestion_failed)
+                        }
+                        postEffect(ShowMessage(message))
+                    }
             }
             .launchIn(viewModelScope)
 
+        // The catch sits inside flatMapLatest, so one failed fetch ends only that fetch: the next
+        // category the seller picks still loads its attributes.
         selectedCategoryId
-            .filterNotNull()
             .flatMapLatest { categoryId ->
                 categoriesRepository.getAttributes(categoryId)
-            }
-            .onEach { attributes ->
-                val attributeItems = attributes.map { attribute ->
-                    OlxAttributeState(
-                        attribute = attribute,
-                        selectedValues = restoredSavedState.attributeValues[attribute.code]
-                            ?: filledAdvertisement.filledAttributes[attribute.code].orEmpty(),
-                    )
-                }
-                setState {
-                    it.copy(
-                        attributeItems = attributeItems,
-                        attributesLoadState = AttributesLoadState.Loaded,
-                    )
-                }
-                logAttributesLoaded(attributeItems)
-            }
-            .catch { error ->
-                reportShownError(reason = "attributes_load_failed", throwable = error)
-                setState { state ->
-                    state.copy(
-                        attributeItems = emptyList(),
-                        attributesLoadState = AttributesLoadState.Failed,
-                    )
-                }
-                postEffect(ShowMessage(getString(Res.string.error_attributes_load_failed)))
+                    .onEach { attributes ->
+                        val attributeItems = attributes.map { attribute ->
+                            OlxAttributeState(
+                                attribute = attribute,
+                                selectedValues = restoredSavedState.attributeValues[attribute.code]
+                                    ?: filledAdvertisement.filledAttributes[attribute.code].orEmpty(),
+                            )
+                        }
+                        setState {
+                            it.copy(
+                                attributeItems = attributeItems,
+                                attributesLoadState = AttributesLoadState.Loaded,
+                            )
+                        }
+                        logAttributesLoaded(attributeItems)
+                    }
+                    .catch { error ->
+                        reportShownError(reason = "attributes_load_failed", throwable = error)
+                        setState { state ->
+                            state.copy(
+                                attributeItems = emptyList(),
+                                attributesLoadState = AttributesLoadState.Failed,
+                            )
+                        }
+                        postEffect(ShowMessage(getString(Res.string.error_attributes_load_failed)))
+                    }
             }
             .launchIn(viewModelScope)
     }
@@ -1031,6 +1035,12 @@ class PreviewAdViewModel internal constructor(
     }
 
     private suspend fun updateSelectedCategory(category: OlxCategory) {
+        // The category on screen with its attributes loaded: nothing to change, and reloading would
+        // drop the values the seller has already picked.
+        val current = currentState()
+        if (current.selectedCategory?.id == category.id && current.attributesLoadState == AttributesLoadState.Loaded) {
+            return
+        }
         val path = mutableListOf(category.label)
         var parentId = category.parentId
         while (parentId != null) {
@@ -1046,7 +1056,7 @@ class PreviewAdViewModel internal constructor(
                 attributesLoadState = AttributesLoadState.Loading,
             )
         }
-        selectedCategoryId.value = category.id
+        selectedCategoryId.emit(category.id)
     }
 
     /**
