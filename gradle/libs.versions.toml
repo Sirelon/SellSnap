@@ -59,7 +59,7 @@ playReview = "2.0.2"
 # https://github.com/GitLiveApp/firebase-kotlin-sdk/releases
 gitliveFirebase = "2.7.0"
 googleServices = "4.5.0"
-crashlyticsPlugin = "3.0.7"
+crashlyticsPlugin = "3.0.8"
 firebaseBom = "34.17.0"
 
 [libraries]
