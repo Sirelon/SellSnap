@@ -10,7 +10,7 @@ androidx-activity = "1.13.0"
 androidx-datastore = "1.3.0-alpha10"
 androidx-appcompat = "1.8.0"
 # https://developer.android.com/jetpack/androidx/releases/core
-androidx-core = "1.19.0"
+androidx-core = "1.19.1"
 androidx-espresso = "3.7.0"
 # https://developer.android.com/jetpack/androidx/releases/exifinterface
 androidx-exifinterface = "1.4.2"
