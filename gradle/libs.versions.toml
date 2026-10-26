@@ -60,7 +60,7 @@ playReview = "2.0.2"
 gitliveFirebase = "2.7.0"
 googleServices = "4.5.0"
 crashlyticsPlugin = "3.0.7"
-firebaseBom = "34.17.0"
+firebaseBom = "35.1.0"
 
 [libraries]
 androidx-navigation3-runtime = { module = "androidx.navigation3:navigation3-runtime", version.ref = "navigation3Runtime" }
