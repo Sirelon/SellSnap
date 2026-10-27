@@ -12,6 +12,12 @@ interface SpeechToText {
     /** True from [start] until listening ends, by [stop], an error, or the recognizer's own limit. */
     val isListening: Boolean
 
+    /**
+     * Microphone loudness from 0 (silence) to 1 (loud), about 15 updates a second while
+     * [isListening]; 0 otherwise. Read it in a draw or animation block to avoid recomposing.
+     */
+    val level: Float
+
     /** Asks for the microphone and speech permissions if needed, then listens. */
     fun start()
 

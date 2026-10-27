@@ -148,12 +148,10 @@ import com.sirelon.sellsnap.generated.resources.ic_refresh_cw
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.rememberModalBottomSheetState
 import com.sirelon.sellsnap.designsystem.Input
-import com.sirelon.sellsnap.features.media.SpeechToText
+import com.sirelon.sellsnap.features.media.DictatePill
+import com.sirelon.sellsnap.features.media.messageRes
 import com.sirelon.sellsnap.features.media.SpeechToTextError
 import com.sirelon.sellsnap.features.media.rememberSpeechToText
-import com.sirelon.sellsnap.generated.resources.dictate_pill
-import com.sirelon.sellsnap.generated.resources.dictate_pill_listening
-import com.sirelon.sellsnap.generated.resources.ic_mic
 import com.sirelon.sellsnap.generated.resources.ic_wand_sparkles
 import com.sirelon.sellsnap.generated.resources.polish_pill
 import com.sirelon.sellsnap.generated.resources.polish_sheet_action
@@ -1312,30 +1310,6 @@ private fun ActionPill(
             modifier = modifier,
         )
     }
-}
-
-@Composable
-private fun DictatePill(
-    speechToText: SpeechToText,
-    modifier: Modifier = Modifier,
-    enabled: Boolean = true,
-) {
-    val isListening = speechToText.isListening
-    Pill(
-        color = when {
-            !enabled -> AppTheme.colors.onSurfaceMuted
-            isListening -> AppTheme.colors.error
-            else -> AppTheme.colors.primary
-        },
-        text = stringResource(if (isListening) Res.string.dictate_pill_listening else Res.string.dictate_pill),
-        iconResource = Res.drawable.ic_mic,
-        onClick = if (enabled) {
-            { if (isListening) speechToText.stop() else speechToText.start() }
-        } else {
-            null
-        },
-        modifier = modifier,
-    )
 }
 
 /**

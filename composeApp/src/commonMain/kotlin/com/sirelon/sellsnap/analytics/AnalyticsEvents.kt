@@ -128,7 +128,7 @@ object AnalyticsEvents {
     const val AD_DESCRIPTION_POLISH_SUCCEEDED = "ad_description_polish_succeeded"
     const val AD_DESCRIPTION_POLISH_FAILED = "ad_description_polish_failed"
 
-    // SIR-85: one event per recognized phrase. Carries `field` (description | polish_instruction),
+    // SIR-85: one event per recognized phrase. Carries `field` (description | polish_instruction | ai_hint),
     // never the text.
     const val AD_TEXT_DICTATED = "ad_text_dictated"
 

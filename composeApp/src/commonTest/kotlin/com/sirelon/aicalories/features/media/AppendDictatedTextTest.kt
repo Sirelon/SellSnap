@@ -1,4 +1,4 @@
-package com.sirelon.sellsnap.features.seller.ad.preview_ad
+package com.sirelon.sellsnap.features.media
 
 import kotlin.test.Test
 import kotlin.test.assertEquals

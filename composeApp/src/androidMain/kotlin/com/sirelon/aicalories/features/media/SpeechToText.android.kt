@@ -14,6 +14,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableStateSetOf
 import androidx.compose.runtime.remember
@@ -73,6 +74,9 @@ private val unsupportedLanguageTags = mutableStateSetOf<String?>()
 // the extra named as the session type must be set in the same intent.
 private const val SegmentedSessionSilenceMillis = 5_000
 
+private const val RmsSilenceDb = -2f
+private const val RmsLoudDb = 10f
+
 private class AndroidSpeechToText(
     private val context: Context,
     private val languageTag: String?,
@@ -82,6 +86,10 @@ private class AndroidSpeechToText(
 
     override var isListening by mutableStateOf(false)
         private set
+
+    // Mic loudness from the recognizer, reset to silence when a session starts. Zero when idle.
+    private var rawLevel by mutableFloatStateOf(0f)
+    override val level: Float get() = if (isListening) rawLevel else 0f
 
     var requestPermission: () -> Unit = {}
 
@@ -99,6 +107,7 @@ private class AndroidSpeechToText(
     fun listen() {
         stopRequested = false
         heardAnything = false
+        rawLevel = 0f
         isListening = true
         startSession()
     }
@@ -174,7 +183,12 @@ private class AndroidSpeechToText(
 
         override fun onReadyForSpeech(params: Bundle?) = Unit
         override fun onBeginningOfSpeech() = Unit
-        override fun onRmsChanged(rmsdB: Float) = Unit
+
+        // SpeechRecognizer documents no range; about -2 dB (silence) to 10 dB (loud) is typical.
+        override fun onRmsChanged(rmsdB: Float) {
+            rawLevel = ((rmsdB - RmsSilenceDb) / (RmsLoudDb - RmsSilenceDb)).coerceIn(0f, 1f)
+        }
+
         override fun onBufferReceived(buffer: ByteArray?) = Unit
         override fun onEndOfSpeech() = Unit
         override fun onPartialResults(partialResults: Bundle?) = Unit

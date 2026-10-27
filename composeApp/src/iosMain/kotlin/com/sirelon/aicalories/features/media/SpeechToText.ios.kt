@@ -1,14 +1,20 @@
+@file:OptIn(ExperimentalForeignApi::class)
+
 package com.sirelon.sellsnap.features.media
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.get
 import platform.AVFAudio.AVAudioApplication
 import platform.AVFAudio.AVAudioEngine
+import platform.AVFAudio.AVAudioPCMBuffer
 import platform.AVFAudio.AVAudioSession
 import platform.AVFAudio.AVAudioSessionCategoryOptionDuckOthers
 import platform.AVFAudio.AVAudioSessionCategoryRecord
@@ -26,6 +32,10 @@ import platform.Speech.SFSpeechRecognizer
 import platform.Speech.SFSpeechRecognizerAuthorizationStatus
 import platform.darwin.dispatch_async
 import platform.darwin.dispatch_get_main_queue
+import kotlin.math.log10
+import kotlin.math.sqrt
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.TimeSource
 
 @Composable
 actual fun rememberSpeechToText(
@@ -69,6 +79,12 @@ private fun speechRecognizer(languageTag: String?): SFSpeechRecognizer? {
 /** `uk_UA@rg=uazzzz` and `uk-UA` both become `uk-ua`. */
 private fun String.toLocaleKey(): String = substringBefore('@').replace('_', '-').lowercase()
 
+private val LevelPostInterval = 66.milliseconds
+
+// Speech into a phone mic sits around -30..-10 dBFS.
+private const val LevelFloorDb = -50f
+private const val LevelCeilingDb = -10f
+
 /**
  * Streams the microphone into one recognition task until [stop], then hands over the whole
  * transcript at once. Apple caps one task at about a minute; the task then ends by itself and
@@ -84,6 +100,13 @@ private class IosSpeechToText(
     override var isListening by mutableStateOf(false)
         private set
 
+    // Loudness of the latest posted audio buffer. Zero when idle.
+    private var rawLevel by mutableFloatStateOf(0f)
+    override val level: Float get() = if (isListening) rawLevel else 0f
+
+    // Only the audio thread's tap touches this.
+    private var lastLevelPost = TimeSource.Monotonic.markNow()
+
     private var audioEngine: AVAudioEngine? = null
     private var request: SFSpeechAudioBufferRecognitionRequest? = null
     private var task: SFSpeechRecognitionTask? = null
@@ -97,6 +120,7 @@ private class IosSpeechToText(
     override fun start() {
         if (isListening) return
         isListening = true
+        rawLevel = 0f
         val generation = ++this.generation
         SFSpeechRecognizer.requestAuthorization { status ->
             onMain {
@@ -158,7 +182,10 @@ private class IosSpeechToText(
         val engine = AVAudioEngine()
         val input = engine.inputNode
         input.installTapOnBus(0u, bufferSize = 1024u, format = input.outputFormatForBus(0u)) { buffer, _ ->
-            buffer?.let(request::appendAudioPCMBuffer)
+            buffer?.let {
+                request.appendAudioPCMBuffer(it)
+                postLevel(it, generation)
+            }
         }
         engine.prepare()
         if (!engine.startAndReturnError(null)) {
@@ -179,6 +206,29 @@ private class IosSpeechToText(
                 if (!text.isNullOrBlank()) transcript = text
                 if (error != null || isFinal) complete(error)
             }
+        }
+    }
+
+    /**
+     * Runs on the audio thread for every buffer. Takes the RMS of the first channel, maps
+     * [LevelFloorDb]..[LevelCeilingDb] to 0..1, and posts it to the main thread at most
+     * every [LevelPostInterval].
+     */
+    private fun postLevel(buffer: AVAudioPCMBuffer, generation: Int) {
+        if (lastLevelPost.elapsedNow() < LevelPostInterval) return
+        val samples = buffer.floatChannelData?.get(0) ?: return
+        val frames = buffer.frameLength.toInt()
+        if (frames == 0) return
+        var sumOfSquares = 0f
+        for (i in 0 until frames) {
+            val sample = samples[i]
+            sumOfSquares += sample * sample
+        }
+        val db = 20f * log10(sqrt(sumOfSquares / frames).coerceAtLeast(1e-6f))
+        val level = ((db - LevelFloorDb) / (LevelCeilingDb - LevelFloorDb)).coerceIn(0f, 1f)
+        lastLevelPost = TimeSource.Monotonic.markNow()
+        onMain {
+            if (generation == this.generation) rawLevel = level
         }
     }
 

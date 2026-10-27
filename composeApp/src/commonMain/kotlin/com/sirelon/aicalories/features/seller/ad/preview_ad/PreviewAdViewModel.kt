@@ -99,10 +99,11 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.jetbrains.compose.resources.getString
 import com.sirelon.sellsnap.features.media.SpeechToTextError
-import com.sirelon.sellsnap.generated.resources.error_dictation_failed
-import com.sirelon.sellsnap.generated.resources.error_dictation_permission
+import com.sirelon.sellsnap.features.media.analyticsCode
+import com.sirelon.sellsnap.features.media.appendDictatedText
+import com.sirelon.sellsnap.features.media.isDefect
+import com.sirelon.sellsnap.features.media.messageRes
 import com.sirelon.sellsnap.generated.resources.error_polish_failed
-import org.jetbrains.compose.resources.StringResource
 
 private const val TitleMinLength = 10
 private const val DescriptionMinLength = 30
@@ -504,12 +505,7 @@ class PreviewAdViewModel internal constructor(
 
             is PreviewAdEvent.DictationFailed -> {
                 val error = event.error
-                // Silence and a refused permission are normal use, not defects.
-                reportShownError(
-                    reason = "dictation_${error.analyticsCode}",
-                    recordNonFatal = error is SpeechToTextError.Failed ||
-                        error == SpeechToTextError.LanguageUnsupported,
-                )
+                reportShownError(reason = "dictation_${error.analyticsCode}", recordNonFatal = error.isDefect)
                 // The polish sheet covers the snackbar, so it shows its own dictation error inline.
                 // An unsupported language hides the mic instead, which says enough.
                 if (event.field == DictationField.Description && error != SpeechToTextError.LanguageUnsupported) {
@@ -1229,22 +1225,6 @@ private val DictationField.analyticsCode: String
         DictationField.PolishInstruction -> "polish_instruction"
     }
 
-private val SpeechToTextError.analyticsCode: String
-    get() = when (this) {
-        SpeechToTextError.PermissionDenied -> "permission_denied"
-        SpeechToTextError.NothingHeard -> "nothing_heard"
-        SpeechToTextError.LanguageUnsupported -> "language_unsupported"
-        is SpeechToTextError.Failed -> "failed:$code"
-    }
-
-internal val SpeechToTextError.messageRes: StringResource
-    get() = when (this) {
-        SpeechToTextError.PermissionDenied -> Res.string.error_dictation_permission
-        SpeechToTextError.NothingHeard,
-        SpeechToTextError.LanguageUnsupported,
-        is SpeechToTextError.Failed -> Res.string.error_dictation_failed
-    }
-
 /**
  * The [rewritten] description from a polish or regeneration, with anything the seller added at
  * the end while it ran, such as a dictated phrase, kept after it. Null when [current] changed
@@ -1254,15 +1234,4 @@ internal fun mergeRewrittenDescription(original: String, current: String, rewrit
     if (!current.startsWith(original)) return null
     val added = current.substring(original.length).trim()
     return if (added.isEmpty()) rewritten else appendDictatedText(rewritten, added)
-}
-
-/**
- * Adds a dictated [phrase] at the end of [existing], a space apart. The recognizer writes each
- * phrase lower-case, so one that opens a sentence gets a capital.
- */
-internal fun appendDictatedText(existing: String, phrase: String): String {
-    val trimmed = existing.trimEnd()
-    val opensSentence = trimmed.isEmpty() || trimmed.last() in ".!?"
-    val separator = if (existing.isEmpty() || existing.last().isWhitespace()) "" else " "
-    return existing + separator + if (opensSentence) phrase.replaceFirstChar { it.uppercaseChar() } else phrase
 }
