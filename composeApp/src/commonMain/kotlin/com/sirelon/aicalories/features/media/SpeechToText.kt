@@ -25,6 +25,12 @@ sealed interface SpeechToTextError {
     /** Listening ended before any speech was recognized. */
     data object NothingHeard : SpeechToTextError
 
+    /**
+     * The recognizer turned down the language only once asked. The mic hides from then on, so
+     * this arrives once per language.
+     */
+    data object LanguageUnsupported : SpeechToTextError
+
     /** [code] names the platform error, for telemetry only. */
     data class Failed(val code: String) : SpeechToTextError
 }

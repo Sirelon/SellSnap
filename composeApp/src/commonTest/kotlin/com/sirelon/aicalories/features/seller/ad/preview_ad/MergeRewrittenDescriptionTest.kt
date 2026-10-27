@@ -4,23 +4,23 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
-class MergePolishedDescriptionTest {
+class MergeRewrittenDescriptionTest {
 
     @Test
     fun unchangedTextTakesThePolish() {
-        assertEquals("Blue jacket.", mergePolishedDescription("blue jacket", "blue jacket", "Blue jacket."))
+        assertEquals("Blue jacket.", mergeRewrittenDescription("blue jacket", "blue jacket", "Blue jacket."))
     }
 
     @Test
     fun textAddedAtTheEndIsKeptAfterThePolish() {
         assertEquals(
             "Blue jacket. Free delivery in Kyiv",
-            mergePolishedDescription("blue jacket", "blue jacket free delivery in Kyiv", "Blue jacket."),
+            mergeRewrittenDescription("blue jacket", "blue jacket free delivery in Kyiv", "Blue jacket."),
         )
     }
 
     @Test
     fun editInsideTheTextDropsThePolish() {
-        assertNull(mergePolishedDescription("blue jacket", "red jacket", "Blue jacket."))
+        assertNull(mergeRewrittenDescription("blue jacket", "red jacket", "Blue jacket."))
     }
 }

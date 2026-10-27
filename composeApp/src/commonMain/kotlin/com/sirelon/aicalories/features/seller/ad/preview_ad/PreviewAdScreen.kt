@@ -1355,7 +1355,8 @@ private fun PolishDescriptionSheet(
         languageTag = null,
         onResult = { onEvent(PreviewAdEvent.TextDictated(DictationField.PolishInstruction, it)) },
         onError = {
-            dictationError = it
+            // An unsupported language hides the mic instead.
+            if (it != SpeechToTextError.LanguageUnsupported) dictationError = it
             onEvent(PreviewAdEvent.DictationFailed(DictationField.PolishInstruction, it))
         },
     )

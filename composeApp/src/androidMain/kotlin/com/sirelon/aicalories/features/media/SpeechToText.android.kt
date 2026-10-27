@@ -15,6 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableStateSetOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
@@ -30,7 +31,7 @@ actual fun rememberSpeechToText(
     val context = LocalContext.current
     // Needs the RecognitionService <queries> entry in the manifest, or this is false on API 30+.
     val isAvailable = remember(context) { SpeechRecognizer.isRecognitionAvailable(context) }
-    if (!isAvailable) return null
+    if (!isAvailable || languageTag in unsupportedLanguageTags) return null
 
     val currentOnResult by rememberUpdatedState(onResult)
     val currentOnError by rememberUpdatedState(onError)
@@ -53,6 +54,13 @@ actual fun rememberSpeechToText(
     }
     return speechToText
 }
+
+/**
+ * Languages the recognizer turned down with ERROR_LANGUAGE_NOT_SUPPORTED. Android has no
+ * up-front check that works below API 33, so the mic hides after the first refusal, for as long
+ * as the app runs.
+ */
+private val unsupportedLanguageTags = mutableStateSetOf<String?>()
 
 /**
  * One tap covers as many sentences as the seller says. On API 33+ that is one segmented session,
@@ -154,6 +162,11 @@ private class AndroidSpeechToText(
                 silence || stopRequested -> finishWith(SpeechToTextError.NothingHeard)
                 error == SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS ->
                     finishWith(SpeechToTextError.PermissionDenied)
+
+                error == SpeechRecognizer.ERROR_LANGUAGE_NOT_SUPPORTED -> {
+                    unsupportedLanguageTags += languageTag
+                    finishWith(SpeechToTextError.LanguageUnsupported)
+                }
 
                 else -> finishWith(SpeechToTextError.Failed("android_$error"))
             }

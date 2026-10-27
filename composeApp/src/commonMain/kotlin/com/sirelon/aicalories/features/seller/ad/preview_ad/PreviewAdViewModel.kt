@@ -507,10 +507,12 @@ class PreviewAdViewModel internal constructor(
                 // Silence and a refused permission are normal use, not defects.
                 reportShownError(
                     reason = "dictation_${error.analyticsCode}",
-                    recordNonFatal = error is SpeechToTextError.Failed,
+                    recordNonFatal = error is SpeechToTextError.Failed ||
+                        error == SpeechToTextError.LanguageUnsupported,
                 )
                 // The polish sheet covers the snackbar, so it shows its own dictation error inline.
-                if (event.field == DictationField.Description) {
+                // An unsupported language hides the mic instead, which says enough.
+                if (event.field == DictationField.Description && error != SpeechToTextError.LanguageUnsupported) {
                     viewModelScope.launch { postEffect(ShowMessage(getString(error.messageRes))) }
                 }
             }
@@ -1018,6 +1020,7 @@ class PreviewAdViewModel internal constructor(
         setState { it.copy(isRegeneratingDescription = true) }
         analytics.logEvent(AnalyticsEvents.AD_DESCRIPTION_REGENERATE_STARTED)
         try {
+            val original = descriptionState.text.toString()
             val analysis = openAiClient.analyzeThing(
                 images = advertisement.images,
                 sellerPrompt = filledAdvertisement.sellerPrompt,
@@ -1035,7 +1038,12 @@ class PreviewAdViewModel internal constructor(
                     return
                 }
             }
-            descriptionState.setTextAndPlaceCursorAtEnd(generated.description)
+            // A new listing is what the seller asked for, so it replaces an edit made meanwhile;
+            // only text added at the end, such as a dictated phrase, carries over.
+            descriptionState.setTextAndPlaceCursorAtEnd(
+                mergeRewrittenDescription(original, descriptionState.text.toString(), generated.description)
+                    ?: generated.description
+            )
             val attemptNumber = currentState().regenerationCount + 1
             val attemptId = adGenerationLogRepository.logAttempt(
                 AdGenerationAttempt(
@@ -1090,7 +1098,7 @@ class PreviewAdViewModel internal constructor(
                 instruction = instruction,
                 country = olxCountryStore.current,
             )
-            val merged = mergePolishedDescription(original, descriptionState.text.toString(), polished)
+            val merged = mergeRewrittenDescription(original, descriptionState.text.toString(), polished)
             if (merged == null) {
                 // The seller changed the text while the request ran; their edit wins, and the
                 // kept instruction lets them polish again.
@@ -1225,24 +1233,27 @@ private val SpeechToTextError.analyticsCode: String
     get() = when (this) {
         SpeechToTextError.PermissionDenied -> "permission_denied"
         SpeechToTextError.NothingHeard -> "nothing_heard"
+        SpeechToTextError.LanguageUnsupported -> "language_unsupported"
         is SpeechToTextError.Failed -> "failed:$code"
     }
 
 internal val SpeechToTextError.messageRes: StringResource
     get() = when (this) {
         SpeechToTextError.PermissionDenied -> Res.string.error_dictation_permission
-        SpeechToTextError.NothingHeard, is SpeechToTextError.Failed -> Res.string.error_dictation_failed
+        SpeechToTextError.NothingHeard,
+        SpeechToTextError.LanguageUnsupported,
+        is SpeechToTextError.Failed -> Res.string.error_dictation_failed
     }
 
 /**
- * The polished description, with anything the seller added at the end while the polish ran, such
- * as a dictated phrase, kept after it. Null when [current] changed anywhere else, because the
- * polish then rewrote text the seller has since edited.
+ * The [rewritten] description from a polish or regeneration, with anything the seller added at
+ * the end while it ran, such as a dictated phrase, kept after it. Null when [current] changed
+ * anywhere else since [original] was sent.
  */
-internal fun mergePolishedDescription(original: String, current: String, polished: String): String? {
+internal fun mergeRewrittenDescription(original: String, current: String, rewritten: String): String? {
     if (!current.startsWith(original)) return null
     val added = current.substring(original.length).trim()
-    return if (added.isEmpty()) polished else appendDictatedText(polished, added)
+    return if (added.isEmpty()) rewritten else appendDictatedText(rewritten, added)
 }
 
 /**
