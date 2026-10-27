@@ -152,6 +152,7 @@ fun TransparentInput(
     maxCharacters: Int = Int.MIN_VALUE,
     prefix: @Composable (() -> Unit)? = null,
     isError: Boolean = false,
+    readOnly: Boolean = false,
     inputTransformation: InputTransformation? = null,
     outputTransformation: OutputTransformation? = null,
 ) {
@@ -204,6 +205,7 @@ fun TransparentInput(
             errorIndicatorColor = AppTheme.colors.error,
         ),
         state = state,
+        readOnly = readOnly,
         prefix = prefix,
         keyboardOptions = resolvedKeyboardOptions,
         onKeyboardAction = keyboardActionHandler,

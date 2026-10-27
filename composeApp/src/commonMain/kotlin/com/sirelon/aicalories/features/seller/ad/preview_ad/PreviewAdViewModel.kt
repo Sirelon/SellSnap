@@ -457,6 +457,8 @@ class PreviewAdViewModel internal constructor(
                 // active synchronously, while `isPublishing` is only set once the coroutine body
                 // actually runs.
                 if (publishJob?.isActive == true) return
+                // A regeneration or a polish is about to change what would be posted.
+                if (currentState().isUpdatingListing) return
                 publishJob = viewModelScope.launch { publishAdvert() }
             }
 
@@ -1037,8 +1039,9 @@ class PreviewAdViewModel internal constructor(
     )
 
     private suspend fun regenerateDescription() {
-        if (currentState().isRegeneratingDescription || currentState().isPolishingDescription) return
+        if (currentState().isUpdatingListing) return
 
+        val before = listingSnapshot()
         setState { it.copy(isRegeneratingDescription = true) }
         analytics.logEvent(AnalyticsEvents.AD_DESCRIPTION_REGENERATE_STARTED)
         try {
@@ -1094,6 +1097,7 @@ class PreviewAdViewModel internal constructor(
                     conversationResponseId = analysis.responseId.id,
                 )
             }
+            highlightChangesSince(before)
             analytics.logEvent(AnalyticsEvents.AD_DESCRIPTION_REGENERATE_SUCCEEDED)
         } catch (error: CancellationException) {
             // Leaving the screen mid-request is not a failure and must not skew the metric.
@@ -1111,8 +1115,9 @@ class PreviewAdViewModel internal constructor(
     private suspend fun polishDescription() {
         val instruction = currentState().polishInstruction.trim()
         if (instruction.isEmpty()) return
-        if (currentState().isRegeneratingDescription || currentState().isPolishingDescription) return
+        if (currentState().isUpdatingListing) return
 
+        val before = listingSnapshot()
         setState { it.copy(isPolishingDescription = true) }
         analytics.logEvent(AnalyticsEvents.AD_DESCRIPTION_POLISH_STARTED)
         try {
@@ -1167,6 +1172,7 @@ class PreviewAdViewModel internal constructor(
             if (!polished.sameItem) {
                 refreshForNewItem(title = listing.title, responseId = polished.responseId)
             }
+            highlightChangesSince(before)
         } catch (error: CancellationException) {
             // Leaving the screen mid-request is not a failure and must not skew the metric.
             throw error
@@ -1234,6 +1240,26 @@ class PreviewAdViewModel internal constructor(
             }
             postEffect(ShowMessage(message))
         }
+    }
+
+    private fun listingSnapshot() = ListingSnapshot(
+        title = titleState.text.toString(),
+        description = descriptionState.text.toString(),
+        price = currentState().price.roundToLong(),
+        categoryId = currentState().selectedCategory?.id,
+    )
+
+    /** Marks the fields that differ from [before], so the screen highlights what a result changed. */
+    private fun highlightChangesSince(before: ListingSnapshot) {
+        val after = listingSnapshot()
+        val changed = buildSet {
+            if (after.title != before.title) add(ListingField.Title)
+            if (after.description != before.description) add(ListingField.Description)
+            if (after.price != before.price) add(ListingField.Price)
+            if (after.categoryId != before.categoryId) add(ListingField.Category)
+        }
+        if (changed.isEmpty()) return
+        setState { it.copy(changedFields = changed, changedFieldsRevision = it.changedFieldsRevision + 1) }
     }
 
     private suspend fun updateSelectedCategory(category: OlxCategory) {
@@ -1339,6 +1365,14 @@ class PreviewAdViewModel internal constructor(
         )
     }
 }
+
+/** What a regeneration or a polish can rewrite, compared before and after it runs. */
+private data class ListingSnapshot(
+    val title: String,
+    val description: String,
+    val price: Long,
+    val categoryId: Int?,
+)
 
 private val DictationField.analyticsCode: String
     get() = when (this) {

@@ -110,7 +110,10 @@ private class IosSpeechToText(
     private var audioEngine: AVAudioEngine? = null
     private var request: SFSpeechAudioBufferRecognitionRequest? = null
     private var task: SFSpeechRecognitionTask? = null
-    private var transcript = ""
+
+    // The running transcript of this dictation, delivered whole when it ends.
+    private var transcript by mutableStateOf("")
+    override val partialText: String get() = if (isListening) transcript else ""
 
     // Each dictation gets its own number, and the number moves on when the dictation ends. A
     // permission answer or recognition callback that carries an old number is ignored, so a late
@@ -239,6 +242,7 @@ private class IosSpeechToText(
         request = null
         stopAudio()
         val text = transcript.trim()
+        transcript = ""
         when {
             text.isNotEmpty() -> {
                 isListening = false

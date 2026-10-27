@@ -48,8 +48,6 @@ fun Pill(
     modifier: Modifier = Modifier,
     bgColor: Color = color.copy(alpha = 0.18f),
     onClick: (() -> Unit)? = null,
-    // Replaces the icon when set, e.g. with an animated indicator of the same size.
-    leadingContent: (@Composable () -> Unit)? = null,
 ) {
     val content: @Composable () -> Unit = {
         Row(
@@ -63,16 +61,12 @@ fun Pill(
                 Alignment.CenterHorizontally
             )
         ) {
-            if (leadingContent != null) {
-                leadingContent()
-            } else {
-                Icon(
-                    painter = painterResource(iconResource),
-                    contentDescription = null,
-                    tint = color,
-                    modifier = Modifier.size(AppDimens.Size.xl),
-                )
-            }
+            Icon(
+                painter = painterResource(iconResource),
+                contentDescription = null,
+                tint = color,
+                modifier = Modifier.size(AppDimens.Size.xl),
+            )
             Text(
                 text = text,
                 style = AppTheme.typography.caption.copy(

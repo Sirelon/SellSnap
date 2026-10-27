@@ -18,6 +18,12 @@ interface SpeechToText {
      */
     val level: Float
 
+    /**
+     * The words heard so far that have not reached `onResult` yet, updated as the recognizer
+     * hears them. Empty when idle, and emptied once they are delivered.
+     */
+    val partialText: String
+
     /** Asks for the microphone and speech permissions if needed, then listens. */
     fun start()
 

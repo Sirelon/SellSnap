@@ -21,6 +21,9 @@ data class OlxAttributeState(
 /** The text fields on the preview screen that take dictation (SIR-85). */
 enum class DictationField { Description, PolishInstruction }
 
+/** The parts of the listing a regeneration or a polish can rewrite (SIR-86). */
+enum class ListingField { Title, Description, Price, Category }
+
 /** Display-only projection of the active OLX account for the "Publish to" row (SIR-83 U6/D2).
  * Deliberately not the internal [com.sirelon.sellsnap.features.seller.auth.data.OlxAccountRecord]
  * itself, so the UI layer only ever sees what it needs to render. */
@@ -92,13 +95,20 @@ interface PreviewAdContract {
         val priceRevision: Int = 0,
         // SIR-86: the latest stored OpenAI turn for this listing; Polish and Regenerate chain onto it.
         val conversationResponseId: String? = null,
+        // SIR-86: the fields the latest regeneration or polish actually changed, for the screen to
+        // highlight. The revision moves on with every result, so equal sets still highlight again.
+        val changedFields: Set<ListingField> = emptySet(),
+        val changedFieldsRevision: Int = 0,
         val regenerationCount: Int = 0,
         val selectedVote: GeneratedContentVote? = null,
         val currentAttemptId: String? = null,
         // SIR-122: whether a removed photo can still be put back at its original position -
         // see PreviewAdEvent.UndoRemoveImage.
         val canUndoRemoveImage: Boolean = false,
-    )
+    ) {
+        /** A regeneration or a polish is rewriting the listing: it is locked and cannot be published. */
+        val isUpdatingListing: Boolean get() = isRegeneratingDescription || isPolishingDescription
+    }
 
     sealed interface PreviewAdEvent {
         data class CategorySelected(val category: OlxCategory) : PreviewAdEvent

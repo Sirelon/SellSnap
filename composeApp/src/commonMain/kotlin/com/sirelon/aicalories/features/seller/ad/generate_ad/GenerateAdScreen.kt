@@ -71,6 +71,7 @@ import com.sirelon.sellsnap.features.seller.drafts.ui.DraftsSection
 import com.sirelon.sellsnap.generated.resources.Res
 import com.sirelon.sellsnap.generated.resources.add_photos_to_continue
 import com.sirelon.sellsnap.features.media.DictatePill
+import com.sirelon.sellsnap.features.media.ListeningStrip
 import com.sirelon.sellsnap.features.media.SpeechToText
 import com.sirelon.sellsnap.features.media.rememberSpeechToText
 import com.sirelon.sellsnap.generated.resources.ai_hint_label
@@ -515,6 +516,7 @@ private fun PromptSection(
                 maxCharacters = MAX_PROMPT_CHARS,
             )
             if (speechToText != null && enabled) {
+                ListeningStrip(speechToText = speechToText)
                 DictatePill(
                     speechToText = speechToText,
                     modifier = Modifier.testTag("generate_ad_dictate_pill"),

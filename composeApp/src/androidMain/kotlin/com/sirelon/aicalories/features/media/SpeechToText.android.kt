@@ -91,6 +91,10 @@ private class AndroidSpeechToText(
     private var rawLevel by mutableFloatStateOf(0f)
     override val level: Float get() = if (isListening) rawLevel else 0f
 
+    // The phrase being heard, until onResults or onSegmentResults delivers it.
+    private var rawPartialText by mutableStateOf("")
+    override val partialText: String get() = if (isListening) rawPartialText else ""
+
     var requestPermission: () -> Unit = {}
 
     private var recognizer: SpeechRecognizer? = null
@@ -108,6 +112,7 @@ private class AndroidSpeechToText(
         stopRequested = false
         heardAnything = false
         rawLevel = 0f
+        rawPartialText = ""
         isListening = true
         startSession()
     }
@@ -132,6 +137,7 @@ private class AndroidSpeechToText(
         val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
             languageTag?.let { putExtra(RecognizerIntent.EXTRA_LANGUAGE, it) }
+            putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 putExtra(
                     RecognizerIntent.EXTRA_SEGMENTED_SESSION,
@@ -149,6 +155,7 @@ private class AndroidSpeechToText(
     private val listener = object : RecognitionListener {
         override fun onResults(results: Bundle?) {
             val text = results?.recognizedText().orEmpty()
+            rawPartialText = ""
             if (text.isNotEmpty()) {
                 heardAnything = true
                 onResult(text)
@@ -191,11 +198,15 @@ private class AndroidSpeechToText(
 
         override fun onBufferReceived(buffer: ByteArray?) = Unit
         override fun onEndOfSpeech() = Unit
-        override fun onPartialResults(partialResults: Bundle?) = Unit
+        override fun onPartialResults(partialResults: Bundle?) {
+            val text = partialResults?.recognizedText().orEmpty()
+            if (text.isNotEmpty()) rawPartialText = text
+        }
         override fun onEvent(eventType: Int, params: Bundle?) = Unit
 
         override fun onSegmentResults(segmentResults: Bundle) {
             val text = segmentResults.recognizedText()
+            rawPartialText = ""
             if (text.isNotEmpty()) {
                 heardAnything = true
                 onResult(text)

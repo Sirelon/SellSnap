@@ -1508,6 +1508,84 @@ class PreviewAdViewModelTest {
     }
 
     @Test
+    fun `a polish highlights the fields it changed, and a polish that changes nothing highlights none`() =
+        runTest(testDispatcher) {
+            val (_, viewModel) = polishHarness(sameItem = true, title = "A perfectly fine test title")
+            advanceUntilIdle()
+            viewModel.onEvent(PreviewAdEvent.PolishInstructionChanged("make it shorter"))
+            viewModel.onEvent(PreviewAdEvent.PolishDescription)
+            advanceUntilIdle()
+
+            // The title of the same item is unchanged, so it is not highlighted.
+            assertEquals(setOf(ListingField.Description, ListingField.Price), viewModel.state.value.changedFields)
+            assertEquals(1, viewModel.state.value.changedFieldsRevision)
+
+            // The same answer again leaves every field as it is.
+            viewModel.onEvent(PreviewAdEvent.PolishInstructionChanged("make it shorter"))
+            viewModel.onEvent(PreviewAdEvent.PolishDescription)
+            advanceUntilIdle()
+
+            assertEquals(1, viewModel.state.value.changedFieldsRevision)
+        }
+
+    @Test
+    fun `a polish that names a different item highlights its title too`() = runTest(testDispatcher) {
+        val (_, viewModel) = polishHarness(sameItem = false, title = "Nike Air Max 90 size 42")
+        advanceUntilIdle()
+        viewModel.onEvent(PreviewAdEvent.PolishInstructionChanged("these are Nike Air Max 90, not Adidas"))
+
+        viewModel.onEvent(PreviewAdEvent.PolishDescription)
+        advanceUntilIdle()
+
+        assertEquals(
+            setOf(ListingField.Title, ListingField.Description, ListingField.Price),
+            viewModel.state.value.changedFields,
+        )
+    }
+
+    @Test
+    fun `Publish does nothing while a regeneration or a polish is rewriting the listing`() = runTest(testDispatcher) {
+        var postAdvertRequests = 0
+        val engine = buildEngine {
+            addHandler { request ->
+                when {
+                    request.url.encodedPath.contains("users/me") ->
+                        respond(userJson(id = 100L, name = "Seller"), status = HttpStatusCode.OK, headers = jsonHeaders())
+
+                    request.url.encodedPath.contains("adverts") && request.method == HttpMethod.Post -> {
+                        postAdvertRequests += 1
+                        respond(postAdvertJson(id = 7L), status = HttpStatusCode.OK, headers = jsonHeaders())
+                    }
+
+                    else -> respond("{}", status = HttpStatusCode.OK, headers = jsonHeaders())
+                }
+            }
+        }
+        val harness = harness(engine, loggedInAccountStore())
+        val viewModel = buildViewModel(harness)
+        viewModel.setState { it.copy(selectedCategory = testCategory, location = testLocation, attributesLoadState = AttributesLoadState.Loaded) }
+        val effects = mutableListOf<PreviewAdEffect>()
+        backgroundScope.launch { viewModel.effects.collect { effects += it } }
+
+        viewModel.setState { it.copy(isRegeneratingDescription = true) }
+        viewModel.onEvent(PreviewAdEvent.Publish)
+        advanceUntilIdle()
+        viewModel.setState { it.copy(isRegeneratingDescription = false, isPolishingDescription = true) }
+        viewModel.onEvent(PreviewAdEvent.Publish)
+        advanceUntilIdle()
+
+        assertEquals(0, postAdvertRequests)
+        assertTrue(effects.none { it is PreviewAdEffect.PublishSuccess || it is PreviewAdEffect.PublishFailure })
+
+        // Once the rewrite has landed, the same Publish goes through.
+        viewModel.setState { it.copy(isPolishingDescription = false) }
+        viewModel.onEvent(PreviewAdEvent.Publish)
+        advanceUntilIdle()
+
+        assertEquals(1, postAdvertRequests)
+    }
+
+    @Test
     fun `a polish continues the listing conversation without sending the photos again`() = runTest(testDispatcher) {
         val requests = mutableListOf<String>()
         val (_, viewModel) = polishHarness(
