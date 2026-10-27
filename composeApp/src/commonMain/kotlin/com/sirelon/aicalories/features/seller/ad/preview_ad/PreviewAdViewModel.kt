@@ -134,6 +134,7 @@ private data class DraftStateEdit(
     val attributeValues: List<Pair<String, List<OlxAttributeValue>>>,
     val selectedCategoryId: Int?,
     val attemptId: String?,
+    val conversationResponseId: String?,
 )
 
 class PreviewAdViewModel internal constructor(
@@ -254,6 +255,7 @@ class PreviewAdViewModel internal constructor(
                     attributeValues = snapshot.attributeItems.map { it.attribute.code to it.selectedValues },
                     selectedCategoryId = snapshot.selectedCategory?.id,
                     attemptId = snapshot.currentAttemptId,
+                    conversationResponseId = snapshot.conversationResponseId,
                 )
             }.distinctUntilChanged(),
             ::DraftEdit,
@@ -404,6 +406,7 @@ class PreviewAdViewModel internal constructor(
         images = restoredSavedState.images ?: advertisement.images,
         location = restoredSavedState.location,
         currentAttemptId = filledAdvertisement.lastAttemptId,
+        conversationResponseId = filledAdvertisement.conversationResponseId,
         // Guests never load OLX's currency list, and a publish can land before it arrives.
         currency = OlxCurrency.fallbackFor(olxCountryStore.current),
     )
@@ -1044,6 +1047,7 @@ class PreviewAdViewModel internal constructor(
                 images = advertisement.images,
                 sellerPrompt = filledAdvertisement.sellerPrompt,
                 country = olxCountryStore.current,
+                previousResponseId = currentState().conversationResponseId?.let(::ResponseId),
             )
             // These photos already carried a listing once, so a refusal here is a regeneration that
             // did not work rather than a fresh verdict on the photos: the seller keeps the text they
@@ -1087,6 +1091,7 @@ class PreviewAdViewModel internal constructor(
                     regenerationCount = attemptNumber,
                     selectedVote = null,
                     currentAttemptId = attemptId ?: it.currentAttemptId,
+                    conversationResponseId = analysis.responseId.id,
                 )
             }
             analytics.logEvent(AnalyticsEvents.AD_DESCRIPTION_REGENERATE_SUCCEEDED)
@@ -1119,6 +1124,7 @@ class PreviewAdViewModel internal constructor(
                 instruction = instruction,
                 sellerPrompt = filledAdvertisement.sellerPrompt,
                 country = olxCountryStore.current,
+                previousResponseId = currentState().conversationResponseId?.let(::ResponseId),
             )
             val listing = polished.advertisement
             val merged = mergeRewrittenDescription(original, descriptionState.text.toString(), listing.description)
@@ -1143,6 +1149,7 @@ class PreviewAdViewModel internal constructor(
             setState {
                 it.copy(
                     polishInstruction = "",
+                    conversationResponseId = polished.responseId.id,
                     price = listing.suggestedPrice,
                     minPrice = listing.minPrice,
                     maxPrice = listing.maxPrice,
@@ -1284,6 +1291,7 @@ class PreviewAdViewModel internal constructor(
             sellerPrice = edit.state.price,
             selectedCategoryId = edit.state.selectedCategoryId ?: listing.selectedCategoryId,
             lastAttemptId = edit.state.attemptId ?: listing.lastAttemptId,
+            conversationResponseId = edit.state.conversationResponseId ?: listing.conversationResponseId,
             // This ViewModel's own record wins: a write that read the draft before
             // mintPublishExternalId stored the id must not put the draft back without it.
             publishExternalId = publishExternalId ?: listing.publishExternalId,

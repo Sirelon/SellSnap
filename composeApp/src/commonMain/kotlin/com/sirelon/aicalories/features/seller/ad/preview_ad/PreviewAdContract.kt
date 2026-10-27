@@ -90,6 +90,8 @@ interface PreviewAdContract {
         // Bumped when the ViewModel sets the price itself (a polish), so the price field, which
         // otherwise keeps its own text, shows the new one.
         val priceRevision: Int = 0,
+        // SIR-86: the latest stored OpenAI turn for this listing; Polish and Regenerate chain onto it.
+        val conversationResponseId: String? = null,
         val regenerationCount: Int = 0,
         val selectedVote: GeneratedContentVote? = null,
         val currentAttemptId: String? = null,

@@ -66,6 +66,7 @@ import com.sirelon.sellsnap.startup.AnalyticsConsentStore
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.MockEngineConfig
 import io.ktor.client.engine.mock.respond
+import io.ktor.client.engine.mock.toByteArray
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
@@ -1506,6 +1507,55 @@ class PreviewAdViewModelTest {
         assertFalse(viewModel.state.value.isPolishingDescription)
     }
 
+    @Test
+    fun `a polish continues the listing conversation without sending the photos again`() = runTest(testDispatcher) {
+        val requests = mutableListOf<String>()
+        val (_, viewModel) = polishHarness(
+            sameItem = true,
+            title = "A perfectly fine test title",
+            listing = chainedListing,
+            openAiRequests = requests,
+        )
+        advanceUntilIdle()
+        viewModel.onEvent(PreviewAdEvent.PolishInstructionChanged("make it shorter"))
+
+        viewModel.onEvent(PreviewAdEvent.PolishDescription)
+        advanceUntilIdle()
+
+        val request = requests.single()
+        assertTrue(request.contains("\"previous_response_id\":\"resp_listing\""))
+        assertFalse(request.contains("input_image"))
+        assertEquals("resp_polish", viewModel.state.value.conversationResponseId)
+    }
+
+    @Test
+    fun `a polish whose conversation OpenAI no longer has runs again with the photos`() = runTest(testDispatcher) {
+        val requests = mutableListOf<String>()
+        val (_, viewModel) = polishHarness(
+            sameItem = true,
+            title = "A perfectly fine test title",
+            listing = chainedListing,
+            openAiRequests = requests,
+            refuseChainedTurn = true,
+        )
+        advanceUntilIdle()
+        viewModel.onEvent(PreviewAdEvent.PolishInstructionChanged("make it shorter"))
+
+        viewModel.onEvent(PreviewAdEvent.PolishDescription)
+        advanceUntilIdle()
+
+        assertEquals(2, requests.size)
+        assertFalse(requests[1].contains("previous_response_id"))
+        assertTrue(requests[1].contains("input_image"))
+        assertEquals(150f, viewModel.state.value.price)
+        assertEquals("resp_polish", viewModel.state.value.conversationResponseId)
+    }
+
+    private val chainedListing = testListing.copy(
+        advertisement = testListing.advertisement.copy(images = listOf("https://example.com/photo1.jpg")),
+        conversationResponseId = "resp_listing",
+    )
+
     private fun polishResponseJson(sameItem: Boolean, title: String, description: String, price: Int): String {
         val listing = """{"sameItem":$sameItem,"title":"$title","description":"$description",""" +
             """"suggestedPrice":$price,"minPrice":${price - 50},"maxPrice":${price + 50}}"""
@@ -1513,7 +1563,13 @@ class PreviewAdViewModelTest {
             """"content":[{"type":"output_text","text":${Json.encodeToString(String.serializer(), listing)}}]}]}"""
     }
 
-    private suspend fun polishHarness(sameItem: Boolean, title: String): Pair<TestHarness, PreviewAdViewModel> {
+    private suspend fun polishHarness(
+        sameItem: Boolean,
+        title: String,
+        listing: AdvertisementWithAttributes = testListing,
+        openAiRequests: MutableList<String> = mutableListOf(),
+        refuseChainedTurn: Boolean = false,
+    ): Pair<TestHarness, PreviewAdViewModel> {
         val accountStore = OlxAccountStore(InMemoryOlxKeyValueStore(), testJson)
         accountStore.write(
             OlxAccountsRecord(
@@ -1525,6 +1581,15 @@ class PreviewAdViewModelTest {
         val engine = buildEngine {
             addHandler { request ->
                 if (request.url.encodedPath.endsWith("responses")) {
+                    val body = request.body.toByteArray().decodeToString()
+                    openAiRequests += body
+                    if (refuseChainedTurn && body.contains("previous_response_id")) {
+                        return@addHandler respond(
+                            """{"error":{"message":"Previous response not found.","type":"invalid_request_error"}}""",
+                            status = HttpStatusCode.NotFound,
+                            headers = jsonHeaders(),
+                        )
+                    }
                     respond(
                         polishResponseJson(
                             sameItem = sameItem,
@@ -1541,7 +1606,7 @@ class PreviewAdViewModelTest {
             }
         }
         val harness = harness(engine, accountStore)
-        return harness to buildViewModel(harness, openAiEngine = engine)
+        return harness to buildViewModel(harness, listing = listing, openAiEngine = engine)
     }
 
     private fun buildEngine(block: MockEngineConfig.() -> Unit): MockEngine {

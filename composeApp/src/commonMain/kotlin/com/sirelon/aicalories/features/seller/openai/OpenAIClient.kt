@@ -1,5 +1,6 @@
 package com.sirelon.sellsnap.features.seller.openai
 
+import com.aallam.openai.api.exception.OpenAIAPIException
 import com.aallam.openai.api.model.ModelId
 import com.aallam.openai.api.response.Response
 import com.aallam.openai.api.response.ResponseId
@@ -258,10 +259,16 @@ class OpenAIClient(
         return mapAttributeSuggestions(attributes, suggestions)
     }
 
+    /**
+     * Writes the listing from [images]. With [previousResponseId] it is a regeneration chained onto
+     * that stored turn: the photos are already in the conversation and are not sent again - see
+     * [chainedOrFresh].
+     */
     suspend fun analyzeThing(
         images: List<String>,
         sellerPrompt: String,
         country: OlxCountry,
+        previousResponseId: ResponseId? = null,
         model: ModelId = DEFAULT_MODEL,
         imageDetail: String = DEFAULT_IMAGE_DETAIL,
     ): AdAnalysis {
@@ -270,31 +277,47 @@ class OpenAIClient(
             "Legacy gpt-4 does not support image input or structured outputs for this flow. Use gpt-4.1, gpt-4o, or a newer model."
         }
 
-        val listingResponse = openAI.response(
-            request = ResponseRequest(
-                model = model,
-                instructions = adGenerationInstructions(country).trimIndent(),
-                // Low so the same item gets the same price from one generation to the next: at 0.7
-                // prices for one item drifted up to 46% apart (SIR-116). The opener rule in the
-                // instructions now carries the variety in voice that the higher temperature gave.
-                temperature = 0.3,
-                // Polish and Ukrainian tokenize at roughly twice the English rate, so a six-sentence
-                // description plus title and three prices needs this much headroom; a 600 cap was hit in production.
-                maxOutputTokens = 1000,
-                // Stored so the follow-up attribute-fill call can chain on this response id.
-                store = true,
-                input = ResponseInput(
-                    items = listOf(
-                        createListingAnalysisUserItem(
-                            images = images,
-                            sellerPrompt = sellerPrompt,
-                            country = country,
-                            imageDetail = imageDetail,
+        val listingResponse = chainedOrFresh(previousResponseId) { chainedTo ->
+            openAI.response(
+                request = ResponseRequest(
+                    model = model,
+                    previousResponseId = chainedTo,
+                    instructions = adGenerationInstructions(country).trimIndent(),
+                    // Low so the same item gets the same price from one generation to the next: at 0.7
+                    // prices for one item drifted up to 46% apart (SIR-116). The opener rule in the
+                    // instructions now carries the variety in voice that the higher temperature gave.
+                    temperature = 0.3,
+                    // Polish and Ukrainian tokenize at roughly twice the English rate, so a six-sentence
+                    // description plus title and three prices needs this much headroom; a 600 cap was hit in production.
+                    maxOutputTokens = 1000,
+                    // Stored so the attribute fill, a polish and a regeneration can chain onto it.
+                    store = true,
+                    input = ResponseInput(
+                        items = listOf(
+                            if (chainedTo != null) {
+                                createTextUserResponseItem(
+                                    buildString {
+                                        append("Write the OLX ${country.nameEn} listing for the same item again: a fresh version, ")
+                                        append("by the same rules. Return the same JSON shape.")
+                                        sellerPrompt.trim().takeIf { it.isNotEmpty() }?.let {
+                                            appendLine()
+                                            append(buildSellerNoteBlock(it))
+                                        }
+                                    }
+                                )
+                            } else {
+                                createListingAnalysisUserItem(
+                                    images = images,
+                                    sellerPrompt = sellerPrompt,
+                                    country = country,
+                                    imageDetail = imageDetail,
+                                )
+                            }
                         )
-                    )
-                ),
+                    ),
+                )
             )
-        )
+        }
 
         val listingJson = extractTextPayload(listingResponse)
         val generatedAd = json.decodeFromString<OpenAIGeneratedAd>(listingJson)
@@ -317,8 +340,10 @@ class OpenAIClient(
 
     /**
      * SIR-86: revises the listing the way the seller's [instruction] asks, and prices it again.
-     * The photos go with it, so a corrected item gets a price from what it looks like. Stored, so
-     * when the item turns out to be a different one the attribute fill can chain onto this turn.
+     * With [previousResponseId] it is a turn in the listing's own conversation, which already
+     * holds the photos and the seller's note, so neither is sent again - see [chainedOrFresh].
+     * Stored, so the next polish, a regeneration and the attribute fill for a different item can
+     * chain onto it.
      */
     suspend fun polishListing(
         images: List<String>,
@@ -327,35 +352,55 @@ class OpenAIClient(
         instruction: String,
         sellerPrompt: String,
         country: OlxCountry,
+        previousResponseId: ResponseId? = null,
         model: ModelId = DEFAULT_MODEL,
         imageDetail: String = DEFAULT_IMAGE_DETAIL,
     ): PolishedListing {
-        val response = openAI.response(
-            request = ResponseRequest(
-                model = model,
-                instructions = listingPolishInstructions(country).trimIndent(),
-                // Same as the listing turn: low, so the same item gets the same price (SIR-116).
-                temperature = 0.3,
-                // The description field holds up to 9000 characters; Polish and Ukrainian run at
-                // roughly two characters per token.
-                maxOutputTokens = 4500,
-                store = true,
-                input = ResponseInput(
-                    items = listOf(
-                        ResponseInputItem(
-                            role = "user",
-                            content = buildJsonArray {
-                                add(createTextContent(buildPolishPrompt(title, description, instruction)))
-                                sellerPrompt.trim()
-                                    .takeIf { it.isNotEmpty() }
-                                    ?.let { add(createTextContent(buildSellerNoteBlock(it))) }
-                                images.forEach { add(createImageContent(it, imageDetail)) }
-                            },
+        val polishPrompt = buildPolishPrompt(title, description, instruction)
+        val response = chainedOrFresh(previousResponseId) { chainedTo ->
+            openAI.response(
+                request = ResponseRequest(
+                    model = model,
+                    previousResponseId = chainedTo,
+                    // A chained turn keeps the listing turn's instructions, so the conversation
+                    // starts the same and its earlier part, photos included, can be billed at the
+                    // cached rate; the polish rules then travel in the message.
+                    instructions = if (chainedTo != null) {
+                        adGenerationInstructions(country).trimIndent()
+                    } else {
+                        listingPolishInstructions(country).trimIndent()
+                    },
+                    // Same as the listing turn: low, so the same item gets the same price (SIR-116).
+                    temperature = 0.3,
+                    // The description field holds up to 9000 characters; Polish and Ukrainian run at
+                    // roughly two characters per token.
+                    maxOutputTokens = 4500,
+                    store = true,
+                    input = ResponseInput(
+                        items = listOf(
+                            if (chainedTo != null) {
+                                createTextUserResponseItem(
+                                    "Revise the listing you wrote. For this turn these rules replace the " +
+                                        "output rules above.\n\n" +
+                                        listingPolishInstructions(country).trimIndent() + "\n\n" + polishPrompt
+                                )
+                            } else {
+                                ResponseInputItem(
+                                    role = "user",
+                                    content = buildJsonArray {
+                                        add(createTextContent(polishPrompt))
+                                        sellerPrompt.trim()
+                                            .takeIf { it.isNotEmpty() }
+                                            ?.let { add(createTextContent(buildSellerNoteBlock(it))) }
+                                        images.forEach { add(createImageContent(it, imageDetail)) }
+                                    },
+                                )
+                            }
                         )
-                    )
-                ),
+                    ),
+                )
             )
-        )
+        }
         val polished = json.decodeFromString<OpenAIPolishedListing>(extractTextPayload(response))
         val advertisement = mapper.mapToDomain(
             OpenAIGeneratedAd(
@@ -372,6 +417,30 @@ class OpenAIClient(
             sameItem = polished.sameItem,
             advertisement = advertisement,
         )
+    }
+
+    /**
+     * Runs [request] chained onto [previousResponseId], or fresh with the photos when there is no
+     * id. Chaining does not make the earlier turns free - OpenAI bills every input token of the
+     * chain again ("Even when using `previous_response_id`, all previous input tokens for
+     * responses in the chain are billed as input tokens",
+     * developers.openai.com/api/docs/guides/conversation-state) - but a request that starts like
+     * the one before it is billed at the cached-input rate for that part, images included
+     * (developers.openai.com/api/docs/guides/prompt-caching). OpenAI keeps a stored response for
+     * 30 days (same conversation-state guide), so an older draft's id is refused with a 4xx and
+     * the request runs once more with the photos.
+     */
+    private suspend fun <T> chainedOrFresh(
+        previousResponseId: ResponseId?,
+        request: suspend (chainedTo: ResponseId?) -> T,
+    ): T {
+        if (previousResponseId == null) return request(null)
+        return try {
+            request(previousResponseId)
+        } catch (error: OpenAIAPIException) {
+            if (error.statusCode != 400 && error.statusCode != 404) throw error
+            request(null)
+        }
     }
 
     private fun buildPolishPrompt(title: String, description: String, instruction: String) = buildString {

@@ -362,6 +362,7 @@ class GenerateAdViewModel(
                             sellerPrompt = state.value.prompt,
                             generationSessionId = generationSessionId,
                             lastAttemptId = generationAttemptId,
+                            conversationResponseId = analysis.responseId.id,
                         )
                     ).onEach {
                         setState { it.copy(completedSteps = GuestProcessingStepCount) }
@@ -392,6 +393,7 @@ class GenerateAdViewModel(
                                 sellerPrompt = state.value.prompt,
                                 generationSessionId = generationSessionId,
                                 lastAttemptId = generationAttemptId,
+                                conversationResponseId = analysis.responseId.id,
                             )
                         }
                 }
