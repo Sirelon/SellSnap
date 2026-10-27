@@ -87,6 +87,9 @@ interface PreviewAdContract {
         // The instruction is cleared once a polish lands.
         val polishInstruction: String = "",
         val isPolishingDescription: Boolean = false,
+        // Bumped when the ViewModel sets the price itself (a polish), so the price field, which
+        // otherwise keeps its own text, shows the new one.
+        val priceRevision: Int = 0,
         val regenerationCount: Int = 0,
         val selectedVote: GeneratedContentVote? = null,
         val currentAttemptId: String? = null,

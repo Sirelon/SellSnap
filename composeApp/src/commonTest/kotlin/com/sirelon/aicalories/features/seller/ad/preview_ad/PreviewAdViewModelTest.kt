@@ -57,6 +57,7 @@ import com.sirelon.sellsnap.features.seller.location.data.LocationRepository
 import com.sirelon.sellsnap.features.seller.openai.OpenAIClient
 import com.aallam.openai.client.OpenAI
 import com.aallam.openai.client.OpenAIConfig
+import com.aallam.openai.client.RetryStrategy
 import com.sirelon.sellsnap.features.seller.location.data.LocationStore
 import com.sirelon.sellsnap.features.seller.my_ads.data.AdvertOutcomeStore
 import com.sirelon.sellsnap.features.seller.profile.data.SellerAccountRepository
@@ -80,6 +81,7 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.Json
 import kotlinx.coroutines.flow.first
 import kotlin.test.AfterTest
@@ -1443,6 +1445,105 @@ class PreviewAdViewModelTest {
             )
         }
 
+    @Test
+    fun `a polish prices the listing again, a hand-set price included, and keeps the title of the same item`() =
+        runTest(testDispatcher) {
+            val (harness, viewModel) = polishHarness(sameItem = true, title = "A different title")
+            advanceUntilIdle()
+            viewModel.onEvent(PreviewAdEvent.OnPriceChanged(120f))
+            viewModel.onEvent(PreviewAdEvent.PolishInstructionChanged("make it shorter"))
+
+            viewModel.onEvent(PreviewAdEvent.PolishDescription)
+            advanceUntilIdle()
+
+            val state = viewModel.state.value
+            assertEquals(150f, state.price)
+            assertEquals(1, state.priceRevision)
+            assertEquals("A perfectly fine test title", viewModel.titleState.text.toString())
+            assertEquals(
+                "A polished test description that is long enough to publish.",
+                viewModel.descriptionState.text.toString(),
+            )
+            val succeeded = harness.analytics.events.single { it.first == AnalyticsEvents.AD_DESCRIPTION_POLISH_SUCCEEDED }
+            assertEquals(true, succeeded.second["same_item"])
+            assertEquals(true, succeeded.second["price_was_hand_set"])
+            assertEquals(25, succeeded.second["price_change_pct"])
+        }
+
+    @Test
+    fun `changing the price a polish set is logged once, with whether it had been set by hand`() =
+        runTest(testDispatcher) {
+            val (harness, viewModel) = polishHarness(sameItem = true, title = "A perfectly fine test title")
+            advanceUntilIdle()
+            viewModel.onEvent(PreviewAdEvent.PolishInstructionChanged("make it shorter"))
+            viewModel.onEvent(PreviewAdEvent.PolishDescription)
+            advanceUntilIdle()
+
+            // The field echoes the polished price back first; that is not an edit.
+            viewModel.onEvent(PreviewAdEvent.OnPriceChanged(150f))
+            viewModel.onEvent(PreviewAdEvent.OnPriceChanged(120f))
+            viewModel.onEvent(PreviewAdEvent.OnPriceChanged(110f))
+
+            val edited = harness.analytics.events.filter { it.first == AnalyticsEvents.AD_PRICE_EDITED_AFTER_POLISH }
+            assertEquals(1, edited.size)
+            assertEquals(false, edited.single().second["price_was_hand_set_before_polish"])
+            assertEquals(-20, edited.single().second["change_pct"])
+        }
+
+    @Test
+    fun `a polish that names a different item takes its title too`() = runTest(testDispatcher) {
+        val (harness, viewModel) = polishHarness(sameItem = false, title = "Nike Air Max 90 size 42")
+        advanceUntilIdle()
+        viewModel.onEvent(PreviewAdEvent.PolishInstructionChanged("these are Nike Air Max 90, not Adidas"))
+
+        viewModel.onEvent(PreviewAdEvent.PolishDescription)
+        advanceUntilIdle()
+
+        assertEquals("Nike Air Max 90 size 42", viewModel.titleState.text.toString())
+        assertEquals(150f, viewModel.state.value.price)
+        val succeeded = harness.analytics.events.single { it.first == AnalyticsEvents.AD_DESCRIPTION_POLISH_SUCCEEDED }
+        assertEquals(false, succeeded.second["same_item"])
+        assertFalse(viewModel.state.value.isPolishingDescription)
+    }
+
+    private fun polishResponseJson(sameItem: Boolean, title: String, description: String, price: Int): String {
+        val listing = """{"sameItem":$sameItem,"title":"$title","description":"$description",""" +
+            """"suggestedPrice":$price,"minPrice":${price - 50},"maxPrice":${price + 50}}"""
+        return """{"id":"resp_polish","status":"completed","output":[{"id":"msg_1","type":"message","role":"assistant",""" +
+            """"content":[{"type":"output_text","text":${Json.encodeToString(String.serializer(), listing)}}]}]}"""
+    }
+
+    private suspend fun polishHarness(sameItem: Boolean, title: String): Pair<TestHarness, PreviewAdViewModel> {
+        val accountStore = OlxAccountStore(InMemoryOlxKeyValueStore(), testJson)
+        accountStore.write(
+            OlxAccountsRecord(
+                accounts = listOf(account(localIndex = 1, olxUserId = 100L, accessToken = "token-a")),
+                activeByCountry = mapOf("ua" to 1),
+                nextLocalIndex = 2,
+            ),
+        )
+        val engine = buildEngine {
+            addHandler { request ->
+                if (request.url.encodedPath.endsWith("responses")) {
+                    respond(
+                        polishResponseJson(
+                            sameItem = sameItem,
+                            title = title,
+                            description = "A polished test description that is long enough to publish.",
+                            price = 150,
+                        ),
+                        status = HttpStatusCode.OK,
+                        headers = jsonHeaders(),
+                    )
+                } else {
+                    respond("{}", status = HttpStatusCode.OK, headers = jsonHeaders())
+                }
+            }
+        }
+        val harness = harness(engine, accountStore)
+        return harness to buildViewModel(harness, openAiEngine = engine)
+    }
+
     private fun buildEngine(block: MockEngineConfig.() -> Unit): MockEngine {
         val config = MockEngineConfig().apply(block)
         config.dispatcher = testDispatcher
@@ -1496,6 +1597,7 @@ class PreviewAdViewModelTest {
         harness: TestHarness,
         savedStateHandle: SavedStateHandle = SavedStateHandle(),
         listing: AdvertisementWithAttributes = testListing,
+        openAiEngine: MockEngine? = null,
     ): PreviewAdViewModel {
         return PreviewAdViewModel(
             filledAdvertisement = listing,
@@ -1512,7 +1614,9 @@ class PreviewAdViewModelTest {
             json = testJson,
             analytics = harness.analytics,
             openAiClient = OpenAIClient(
-                openAI = OpenAI(config = OpenAIConfig(token = "test-token")),
+                openAI = OpenAI(
+                    config = OpenAIConfig(token = "test-token", engine = openAiEngine, retry = RetryStrategy(maxRetries = 0)),
+                ),
                 json = testJson,
                 compactJson = testJson,
             ),

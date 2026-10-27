@@ -123,10 +123,16 @@ object AnalyticsEvents {
     const val AD_DESCRIPTION_REGENERATE_SUCCEEDED = "ad_description_regenerate_succeeded"
     const val AD_DESCRIPTION_REGENERATE_FAILED = "ad_description_regenerate_failed"
 
-    // SIR-86. Carries no instruction text.
+    // SIR-86. Carries no instruction text. SUCCEEDED carries `same_item`, `price_was_hand_set`
+    // (the price the polish replaced differed from the AI's) and `price_change_pct`.
     const val AD_DESCRIPTION_POLISH_STARTED = "ad_description_polish_started"
     const val AD_DESCRIPTION_POLISH_SUCCEEDED = "ad_description_polish_succeeded"
     const val AD_DESCRIPTION_POLISH_FAILED = "ad_description_polish_failed"
+
+    // SIR-86: the seller changed the price a polish set, once per polish. Carries
+    // `price_was_hand_set_before_polish` and `change_pct`. Many of these with the flag "true" mean
+    // sellers want a price they set by hand kept through a polish.
+    const val AD_PRICE_EDITED_AFTER_POLISH = "ad_price_edited_after_polish"
 
     // SIR-85: one event per recognized phrase. Carries `field` (description | polish_instruction | ai_hint),
     // never the text.

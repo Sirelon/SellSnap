@@ -770,6 +770,13 @@ private fun PreviewAdContent(
                 }
         }
 
+        // A polish sets a new price; the field keeps its own text otherwise.
+        LaunchedEffect(state.priceRevision) {
+            if (state.priceRevision > 0) {
+                priceTextFieldState.setTextAndPlaceCursorAtEnd(state.price.roundToInt().toString())
+            }
+        }
+
         AdPriceCard(
             priceTextFieldState = priceTextFieldState,
             minPrice = state.minPrice,
