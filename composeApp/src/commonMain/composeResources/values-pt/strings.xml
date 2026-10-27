@@ -300,6 +300,7 @@
     <string name="polish_sheet_placeholder">ex.: mais curto, mencione a entrega gratuita</string>
     <string name="polish_sheet_action">Melhorar descrição</string>
     <string name="error_polish_failed">Não foi possível melhorar a descrição. Tentar de novo?</string>
+    <string name="publish_updating_listing">A atualizar o anúncio…</string>
     <string name="vote_up_label">Útil</string>
     <string name="vote_down_label">Não útil</string>
 

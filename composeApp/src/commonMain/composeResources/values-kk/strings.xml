@@ -300,6 +300,7 @@
     <string name="polish_sheet_placeholder">мыс. қысқарақ жаз, тегін жеткізуді ата</string>
     <string name="polish_sheet_action">Сипаттаманы жақсарту</string>
     <string name="error_polish_failed">Сипаттаманы жақсарту мүмкін болмады. Қайталап көресің бе?</string>
+    <string name="publish_updating_listing">Хабарландыру жаңартылуда…</string>
     <string name="vote_up_label">Пайдалы</string>
     <string name="vote_down_label">Пайдасыз</string>
 

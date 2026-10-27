@@ -300,6 +300,7 @@
     <string name="polish_sheet_placeholder">напр. направи го по-кратко, спомени безплатна доставка</string>
     <string name="polish_sheet_action">Подобри описанието</string>
     <string name="error_polish_failed">Описанието не можа да се подобри. Опитай пак?</string>
+    <string name="publish_updating_listing">Обновяване на обявата…</string>
     <string name="vote_up_label">Полезно</string>
     <string name="vote_down_label">Безполезно</string>
 

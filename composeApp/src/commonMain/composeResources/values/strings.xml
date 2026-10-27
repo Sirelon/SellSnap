@@ -302,6 +302,7 @@
     <string name="polish_sheet_placeholder">e.g. make it shorter, mention free delivery</string>
     <string name="polish_sheet_action">Polish description</string>
     <string name="error_polish_failed">Couldn't polish the description. Try again?</string>
+    <string name="publish_updating_listing">Updating listing…</string>
     <string name="vote_up_label">Helpful</string>
     <string name="vote_down_label">Not helpful</string>
 

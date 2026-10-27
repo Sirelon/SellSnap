@@ -300,6 +300,7 @@
     <string name="polish_sheet_placeholder">de ex. fă-l mai scurt, menționează livrarea gratuită</string>
     <string name="polish_sheet_action">Îmbunătățește descrierea</string>
     <string name="error_polish_failed">Nu s-a putut îmbunătăți descrierea. Încerci din nou?</string>
+    <string name="publish_updating_listing">Se actualizează anunțul…</string>
     <string name="vote_up_label">Util</string>
     <string name="vote_down_label">Neutil</string>
 

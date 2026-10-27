@@ -303,6 +303,7 @@
     <string name="polish_sheet_placeholder">напр. зробіть коротше, згадайте безкоштовну доставку</string>
     <string name="polish_sheet_action">Покращити опис</string>
     <string name="error_polish_failed">Не вдалося покращити опис. Спробуєте ще раз?</string>
+    <string name="publish_updating_listing">Оновлюємо оголошення…</string>
     <string name="vote_up_label">Корисно</string>
     <string name="vote_down_label">Не корисно</string>
 

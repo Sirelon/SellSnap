@@ -300,6 +300,7 @@
     <string name="polish_sheet_placeholder">np. skróć go, wspomnij o darmowej dostawie</string>
     <string name="polish_sheet_action">Dopracuj opis</string>
     <string name="error_polish_failed">Nie udało się dopracować opisu. Spróbować jeszcze raz?</string>
+    <string name="publish_updating_listing">Aktualizowanie ogłoszenia…</string>
     <string name="vote_up_label">Pomocne</string>
     <string name="vote_down_label">Niepomocne</string>
 
