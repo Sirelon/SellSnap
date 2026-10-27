@@ -1090,6 +1090,9 @@ class PreviewAdViewModel internal constructor(
                 country = olxCountryStore.current,
             )
             descriptionState.setTextAndPlaceCursorAtEnd(polished)
+            // Unlike a regeneration, the vote stays and no attempt is logged: the vote rates the
+            // photo-based generation on the attempt row, which a polish leaves as it is, the same
+            // as the seller's own typing.
             setState { it.copy(polishInstruction = "") }
             analytics.logEvent(AnalyticsEvents.AD_DESCRIPTION_POLISH_SUCCEEDED)
         } catch (error: CancellationException) {

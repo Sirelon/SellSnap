@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
@@ -52,9 +53,16 @@ actual fun rememberSpeechToText(
 }
 
 /**
- * The platform recognizer ends a session at the first pause, so each result starts the next
- * session until the seller taps stop: one tap covers as many sentences as they say.
+ * One tap covers as many sentences as the seller says. On API 33+ that is one segmented session,
+ * which delivers each phrase through `onSegmentResults` and keeps listening across pauses until
+ * [SegmentedSessionSilenceMillis] of silence or a stop. Where the recognizer ignores segmentation,
+ * or below API 33, a session ends at the first pause and each result starts the next one; some
+ * recognizers play their start sound on every restart.
  */
+// RecognizerIntent.EXTRA_SEGMENTED_SESSION (developer.android.com/reference/android/speech/RecognizerIntent):
+// the extra named as the session type must be set in the same intent.
+private const val SegmentedSessionSilenceMillis = 5_000
+
 private class AndroidSpeechToText(
     private val context: Context,
     private val onResult: (String) -> Unit,
@@ -106,17 +114,23 @@ private class AndroidSpeechToText(
         val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
             languageTag?.let { putExtra(RecognizerIntent.EXTRA_LANGUAGE, it) }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                putExtra(
+                    RecognizerIntent.EXTRA_SEGMENTED_SESSION,
+                    RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS,
+                )
+                putExtra(
+                    RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS,
+                    SegmentedSessionSilenceMillis,
+                )
+            }
         }
         recognizer.startListening(intent)
     }
 
     private val listener = object : RecognitionListener {
         override fun onResults(results: Bundle?) {
-            val text = results
-                ?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-                ?.firstOrNull()
-                ?.trim()
-                .orEmpty()
+            val text = results?.recognizedText().orEmpty()
             if (text.isNotEmpty()) {
                 heardAnything = true
                 onResult(text)
@@ -149,7 +163,22 @@ private class AndroidSpeechToText(
         override fun onEndOfSpeech() = Unit
         override fun onPartialResults(partialResults: Bundle?) = Unit
         override fun onEvent(eventType: Int, params: Bundle?) = Unit
+
+        override fun onSegmentResults(segmentResults: Bundle) {
+            val text = segmentResults.recognizedText()
+            if (text.isNotEmpty()) {
+                heardAnything = true
+                onResult(text)
+            }
+        }
+
+        override fun onEndOfSegmentedSession() {
+            if (heardAnything) isListening = false else finishWith(SpeechToTextError.NothingHeard)
+        }
     }
+
+    private fun Bundle.recognizedText(): String =
+        getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull()?.trim().orEmpty()
 
     private fun finishWith(error: SpeechToTextError) {
         isListening = false
