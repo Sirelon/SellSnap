@@ -12,11 +12,8 @@ interface SpeechToText {
     /** True from [start] until listening ends, by [stop], an error, or the recognizer's own limit. */
     val isListening: Boolean
 
-    /**
-     * Asks for the microphone and speech permissions if needed, then listens. [languageTag] is a
-     * BCP-47 tag such as `pl-PL`; null listens in the device language.
-     */
-    fun start(languageTag: String?)
+    /** Asks for the microphone and speech permissions if needed, then listens. */
+    fun start()
 
     /** Stops listening. The text heard so far still reaches `onResult`. */
     fun stop()
@@ -32,9 +29,14 @@ sealed interface SpeechToTextError {
     data class Failed(val code: String) : SpeechToTextError
 }
 
-/** Null where the platform has no speech recognizer, so the caller hides the mic. */
+/**
+ * Listens in [languageTag], a BCP-47 tag such as `pl-PL`; null listens in the device language.
+ * Null where the platform has no speech recognizer, or none for that language, so the caller
+ * hides the mic.
+ */
 @Composable
 expect fun rememberSpeechToText(
+    languageTag: String?,
     onResult: (String) -> Unit,
     onError: (SpeechToTextError) -> Unit,
 ): SpeechToText?

@@ -1084,12 +1084,22 @@ class PreviewAdViewModel internal constructor(
         setState { it.copy(isPolishingDescription = true) }
         analytics.logEvent(AnalyticsEvents.AD_DESCRIPTION_POLISH_STARTED)
         try {
+            val original = descriptionState.text.toString()
             val polished = openAiClient.polishDescription(
-                description = descriptionState.text.toString(),
+                description = original,
                 instruction = instruction,
                 country = olxCountryStore.current,
             )
-            descriptionState.setTextAndPlaceCursorAtEnd(polished)
+            val merged = mergePolishedDescription(original, descriptionState.text.toString(), polished)
+            if (merged == null) {
+                // The seller changed the text while the request ran; their edit wins, and the
+                // kept instruction lets them polish again.
+                analytics.logEvent(AnalyticsEvents.AD_DESCRIPTION_POLISH_FAILED)
+                reportShownError(reason = "polish_stale", recordNonFatal = false)
+                postEffect(ShowMessage(getString(Res.string.error_polish_failed)))
+                return
+            }
+            descriptionState.setTextAndPlaceCursorAtEnd(merged)
             // Unlike a regeneration, the vote stays and no attempt is logged: the vote rates the
             // photo-based generation on the attempt row, which a polish leaves as it is, the same
             // as the seller's own typing.
@@ -1223,6 +1233,17 @@ internal val SpeechToTextError.messageRes: StringResource
         SpeechToTextError.PermissionDenied -> Res.string.error_dictation_permission
         SpeechToTextError.NothingHeard, is SpeechToTextError.Failed -> Res.string.error_dictation_failed
     }
+
+/**
+ * The polished description, with anything the seller added at the end while the polish ran, such
+ * as a dictated phrase, kept after it. Null when [current] changed anywhere else, because the
+ * polish then rewrote text the seller has since edited.
+ */
+internal fun mergePolishedDescription(original: String, current: String, polished: String): String? {
+    if (!current.startsWith(original)) return null
+    val added = current.substring(original.length).trim()
+    return if (added.isEmpty()) polished else appendDictatedText(polished, added)
+}
 
 /**
  * Adds a dictated [phrase] at the end of [existing], a space apart. The recognizer writes each

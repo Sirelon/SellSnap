@@ -23,6 +23,7 @@ import androidx.core.content.ContextCompat
 
 @Composable
 actual fun rememberSpeechToText(
+    languageTag: String?,
     onResult: (String) -> Unit,
     onError: (SpeechToTextError) -> Unit,
 ): SpeechToText? {
@@ -33,9 +34,10 @@ actual fun rememberSpeechToText(
 
     val currentOnResult by rememberUpdatedState(onResult)
     val currentOnError by rememberUpdatedState(onError)
-    val speechToText = remember(context) {
+    val speechToText = remember(context, languageTag) {
         AndroidSpeechToText(
             context = context,
+            languageTag = languageTag,
             onResult = { currentOnResult(it) },
             onError = { currentOnError(it) },
         )
@@ -65,6 +67,7 @@ private const val SegmentedSessionSilenceMillis = 5_000
 
 private class AndroidSpeechToText(
     private val context: Context,
+    private val languageTag: String?,
     private val onResult: (String) -> Unit,
     private val onError: (SpeechToTextError) -> Unit,
 ) : SpeechToText {
@@ -74,14 +77,12 @@ private class AndroidSpeechToText(
 
     var requestPermission: () -> Unit = {}
 
-    private var languageTag: String? = null
     private var recognizer: SpeechRecognizer? = null
     private var stopRequested = false
     private var heardAnything = false
 
-    override fun start(languageTag: String?) {
+    override fun start() {
         if (isListening) return
-        this.languageTag = languageTag
         val granted = ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==
             PackageManager.PERMISSION_GRANTED
         if (granted) listen() else requestPermission()
@@ -146,8 +147,10 @@ private class AndroidSpeechToText(
             val silence = error == SpeechRecognizer.ERROR_NO_MATCH ||
                 error == SpeechRecognizer.ERROR_SPEECH_TIMEOUT
             when {
-                // A pause after some speech, or a stop tap, ends the dictation the seller asked for.
-                (silence || stopRequested) && heardAnything -> isListening = false
+                // Once some text is in, any end is the end of the dictation the seller asked for:
+                // a pause, a stop tap, or a restart from onResults that some recognizers refuse
+                // with ERROR_CLIENT or ERROR_RECOGNIZER_BUSY.
+                heardAnything -> isListening = false
                 silence || stopRequested -> finishWith(SpeechToTextError.NothingHeard)
                 error == SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS ->
                     finishWith(SpeechToTextError.PermissionDenied)

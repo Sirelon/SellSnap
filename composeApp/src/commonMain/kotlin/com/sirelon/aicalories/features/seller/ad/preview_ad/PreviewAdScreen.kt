@@ -180,6 +180,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
@@ -665,6 +666,7 @@ private fun PreviewAdContent(
         remember(descriptionText) { descriptionText.trim().length < DescriptionMinLength }
     val dismissKeyboard = rememberKeyboardDismissAction()
     val descriptionSpeechToText = rememberSpeechToText(
+        languageTag = descriptionDictationLanguageTag,
         onResult = { onEvent(PreviewAdEvent.TextDictated(DictationField.Description, it)) },
         onError = { onEvent(PreviewAdEvent.DictationFailed(DictationField.Description, it)) },
     )
@@ -677,6 +679,9 @@ private fun PreviewAdContent(
         ) {
             PolishDescriptionSheet(
                 instruction = state.polishInstruction,
+                // The description's dictation was stopped on open but may still be finishing;
+                // the device has one microphone, so the sheet's mic waits for it.
+                isMicBusy = descriptionSpeechToText?.isListening == true,
                 onEvent = onEvent,
                 onSubmit = {
                     showPolishSheet = false
@@ -702,9 +707,9 @@ private fun PreviewAdContent(
             onEvent = onEvent,
         )
 
-        // FlowRow, not Row: the three labels together run ~310dp in ru and the row has 328dp
-        // on a 360dp phone, so anything wider (larger font scale, a narrower device) has to
-        // wrap rather than clip.
+        // FlowRow, not Row: three labelled pills and the two votes rarely fit the 328dp row of a
+        // 360dp phone, and "Listening… tap to stop" is wider still, so the row wraps rather
+        // than clips.
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing.s),
             verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.s),
@@ -712,23 +717,31 @@ private fun PreviewAdContent(
             // pills, and FlowRow would otherwise hang every item from the top of the line.
             itemVerticalAlignment = Alignment.CenterVertically,
         ) {
-            RegeneratePill(
+            // Both rewrite the description, so each waits while the other runs.
+            ActionPill(
+                text = stringResource(Res.string.regenerate_pill_default),
+                iconResource = Res.drawable.ic_refresh_cw,
                 isLoading = state.isRegeneratingDescription,
+                enabled = !state.isPolishingDescription,
                 onClick = { onEvent(PreviewAdEvent.RegenerateDescription) },
             )
 
-            PolishPill(
+            ActionPill(
+                text = stringResource(Res.string.polish_pill),
+                iconResource = Res.drawable.ic_wand_sparkles,
                 isLoading = state.isPolishingDescription,
+                enabled = !state.isRegeneratingDescription,
                 onClick = {
                     dismissKeyboard()
+                    descriptionSpeechToText?.stop()
                     showPolishSheet = true
                 },
+                modifier = Modifier.testTag("preview_ad_polish_pill"),
             )
 
             if (descriptionSpeechToText != null) {
                 DictatePill(
                     speechToText = descriptionSpeechToText,
-                    languageTag = descriptionDictationLanguageTag,
                     modifier = Modifier.testTag("preview_ad_dictate_pill"),
                 )
             }
@@ -1278,9 +1291,13 @@ fun CopyPill(
     }
 }
 
+/** A spinner while its action runs; greyed out and inert while [enabled] is false. */
 @Composable
-private fun RegeneratePill(
+private fun ActionPill(
+    text: String,
+    iconResource: DrawableResource,
     isLoading: Boolean,
+    enabled: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -1288,29 +1305,11 @@ private fun RegeneratePill(
         LoadingPill(modifier = modifier)
     } else {
         Pill(
-            color = AppTheme.colors.primary,
-            text = stringResource(Res.string.regenerate_pill_default),
-            iconResource = Res.drawable.ic_refresh_cw,
-            onClick = onClick,
+            color = if (enabled) AppTheme.colors.primary else AppTheme.colors.onSurfaceMuted,
+            text = text,
+            iconResource = iconResource,
+            onClick = if (enabled) onClick else null,
             modifier = modifier,
-        )
-    }
-}
-
-@Composable
-private fun PolishPill(
-    isLoading: Boolean,
-    onClick: () -> Unit,
-) {
-    if (isLoading) {
-        LoadingPill()
-    } else {
-        Pill(
-            color = AppTheme.colors.primary,
-            text = stringResource(Res.string.polish_pill),
-            iconResource = Res.drawable.ic_wand_sparkles,
-            onClick = onClick,
-            modifier = Modifier.testTag("preview_ad_polish_pill"),
         )
     }
 }
@@ -1318,15 +1317,23 @@ private fun PolishPill(
 @Composable
 private fun DictatePill(
     speechToText: SpeechToText,
-    languageTag: String?,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
 ) {
     val isListening = speechToText.isListening
     Pill(
-        color = if (isListening) AppTheme.colors.error else AppTheme.colors.primary,
+        color = when {
+            !enabled -> AppTheme.colors.onSurfaceMuted
+            isListening -> AppTheme.colors.error
+            else -> AppTheme.colors.primary
+        },
         text = stringResource(if (isListening) Res.string.dictate_pill_listening else Res.string.dictate_pill),
         iconResource = Res.drawable.ic_mic,
-        onClick = { if (isListening) speechToText.stop() else speechToText.start(languageTag) },
+        onClick = if (enabled) {
+            { if (isListening) speechToText.stop() else speechToText.start() }
+        } else {
+            null
+        },
         modifier = modifier,
     )
 }
@@ -1339,11 +1346,13 @@ private fun DictatePill(
 @Composable
 private fun PolishDescriptionSheet(
     instruction: String,
+    isMicBusy: Boolean,
     onEvent: (PreviewAdEvent) -> Unit,
     onSubmit: () -> Unit,
 ) {
     var dictationError by remember { mutableStateOf<SpeechToTextError?>(null) }
     val speechToText = rememberSpeechToText(
+        languageTag = null,
         onResult = { onEvent(PreviewAdEvent.TextDictated(DictationField.PolishInstruction, it)) },
         onError = {
             dictationError = it
@@ -1378,7 +1387,7 @@ private fun PolishDescriptionSheet(
             maxLines = 6,
         )
         if (speechToText != null) {
-            DictatePill(speechToText = speechToText, languageTag = null)
+            DictatePill(speechToText = speechToText, enabled = !isMicBusy)
         }
         AppButton(
             modifier = Modifier.fillMaxWidth(),
