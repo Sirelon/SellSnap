@@ -89,6 +89,19 @@ A refusal has this exact shape:
 The response must start with `{` and end with `}`.
 """
 
+private const val DESCRIPTION_POLISH_INSTRUCTIONS = """
+You edit the description of a second-hand OLX listing. The seller wrote or approved the current description and now tells you what to change.
+
+Rules:
+- Apply exactly the change the seller asks for and keep everything else: every fact, the tone and the order, unless the instruction changes them.
+- Keep the language of the current description, whatever language the instruction is written in, unless the seller asks for another language.
+- A fact the seller states in the instruction is true and may be added. Never add any other fact: no brand, size, material, condition, defects, location, delivery, payment or reason for selling the seller has not written.
+- Plain text only: no markdown, no bullet points, no hashtags and no emoji, unless the seller asks for them.
+- If the instruction is not about the description, return the current description unchanged.
+
+Return ONLY the new description text, with no quotes and no comment around it.
+"""
+
 private const val ATTRIBUTE_FILL_INSTRUCTIONS = """
 Fill the provided OLX attributes for the same item from the previous turn.
 
@@ -279,6 +292,48 @@ class OpenAIClient(
             responseId = listingResponse.id,
             advertisement = mapper.mapToDomain(generatedAd, images).roundedToMarketSteps(country),
         )
+    }
+
+    /**
+     * SIR-86: rewrites [description] the way the seller's [instruction] asks. Text only - the
+     * photos and the stored listing turn are not sent, so this works on a draft restored long
+     * after generation, at a fraction of a regeneration's cost.
+     */
+    suspend fun polishDescription(
+        description: String,
+        instruction: String,
+        country: OlxCountry,
+        model: ModelId = DEFAULT_MODEL,
+    ): String {
+        val response = openAI.response(
+            request = ResponseRequest(
+                model = model,
+                instructions = DESCRIPTION_POLISH_INSTRUCTIONS.trimIndent(),
+                temperature = 0.3,
+                // The description field holds up to 9000 characters; Polish and Ukrainian run at
+                // roughly two characters per token.
+                maxOutputTokens = 4500,
+                store = false,
+                input = ResponseInput(
+                    items = listOf(
+                        createTextUserResponseItem(
+                            buildString {
+                                appendLine("OLX ${country.nameEn} listing.")
+                                appendLine("Current description:")
+                                appendLine("<<<")
+                                appendLine(description)
+                                appendLine(">>>")
+                                appendLine("Seller's instruction:")
+                                appendLine("<<<")
+                                appendLine(instruction)
+                                append(">>>")
+                            }
+                        )
+                    )
+                ),
+            )
+        )
+        return extractTextPayload(response)
     }
 
     private fun createListingAnalysisUserItem(

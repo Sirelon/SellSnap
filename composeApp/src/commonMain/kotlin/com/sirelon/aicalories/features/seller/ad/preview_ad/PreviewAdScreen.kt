@@ -145,6 +145,20 @@ import com.sirelon.sellsnap.generated.resources.ic_circle_check_big
 import com.sirelon.sellsnap.generated.resources.ic_copy
 import com.sirelon.sellsnap.generated.resources.ic_layout_grid
 import com.sirelon.sellsnap.generated.resources.ic_refresh_cw
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
+import com.sirelon.sellsnap.designsystem.Input
+import com.sirelon.sellsnap.features.media.SpeechToText
+import com.sirelon.sellsnap.features.media.SpeechToTextError
+import com.sirelon.sellsnap.features.media.rememberSpeechToText
+import com.sirelon.sellsnap.generated.resources.dictate_pill
+import com.sirelon.sellsnap.generated.resources.dictate_pill_listening
+import com.sirelon.sellsnap.generated.resources.ic_mic
+import com.sirelon.sellsnap.generated.resources.ic_wand_sparkles
+import com.sirelon.sellsnap.generated.resources.polish_pill
+import com.sirelon.sellsnap.generated.resources.polish_sheet_action
+import com.sirelon.sellsnap.generated.resources.polish_sheet_placeholder
+import com.sirelon.sellsnap.generated.resources.polish_sheet_title
 import com.sirelon.sellsnap.generated.resources.ic_sparkles
 import com.sirelon.sellsnap.generated.resources.location_detecting
 import com.sirelon.sellsnap.generated.resources.location_not_available
@@ -398,6 +412,7 @@ internal fun PreviewAdContentRoute(
                 state = state,
                 titleState = viewModel.titleState,
                 descriptionState = viewModel.descriptionState,
+                descriptionDictationLanguageTag = viewModel.descriptionDictationLanguageTag,
                 onLocationClick = if (state.isSessionResolved && !state.isGuest) {
                     {
                         dismissKeyboard()
@@ -635,6 +650,7 @@ private fun AutoDetectLocation(
 private fun PreviewAdContent(
     titleState: TextFieldState,
     descriptionState: TextFieldState,
+    descriptionDictationLanguageTag: String?,
     state: PreviewAdContract.PreviewAdState,
     onEvent: (PreviewAdEvent) -> Unit,
     autoOpenAttributeCode: String?,
@@ -648,6 +664,27 @@ private fun PreviewAdContent(
     val isDescriptionInvalid =
         remember(descriptionText) { descriptionText.trim().length < DescriptionMinLength }
     val dismissKeyboard = rememberKeyboardDismissAction()
+    val descriptionSpeechToText = rememberSpeechToText(
+        onResult = { onEvent(PreviewAdEvent.TextDictated(DictationField.Description, it)) },
+        onError = { onEvent(PreviewAdEvent.DictationFailed(DictationField.Description, it)) },
+    )
+    var showPolishSheet by remember { mutableStateOf(false) }
+
+    if (showPolishSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showPolishSheet = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        ) {
+            PolishDescriptionSheet(
+                instruction = state.polishInstruction,
+                onEvent = onEvent,
+                onSubmit = {
+                    showPolishSheet = false
+                    onEvent(PreviewAdEvent.PolishDescription)
+                },
+            )
+        }
+    }
 
     Column(
         modifier = Modifier.padding(horizontal = AppDimens.Spacing.xl3),
@@ -679,6 +716,22 @@ private fun PreviewAdContent(
                 isLoading = state.isRegeneratingDescription,
                 onClick = { onEvent(PreviewAdEvent.RegenerateDescription) },
             )
+
+            PolishPill(
+                isLoading = state.isPolishingDescription,
+                onClick = {
+                    dismissKeyboard()
+                    showPolishSheet = true
+                },
+            )
+
+            if (descriptionSpeechToText != null) {
+                DictatePill(
+                    speechToText = descriptionSpeechToText,
+                    languageTag = descriptionDictationLanguageTag,
+                    modifier = Modifier.testTag("preview_ad_dictate_pill"),
+                )
+            }
 
             ThumbsVoteRow(
                 isUpSelected = state.selectedVote == GeneratedContentVote.Up,
@@ -1240,6 +1293,99 @@ private fun RegeneratePill(
             iconResource = Res.drawable.ic_refresh_cw,
             onClick = onClick,
             modifier = modifier,
+        )
+    }
+}
+
+@Composable
+private fun PolishPill(
+    isLoading: Boolean,
+    onClick: () -> Unit,
+) {
+    if (isLoading) {
+        LoadingPill()
+    } else {
+        Pill(
+            color = AppTheme.colors.primary,
+            text = stringResource(Res.string.polish_pill),
+            iconResource = Res.drawable.ic_wand_sparkles,
+            onClick = onClick,
+            modifier = Modifier.testTag("preview_ad_polish_pill"),
+        )
+    }
+}
+
+@Composable
+private fun DictatePill(
+    speechToText: SpeechToText,
+    languageTag: String?,
+    modifier: Modifier = Modifier,
+) {
+    val isListening = speechToText.isListening
+    Pill(
+        color = if (isListening) AppTheme.colors.error else AppTheme.colors.primary,
+        text = stringResource(if (isListening) Res.string.dictate_pill_listening else Res.string.dictate_pill),
+        iconResource = Res.drawable.ic_mic,
+        onClick = { if (isListening) speechToText.stop() else speechToText.start(languageTag) },
+        modifier = modifier,
+    )
+}
+
+/**
+ * SIR-86. A sheet is its own window above the screen's snackbar, so a dictation error shows here,
+ * under the field. The instruction is dictated in the device language: the seller is talking to
+ * the app, not writing the listing.
+ */
+@Composable
+private fun PolishDescriptionSheet(
+    instruction: String,
+    onEvent: (PreviewAdEvent) -> Unit,
+    onSubmit: () -> Unit,
+) {
+    var dictationError by remember { mutableStateOf<SpeechToTextError?>(null) }
+    val speechToText = rememberSpeechToText(
+        onResult = { onEvent(PreviewAdEvent.TextDictated(DictationField.PolishInstruction, it)) },
+        onError = {
+            dictationError = it
+            onEvent(PreviewAdEvent.DictationFailed(DictationField.PolishInstruction, it))
+        },
+    )
+    val isListening = speechToText?.isListening == true
+    LaunchedEffect(isListening) {
+        if (isListening) dictationError = null
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = AppDimens.Spacing.xl5)
+            .padding(bottom = AppDimens.Spacing.xl5),
+        verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.xl3),
+    ) {
+        Text(
+            text = stringResource(Res.string.polish_sheet_title),
+            style = AppTheme.typography.headline,
+            color = AppTheme.colors.onBackground,
+        )
+        Input(
+            value = instruction,
+            onValueChange = { onEvent(PreviewAdEvent.PolishInstructionChanged(it)) },
+            modifier = Modifier.fillMaxWidth(),
+            placeholder = stringResource(Res.string.polish_sheet_placeholder),
+            supportingText = dictationError?.let { stringResource(it.messageRes) },
+            singleLine = false,
+            minLines = 2,
+            maxLines = 6,
+        )
+        if (speechToText != null) {
+            DictatePill(speechToText = speechToText, languageTag = null)
+        }
+        AppButton(
+            modifier = Modifier.fillMaxWidth(),
+            text = stringResource(Res.string.polish_sheet_action),
+            leadingIcon = painterResource(Res.drawable.ic_wand_sparkles),
+            enabled = instruction.isNotBlank() && !isListening,
+            onClick = onSubmit,
         )
     }
 }

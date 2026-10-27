@@ -293,6 +293,15 @@
     <string name="error_photo_different_items">These look like different items. Remove the ones you're not selling.</string>
     <string name="error_regenerate_description_failed">Couldn't regenerate the description. Try again?</string>
     <string name="regenerate_pill_default">Regenerate</string>
+    <string name="dictate_pill">Dictate</string>
+    <string name="dictate_pill_listening">Listening… tap to stop</string>
+    <string name="error_dictation_permission">Allow microphone access to dictate.</string>
+    <string name="error_dictation_failed">Didn't catch that. Try again?</string>
+    <string name="polish_pill">Polish</string>
+    <string name="polish_sheet_title">What should change?</string>
+    <string name="polish_sheet_placeholder">e.g. make it shorter, mention free delivery</string>
+    <string name="polish_sheet_action">Polish description</string>
+    <string name="error_polish_failed">Couldn't polish the description. Try again?</string>
     <string name="vote_up_label">Helpful</string>
     <string name="vote_down_label">Not helpful</string>
 

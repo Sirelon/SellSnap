@@ -1,6 +1,7 @@
 package com.sirelon.sellsnap.features.seller.ad.preview_ad
 
 import androidx.compose.runtime.Immutable
+import com.sirelon.sellsnap.features.media.SpeechToTextError
 import com.sirelon.sellsnap.features.seller.ad.publish_success.PublishSuccessData
 import com.sirelon.sellsnap.features.seller.categories.domain.OlxAttribute
 import com.sirelon.sellsnap.features.seller.categories.domain.OlxAttributeValue
@@ -16,6 +17,9 @@ data class OlxAttributeState(
     val selectedValues: List<OlxAttributeValue> = emptyList(),
     val error: ValidationError? = null,
 )
+
+/** The text fields on the preview screen that take dictation (SIR-85). */
+enum class DictationField { Description, PolishInstruction }
 
 /** Display-only projection of the active OLX account for the "Publish to" row (SIR-83 U6/D2).
  * Deliberately not the internal [com.sirelon.sellsnap.features.seller.auth.data.OlxAccountRecord]
@@ -79,6 +83,10 @@ interface PreviewAdContract {
         val showTargetAccountRow: Boolean = false,
         val accountPickerItems: List<PublishAccountPickerItem> = emptyList(),
         val isRegeneratingDescription: Boolean = false,
+        // SIR-86: what the seller asks the polish to change, and whether a polish is in flight.
+        // The instruction is cleared once a polish lands.
+        val polishInstruction: String = "",
+        val isPolishingDescription: Boolean = false,
         val regenerationCount: Int = 0,
         val selectedVote: GeneratedContentVote? = null,
         val currentAttemptId: String? = null,
@@ -99,6 +107,17 @@ interface PreviewAdContract {
         data object FetchLocation : PreviewAdEvent
         data class LocationSelected(val location: OlxLocation) : PreviewAdEvent
         data object RegenerateDescription : PreviewAdEvent
+
+        data class PolishInstructionChanged(val text: String) : PreviewAdEvent
+
+        /** SIR-86: rewrite the description the way [PreviewAdState.polishInstruction] asks. */
+        data object PolishDescription : PreviewAdEvent
+
+        /** SIR-85: the recognizer heard [text] while dictating into [field]. */
+        data class TextDictated(val field: DictationField, val text: String) : PreviewAdEvent
+
+        /** SIR-85: dictating into [field] failed. */
+        data class DictationFailed(val field: DictationField, val error: SpeechToTextError) : PreviewAdEvent
 
         data class AttributeValueChanged(
             val attributeCode: String,

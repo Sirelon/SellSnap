@@ -123,6 +123,15 @@ object AnalyticsEvents {
     const val AD_DESCRIPTION_REGENERATE_SUCCEEDED = "ad_description_regenerate_succeeded"
     const val AD_DESCRIPTION_REGENERATE_FAILED = "ad_description_regenerate_failed"
 
+    // SIR-86. Carries no instruction text.
+    const val AD_DESCRIPTION_POLISH_STARTED = "ad_description_polish_started"
+    const val AD_DESCRIPTION_POLISH_SUCCEEDED = "ad_description_polish_succeeded"
+    const val AD_DESCRIPTION_POLISH_FAILED = "ad_description_polish_failed"
+
+    // SIR-85: one event per recognized phrase. Carries `field` (description | polish_instruction),
+    // never the text.
+    const val AD_TEXT_DICTATED = "ad_text_dictated"
+
     const val AD_GENERATED_CONTENT_VOTED = "ad_generated_content_voted"
 
     // Carries `field` (title | description | price | published_url), never the copied text itself.

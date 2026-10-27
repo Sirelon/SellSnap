@@ -33,5 +33,9 @@
 	<string>SellSnap needs camera access to capture photos for your OLX listing.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>SellSnap uses your location to suggest the nearest city for your OLX advertisement.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>SellSnap uses the microphone so you can dictate your listing.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>SellSnap turns your speech into text for your listing description.</string>
 </dict>
 </plist>

@@ -291,6 +291,15 @@
     <string name="error_photo_different_items">Бұл әртүрлі заттар сияқты. Сатылмайтындарын алып таста.</string>
     <string name="error_regenerate_description_failed">Сипаттаманы қайта жасау мүмкін болмады. Қайталап көресің бе?</string>
     <string name="regenerate_pill_default">Қайта жасау</string>
+    <string name="dictate_pill">Дауыспен жазу</string>
+    <string name="dictate_pill_listening">Тыңдап тұр… тоқтату үшін бас</string>
+    <string name="error_dictation_permission">Дауыспен жазу үшін микрофонға рұқсат бер.</string>
+    <string name="error_dictation_failed">Түсінбедім. Қайталап көресің бе?</string>
+    <string name="polish_pill">Жақсарту</string>
+    <string name="polish_sheet_title">Не өзгеруі керек?</string>
+    <string name="polish_sheet_placeholder">мыс. қысқарақ жаз, тегін жеткізуді ата</string>
+    <string name="polish_sheet_action">Сипаттаманы жақсарту</string>
+    <string name="error_polish_failed">Сипаттаманы жақсарту мүмкін болмады. Қайталап көресің бе?</string>
     <string name="vote_up_label">Пайдалы</string>
     <string name="vote_down_label">Пайдасыз</string>
 

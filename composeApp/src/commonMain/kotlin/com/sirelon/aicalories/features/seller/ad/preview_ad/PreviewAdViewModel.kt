@@ -98,6 +98,11 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.jetbrains.compose.resources.getString
+import com.sirelon.sellsnap.features.media.SpeechToTextError
+import com.sirelon.sellsnap.generated.resources.error_dictation_failed
+import com.sirelon.sellsnap.generated.resources.error_dictation_permission
+import com.sirelon.sellsnap.generated.resources.error_polish_failed
+import org.jetbrains.compose.resources.StringResource
 
 private const val TitleMinLength = 10
 private const val DescriptionMinLength = 30
@@ -174,6 +179,10 @@ class PreviewAdViewModel internal constructor(
 
     val titleState = TextFieldState(restoredSavedState.title ?: advertisement.title)
     val descriptionState = TextFieldState(restoredSavedState.description ?: advertisement.description)
+
+    // SIR-85: the description is written in the listing's language, so it is dictated in it too.
+    // Country is app-global and fixed while this screen is open.
+    val descriptionDictationLanguageTag: String? = olxCountryStore.current.speechLanguageTag
 
     // A SharedFlow, not a StateFlow: picking the category already shown has to fetch its
     // attributes again, because updateSelectedCategory has just cleared them.
@@ -472,6 +481,39 @@ class PreviewAdViewModel internal constructor(
             }
 
             RegenerateDescription -> viewModelScope.launch { regenerateDescription() }
+
+            is PreviewAdEvent.PolishInstructionChanged -> setState { it.copy(polishInstruction = event.text) }
+
+            PreviewAdEvent.PolishDescription -> viewModelScope.launch { polishDescription() }
+
+            is PreviewAdEvent.TextDictated -> {
+                when (event.field) {
+                    DictationField.Description -> descriptionState.setTextAndPlaceCursorAtEnd(
+                        appendDictatedText(descriptionState.text.toString(), event.text)
+                    )
+
+                    DictationField.PolishInstruction -> setState {
+                        it.copy(polishInstruction = appendDictatedText(it.polishInstruction, event.text))
+                    }
+                }
+                analytics.logEvent(
+                    AnalyticsEvents.AD_TEXT_DICTATED,
+                    mapOf("field" to event.field.analyticsCode),
+                )
+            }
+
+            is PreviewAdEvent.DictationFailed -> {
+                val error = event.error
+                // Silence and a refused permission are normal use, not defects.
+                reportShownError(
+                    reason = "dictation_${error.analyticsCode}",
+                    recordNonFatal = error is SpeechToTextError.Failed,
+                )
+                // The polish sheet covers the snackbar, so it shows its own dictation error inline.
+                if (event.field == DictationField.Description) {
+                    viewModelScope.launch { postEffect(ShowMessage(getString(error.messageRes))) }
+                }
+            }
 
             is VoteGeneratedContent -> {
                 // Tapping the selected thumb clears the vote; only a real selection is worth
@@ -971,7 +1013,7 @@ class PreviewAdViewModel internal constructor(
     )
 
     private suspend fun regenerateDescription() {
-        if (currentState().isRegeneratingDescription) return
+        if (currentState().isRegeneratingDescription || currentState().isPolishingDescription) return
 
         setState { it.copy(isRegeneratingDescription = true) }
         analytics.logEvent(AnalyticsEvents.AD_DESCRIPTION_REGENERATE_STARTED)
@@ -1031,6 +1073,34 @@ class PreviewAdViewModel internal constructor(
             postEffect(ShowMessage(getString(Res.string.error_regenerate_description_failed)))
         } finally {
             setState { it.copy(isRegeneratingDescription = false) }
+        }
+    }
+
+    private suspend fun polishDescription() {
+        val instruction = currentState().polishInstruction.trim()
+        if (instruction.isEmpty()) return
+        if (currentState().isRegeneratingDescription || currentState().isPolishingDescription) return
+
+        setState { it.copy(isPolishingDescription = true) }
+        analytics.logEvent(AnalyticsEvents.AD_DESCRIPTION_POLISH_STARTED)
+        try {
+            val polished = openAiClient.polishDescription(
+                description = descriptionState.text.toString(),
+                instruction = instruction,
+                country = olxCountryStore.current,
+            )
+            descriptionState.setTextAndPlaceCursorAtEnd(polished)
+            setState { it.copy(polishInstruction = "") }
+            analytics.logEvent(AnalyticsEvents.AD_DESCRIPTION_POLISH_SUCCEEDED)
+        } catch (error: CancellationException) {
+            // Leaving the screen mid-request is not a failure and must not skew the metric.
+            throw error
+        } catch (error: Throwable) {
+            analytics.logEvent(AnalyticsEvents.AD_DESCRIPTION_POLISH_FAILED)
+            reportShownError(reason = "polish_failed", throwable = error)
+            postEffect(ShowMessage(getString(Res.string.error_polish_failed)))
+        } finally {
+            setState { it.copy(isPolishingDescription = false) }
         }
     }
 
@@ -1130,4 +1200,34 @@ class PreviewAdViewModel internal constructor(
             images = state.images,
         )
     }
+}
+
+private val DictationField.analyticsCode: String
+    get() = when (this) {
+        DictationField.Description -> "description"
+        DictationField.PolishInstruction -> "polish_instruction"
+    }
+
+private val SpeechToTextError.analyticsCode: String
+    get() = when (this) {
+        SpeechToTextError.PermissionDenied -> "permission_denied"
+        SpeechToTextError.NothingHeard -> "nothing_heard"
+        is SpeechToTextError.Failed -> "failed:$code"
+    }
+
+internal val SpeechToTextError.messageRes: StringResource
+    get() = when (this) {
+        SpeechToTextError.PermissionDenied -> Res.string.error_dictation_permission
+        SpeechToTextError.NothingHeard, is SpeechToTextError.Failed -> Res.string.error_dictation_failed
+    }
+
+/**
+ * Adds a dictated [phrase] at the end of [existing], a space apart. The recognizer writes each
+ * phrase lower-case, so one that opens a sentence gets a capital.
+ */
+internal fun appendDictatedText(existing: String, phrase: String): String {
+    val trimmed = existing.trimEnd()
+    val opensSentence = trimmed.isEmpty() || trimmed.last() in ".!?"
+    val separator = if (existing.isEmpty() || existing.last().isWhitespace()) "" else " "
+    return existing + separator + if (opensSentence) phrase.replaceFirstChar { it.uppercaseChar() } else phrase
 }
