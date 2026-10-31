@@ -2,7 +2,7 @@
 
 Copy-paste text for every listing field. The app ships 8 in-app languages, but this doc
 only has 7 sections — russian shares Ukrainian's in-app UI and has no separate store
-listing (see the "No russian store listing" note below). Written for SellSnap 3.6 (build 18).
+listing (see the "No russian store listing" note below). Written for SellSnap 3.7 (build 19).
 
 The per-language **What's New** blocks below match what's pushed to the stores automatically from `.claude/tmp/release-metadata/` (gitignored, regenerated fresh each release): Android reads `android/<locale>/changelogs/<version_code>.txt`, iOS reads `ios/<locale>/release_notes.txt` (App Store) and the same file feeds TestFlight's localized build info. The `sellsnap-release` skill regenerates both those files and this section on every release.
 
@@ -73,15 +73,15 @@ From snap to live on OLX in about a minute. Download SellSnap and turn your clut
 SellSnap is an independent app and is not affiliated with or endorsed by OLX. Publishing requires an OLX account.
 ```
 
-**What's New (v3.6):**
+**What's New (v3.7):**
 
 ```
-SellSnap 3.6 — your details, kept
+SellSnap 3.7 — speak it, polish it
 
-• Listings now keep everything you write about the item, like the exact clothing size
-• Fixed a crash on iPhone when leaving the listing screen with the keyboard open
-• Deleting a listing that is already gone no longer shows an error
-• Sharper error reports, so we can fix problems faster
+• Dictate: tap the mic and say the description or the AI hint instead of typing
+• Polish: tell the AI what to change and it rewrites the description in seconds
+• Text you add while the AI regenerates is kept
+• Fixed item details sometimes failing to load after the AI wrote the listing
 ```
 
 ---
@@ -129,15 +129,15 @@ SellSnap підтримує OLX в Україні, Польщі, Румунії,
 SellSnap — незалежний застосунок, не афілійований з OLX. Для публікації потрібен акаунт OLX.
 ```
 
-**What's New (v3.6):**
+**What's New (v3.7):**
 
 ```
-SellSnap 3.6 — ваші деталі на місці
+SellSnap 3.7 — надиктуйте й покращте
 
-• Оголошення тепер зберігає все, що ви написали про річ, наприклад точний розмір одягу
-• Виправлено збій на iPhone, коли ви виходили з екрана оголошення з відкритою клавіатурою
-• Видалення оголошення, якого вже немає, більше не показує помилку
-• Точніші звіти про помилки, щоб ми виправляли проблеми швидше
+• Надиктувати: торкніться мікрофона й скажіть опис або підказку для ШІ замість набору
+• Покращити: скажіть ШІ, що змінити, і він перепише опис за кілька секунд
+• Текст, який ви додаєте, поки ШІ генерує заново, зберігається
+• Виправлено: деталі товару іноді не завантажувалися після того, як ШІ написав оголошення
 ```
 
 ---
@@ -185,15 +185,15 @@ Od zdjęcia do ogłoszenia na OLX w około minutę. Pobierz SellSnap i zamień n
 SellSnap to niezależna aplikacja, niepowiązana z OLX. Do publikacji wymagane jest konto OLX.
 ```
 
-**What's New (v3.6):**
+**What's New (v3.7):**
 
 ```
-SellSnap 3.6 — Twoje szczegóły zostają
+SellSnap 3.7 — podyktuj i dopracuj
 
-• Ogłoszenie zachowuje teraz wszystko, co napiszesz o przedmiocie, np. dokładny rozmiar ubrania
-• Naprawiono awarię na iPhonie przy wychodzeniu z ekranu ogłoszenia z otwartą klawiaturą
-• Usuwanie ogłoszenia, którego już nie ma, nie pokazuje już błędu
-• Dokładniejsze raporty o błędach, żebyśmy szybciej naprawiali problemy
+• Podyktuj: dotknij mikrofonu i powiedz opis lub wskazówkę dla AI zamiast pisać
+• Dopracuj: powiedz AI, co zmienić, a przepisze opis w kilka sekund
+• Tekst dodany podczas ponownego generowania przez AI zostaje zachowany
+• Naprawiono: szczegóły przedmiotu czasem nie wczytywały się po napisaniu ogłoszenia przez AI
 ```
 
 ---
@@ -241,15 +241,15 @@ De la poză la anunț publicat pe OLX în aproximativ un minut. Descarcă SellSn
 SellSnap este o aplicație independentă, neafiliată cu OLX. Publicarea necesită un cont OLX.
 ```
 
-**What's New (v3.6):**
+**What's New (v3.7):**
 
 ```
-SellSnap 3.6 — detaliile tale rămân
+SellSnap 3.7 — dictează și îmbunătățește
 
-• Anunțul păstrează acum tot ce scrii despre produs, de exemplu mărimea exactă a hainei
-• Am reparat o eroare pe iPhone la ieșirea din ecranul anunțului cu tastatura deschisă
-• Ștergerea unui anunț care nu mai există nu mai afișează o eroare
-• Rapoarte de erori mai precise, ca să rezolvăm problemele mai repede
+• Dictează: atinge microfonul și spune descrierea sau indiciul pentru AI în loc să tastezi
+• Îmbunătățește: spune-i AI-ului ce să schimbe și rescrie descrierea în câteva secunde
+• Textul adăugat cât timp AI-ul regenerează anunțul se păstrează
+• Am reparat: detaliile produsului uneori nu se încărcau după ce AI-ul scria anunțul
 ```
 
 ---
@@ -297,15 +297,15 @@ SellSnap поддържа OLX в България, Украйна, Полша, �
 SellSnap е независимо приложение и не е свързано с OLX. За публикуване е необходим акаунт в OLX.
 ```
 
-**What's New (v3.6):**
+**What's New (v3.7):**
 
 ```
-SellSnap 3.6 — вашите детайли остават
+SellSnap 3.7 — диктувай и подобри
 
-• Обявата вече запазва всичко, което напишете за вещта, например точния размер на дрехата
-• Поправен е срив на iPhone при излизане от екрана на обявата с отворена клавиатура
-• Изтриването на обява, която вече я няма, вече не показва грешка
-• По-точни доклади за грешки, за да оправяме проблемите по-бързо
+• Диктувай: докоснете микрофона и кажете описанието или подсказката за AI, вместо да пишете
+• Подобри: кажете на AI какво да промени и той пренаписва описанието за секунди
+• Текстът, който добавите, докато AI генерира наново, се запазва
+• Поправено: детайлите на вещта понякога не се зареждаха, след като AI напише обявата
 ```
 
 ---
@@ -353,15 +353,15 @@ Da foto ao anúncio publicado no OLX em cerca de um minuto. Descarregue o SellSn
 O SellSnap é uma aplicação independente, sem qualquer afiliação com o OLX. Para publicar é necessária uma conta OLX.
 ```
 
-**What's New (v3.6):**
+**What's New (v3.7):**
 
 ```
-SellSnap 3.6 — os seus detalhes ficam
+SellSnap 3.7 — dite e melhore
 
-• O anúncio guarda agora tudo o que escreve sobre o artigo, como o tamanho exato da roupa
-• Corrigimos uma falha no iPhone ao sair do ecrã do anúncio com o teclado aberto
-• Apagar um anúncio que já não existe deixou de mostrar um erro
-• Relatórios de erros mais precisos, para resolvermos problemas mais depressa
+• Ditar: toque no microfone e diga a descrição ou a dica para a IA em vez de escrever
+• Melhorar: diga à IA o que mudar e ela reescreve a descrição em segundos
+• O texto que adiciona enquanto a IA gera de novo é mantido
+• Corrigimos: os detalhes do artigo por vezes não carregavam depois de a IA escrever o anúncio
 ```
 
 ---
@@ -407,13 +407,13 @@ OLX аккаунтыңыз жоқ па? Қонақ режимін пайдала
 SellSnap — OLX-пен байланысы жоқ тәуелсіз қосымша. Жариялау үшін OLX аккаунты қажет.
 ```
 
-**What's New (v3.6):**
+**What's New (v3.7):**
 
 ```
-SellSnap 3.6 — сіздің мәліметтеріңіз сақталады
+SellSnap 3.7 — айтыңыз да, жақсартыңыз
 
-• Хабарландыру енді зат туралы жазғаныңыздың бәрін сақтайды, мысалы киімнің нақты өлшемін
-• Пернетақта ашық кезде хабарландыру экранынан шыққанда iPhone-дағы ақау түзетілді
-• Бұрыннан жоқ хабарландыруды өшіру енді қате көрсетпейді
-• Қателер туралы нақтырақ есептер — мәселелерді тезірек түзетеміз
+• Дауыспен жазу: микрофонды басып, сипаттаманы не ЖИ кеңесін теру орнына айтыңыз
+• Жақсарту: ЖИ-ге не өзгерту керегін айтыңыз, ол сипаттаманы бірнеше секундта қайта жазады
+• ЖИ қайта жасап жатқанда қосқан мәтініңіз сақталады
+• Түзетілді: ЖИ хабарландыру жазғаннан кейін зат мәліметтері кейде жүктелмейтін
 ```
