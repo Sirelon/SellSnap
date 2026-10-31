@@ -1,5 +1,104 @@
 [
   {
+    "version": "3.7",
+    "date": "2026-10-31",
+    "active": true,
+    "changes": [
+      {
+        "id": "dictate-text",
+        "icon": "feature",
+        "title": {
+          "en": "Dictate instead of typing",
+          "uk": "Надиктуйте замість набору",
+          "ru": "Надиктуйте замість набору",
+          "bg": "Диктувай вместо да пишеш",
+          "kk": "Тер орнына айтыңыз",
+          "pl": "Dyktuj zamiast pisać",
+          "pt": "Dite em vez de escrever",
+          "ro": "Dictează în loc să tastezi"
+        },
+        "summary": {
+          "en": "Tap Dictate and say the description or the AI hint out loud",
+          "uk": "Торкніться «Надиктувати» й скажіть опис або підказку для ШІ вголос",
+          "ru": "Торкніться «Надиктувати» й скажіть опис або підказку для ШІ вголос",
+          "bg": "Докосни „Диктувай“ и кажи описанието или подсказката за AI на глас",
+          "kk": "«Дауыспен жазу» түймесін басып, сипаттаманы не ЖИ кеңесін дауыстап айтыңыз",
+          "pl": "Dotknij „Podyktuj” i powiedz na głos opis albo wskazówkę dla AI",
+          "pt": "Toque em «Ditar» e diga em voz alta a descrição ou a dica para a IA",
+          "ro": "Atinge „Dictează” și spune cu voce tare descrierea sau indiciul pentru AI"
+        },
+        "detail": {
+          "en": "What you say is added to the end of the text. The app listens until you tap again, and the bars show it hears you. Text you dictate while the AI regenerates the listing is kept.",
+          "uk": "Сказане додається в кінець тексту. Застосунок слухає, доки ви не торкнетеся ще раз, а смужки показують, що він вас чує. Текст, який ви надиктуєте, поки ШІ генерує оголошення заново, зберігається.",
+          "ru": "Сказане додається в кінець тексту. Застосунок слухає, доки ви не торкнетеся ще раз, а смужки показують, що він вас чує. Текст, який ви надиктуєте, поки ШІ генерує оголошення заново, зберігається.",
+          "bg": "Казаното се добавя в края на текста. Приложението слуша, докато не докоснеш отново, а лентите показват, че те чува. Текстът, който диктуваш, докато AI генерира обявата наново, се запазва.",
+          "kk": "Айтқаныңыз мәтіннің соңына қосылады. Қолданба қайта басқанша тыңдайды, ал жолақтар сізді естіп тұрғанын көрсетеді. ЖИ хабарландыруды қайта жасап жатқанда айтқан мәтініңіз сақталады.",
+          "pl": "To, co powiesz, trafia na koniec tekstu. Aplikacja słucha, dopóki nie dotkniesz ponownie, a paski pokazują, że cię słyszy. Tekst podyktowany, gdy AI ponownie generuje ogłoszenie, zostaje zachowany.",
+          "pt": "O que disser é acrescentado no fim do texto. A app ouve até tocar outra vez, e as barras mostram que o está a ouvir. O texto que ditar enquanto a IA gera o anúncio de novo é mantido.",
+          "ro": "Ce spui se adaugă la finalul textului. Aplicația ascultă până atingi din nou, iar barele arată că te aude. Textul dictat cât timp AI-ul regenerează anunțul se păstrează."
+        }
+      },
+      {
+        "id": "polish-description",
+        "icon": "magic",
+        "title": {
+          "en": "Polish the description",
+          "uk": "Покращте опис",
+          "ru": "Покращте опис",
+          "bg": "Подобри описанието",
+          "kk": "Сипаттаманы жақсартыңыз",
+          "pl": "Dopracuj opis",
+          "pt": "Melhore a descrição",
+          "ro": "Îmbunătățește descrierea"
+        },
+        "summary": {
+          "en": "Tell the AI what to change, and it rewrites the description in seconds",
+          "uk": "Скажіть ШІ, що змінити, і він перепише опис за кілька секунд",
+          "ru": "Скажіть ШІ, що змінити, і він перепише опис за кілька секунд",
+          "bg": "Кажи на AI какво да промени и той пренаписва описанието за секунди",
+          "kk": "ЖИ-ге не өзгерту керегін айтыңыз, ол сипаттаманы бірнеше секундта қайта жазады",
+          "pl": "Powiedz AI, co zmienić, a przepisze opis w kilka sekund",
+          "pt": "Diga à IA o que mudar e ela reescreve a descrição em segundos",
+          "ro": "Spune-i AI-ului ce să schimbe și rescrie descrierea în câteva secunde"
+        },
+        "detail": {
+          "en": "Tap Polish next to Regenerate and write or dictate your wish, like \"make it shorter\" or \"mention free delivery\". The title and price stay as they are.",
+          "uk": "Торкніться «Покращити» поруч із «Згенерувати знову» і напишіть або надиктуйте побажання, наприклад «коротше» чи «згадай безкоштовну доставку». Заголовок і ціна не змінюються.",
+          "ru": "Торкніться «Покращити» поруч із «Згенерувати знову» і напишіть або надиктуйте побажання, наприклад «коротше» чи «згадай безкоштовну доставку». Заголовок і ціна не змінюються.",
+          "bg": "Докосни „Подобри“ до бутона за ново генериране и напиши или диктувай желанието си, например „по-кратко“ или „спомени безплатна доставка“. Заглавието и цената остават същите.",
+          "kk": "Қайта жасау түймесінің жанындағы «Жақсарту» түймесін басып, тілегіңізді жазыңыз не айтыңыз, мысалы «қысқарт» немесе «тегін жеткізуді айт». Тақырып пен баға өзгермейді.",
+          "pl": "Dotknij „Dopracuj” obok przycisku ponownego generowania i wpisz albo podyktuj życzenie, np. „krócej” lub „wspomnij o darmowej dostawie”. Tytuł i cena się nie zmieniają.",
+          "pt": "Toque em «Melhorar» junto ao botão de gerar de novo e escreva ou dite o que quer, como «mais curto» ou «menciona envio grátis». O título e o preço ficam iguais.",
+          "ro": "Atinge „Îmbunătățește” lângă butonul de regenerare și scrie sau dictează ce vrei, de exemplu „mai scurt” sau „menționează livrarea gratuită”. Titlul și prețul rămân la fel."
+        }
+      },
+      {
+        "id": "category-details-load",
+        "icon": "fix",
+        "title": {
+          "en": "Item details load reliably",
+          "uk": "Деталі товару завантажуються надійно",
+          "ru": "Деталі товару завантажуються надійно",
+          "bg": "Детайлите се зареждат надеждно",
+          "kk": "Зат мәліметтері сенімді жүктеледі",
+          "pl": "Szczegóły wczytują się niezawodnie",
+          "pt": "Os detalhes carregam sempre",
+          "ro": "Detaliile se încarcă sigur"
+        },
+        "summary": {
+          "en": "Fixed item details sometimes failing to load after the AI wrote the listing, which blocked publishing",
+          "uk": "Виправлено: деталі товару іноді не завантажувалися після того, як ШІ написав оголошення, і публікація блокувалася",
+          "ru": "Виправлено: деталі товару іноді не завантажувалися після того, як ШІ написав оголошення, і публікація блокувалася",
+          "bg": "Поправено: детайлите на вещта понякога не се зареждаха, след като AI напише обявата, и публикуването беше блокирано",
+          "kk": "Түзетілді: ЖИ хабарландыру жазғаннан кейін зат мәліметтері кейде жүктелмей, жариялау бұғатталатын",
+          "pl": "Naprawiono: szczegóły przedmiotu czasem nie wczytywały się po napisaniu ogłoszenia przez AI, co blokowało publikację",
+          "pt": "Corrigimos: os detalhes do artigo por vezes não carregavam depois de a IA escrever o anúncio, o que bloqueava a publicação",
+          "ro": "Am reparat: detaliile produsului uneori nu se încărcau după ce AI-ul scria anunțul, iar publicarea era blocată"
+        }
+      }
+    ]
+  },
+  {
     "version": "3.6",
     "date": "2026-10-22",
     "active": true,
