@@ -1,6 +1,7 @@
 package com.sirelon.sellsnap.features.seller.ad.preview_ad
 
 import androidx.compose.runtime.Immutable
+import com.sirelon.sellsnap.features.media.SpeechToTextError
 import com.sirelon.sellsnap.features.seller.ad.publish_success.PublishSuccessData
 import com.sirelon.sellsnap.features.seller.categories.domain.OlxAttribute
 import com.sirelon.sellsnap.features.seller.categories.domain.OlxAttributeValue
@@ -16,6 +17,12 @@ data class OlxAttributeState(
     val selectedValues: List<OlxAttributeValue> = emptyList(),
     val error: ValidationError? = null,
 )
+
+/** The text fields on the preview screen that take dictation (SIR-85). */
+enum class DictationField { Description, PolishInstruction }
+
+/** The parts of the listing a regeneration or a polish can rewrite (SIR-86). */
+enum class ListingField { Title, Description, Price, Category }
 
 /** Display-only projection of the active OLX account for the "Publish to" row (SIR-83 U6/D2).
  * Deliberately not the internal [com.sirelon.sellsnap.features.seller.auth.data.OlxAccountRecord]
@@ -79,13 +86,29 @@ interface PreviewAdContract {
         val showTargetAccountRow: Boolean = false,
         val accountPickerItems: List<PublishAccountPickerItem> = emptyList(),
         val isRegeneratingDescription: Boolean = false,
+        // SIR-86: what the seller asks the polish to change, and whether a polish is in flight.
+        // The instruction is cleared once a polish lands.
+        val polishInstruction: String = "",
+        val isPolishingDescription: Boolean = false,
+        // Bumped when the ViewModel sets the price itself (a polish), so the price field, which
+        // otherwise keeps its own text, shows the new one.
+        val priceRevision: Int = 0,
+        // SIR-86: the latest stored OpenAI turn for this listing; Polish and Regenerate chain onto it.
+        val conversationResponseId: String? = null,
+        // SIR-86: the fields the latest regeneration or polish actually changed, for the screen to
+        // highlight. The revision moves on with every result, so equal sets still highlight again.
+        val changedFields: Set<ListingField> = emptySet(),
+        val changedFieldsRevision: Int = 0,
         val regenerationCount: Int = 0,
         val selectedVote: GeneratedContentVote? = null,
         val currentAttemptId: String? = null,
         // SIR-122: whether a removed photo can still be put back at its original position -
         // see PreviewAdEvent.UndoRemoveImage.
         val canUndoRemoveImage: Boolean = false,
-    )
+    ) {
+        /** A regeneration or a polish is rewriting the listing: it is locked and cannot be published. */
+        val isUpdatingListing: Boolean get() = isRegeneratingDescription || isPolishingDescription
+    }
 
     sealed interface PreviewAdEvent {
         data class CategorySelected(val category: OlxCategory) : PreviewAdEvent
@@ -99,6 +122,17 @@ interface PreviewAdContract {
         data object FetchLocation : PreviewAdEvent
         data class LocationSelected(val location: OlxLocation) : PreviewAdEvent
         data object RegenerateDescription : PreviewAdEvent
+
+        data class PolishInstructionChanged(val text: String) : PreviewAdEvent
+
+        /** SIR-86: rewrite the description the way [PreviewAdState.polishInstruction] asks. */
+        data object PolishDescription : PreviewAdEvent
+
+        /** SIR-85: the recognizer heard [text] while dictating into [field]. */
+        data class TextDictated(val field: DictationField, val text: String) : PreviewAdEvent
+
+        /** SIR-85: dictating into [field] failed. */
+        data class DictationFailed(val field: DictationField, val error: SpeechToTextError) : PreviewAdEvent
 
         data class AttributeValueChanged(
             val attributeCode: String,

@@ -1,5 +1,6 @@
 package com.sirelon.sellsnap.features.seller.openai
 
+import com.aallam.openai.api.exception.OpenAIAPIException
 import com.aallam.openai.api.model.ModelId
 import com.aallam.openai.api.response.Response
 import com.aallam.openai.api.response.ResponseId
@@ -20,6 +21,7 @@ import com.sirelon.sellsnap.features.seller.openai.requests.OpenAIAttributesRequ
 import com.sirelon.sellsnap.features.seller.openai.response.OpenAIAttributeSuggestionResponse
 import com.sirelon.sellsnap.features.seller.openai.response.OpenAIAttributeSuggestionsResponse
 import com.sirelon.sellsnap.features.seller.openai.response.OpenAIGeneratedAd
+import com.sirelon.sellsnap.features.seller.openai.response.OpenAIPolishedListing
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
@@ -86,6 +88,29 @@ Return ONLY valid JSON. A listing has this exact shape:
   {"title":"string","description":"string","suggestedPrice":number,"minPrice":number,"maxPrice":number}
 A refusal has this exact shape:
   {"unrecognized":"string"}
+The response must start with `{` and end with `}`.
+"""
+
+internal fun listingPolishInstructions(country: OlxCountry): String = """
+You revise a second-hand listing for OLX ${country.nameEn}. You get the photos of the item, the listing as it stands now, the seller's original note if there was one, and the seller's instruction.
+
+The instruction is either a change to make ("make it shorter", "mention free delivery", "it is size 42, not 44") or a whole new description the seller wrote or dictated. Treat a new description as the seller's own text: keep its facts and tidy it up, do not replace it with yours.
+
+Description rules:
+- Apply exactly what the instruction asks and keep everything else: every fact, the tone and the order, unless the instruction changes them.
+- Keep the language of the current description, whatever language the instruction is written in, unless the seller asks for another language.
+- A fact the seller states in the instruction is true and outranks the photos. Never add any other fact that is not visible in the photos: no brand, size, material, condition, defects, location, delivery, payment or reason for selling the seller has not written.
+- Describe the item, never the pictures of it: no "on the photo", "pictured", "as you can see".
+- Plain text only: no markdown, no bullet points, no hashtags and no emoji, unless the seller asks for them.
+
+sameItem: false only when the revised listing is about a different item than the current title names - another kind of thing, or another brand or model. A corrected size, colour, condition or a different wording is still the same item.
+
+Title: the title for the revised listing, in the language of the description. Short and searchable: item type + brand + key detail + exact size when known. No emoji, no ALL CAPS, no hashtags, no placeholder for an unknown value. When sameItem is true and the instruction does not touch what the title says, return the current title unchanged.
+
+Prices: price the item the revised listing describes, as it looks in the photos, for the ${country.nameEn} second-hand market. Plain integers in ${country.currencyCode}. Not retail, not collectible premium. Ensure minPrice <= suggestedPrice <= maxPrice.
+
+Return ONLY valid JSON with this exact shape:
+  {"sameItem":true,"title":"string","description":"string","suggestedPrice":number,"minPrice":number,"maxPrice":number}
 The response must start with `{` and end with `}`.
 """
 
@@ -172,6 +197,16 @@ enum class UnusablePhotoReason(val code: String) {
     }
 }
 
+/**
+ * SIR-86: a revised listing. [sameItem] is false when the seller's revision names a different
+ * item; [responseId] chains the attribute fill for that item onto this turn.
+ */
+data class PolishedListing(
+    val responseId: ResponseId,
+    val sameItem: Boolean,
+    val advertisement: Advertisement,
+)
+
 /** The two outcomes of reading a seller's photos. */
 sealed interface AdAnalysis {
     /** [responseId] chains the attribute-fill turn onto the same thread. */
@@ -224,10 +259,16 @@ class OpenAIClient(
         return mapAttributeSuggestions(attributes, suggestions)
     }
 
+    /**
+     * Writes the listing from [images]. With [previousResponseId] it is a regeneration chained onto
+     * that stored turn: the photos are already in the conversation and are not sent again - see
+     * [chainedOrFresh].
+     */
     suspend fun analyzeThing(
         images: List<String>,
         sellerPrompt: String,
         country: OlxCountry,
+        previousResponseId: ResponseId? = null,
         model: ModelId = DEFAULT_MODEL,
         imageDetail: String = DEFAULT_IMAGE_DETAIL,
     ): AdAnalysis {
@@ -236,31 +277,47 @@ class OpenAIClient(
             "Legacy gpt-4 does not support image input or structured outputs for this flow. Use gpt-4.1, gpt-4o, or a newer model."
         }
 
-        val listingResponse = openAI.response(
-            request = ResponseRequest(
-                model = model,
-                instructions = adGenerationInstructions(country).trimIndent(),
-                // Low so the same item gets the same price from one generation to the next: at 0.7
-                // prices for one item drifted up to 46% apart (SIR-116). The opener rule in the
-                // instructions now carries the variety in voice that the higher temperature gave.
-                temperature = 0.3,
-                // Polish and Ukrainian tokenize at roughly twice the English rate, so a six-sentence
-                // description plus title and three prices needs this much headroom; a 600 cap was hit in production.
-                maxOutputTokens = 1000,
-                // Stored so the follow-up attribute-fill call can chain on this response id.
-                store = true,
-                input = ResponseInput(
-                    items = listOf(
-                        createListingAnalysisUserItem(
-                            images = images,
-                            sellerPrompt = sellerPrompt,
-                            country = country,
-                            imageDetail = imageDetail,
+        val listingResponse = chainedOrFresh(previousResponseId) { chainedTo ->
+            openAI.response(
+                request = ResponseRequest(
+                    model = model,
+                    previousResponseId = chainedTo,
+                    instructions = adGenerationInstructions(country).trimIndent(),
+                    // Low so the same item gets the same price from one generation to the next: at 0.7
+                    // prices for one item drifted up to 46% apart (SIR-116). The opener rule in the
+                    // instructions now carries the variety in voice that the higher temperature gave.
+                    temperature = 0.3,
+                    // Polish and Ukrainian tokenize at roughly twice the English rate, so a six-sentence
+                    // description plus title and three prices needs this much headroom; a 600 cap was hit in production.
+                    maxOutputTokens = 1000,
+                    // Stored so the attribute fill, a polish and a regeneration can chain onto it.
+                    store = true,
+                    input = ResponseInput(
+                        items = listOf(
+                            if (chainedTo != null) {
+                                createTextUserResponseItem(
+                                    buildString {
+                                        append("Write the OLX ${country.nameEn} listing for the same item again: a fresh version, ")
+                                        append("by the same rules. Return the same JSON shape.")
+                                        sellerPrompt.trim().takeIf { it.isNotEmpty() }?.let {
+                                            appendLine()
+                                            append(buildSellerNoteBlock(it))
+                                        }
+                                    }
+                                )
+                            } else {
+                                createListingAnalysisUserItem(
+                                    images = images,
+                                    sellerPrompt = sellerPrompt,
+                                    country = country,
+                                    imageDetail = imageDetail,
+                                )
+                            }
                         )
-                    )
-                ),
+                    ),
+                )
             )
-        )
+        }
 
         val listingJson = extractTextPayload(listingResponse)
         val generatedAd = json.decodeFromString<OpenAIGeneratedAd>(listingJson)
@@ -279,6 +336,126 @@ class OpenAIClient(
             responseId = listingResponse.id,
             advertisement = mapper.mapToDomain(generatedAd, images).roundedToMarketSteps(country),
         )
+    }
+
+    /**
+     * SIR-86: revises the listing the way the seller's [instruction] asks, and prices it again.
+     * With [previousResponseId] it is a turn in the listing's own conversation, which already
+     * holds the photos and the seller's note, so neither is sent again - see [chainedOrFresh].
+     * Stored, so the next polish, a regeneration and the attribute fill for a different item can
+     * chain onto it.
+     */
+    suspend fun polishListing(
+        images: List<String>,
+        title: String,
+        description: String,
+        instruction: String,
+        sellerPrompt: String,
+        country: OlxCountry,
+        previousResponseId: ResponseId? = null,
+        model: ModelId = DEFAULT_MODEL,
+        imageDetail: String = DEFAULT_IMAGE_DETAIL,
+    ): PolishedListing {
+        val polishPrompt = buildPolishPrompt(title, description, instruction)
+        val response = chainedOrFresh(previousResponseId) { chainedTo ->
+            openAI.response(
+                request = ResponseRequest(
+                    model = model,
+                    previousResponseId = chainedTo,
+                    // A chained turn keeps the listing turn's instructions, so the conversation
+                    // starts the same and its earlier part, photos included, can be billed at the
+                    // cached rate; the polish rules then travel in the message.
+                    instructions = if (chainedTo != null) {
+                        adGenerationInstructions(country).trimIndent()
+                    } else {
+                        listingPolishInstructions(country).trimIndent()
+                    },
+                    // Same as the listing turn: low, so the same item gets the same price (SIR-116).
+                    temperature = 0.3,
+                    // The description field holds up to 9000 characters; Polish and Ukrainian run at
+                    // roughly two characters per token.
+                    maxOutputTokens = 4500,
+                    store = true,
+                    input = ResponseInput(
+                        items = listOf(
+                            if (chainedTo != null) {
+                                createTextUserResponseItem(
+                                    "Revise the listing you wrote. For this turn these rules replace the " +
+                                        "output rules above.\n\n" +
+                                        listingPolishInstructions(country).trimIndent() + "\n\n" + polishPrompt
+                                )
+                            } else {
+                                ResponseInputItem(
+                                    role = "user",
+                                    content = buildJsonArray {
+                                        add(createTextContent(polishPrompt))
+                                        sellerPrompt.trim()
+                                            .takeIf { it.isNotEmpty() }
+                                            ?.let { add(createTextContent(buildSellerNoteBlock(it))) }
+                                        images.forEach { add(createImageContent(it, imageDetail)) }
+                                    },
+                                )
+                            }
+                        )
+                    ),
+                )
+            )
+        }
+        val polished = json.decodeFromString<OpenAIPolishedListing>(extractTextPayload(response))
+        val advertisement = mapper.mapToDomain(
+            OpenAIGeneratedAd(
+                title = polished.title,
+                description = polished.description,
+                suggestedPrice = polished.suggestedPrice,
+                minPrice = polished.minPrice,
+                maxPrice = polished.maxPrice,
+            ),
+            images,
+        ).roundedToMarketSteps(country)
+        return PolishedListing(
+            responseId = response.id,
+            sameItem = polished.sameItem,
+            advertisement = advertisement,
+        )
+    }
+
+    /**
+     * Runs [request] chained onto [previousResponseId], or fresh with the photos when there is no
+     * id. Chaining does not make the earlier turns free - OpenAI bills every input token of the
+     * chain again ("Even when using `previous_response_id`, all previous input tokens for
+     * responses in the chain are billed as input tokens",
+     * developers.openai.com/api/docs/guides/conversation-state) - but a request that starts like
+     * the one before it is billed at the cached-input rate for that part, images included
+     * (developers.openai.com/api/docs/guides/prompt-caching). OpenAI keeps a stored response for
+     * 30 days (same conversation-state guide), so an older draft's id is refused with a 4xx and
+     * the request runs once more with the photos.
+     */
+    private suspend fun <T> chainedOrFresh(
+        previousResponseId: ResponseId?,
+        request: suspend (chainedTo: ResponseId?) -> T,
+    ): T {
+        if (previousResponseId == null) return request(null)
+        return try {
+            request(previousResponseId)
+        } catch (error: OpenAIAPIException) {
+            if (error.statusCode != 400 && error.statusCode != 404) throw error
+            request(null)
+        }
+    }
+
+    private fun buildPolishPrompt(title: String, description: String, instruction: String) = buildString {
+        appendLine("Current title:")
+        appendLine("<<<")
+        appendLine(title)
+        appendLine(">>>")
+        appendLine("Current description:")
+        appendLine("<<<")
+        appendLine(description)
+        appendLine(">>>")
+        appendLine("Seller's instruction:")
+        appendLine("<<<")
+        appendLine(instruction)
+        append(">>>")
     }
 
     private fun createListingAnalysisUserItem(

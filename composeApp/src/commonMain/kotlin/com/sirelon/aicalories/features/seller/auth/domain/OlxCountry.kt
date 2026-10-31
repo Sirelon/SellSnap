@@ -40,6 +40,17 @@ data class OlxCountry(
         else -> 1
     }
 
+    /** BCP-47 tag of [language] for the speech recognizer (SIR-85); null listens in the device language. */
+    val speechLanguageTag: String?
+        get() = when (code) {
+            "pt" -> "pt-PT"
+            "ro" -> "ro-RO"
+            "pl" -> "pl-PL"
+            "ua" -> "uk-UA"
+            "bg" -> "bg-BG"
+            else -> null
+        }
+
     // Redact credentials so they never leak through logs, analytics, or crash reports.
     override fun toString(): String =
         "OlxCountry(code=$code, domain=$domain, language=$language, currencyCode=$currencyCode)"

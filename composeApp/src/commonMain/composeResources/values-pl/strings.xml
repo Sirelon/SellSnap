@@ -291,6 +291,16 @@
     <string name="error_photo_different_items">Wygląda na różne przedmioty. Usuń te, których nie sprzedajesz.</string>
     <string name="error_regenerate_description_failed">Nie udało się wygenerować opisu ponownie. Spróbować jeszcze raz?</string>
     <string name="regenerate_pill_default">Wygeneruj ponownie</string>
+    <string name="dictate_pill">Podyktuj</string>
+    <string name="dictate_pill_listening">Słucham… dotknij, by zatrzymać</string>
+    <string name="error_dictation_permission">Zezwól na dostęp do mikrofonu, żeby dyktować.</string>
+    <string name="error_dictation_failed">Nie udało się rozpoznać mowy. Spróbować jeszcze raz?</string>
+    <string name="polish_pill">Dopracuj</string>
+    <string name="polish_sheet_title">Co zmienić?</string>
+    <string name="polish_sheet_placeholder">np. skróć go, wspomnij o darmowej dostawie</string>
+    <string name="polish_sheet_action">Dopracuj opis</string>
+    <string name="error_polish_failed">Nie udało się dopracować opisu. Spróbować jeszcze raz?</string>
+    <string name="publish_updating_listing">Aktualizowanie ogłoszenia…</string>
     <string name="vote_up_label">Pomocne</string>
     <string name="vote_down_label">Niepomocne</string>
 

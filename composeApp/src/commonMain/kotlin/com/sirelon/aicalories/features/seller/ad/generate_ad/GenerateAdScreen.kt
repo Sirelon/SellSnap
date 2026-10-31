@@ -70,6 +70,10 @@ import com.sirelon.sellsnap.features.seller.drafts.Draft
 import com.sirelon.sellsnap.features.seller.drafts.ui.DraftsSection
 import com.sirelon.sellsnap.generated.resources.Res
 import com.sirelon.sellsnap.generated.resources.add_photos_to_continue
+import com.sirelon.sellsnap.features.media.DictatePill
+import com.sirelon.sellsnap.features.media.ListeningStrip
+import com.sirelon.sellsnap.features.media.SpeechToText
+import com.sirelon.sellsnap.features.media.rememberSpeechToText
 import com.sirelon.sellsnap.generated.resources.ai_hint_label
 import com.sirelon.sellsnap.generated.resources.ai_hint_placeholder
 import com.sirelon.sellsnap.generated.resources.generate_ad_guest_connect_hint
@@ -90,7 +94,6 @@ import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
-private const val MAX_PROMPT_CHARS = 120
 
 @Composable
 fun GenerateAdScreen(
@@ -160,8 +163,15 @@ fun GenerateAdScreen(
                 modifier = modifier,
             )
         } else {
+            // In this branch so listening stops when generation starts and the hint is locked.
+            val hintSpeechToText = rememberSpeechToText(
+                languageTag = null,
+                onResult = { viewModel.onEvent(GenerateAdContract.GenerateAdEvent.PromptDictated(it)) },
+                onError = { viewModel.onEvent(GenerateAdContract.GenerateAdEvent.DictationFailed(it)) },
+            )
             GenerateAdScreenContent(
                 state = state,
+                hintSpeechToText = hintSpeechToText,
                 snackbarHostState = snackbarHostState,
                 onPromptChanged = {
                     viewModel.onEvent(GenerateAdContract.GenerateAdEvent.PromptChanged(it))
@@ -194,6 +204,7 @@ fun GenerateAdScreen(
 @Composable
 private fun GenerateAdScreenContent(
     state: GenerateAdContract.GenerateAdState,
+    hintSpeechToText: SpeechToText?,
     snackbarHostState: SnackbarHostState,
     onPromptChanged: (String) -> Unit,
     onTakePhotoClick: () -> Unit,
@@ -295,6 +306,7 @@ private fun GenerateAdScreenContent(
                 PromptSection(
                     value = state.prompt,
                     enabled = !state.isLoading,
+                    speechToText = hintSpeechToText,
                     onValueChange = onPromptChanged,
                     modifier = Modifier.testTag("generate_ad_prompt"),
                 )
@@ -480,6 +492,7 @@ private fun InfoSection(
 private fun PromptSection(
     value: String,
     enabled: Boolean,
+    speechToText: SpeechToText?,
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -502,6 +515,13 @@ private fun PromptSection(
                 placeholder = stringResource(Res.string.ai_hint_placeholder),
                 maxCharacters = MAX_PROMPT_CHARS,
             )
+            if (speechToText != null && enabled) {
+                ListeningStrip(speechToText = speechToText)
+                DictatePill(
+                    speechToText = speechToText,
+                    modifier = Modifier.testTag("generate_ad_dictate_pill"),
+                )
+            }
         }
     }
 }
@@ -584,6 +604,7 @@ private fun GenerateAdScreenEmptyPreview() {
     AppTheme {
         GenerateAdScreenContent(
             state = GenerateAdContract.GenerateAdState(),
+            hintSpeechToText = null,
             snackbarHostState = remember { SnackbarHostState() },
             onPromptChanged = {},
             onTakePhotoClick = {},
@@ -604,6 +625,7 @@ private fun GenerateAdScreenWithPromptPreview() {
             state = GenerateAdContract.GenerateAdState(
                 prompt = "Nike Air Max 90, size 42, worn 2 months",
             ),
+            hintSpeechToText = null,
             snackbarHostState = remember { SnackbarHostState() },
             onPromptChanged = {},
             onTakePhotoClick = {},

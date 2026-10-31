@@ -74,6 +74,7 @@ import com.sirelon.sellsnap.generated.resources.publish_target_account_fallback_
 import com.sirelon.sellsnap.generated.resources.error_regenerate_description_failed
 import com.sirelon.sellsnap.generated.resources.validation_error_desc_too_short
 import com.sirelon.sellsnap.generated.resources.validation_error_title_too_short
+import com.aallam.openai.api.response.ResponseId
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -86,11 +87,13 @@ import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 import kotlin.math.roundToLong
 import kotlin.time.Clock
 import kotlin.uuid.Uuid
@@ -98,6 +101,12 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.jetbrains.compose.resources.getString
+import com.sirelon.sellsnap.features.media.SpeechToTextError
+import com.sirelon.sellsnap.features.media.analyticsCode
+import com.sirelon.sellsnap.features.media.appendDictatedText
+import com.sirelon.sellsnap.features.media.isDefect
+import com.sirelon.sellsnap.features.media.messageRes
+import com.sirelon.sellsnap.generated.resources.error_polish_failed
 
 private const val TitleMinLength = 10
 private const val DescriptionMinLength = 30
@@ -125,6 +134,7 @@ private data class DraftStateEdit(
     val attributeValues: List<Pair<String, List<OlxAttributeValue>>>,
     val selectedCategoryId: Int?,
     val attemptId: String?,
+    val conversationResponseId: String?,
 )
 
 class PreviewAdViewModel internal constructor(
@@ -175,6 +185,17 @@ class PreviewAdViewModel internal constructor(
     val titleState = TextFieldState(restoredSavedState.title ?: advertisement.title)
     val descriptionState = TextFieldState(restoredSavedState.description ?: advertisement.description)
 
+    // SIR-85: the description is written in the listing's language, so it is dictated in it too.
+    // Country is app-global and fixed while this screen is open.
+    // SIR-86: the price the AI last suggested, to tell whether the price on screen was set by hand.
+    private var aiSuggestedPrice = advertisement.suggestedPrice
+    // The price the last polish set, until the seller edits it; and whether the price that polish
+    // replaced had been set by hand. Together they show whether sellers set their price back.
+    private var polishedPrice: Float? = null
+    private var priceWasHandSetBeforePolish = false
+
+    val descriptionDictationLanguageTag: String? = olxCountryStore.current.speechLanguageTag
+
     // A SharedFlow, not a StateFlow: picking the category already shown has to fetch its
     // attributes again, because updateSelectedCategory has just cleared them.
     private val selectedCategoryId = MutableSharedFlow<Int>(replay = 1)
@@ -194,6 +215,8 @@ class PreviewAdViewModel internal constructor(
     // A category the seller already has - from the saved state, else from the draft - is kept over
     // the suggestion the current title would produce on open.
     private val initialCategoryId = restoredSavedState.selectedCategoryId ?: filledAdvertisement.selectedCategoryId
+    // Also set by a polish that names a different item: it picks the category and fills the
+    // attributes itself, so the title it writes must not start a second suggestion.
     private var skipRestoredTitleSuggestion = initialCategoryId != null
     private var attributesLoadedLogged = false
 
@@ -232,6 +255,7 @@ class PreviewAdViewModel internal constructor(
                     attributeValues = snapshot.attributeItems.map { it.attribute.code to it.selectedValues },
                     selectedCategoryId = snapshot.selectedCategory?.id,
                     attemptId = snapshot.currentAttemptId,
+                    conversationResponseId = snapshot.conversationResponseId,
                 )
             }.distinctUntilChanged(),
             ::DraftEdit,
@@ -382,6 +406,7 @@ class PreviewAdViewModel internal constructor(
         images = restoredSavedState.images ?: advertisement.images,
         location = restoredSavedState.location,
         currentAttemptId = filledAdvertisement.lastAttemptId,
+        conversationResponseId = filledAdvertisement.conversationResponseId,
         // Guests never load OLX's currency list, and a publish can land before it arrives.
         currency = OlxCurrency.fallbackFor(olxCountryStore.current),
     )
@@ -398,6 +423,17 @@ class PreviewAdViewModel internal constructor(
                         price = event.price,
                         maxPrice = it.maxPrice.coerceAtLeast(event.price),
                         minPrice = it.minPrice.coerceAtMost(event.price),
+                    )
+                }
+                val polished = polishedPrice
+                if (polished != null && event.price.roundToLong() != polished.roundToLong()) {
+                    polishedPrice = null
+                    analytics.logEvent(
+                        AnalyticsEvents.AD_PRICE_EDITED_AFTER_POLISH,
+                        mapOf(
+                            "price_was_hand_set_before_polish" to priceWasHandSetBeforePolish,
+                            "change_pct" to percentChange(from = polished, to = event.price),
+                        ),
                     )
                 }
             }
@@ -421,6 +457,8 @@ class PreviewAdViewModel internal constructor(
                 // active synchronously, while `isPublishing` is only set once the coroutine body
                 // actually runs.
                 if (publishJob?.isActive == true) return
+                // A regeneration or a polish is about to change what would be posted.
+                if (currentState().isUpdatingListing) return
                 publishJob = viewModelScope.launch { publishAdvert() }
             }
 
@@ -472,6 +510,36 @@ class PreviewAdViewModel internal constructor(
             }
 
             RegenerateDescription -> viewModelScope.launch { regenerateDescription() }
+
+            is PreviewAdEvent.PolishInstructionChanged -> setState { it.copy(polishInstruction = event.text) }
+
+            PreviewAdEvent.PolishDescription -> viewModelScope.launch { polishDescription() }
+
+            is PreviewAdEvent.TextDictated -> {
+                when (event.field) {
+                    DictationField.Description -> descriptionState.setTextAndPlaceCursorAtEnd(
+                        appendDictatedText(descriptionState.text.toString(), event.text)
+                    )
+
+                    DictationField.PolishInstruction -> setState {
+                        it.copy(polishInstruction = appendDictatedText(it.polishInstruction, event.text))
+                    }
+                }
+                analytics.logEvent(
+                    AnalyticsEvents.AD_TEXT_DICTATED,
+                    mapOf("field" to event.field.analyticsCode),
+                )
+            }
+
+            is PreviewAdEvent.DictationFailed -> {
+                val error = event.error
+                reportShownError(reason = "dictation_${error.analyticsCode}", recordNonFatal = error.isDefect)
+                // The polish sheet covers the snackbar, so it shows its own dictation error inline.
+                // An unsupported language hides the mic instead, which says enough.
+                if (event.field == DictationField.Description && error != SpeechToTextError.LanguageUnsupported) {
+                    viewModelScope.launch { postEffect(ShowMessage(getString(error.messageRes))) }
+                }
+            }
 
             is VoteGeneratedContent -> {
                 // Tapping the selected thumb clears the vote; only a real selection is worth
@@ -971,15 +1039,18 @@ class PreviewAdViewModel internal constructor(
     )
 
     private suspend fun regenerateDescription() {
-        if (currentState().isRegeneratingDescription) return
+        if (currentState().isUpdatingListing) return
 
+        val before = listingSnapshot()
         setState { it.copy(isRegeneratingDescription = true) }
         analytics.logEvent(AnalyticsEvents.AD_DESCRIPTION_REGENERATE_STARTED)
         try {
+            val original = descriptionState.text.toString()
             val analysis = openAiClient.analyzeThing(
                 images = advertisement.images,
                 sellerPrompt = filledAdvertisement.sellerPrompt,
                 country = olxCountryStore.current,
+                previousResponseId = currentState().conversationResponseId?.let(::ResponseId),
             )
             // These photos already carried a listing once, so a refusal here is a regeneration that
             // did not work rather than a fresh verdict on the photos: the seller keeps the text they
@@ -993,7 +1064,12 @@ class PreviewAdViewModel internal constructor(
                     return
                 }
             }
-            descriptionState.setTextAndPlaceCursorAtEnd(generated.description)
+            // A new listing is what the seller asked for, so it replaces an edit made meanwhile;
+            // only text added at the end, such as a dictated phrase, carries over.
+            descriptionState.setTextAndPlaceCursorAtEnd(
+                mergeRewrittenDescription(original, descriptionState.text.toString(), generated.description)
+                    ?: generated.description
+            )
             val attemptNumber = currentState().regenerationCount + 1
             val attemptId = adGenerationLogRepository.logAttempt(
                 AdGenerationAttempt(
@@ -1018,8 +1094,10 @@ class PreviewAdViewModel internal constructor(
                     regenerationCount = attemptNumber,
                     selectedVote = null,
                     currentAttemptId = attemptId ?: it.currentAttemptId,
+                    conversationResponseId = analysis.responseId.id,
                 )
             }
+            highlightChangesSince(before)
             analytics.logEvent(AnalyticsEvents.AD_DESCRIPTION_REGENERATE_SUCCEEDED)
         } catch (error: CancellationException) {
             // Leaving the screen mid-request is not a failure and must not skew the metric.
@@ -1034,6 +1112,156 @@ class PreviewAdViewModel internal constructor(
         }
     }
 
+    private suspend fun polishDescription() {
+        val instruction = currentState().polishInstruction.trim()
+        if (instruction.isEmpty()) return
+        if (currentState().isUpdatingListing) return
+
+        val before = listingSnapshot()
+        setState { it.copy(isPolishingDescription = true) }
+        analytics.logEvent(AnalyticsEvents.AD_DESCRIPTION_POLISH_STARTED)
+        try {
+            val original = descriptionState.text.toString()
+            val polished = openAiClient.polishListing(
+                images = currentState().images,
+                title = titleState.text.toString(),
+                description = original,
+                instruction = instruction,
+                sellerPrompt = filledAdvertisement.sellerPrompt,
+                country = olxCountryStore.current,
+                previousResponseId = currentState().conversationResponseId?.let(::ResponseId),
+            )
+            val listing = polished.advertisement
+            val merged = mergeRewrittenDescription(original, descriptionState.text.toString(), listing.description)
+            if (merged == null) {
+                // The seller changed the text while the request ran; their edit wins, and the
+                // kept instruction lets them polish again.
+                analytics.logEvent(AnalyticsEvents.AD_DESCRIPTION_POLISH_FAILED)
+                reportShownError(reason = "polish_stale", recordNonFatal = false)
+                postEffect(ShowMessage(getString(Res.string.error_polish_failed)))
+                return
+            }
+            descriptionState.setTextAndPlaceCursorAtEnd(merged)
+
+            // Every polish prices the listing again, a price set by hand included (owner,
+            // 2026-10-27). The analytics below show whether sellers then set their own price back.
+            val priceBefore = currentState().price
+            priceWasHandSetBeforePolish = priceBefore.roundToLong() != aiSuggestedPrice.roundToLong()
+            aiSuggestedPrice = listing.suggestedPrice
+            polishedPrice = listing.suggestedPrice
+            // Unlike a regeneration, the vote stays and no attempt is logged: the vote rates the
+            // photo-based generation on the attempt row, which a polish leaves as it is.
+            setState {
+                it.copy(
+                    polishInstruction = "",
+                    conversationResponseId = polished.responseId.id,
+                    price = listing.suggestedPrice,
+                    minPrice = listing.minPrice,
+                    maxPrice = listing.maxPrice,
+                    priceRevision = it.priceRevision + 1,
+                )
+            }
+            analytics.logEvent(
+                AnalyticsEvents.AD_DESCRIPTION_POLISH_SUCCEEDED,
+                mapOf(
+                    "same_item" to polished.sameItem,
+                    "price_was_hand_set" to priceWasHandSetBeforePolish,
+                    "price_change_pct" to percentChange(from = priceBefore, to = listing.suggestedPrice),
+                ),
+            )
+            if (!polished.sameItem) {
+                refreshForNewItem(title = listing.title, responseId = polished.responseId)
+            }
+            highlightChangesSince(before)
+        } catch (error: CancellationException) {
+            // Leaving the screen mid-request is not a failure and must not skew the metric.
+            throw error
+        } catch (error: Throwable) {
+            analytics.logEvent(AnalyticsEvents.AD_DESCRIPTION_POLISH_FAILED)
+            reportShownError(reason = "polish_failed", throwable = error)
+            postEffect(ShowMessage(getString(Res.string.error_polish_failed)))
+        } finally {
+            setState { it.copy(isPolishingDescription = false) }
+        }
+    }
+
+    /**
+     * SIR-86: the polished listing names a different item, so the title, the category and the
+     * attributes follow it (owner, 2026-10-27). The attribute fill chains onto the polish turn,
+     * which holds the photos and the seller's instruction. A failure here leaves the polished
+     * description and price in place and says only that the category could not be found.
+     */
+    private suspend fun refreshForNewItem(title: String, responseId: ResponseId) {
+        val isGuest = currentState().isGuest
+        // Guests have no category, and no title suggestion stream to skip.
+        if (!isGuest) skipRestoredTitleSuggestion = true
+        titleState.setTextAndPlaceCursorAtEnd(title)
+        if (isGuest) return
+
+        try {
+            val category = categoriesRepository.categorySuggestion(title).first()
+            val attributes = categoriesRepository.getAttributes(category.id).first()
+            val filled = try {
+                openAiClient.fillAdditionalInfo(
+                    previousResponseId = responseId,
+                    attributes = attributes,
+                    sellerPrompt = filledAdvertisement.sellerPrompt,
+                )
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: Throwable) {
+                // The seller fills the attributes in by hand; the validation banner lists them.
+                analytics.recordException(error, "polish_attribute_fill_failed")
+                emptyMap()
+            }
+            val categoryLabel = categoryPath(category)
+            setState {
+                it.copy(
+                    categoryLabel = categoryLabel,
+                    selectedCategory = category,
+                    attributeItems = attributes.map { attribute ->
+                        OlxAttributeState(attribute = attribute, selectedValues = filled[attribute.code].orEmpty())
+                    },
+                    attributesLoadState = AttributesLoadState.Loaded,
+                )
+            }
+        } catch (error: CancellationException) {
+            throw error
+        } catch (error: Throwable) {
+            val unsupported = error is UnsupportedOlxCategoryException
+            reportShownError(
+                reason = if (unsupported) "polish_category_not_supported" else "polish_category_refresh_failed",
+                throwable = error,
+            )
+            val message = if (unsupported) {
+                getString(Res.string.error_category_not_supported)
+            } else {
+                getString(Res.string.error_category_suggestion_failed)
+            }
+            postEffect(ShowMessage(message))
+        }
+    }
+
+    private fun listingSnapshot() = ListingSnapshot(
+        title = titleState.text.toString(),
+        description = descriptionState.text.toString(),
+        price = currentState().price.roundToLong(),
+        categoryId = currentState().selectedCategory?.id,
+    )
+
+    /** Marks the fields that differ from [before], so the screen highlights what a result changed. */
+    private fun highlightChangesSince(before: ListingSnapshot) {
+        val after = listingSnapshot()
+        val changed = buildSet {
+            if (after.title != before.title) add(ListingField.Title)
+            if (after.description != before.description) add(ListingField.Description)
+            if (after.price != before.price) add(ListingField.Price)
+            if (after.categoryId != before.categoryId) add(ListingField.Category)
+        }
+        if (changed.isEmpty()) return
+        setState { it.copy(changedFields = changed, changedFieldsRevision = it.changedFieldsRevision + 1) }
+    }
+
     private suspend fun updateSelectedCategory(category: OlxCategory) {
         // The category on screen with its attributes loaded: nothing to change, and reloading would
         // drop the values the seller has already picked.
@@ -1041,6 +1269,19 @@ class PreviewAdViewModel internal constructor(
         if (current.selectedCategory?.id == category.id && current.attributesLoadState == AttributesLoadState.Loaded) {
             return
         }
+        val categoryLabel = categoryPath(category)
+        setState {
+            it.copy(
+                categoryLabel = categoryLabel,
+                selectedCategory = category,
+                attributeItems = emptyList(),
+                attributesLoadState = AttributesLoadState.Loading,
+            )
+        }
+        selectedCategoryId.emit(category.id)
+    }
+
+    private suspend fun categoryPath(category: OlxCategory): String {
         val path = mutableListOf(category.label)
         var parentId = category.parentId
         while (parentId != null) {
@@ -1048,15 +1289,7 @@ class PreviewAdViewModel internal constructor(
             path.add(0, parent.label)
             parentId = parent.parentId
         }
-        setState {
-            it.copy(
-                categoryLabel = path.joinToString(" / "),
-                selectedCategory = category,
-                attributeItems = emptyList(),
-                attributesLoadState = AttributesLoadState.Loading,
-            )
-        }
-        selectedCategoryId.emit(category.id)
+        return path.joinToString(" / ")
     }
 
     /**
@@ -1084,6 +1317,7 @@ class PreviewAdViewModel internal constructor(
             sellerPrice = edit.state.price,
             selectedCategoryId = edit.state.selectedCategoryId ?: listing.selectedCategoryId,
             lastAttemptId = edit.state.attemptId ?: listing.lastAttemptId,
+            conversationResponseId = edit.state.conversationResponseId ?: listing.conversationResponseId,
             // This ViewModel's own record wins: a write that read the draft before
             // mintPublishExternalId stored the id must not put the draft back without it.
             publishExternalId = publishExternalId ?: listing.publishExternalId,
@@ -1130,4 +1364,33 @@ class PreviewAdViewModel internal constructor(
             images = state.images,
         )
     }
+}
+
+/** What a regeneration or a polish can rewrite, compared before and after it runs. */
+private data class ListingSnapshot(
+    val title: String,
+    val description: String,
+    val price: Long,
+    val categoryId: Int?,
+)
+
+private val DictationField.analyticsCode: String
+    get() = when (this) {
+        DictationField.Description -> "description"
+        DictationField.PolishInstruction -> "polish_instruction"
+    }
+
+/** Whole percent from [from] to [to]; 0 when [from] is not a price. */
+internal fun percentChange(from: Float, to: Float): Int =
+    if (from <= 0f) 0 else ((to - from) / from * 100f).roundToInt()
+
+/**
+ * The [rewritten] description from a polish or regeneration, with anything the seller added at
+ * the end while it ran, such as a dictated phrase, kept after it. Null when [current] changed
+ * anywhere else since [original] was sent.
+ */
+internal fun mergeRewrittenDescription(original: String, current: String, rewritten: String): String? {
+    if (!current.startsWith(original)) return null
+    val added = current.substring(original.length).trim()
+    return if (added.isEmpty()) rewritten else appendDictatedText(rewritten, added)
 }

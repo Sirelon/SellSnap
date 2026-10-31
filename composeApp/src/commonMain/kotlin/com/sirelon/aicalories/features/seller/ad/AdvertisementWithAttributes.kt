@@ -29,4 +29,10 @@ data class AdvertisementWithAttributes(
      * `PreviewAdViewModel.postAdvertIdempotently`.
      */
     val publishExternalId: String? = null,
+    /**
+     * SIR-86: the id of the latest stored OpenAI turn for this listing - the listing turn, or the
+     * last polish or regeneration. Polish and Regenerate continue that conversation instead of
+     * sending the photos again. Null for listings saved before it existed.
+     */
+    val conversationResponseId: String? = null,
 )

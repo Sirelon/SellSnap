@@ -8,6 +8,11 @@ import com.mohamedrejeb.calf.io.getName
 import com.mohamedrejeb.calf.io.readByteArray
 import com.sirelon.sellsnap.analytics.Analytics
 import com.sirelon.sellsnap.analytics.AnalyticsEvents
+import com.sirelon.sellsnap.features.media.SpeechToTextError
+import com.sirelon.sellsnap.features.media.analyticsCode
+import com.sirelon.sellsnap.features.media.appendDictatedText
+import com.sirelon.sellsnap.features.media.isDefect
+import com.sirelon.sellsnap.features.media.messageRes
 import com.sirelon.sellsnap.analytics.reportShownError
 import com.sirelon.sellsnap.features.common.presentation.BaseViewModel
 import com.sirelon.sellsnap.features.media.SharedImagesBridge
@@ -184,6 +189,25 @@ class GenerateAdViewModel(
                 }
             }
 
+            is GenerateAdContract.GenerateAdEvent.PromptDictated -> {
+                setState {
+                    it.copy(
+                        prompt = appendDictatedText(it.prompt, event.text).take(MAX_PROMPT_CHARS),
+                        errorMessage = null,
+                    )
+                }
+                analytics.logEvent(AnalyticsEvents.AD_TEXT_DICTATED, mapOf("field" to "ai_hint"))
+            }
+
+            is GenerateAdContract.GenerateAdEvent.DictationFailed -> {
+                val error = event.error
+                reportShownError(reason = "dictation_${error.analyticsCode}", recordNonFatal = error.isDefect)
+                // An unsupported language hides the mic instead, which says enough.
+                if (error != SpeechToTextError.LanguageUnsupported) {
+                    viewModelScope.launch { showError(getString(error.messageRes)) }
+                }
+            }
+
             is GenerateAdContract.GenerateAdEvent.Submit -> {
                 // Synchronous, ahead of submit()'s first suspension point (currentSession()):
                 // a double-tap that lands before isLoading would otherwise flip true starts a
@@ -338,6 +362,7 @@ class GenerateAdViewModel(
                             sellerPrompt = state.value.prompt,
                             generationSessionId = generationSessionId,
                             lastAttemptId = generationAttemptId,
+                            conversationResponseId = analysis.responseId.id,
                         )
                     ).onEach {
                         setState { it.copy(completedSteps = GuestProcessingStepCount) }
@@ -368,6 +393,7 @@ class GenerateAdViewModel(
                                 sellerPrompt = state.value.prompt,
                                 generationSessionId = generationSessionId,
                                 lastAttemptId = generationAttemptId,
+                                conversationResponseId = analysis.responseId.id,
                             )
                         }
                 }

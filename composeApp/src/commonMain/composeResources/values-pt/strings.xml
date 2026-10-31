@@ -291,6 +291,16 @@
     <string name="error_photo_different_items">Parecem ser artigos diferentes. Remova os que não está a vender.</string>
     <string name="error_regenerate_description_failed">Não foi possível gerar a descrição novamente. Tentar de novo?</string>
     <string name="regenerate_pill_default">Gerar novamente</string>
+    <string name="dictate_pill">Ditar</string>
+    <string name="dictate_pill_listening">A ouvir… toque para parar</string>
+    <string name="error_dictation_permission">Permita o acesso ao microfone para ditar.</string>
+    <string name="error_dictation_failed">Não percebi. Tentar de novo?</string>
+    <string name="polish_pill">Melhorar</string>
+    <string name="polish_sheet_title">O que deve mudar?</string>
+    <string name="polish_sheet_placeholder">ex.: mais curto, mencione a entrega gratuita</string>
+    <string name="polish_sheet_action">Melhorar descrição</string>
+    <string name="error_polish_failed">Não foi possível melhorar a descrição. Tentar de novo?</string>
+    <string name="publish_updating_listing">A atualizar o anúncio…</string>
     <string name="vote_up_label">Útil</string>
     <string name="vote_down_label">Não útil</string>
 
