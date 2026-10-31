@@ -47,8 +47,10 @@ object AnalyticsEvents {
 
     /** Same stage params as [AD_GENERATION_SUCCEEDED] (including `retry_count`), plus `reason`.
      * Only the stages that finished before the failure are present. `reason` is one of
-     * `unsupported_category`, `empty_output` (no title or price, after the retry), `incomplete_ad`
-     * (no description), `timeout`, `openai_error` or `other`. */
+     * `unsupported_category`, `photo_upload`, `empty_output` (no title or price, after the retry), `incomplete_ad`
+     * (no description), `timeout`, `openai_error`, `http_<status>` (the proxy or OpenAI answered
+     * an error; `http_401` is a missing or rejected App Check token), `network` (connection lost
+     * or refused) or `other:<ExceptionClass>`. */
     const val AD_GENERATION_FAILED = "ad_generation_failed"
 
     // The model read the photos and declined to write a listing. Deliberately not

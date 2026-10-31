@@ -343,12 +343,14 @@ class OpenAIClient(
      * With [previousResponseId] it is a turn in the listing's own conversation, which already
      * holds the photos and the seller's note, so neither is sent again - see [chainedOrFresh].
      * Stored, so the next polish, a regeneration and the attribute fill for a different item can
-     * chain onto it.
+     * chain onto it. When the answer has no usable price, the listing keeps [currentPrices]: the
+     * text change is what the seller asked for, and failing it over a missing price loses it.
      */
     suspend fun polishListing(
         images: List<String>,
         title: String,
         description: String,
+        currentPrices: PriceRange,
         instruction: String,
         sellerPrompt: String,
         country: OlxCountry,
@@ -402,13 +404,14 @@ class OpenAIClient(
             )
         }
         val polished = json.decodeFromString<OpenAIPolishedListing>(extractTextPayload(response))
+        val hasPrice = (polished.suggestedPrice ?: 0f) > 0f
         val advertisement = mapper.mapToDomain(
             OpenAIGeneratedAd(
                 title = polished.title,
                 description = polished.description,
-                suggestedPrice = polished.suggestedPrice,
-                minPrice = polished.minPrice,
-                maxPrice = polished.maxPrice,
+                suggestedPrice = if (hasPrice) polished.suggestedPrice else currentPrices.suggested,
+                minPrice = if (hasPrice) polished.minPrice else currentPrices.min,
+                maxPrice = if (hasPrice) polished.maxPrice else currentPrices.max,
             ),
             images,
         ).roundedToMarketSteps(country)
@@ -418,6 +421,9 @@ class OpenAIClient(
             advertisement = advertisement,
         )
     }
+
+    /** The listing's prices before a polish; see [polishListing]. */
+    class PriceRange(val suggested: Float, val min: Float, val max: Float)
 
     /**
      * Runs [request] chained onto [previousResponseId], or fresh with the photos when there is no

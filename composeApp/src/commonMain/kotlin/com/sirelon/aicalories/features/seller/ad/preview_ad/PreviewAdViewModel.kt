@@ -1126,6 +1126,11 @@ class PreviewAdViewModel internal constructor(
                 images = currentState().images,
                 title = titleState.text.toString(),
                 description = original,
+                currentPrices = OpenAIClient.PriceRange(
+                    suggested = currentState().price,
+                    min = currentState().minPrice,
+                    max = currentState().maxPrice,
+                ),
                 instruction = instruction,
                 sellerPrompt = filledAdvertisement.sellerPrompt,
                 country = olxCountryStore.current,

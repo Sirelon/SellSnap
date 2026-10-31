@@ -2,6 +2,8 @@ package com.sirelon.sellsnap.features.seller.ad.generate_ad
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
+import com.aallam.openai.api.exception.OpenAIAPIException
+import com.aallam.openai.api.exception.OpenAIHttpException
 import com.aallam.openai.api.exception.OpenAITimeoutException
 import com.mohamedrejeb.calf.io.KmpFile
 import com.mohamedrejeb.calf.io.getName
@@ -709,7 +711,10 @@ class GenerateAdViewModel(
         this is IncompleteGeneratedAdException -> if (isEmptyOutput) "empty_output" else "incomplete_ad"
         this is AdGenerationTimeoutException || this is OpenAITimeoutException -> "timeout"
         message?.startsWith(OpenAIRequestFailedPrefix) == true -> "openai_error"
-        else -> "other"
+        // 401 from the proxy is a missing or rejected App Check token.
+        this is OpenAIAPIException -> "http_$statusCode"
+        isRetryableModelFailure() || this is OpenAIHttpException -> "network"
+        else -> "other:${this::class.simpleName}"
     }
 
     private fun updateUpload(
