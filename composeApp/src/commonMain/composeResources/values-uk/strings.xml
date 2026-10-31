@@ -294,6 +294,16 @@
     <string name="error_photo_different_items">Тут, схоже, різні товари. Приберіть зайві фото.</string>
     <string name="error_regenerate_description_failed">Не вдалося перегенерувати опис. Спробуєте ще раз?</string>
     <string name="regenerate_pill_default">Перегенерувати</string>
+    <string name="dictate_pill">Надиктувати</string>
+    <string name="dictate_pill_listening">Слухаю… торкніться, щоб зупинити</string>
+    <string name="error_dictation_permission">Дозвольте доступ до мікрофона, щоб надиктовувати.</string>
+    <string name="error_dictation_failed">Не вдалося розчути. Спробуєте ще раз?</string>
+    <string name="polish_pill">Покращити</string>
+    <string name="polish_sheet_title">Що змінити?</string>
+    <string name="polish_sheet_placeholder">напр. зробіть коротше, згадайте безкоштовну доставку</string>
+    <string name="polish_sheet_action">Покращити опис</string>
+    <string name="error_polish_failed">Не вдалося покращити опис. Спробуєте ще раз?</string>
+    <string name="publish_updating_listing">Оновлюємо оголошення…</string>
     <string name="vote_up_label">Корисно</string>
     <string name="vote_down_label">Не корисно</string>
 

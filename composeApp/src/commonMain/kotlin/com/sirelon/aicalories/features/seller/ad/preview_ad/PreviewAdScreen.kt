@@ -1,6 +1,9 @@
 package com.sirelon.sellsnap.features.seller.ad.preview_ad
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutLinearInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -61,6 +64,8 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.drawOutline
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
@@ -100,6 +105,7 @@ import com.sirelon.sellsnap.designsystem.buttons.AppButtonDefaults
 import com.sirelon.sellsnap.designsystem.dismissKeyboardOnTapOutside
 import com.sirelon.sellsnap.designsystem.pager.ImagesCarousel
 import com.sirelon.sellsnap.designsystem.rememberKeyboardDismissAction
+import com.sirelon.sellsnap.designsystem.shimmer
 import com.sirelon.sellsnap.features.media.PermissionController
 import com.sirelon.sellsnap.features.media.rememberPermissionController
 import com.sirelon.sellsnap.features.seller.ad.formatFriendlyElapsedTime
@@ -145,11 +151,25 @@ import com.sirelon.sellsnap.generated.resources.ic_circle_check_big
 import com.sirelon.sellsnap.generated.resources.ic_copy
 import com.sirelon.sellsnap.generated.resources.ic_layout_grid
 import com.sirelon.sellsnap.generated.resources.ic_refresh_cw
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
+import com.sirelon.sellsnap.designsystem.Input
+import com.sirelon.sellsnap.features.media.DictatePill
+import com.sirelon.sellsnap.features.media.ListeningStrip
+import com.sirelon.sellsnap.features.media.messageRes
+import com.sirelon.sellsnap.features.media.SpeechToTextError
+import com.sirelon.sellsnap.features.media.rememberSpeechToText
+import com.sirelon.sellsnap.generated.resources.ic_wand_sparkles
+import com.sirelon.sellsnap.generated.resources.polish_pill
+import com.sirelon.sellsnap.generated.resources.polish_sheet_action
+import com.sirelon.sellsnap.generated.resources.polish_sheet_placeholder
+import com.sirelon.sellsnap.generated.resources.polish_sheet_title
 import com.sirelon.sellsnap.generated.resources.ic_sparkles
 import com.sirelon.sellsnap.generated.resources.location_detecting
 import com.sirelon.sellsnap.generated.resources.location_not_available
 import com.sirelon.sellsnap.generated.resources.publish_errors
 import com.sirelon.sellsnap.generated.resources.publish_on_olx
+import com.sirelon.sellsnap.generated.resources.publish_updating_listing
 import com.sirelon.sellsnap.generated.resources.account_business_badge
 import com.sirelon.sellsnap.generated.resources.ic_user
 import com.sirelon.sellsnap.generated.resources.publish_target_account_fallback_name
@@ -166,6 +186,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
@@ -301,6 +322,14 @@ internal fun PreviewAdContentRoute(
                             onConnectOlxClick()
                         },
                     )
+                } else if (state.isSessionResolved && state.isUpdatingListing) {
+                    // A regeneration or a polish is about to change what would be posted.
+                    AppButton(
+                        modifier = Modifier.fillMaxWidth().testTag("preview_ad_publish_button"),
+                        text = stringResource(Res.string.publish_updating_listing),
+                        enabled = false,
+                        onClick = {},
+                    )
                 } else if (state.isSessionResolved) {
                     AppButton(
                         modifier = Modifier.fillMaxWidth().testTag("preview_ad_publish_button"),
@@ -398,6 +427,7 @@ internal fun PreviewAdContentRoute(
                 state = state,
                 titleState = viewModel.titleState,
                 descriptionState = viewModel.descriptionState,
+                descriptionDictationLanguageTag = viewModel.descriptionDictationLanguageTag,
                 onLocationClick = if (state.isSessionResolved && !state.isGuest) {
                     {
                         dismissKeyboard()
@@ -635,6 +665,7 @@ private fun AutoDetectLocation(
 private fun PreviewAdContent(
     titleState: TextFieldState,
     descriptionState: TextFieldState,
+    descriptionDictationLanguageTag: String?,
     state: PreviewAdContract.PreviewAdState,
     onEvent: (PreviewAdEvent) -> Unit,
     autoOpenAttributeCode: String?,
@@ -648,26 +679,61 @@ private fun PreviewAdContent(
     val isDescriptionInvalid =
         remember(descriptionText) { descriptionText.trim().length < DescriptionMinLength }
     val dismissKeyboard = rememberKeyboardDismissAction()
+    val descriptionSpeechToText = rememberSpeechToText(
+        languageTag = descriptionDictationLanguageTag,
+        onResult = { onEvent(PreviewAdEvent.TextDictated(DictationField.Description, it)) },
+        onError = { onEvent(PreviewAdEvent.DictationFailed(DictationField.Description, it)) },
+    )
+    var showPolishSheet by remember { mutableStateOf(false) }
+
+    if (showPolishSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showPolishSheet = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        ) {
+            PolishDescriptionSheet(
+                instruction = state.polishInstruction,
+                // The description's dictation was stopped on open but may still be finishing;
+                // the device has one microphone, so the sheet's mic waits for it.
+                isMicBusy = descriptionSpeechToText?.isListening == true,
+                onEvent = onEvent,
+                onSubmit = {
+                    showPolishSheet = false
+                    onEvent(PreviewAdEvent.PolishDescription)
+                },
+            )
+        }
+    }
 
     Column(
         modifier = Modifier.padding(horizontal = AppDimens.Spacing.xl3),
         verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.xl)
     ) {
+        // SIR-86: what a polish or a regeneration is about to rewrite is locked until it lands.
         AdTitleCard(
             titleState = titleState,
             isInvalid = isTitleInvalid,
             onEvent = onEvent,
+            readOnly = state.isPolishingDescription,
+            modifier = rewriteEffects(ListingField.Title, isRewriting = state.isPolishingDescription, state = state),
         )
 
-        AdDescriptionCard(
-            descriptionState = descriptionState,
-            isInvalid = isDescriptionInvalid,
-            onEvent = onEvent,
-        )
+        Column(verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.s)) {
+            AdDescriptionCard(
+                descriptionState = descriptionState,
+                isInvalid = isDescriptionInvalid,
+                onEvent = onEvent,
+                readOnly = state.isUpdatingListing,
+                modifier = rewriteEffects(ListingField.Description, isRewriting = state.isUpdatingListing, state = state),
+            )
+            if (descriptionSpeechToText != null) {
+                ListeningStrip(speechToText = descriptionSpeechToText)
+            }
+        }
 
-        // FlowRow, not Row: the three labels together run ~310dp in ru and the row has 328dp
-        // on a 360dp phone, so anything wider (larger font scale, a narrower device) has to
-        // wrap rather than clip.
+        // FlowRow, not Row: three labelled pills and the two votes rarely fit the 328dp row of a
+        // 360dp phone, and "Listening… tap to stop" is wider still, so the row wraps rather
+        // than clips.
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing.s),
             verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.s),
@@ -675,10 +741,39 @@ private fun PreviewAdContent(
             // pills, and FlowRow would otherwise hang every item from the top of the line.
             itemVerticalAlignment = Alignment.CenterVertically,
         ) {
-            RegeneratePill(
+            // Both rewrite the description, so each waits while the other runs.
+            ActionPill(
+                text = stringResource(Res.string.regenerate_pill_default),
+                iconResource = Res.drawable.ic_refresh_cw,
                 isLoading = state.isRegeneratingDescription,
-                onClick = { onEvent(PreviewAdEvent.RegenerateDescription) },
+                enabled = !state.isPolishingDescription,
+                onClick = {
+                    dismissKeyboard()
+                    descriptionSpeechToText?.stop()
+                    onEvent(PreviewAdEvent.RegenerateDescription)
+                },
             )
+
+            ActionPill(
+                text = stringResource(Res.string.polish_pill),
+                iconResource = Res.drawable.ic_wand_sparkles,
+                isLoading = state.isPolishingDescription,
+                enabled = !state.isRegeneratingDescription,
+                onClick = {
+                    dismissKeyboard()
+                    descriptionSpeechToText?.stop()
+                    showPolishSheet = true
+                },
+                modifier = Modifier.testTag("preview_ad_polish_pill"),
+            )
+
+            if (descriptionSpeechToText != null) {
+                DictatePill(
+                    speechToText = descriptionSpeechToText,
+                    enabled = !state.isUpdatingListing,
+                    modifier = Modifier.testTag("preview_ad_dictate_pill"),
+                )
+            }
 
             ThumbsVoteRow(
                 isUpSelected = state.selectedVote == GeneratedContentVote.Up,
@@ -706,16 +801,28 @@ private fun PreviewAdContent(
                 }
         }
 
+        // A polish sets a new price; the field keeps its own text otherwise.
+        LaunchedEffect(state.priceRevision) {
+            if (state.priceRevision > 0) {
+                priceTextFieldState.setTextAndPlaceCursorAtEnd(state.price.roundToInt().toString())
+            }
+        }
+
         AdPriceCard(
             priceTextFieldState = priceTextFieldState,
             minPrice = state.minPrice,
             maxPrice = state.maxPrice,
             currency = state.currency,
+            readOnly = state.isPolishingDescription,
+            modifier = rewriteEffects(ListingField.Price, isRewriting = state.isPolishingDescription, state = state),
         )
 
         if (state.isSessionResolved && !state.isGuest) {
             AdCategoryCard(
                 categoryLabel = state.categoryLabel,
+                // A polish of a different item picks the category itself.
+                enabled = !state.isPolishingDescription,
+                modifier = rewriteEffects(ListingField.Category, isRewriting = false, state = state),
                 onChangeClick = {
                     dismissKeyboard()
                     onEvent(PreviewAdEvent.OnChangeCategoryClick)
@@ -749,6 +856,7 @@ private fun PreviewSectionCard(
     label: String,
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
+    enabled: Boolean = true,
     headerTrailing: (@Composable () -> Unit)? = null,
     content: @Composable () -> Unit,
 ) {
@@ -758,6 +866,7 @@ private fun PreviewSectionCard(
         onClick = {
             onClick?.invoke()
         },
+        enabled = enabled,
     ) {
         Column(modifier = Modifier.padding(vertical = AppDimens.Spacing.xl3)) {
             Row(
@@ -794,18 +903,21 @@ private fun PreviewSectionInputCard(
     textFieldState: TextFieldState,
     maxCharacters: Int,
     isInvalid: Boolean = false,
+    readOnly: Boolean = false,
+    modifier: Modifier = Modifier,
     headerTrailing: (@Composable () -> Unit)? = null,
 ) {
     PreviewSectionCard(
         label = label,
+        modifier = modifier,
         headerTrailing = headerTrailing,
         content = {
             TransparentInput(
                 state = textFieldState,
                 maxCharacters = maxCharacters,
                 isError = isInvalid,
-
-                )
+                readOnly = readOnly,
+            )
         }
     )
 }
@@ -815,8 +927,12 @@ private fun AdTitleCard(
     titleState: TextFieldState,
     isInvalid: Boolean,
     onEvent: (PreviewAdEvent) -> Unit,
+    readOnly: Boolean = false,
+    modifier: Modifier = Modifier,
 ) {
     PreviewSectionInputCard(
+        readOnly = readOnly,
+        modifier = modifier,
         label = stringResource(Res.string.ad_title_label),
         textFieldState = titleState,
         maxCharacters = 140,
@@ -841,8 +957,12 @@ private fun AdDescriptionCard(
     descriptionState: TextFieldState,
     isInvalid: Boolean,
     onEvent: (PreviewAdEvent) -> Unit,
+    readOnly: Boolean = false,
+    modifier: Modifier = Modifier,
 ) {
     PreviewSectionInputCard(
+        readOnly = readOnly,
+        modifier = modifier,
         label = stringResource(Res.string.ad_description_label),
         textFieldState = descriptionState,
         maxCharacters = 9000,
@@ -868,9 +988,11 @@ private fun AdPriceCard(
     minPrice: Float,
     maxPrice: Float,
     currency: OlxCurrency,
+    readOnly: Boolean = false,
+    modifier: Modifier = Modifier,
 ) {
     val textStyle = AppTheme.typography.headline
-    PreviewSectionCard(label = stringResource(Res.string.ad_your_price)) {
+    PreviewSectionCard(label = stringResource(Res.string.ad_your_price), modifier = modifier) {
         Column(verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.m)) {
             val price = remember(priceTextFieldState.text) {
                 (priceTextFieldState.text.toString().toFloatOrNull()
@@ -888,6 +1010,7 @@ private fun AdPriceCard(
                             imeAction = ImeAction.Done,
                         ),
                         lineLimits = TextFieldLineLimits.SingleLine,
+                        readOnly = readOnly,
                         inputTransformation = DigitOnlyInputTransformation,
                         outputTransformation = ThousandSeparatorOutputTransformation,
                         prefix = {
@@ -917,6 +1040,7 @@ private fun AdPriceCard(
                 )
                 Slider(
                     modifier = Modifier.weight(1f),
+                    enabled = !readOnly,
                     value = price,
                     onValueChange = {
                         priceTextFieldState.setTextAndPlaceCursorAtEnd(
@@ -952,8 +1076,9 @@ private fun PreviewSectionClickableCard(
     content: @Composable () -> Unit,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
 ) {
-    PreviewSectionCard(label = label, modifier = modifier, onClick = onClick) {
+    PreviewSectionCard(label = label, modifier = modifier, onClick = onClick, enabled = enabled) {
         Row(
             modifier = Modifier.fillMaxWidth()
                 .padding(horizontal = AppDimens.Spacing.xl3)
@@ -986,10 +1111,17 @@ private fun PreviewSectionClickableCard(
 
 
 @Composable
-private fun AdCategoryCard(categoryLabel: String, onChangeClick: () -> Unit) {
+private fun AdCategoryCard(
+    categoryLabel: String,
+    onChangeClick: () -> Unit,
+    enabled: Boolean = true,
+    modifier: Modifier = Modifier,
+) {
     PreviewSectionClickableCard(
         label = stringResource(Res.string.ad_category_label),
         onClick = onChangeClick,
+        enabled = enabled,
+        modifier = modifier,
         icon = painterResource(Res.drawable.ic_layout_grid),
         content = {
             Text(
@@ -1225,9 +1357,47 @@ fun CopyPill(
     }
 }
 
+private const val HighlightFadeMillis = 1000
+
+/**
+ * SIR-86: a shimmer over the card of [field] while [isRewriting], and a tint that fades out over
+ * [HighlightFadeMillis] each time a regeneration or a polish changed it.
+ */
 @Composable
-private fun RegeneratePill(
+private fun rewriteEffects(
+    field: ListingField,
+    isRewriting: Boolean,
+    state: PreviewAdContract.PreviewAdState,
+): Modifier {
+    val shape = MaterialTheme.shapes.large
+    val tint = AppTheme.colors.primary
+    val highlight = remember { Animatable(0f) }
+    // The result already on screen when this card appeared is not highlighted again.
+    val revisionOnAppear = remember { state.changedFieldsRevision }
+    LaunchedEffect(state.changedFieldsRevision) {
+        if (state.changedFieldsRevision != revisionOnAppear && field in state.changedFields) {
+            highlight.snapTo(1f)
+            highlight.animateTo(0f, tween(HighlightFadeMillis, easing = FastOutLinearInEasing))
+        }
+    }
+    return Modifier
+        .shimmer(visible = isRewriting, color = tint.copy(alpha = 0.16f), shape = shape)
+        .drawWithContent {
+            drawContent()
+            val alpha = highlight.value
+            if (alpha > 0f) {
+                drawOutline(shape.createOutline(size, layoutDirection, this), tint.copy(alpha = 0.24f * alpha))
+            }
+        }
+}
+
+/** A spinner while its action runs; greyed out and inert while [enabled] is false. */
+@Composable
+private fun ActionPill(
+    text: String,
+    iconResource: DrawableResource,
     isLoading: Boolean,
+    enabled: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -1235,11 +1405,74 @@ private fun RegeneratePill(
         LoadingPill(modifier = modifier)
     } else {
         Pill(
-            color = AppTheme.colors.primary,
-            text = stringResource(Res.string.regenerate_pill_default),
-            iconResource = Res.drawable.ic_refresh_cw,
-            onClick = onClick,
+            color = if (enabled) AppTheme.colors.primary else AppTheme.colors.onSurfaceMuted,
+            text = text,
+            iconResource = iconResource,
+            onClick = if (enabled) onClick else null,
             modifier = modifier,
+        )
+    }
+}
+
+/**
+ * SIR-86. A sheet is its own window above the screen's snackbar, so a dictation error shows here,
+ * under the field. The instruction is dictated in the device language: the seller is talking to
+ * the app, not writing the listing.
+ */
+@Composable
+private fun PolishDescriptionSheet(
+    instruction: String,
+    isMicBusy: Boolean,
+    onEvent: (PreviewAdEvent) -> Unit,
+    onSubmit: () -> Unit,
+) {
+    var dictationError by remember { mutableStateOf<SpeechToTextError?>(null) }
+    val speechToText = rememberSpeechToText(
+        languageTag = null,
+        onResult = { onEvent(PreviewAdEvent.TextDictated(DictationField.PolishInstruction, it)) },
+        onError = {
+            // An unsupported language hides the mic instead.
+            if (it != SpeechToTextError.LanguageUnsupported) dictationError = it
+            onEvent(PreviewAdEvent.DictationFailed(DictationField.PolishInstruction, it))
+        },
+    )
+    val isListening = speechToText?.isListening == true
+    LaunchedEffect(isListening) {
+        if (isListening) dictationError = null
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = AppDimens.Spacing.xl5)
+            .padding(bottom = AppDimens.Spacing.xl5),
+        verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.xl3),
+    ) {
+        Text(
+            text = stringResource(Res.string.polish_sheet_title),
+            style = AppTheme.typography.headline,
+            color = AppTheme.colors.onBackground,
+        )
+        Input(
+            value = instruction,
+            onValueChange = { onEvent(PreviewAdEvent.PolishInstructionChanged(it)) },
+            modifier = Modifier.fillMaxWidth(),
+            placeholder = stringResource(Res.string.polish_sheet_placeholder),
+            supportingText = dictationError?.let { stringResource(it.messageRes) },
+            singleLine = false,
+            minLines = 2,
+            maxLines = 6,
+        )
+        if (speechToText != null) {
+            ListeningStrip(speechToText = speechToText)
+            DictatePill(speechToText = speechToText, enabled = !isMicBusy)
+        }
+        AppButton(
+            modifier = Modifier.fillMaxWidth(),
+            text = stringResource(Res.string.polish_sheet_action),
+            leadingIcon = painterResource(Res.drawable.ic_wand_sparkles),
+            enabled = instruction.isNotBlank() && !isListening,
+            onClick = onSubmit,
         )
     }
 }
