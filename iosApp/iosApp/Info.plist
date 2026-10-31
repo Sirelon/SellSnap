@@ -29,6 +29,8 @@
 			</array>
 		</dict>
 	</array>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>NSCameraUsageDescription</key>
 	<string>SellSnap needs camera access to capture photos for your OLX listing.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
