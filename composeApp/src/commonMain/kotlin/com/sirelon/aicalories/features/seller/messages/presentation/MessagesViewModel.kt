@@ -2,14 +2,18 @@ package com.sirelon.sellsnap.features.seller.messages.presentation
 
 import androidx.lifecycle.viewModelScope
 import com.sirelon.sellsnap.analytics.Analytics
+import com.sirelon.sellsnap.analytics.AnalyticsEvents
 import com.sirelon.sellsnap.analytics.reportShownError
 import com.sirelon.sellsnap.features.common.presentation.BaseViewModel
+import com.sirelon.sellsnap.features.seller.ad.publish_success.AdvertStatus
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountState
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountsRecord
 import com.sirelon.sellsnap.features.seller.auth.data._currentOlxCountry
 import com.sirelon.sellsnap.features.seller.auth.domain.shownErrorCause
 import com.sirelon.sellsnap.features.seller.messages.data.MessagesRepository
+import com.sirelon.sellsnap.features.seller.messages.data.activeAccount
 import com.sirelon.sellsnap.features.seller.messages.data.countryAccounts
+import com.sirelon.sellsnap.features.seller.messages.domain.MessagesAnalyticsBuckets
 import com.sirelon.sellsnap.features.seller.messages.domain.OlxThread
 import com.sirelon.sellsnap.features.seller.messages.presentation.MessagesContract.AccountPage
 import com.sirelon.sellsnap.features.seller.messages.presentation.MessagesContract.Effect
@@ -61,6 +65,7 @@ class MessagesViewModel internal constructor(
 
     private var isShown = false
     private var pollJob: Job? = null
+    private var openedLogged = false
 
     /** What each page knows beyond its rows, by localIndex. Replaced when the account reconnects. */
     private val caches = HashMap<Int, AccountCache>()
@@ -80,6 +85,11 @@ class MessagesViewModel internal constructor(
 
         /** Ids whose lookup failed since the last manual refresh; polls do not retry them. */
         val failedLookups = HashSet<Long>()
+
+        /** The first page was read. Starts the one `messages_list_loaded` of this account's page. */
+        var firstPageRead = false
+        var buyerSideCount = 0
+        var listLoadedLogged = false
 
         var lookupJob: Job? = null
         var loadMoreJob: Job? = null
@@ -108,6 +118,13 @@ class MessagesViewModel internal constructor(
         when (event) {
             Event.Shown -> {
                 isShown = true
+                if (!openedLogged) {
+                    openedLogged = true
+                    analytics.logEvent(
+                        AnalyticsEvents.MESSAGES_OPENED,
+                        mapOf("badge_unread_bucket" to MessagesAnalyticsBuckets.count(repository.unreadCount.value)),
+                    )
+                }
                 startPolling()
             }
 
@@ -124,20 +141,38 @@ class MessagesViewModel internal constructor(
 
             is Event.PageSelected -> selectPage(event.localIndex)
 
-            is Event.ThreadClicked -> postEffect(
-                Effect.OpenThread(
-                    localIndex = event.localIndex,
-                    threadId = event.row.threadId,
-                    advertId = event.row.advertId,
-                    title = event.row.title,
-                    imageUrl = event.row.imageUrl,
-                    status = event.row.status,
-                    isListingDeleted = event.row.isListingDeleted,
-                ),
-            )
+            is Event.ThreadClicked -> {
+                logConversationOpened(event)
+                postEffect(
+                    Effect.OpenThread(
+                        localIndex = event.localIndex,
+                        threadId = event.row.threadId,
+                        advertId = event.row.advertId,
+                        title = event.row.title,
+                        imageUrl = event.row.imageUrl,
+                        status = event.row.status,
+                        isListingDeleted = event.row.isListingDeleted,
+                        hadUnread = event.row.unreadCount > 0,
+                    ),
+                )
+            }
             Event.ConnectOlxClicked -> postEffect(Effect.ConnectOlx)
             Event.ReconnectClicked -> postEffect(Effect.Reconnect)
         }
+    }
+
+    private fun logConversationOpened(event: Event.ThreadClicked) {
+        val activeIndex = accountRepository.accountsRecordFlow.value.activeAccount()?.localIndex
+        analytics.logEvent(
+            AnalyticsEvents.MESSAGES_CONVERSATION_OPENED,
+            mapOf(
+                "layout" to if (event.isTwoPane) "two_pane" else "single_pane",
+                "account_count" to currentState().pages.size,
+                "is_active_account" to (event.localIndex == activeIndex),
+                "had_unread" to (event.row.unreadCount > 0),
+                "listing_state" to MessagesAnalyticsBuckets.listingState(event.row.status, event.row.isListingDeleted),
+            ),
+        )
     }
 
     private fun syncPages(record: OlxAccountsRecord) {
@@ -243,16 +278,21 @@ class MessagesViewModel internal constructor(
             } else {
                 null
             }
-            Triple(threadsPage.threads.map(::threadRow), threadsPage.canLoadMore, adverts)
+            LoadResult(
+                rows = threadsPage.threads.map(::threadRow),
+                canLoadMore = threadsPage.canLoadMore,
+                adverts = adverts,
+                buyerSideCount = threadsPage.buyerSideCount,
+            )
         } catch (error: CancellationException) {
             throw error
         } catch (error: Exception) {
-            handleFailure(localIndex, cache, error, isMore)
+            handleFailure(localIndex, cache, error, isMore, page)
             return
         }
 
         if (caches[localIndex] !== cache) return
-        val (rows, canLoadMore, adverts) = loaded
+        val (rows, canLoadMore, adverts, buyerSideCount) = loaded
         if (fetchAdverts) {
             cache.advertsRequested = true
             // A failed read keeps the page already held rather than blanking every row.
@@ -263,6 +303,14 @@ class MessagesViewModel internal constructor(
             cache.failedLookups.clear()
         }
         cache.loadedPages = maxOf(cache.loadedPages, page + 1)
+        if (isMore) {
+            val known = currentState().pages.find { it.localIndex == localIndex }?.threads.orEmpty()
+                .mapTo(HashSet()) { it.threadId }
+            logLoadMore(page, if (rows.any { it.threadId !in known }) "threads" else "empty")
+        } else if (!cache.firstPageRead) {
+            cache.firstPageRead = true
+            cache.buyerSideCount = buyerSideCount
+        }
         setState { state ->
             state.updatePage(localIndex) { p ->
                 val known = p.threads.mapTo(HashSet()) { it.threadId }
@@ -289,6 +337,50 @@ class MessagesViewModel internal constructor(
             repository.publishUnread(localIndex, p.threads.sumOf { it.unreadCount })
         }
         lookUpMissingAdverts(localIndex, cache)
+        logListLoadedOnce(localIndex, cache)
+    }
+
+    private class LoadResult(
+        val rows: List<ThreadRow>,
+        val canLoadMore: Boolean,
+        val adverts: Map<Long, MyAdvertItem>?,
+        val buyerSideCount: Int,
+    ) {
+        operator fun component1() = rows
+        operator fun component2() = canLoadMore
+        operator fun component3() = adverts
+        operator fun component4() = buyerSideCount
+    }
+
+    private fun logLoadMore(page: Int, result: String) {
+        analytics.logEvent(AnalyticsEvents.MESSAGES_LOAD_MORE, mapOf("page" to page, "result" to result))
+    }
+
+    /**
+     * The one `messages_list_loaded` per account page: once the first page was read and every
+     * advert on it has an answer, so the deleted and inactive counts are complete. Called after
+     * each load and when the lookups finish; whichever comes second logs.
+     */
+    private fun logListLoadedOnce(localIndex: Int, cache: AccountCache) {
+        if (cache.listLoadedLogged || !cache.firstPageRead) return
+        if (missingAdvertIds(localIndex, cache).isNotEmpty()) return
+        val state = currentState()
+        val rows = state.pages.find { it.localIndex == localIndex }?.threads ?: return
+        cache.listLoadedLogged = true
+        analytics.logEvent(
+            AnalyticsEvents.MESSAGES_LIST_LOADED,
+            mapOf(
+                "account_index" to localIndex,
+                "account_count" to state.pages.size,
+                "thread_count_bucket" to MessagesAnalyticsBuckets.count(rows.size),
+                "unread_count_bucket" to MessagesAnalyticsBuckets.count(rows.sumOf { it.unreadCount }),
+                "buyer_side_count_bucket" to MessagesAnalyticsBuckets.count(cache.buyerSideCount),
+                "inactive_listing_count_bucket" to MessagesAnalyticsBuckets.count(
+                    rows.count { it.status != null && it.status != AdvertStatus.Active },
+                ),
+                "deleted_listing_count_bucket" to MessagesAnalyticsBuckets.count(rows.count { it.isListingDeleted }),
+            ),
+        )
     }
 
     private fun threadRow(thread: OlxThread) = ThreadRow(
@@ -363,11 +455,19 @@ class MessagesViewModel internal constructor(
                     state.updatePage(localIndex) { p -> p.copy(threads = p.threads.map { it.withListing(cache) }) }
                 }
             }
+            logListLoadedOnce(localIndex, cache)
         }
     }
 
-    private suspend fun handleFailure(localIndex: Int, cache: AccountCache, error: Throwable, isMore: Boolean) {
+    private suspend fun handleFailure(
+        localIndex: Int,
+        cache: AccountCache,
+        error: Throwable,
+        isMore: Boolean,
+        pageNumber: Int,
+    ) {
         if (caches[localIndex] !== cache) return
+        if (isMore && error !is AccountNeedsReconnect) logLoadMore(pageNumber, "failed")
         val page = currentState().pages.find { it.localIndex == localIndex } ?: return
         // syncPages already reflects NeedsReconnect from the account store; just stop spinning.
         // A failed "load more" leaves the button to press again.

@@ -84,12 +84,13 @@ fun ConversationScreenRoute(
     imageUrl: String?,
     status: AdvertStatus?,
     isListingDeleted: Boolean,
+    hadUnread: Boolean,
     onBack: () -> Unit,
     onReconnectClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val viewModel: ConversationViewModel = koinViewModel {
-        parametersOf(localIndex, threadId, advertId, title, imageUrl, status, isListingDeleted)
+        parametersOf(localIndex, threadId, advertId, title, imageUrl, status, isListingDeleted, hadUnread)
     }
     val state by viewModel.state.collectAsStateWithLifecycle()
 
@@ -144,7 +145,10 @@ private fun ConversationScreen(
                     .padding(AppDimens.Spacing.xl3)
                     .testTag("conversation_reply_on_olx"),
                 text = stringResource(Res.string.conversation_reply_on_olx),
-                onClick = { openUrl("https://www.${_currentOlxCountry.domain}/myaccount/answers/") },
+                onClick = {
+                    onEvent(Event.ReplyOnOlxClicked)
+                    openUrl("https://www.${_currentOlxCountry.domain}/myaccount/answers/")
+                },
                 style = AppButtonDefaults.outline(),
             )
         },
@@ -157,6 +161,10 @@ private fun ConversationScreen(
                 imageUrl = state.imageUrl,
                 status = state.listing?.status ?: state.status,
                 isDeleted = state.isListingDeleted,
+                onClick = { url ->
+                    onEvent(Event.ListingClicked)
+                    openUrl(url)
+                },
             )
 
             Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
@@ -210,6 +218,7 @@ private fun ListingHeader(
     imageUrl: String?,
     status: AdvertStatus?,
     isDeleted: Boolean,
+    onClick: (url: String) -> Unit,
 ) {
     val dimmed = isListingDimmed(status, isDeleted)
     // Deleted: OLX answers 404 for the advert, so there is no listing to open.
@@ -219,7 +228,7 @@ private fun ListingHeader(
             .fillMaxWidth()
             .padding(horizontal = AppDimens.Spacing.xl3, vertical = AppDimens.Spacing.m)
             .testTag("conversation_listing_header"),
-        onClick = url?.let { { openUrl(it) } },
+        onClick = url?.let { { onClick(it) } },
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(AppDimens.Spacing.xl),

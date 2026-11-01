@@ -67,9 +67,11 @@ class MessagesRepository internal constructor(
         val ownUserId = accountRepository.accountsRecordFlow.value.accounts
             .find { it.localIndex == localIndex }
             ?.olxUserId
+        val sellerSide = threads.filter { ownUserId == null || it.interlocutorId != ownUserId }
         return ThreadsPage(
-            threads = threads.filter { ownUserId == null || it.interlocutorId != ownUserId },
+            threads = sellerSide,
             canLoadMore = threads.size == ThreadsPageSize,
+            buyerSideCount = threads.size - sellerSide.size,
         )
     }
 

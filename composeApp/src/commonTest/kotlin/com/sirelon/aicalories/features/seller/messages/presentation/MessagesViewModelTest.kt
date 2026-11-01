@@ -743,6 +743,265 @@ class MessagesViewModelTest {
             viewModel.onEvent(Event.Hidden)
         }
 
+    // --- Analytics (SIR-92) ----------------------------------------------------------------------
+
+    private fun FakeAnalytics.messageEvents(name: String) = events.filter { it.first == name }.map { it.second }
+
+    @Test
+    fun `opening the tab logs once per visit with the unread total the badge showed`() = runTest(testDispatcher) {
+        val engine = mockEngine(testDispatcher) {
+            addHandler { respond(threadsJson(), HttpStatusCode.OK, jsonHeaders()) }
+        }
+        val (viewModel, harness) = viewModel(engine, listOf(testAccount(1)), activeIndex = 1)
+        harness.messagesRepository.publishUnread(1, 3)
+
+        viewModel.onEvent(Event.Shown)
+        runCurrent()
+        // Returning from a conversation, or from the background, shows the screen again.
+        viewModel.onEvent(Event.Hidden)
+        viewModel.onEvent(Event.Shown)
+        advanceTimeBy(PollInterval + 1.seconds)
+        runCurrent()
+
+        assertEquals(
+            listOf(mapOf<String, Any>("badge_unread_bucket" to "2_5")),
+            harness.analytics.messageEvents(AnalyticsEvents.MESSAGES_OPENED),
+        )
+        viewModel.onEvent(Event.Hidden)
+    }
+
+    @Test
+    fun `the first load logs counts once the listing lookups settled, and polls and refreshes do not log again`() =
+        runTest(testDispatcher) {
+            val engine = mockEngine(testDispatcher) {
+                addHandler { request ->
+                    val path = request.url.encodedPath
+                    when {
+                        path.endsWith("/threads") -> respond(
+                            threadsJson(
+                                threadJson(id = 1, advertId = 10, unread = 7),
+                                threadJson(id = 2, advertId = 11, interlocutorId = OwnUserId, unread = 4),
+                                threadJson(id = 3, advertId = 12),
+                                threadJson(id = 4, advertId = 13),
+                            ),
+                            HttpStatusCode.OK,
+                            jsonHeaders(),
+                        )
+                        path.endsWith("/adverts/12") -> respond(AdvertNotFoundJson, HttpStatusCode.NotFound, jsonHeaders())
+                        else -> respond(
+                            advertsJsonWithStatus(10L to "active", 13L to "removed_by_user"),
+                            HttpStatusCode.OK,
+                            jsonHeaders(),
+                        )
+                    }
+                }
+            }
+            val (viewModel, harness) = viewModel(engine, listOf(testAccount(1)), activeIndex = 1)
+
+            viewModel.onEvent(Event.Shown)
+            runCurrent()
+            advanceTimeBy(PollInterval + 1.seconds)
+            runCurrent()
+            viewModel.onEvent(Event.RefreshClicked)
+            runCurrent()
+
+            assertEquals(
+                listOf(
+                    mapOf<String, Any>(
+                        "account_index" to 1,
+                        "account_count" to 1,
+                        "thread_count_bucket" to "2_5",
+                        "unread_count_bucket" to "6_10",
+                        "buyer_side_count_bucket" to "1",
+                        "inactive_listing_count_bucket" to "1",
+                        "deleted_listing_count_bucket" to "1",
+                    ),
+                ),
+                harness.analytics.messageEvents(AnalyticsEvents.MESSAGES_LIST_LOADED),
+            )
+            viewModel.onEvent(Event.Hidden)
+        }
+
+    @Test
+    fun `each account page logs its own first load`() = runTest(testDispatcher) {
+        val engine = mockEngine(testDispatcher) {
+            addHandler { request ->
+                if (request.url.encodedPath.endsWith("/threads")) {
+                    respond(threadsJson(threadJson(1, 10)), HttpStatusCode.OK, jsonHeaders())
+                } else {
+                    respond(advertsJson(10), HttpStatusCode.OK, jsonHeaders())
+                }
+            }
+        }
+        val (viewModel, harness) = viewModel(
+            engine,
+            listOf(testAccount(1), testAccount(2, olxUserId = 2)),
+            activeIndex = 1,
+        )
+
+        viewModel.onEvent(Event.Shown)
+        runCurrent()
+        viewModel.onEvent(Event.PageSelected(2))
+        runCurrent()
+        viewModel.onEvent(Event.PageSelected(1))
+        runCurrent()
+
+        val logged = harness.analytics.messageEvents(AnalyticsEvents.MESSAGES_LIST_LOADED)
+        assertEquals(listOf(1, 2), logged.map { it["account_index"] })
+        assertEquals(listOf(2, 2), logged.map { it["account_count"] })
+        viewModel.onEvent(Event.Hidden)
+    }
+
+    @Test
+    fun `a failed first load logs no list outcome, only the shown error`() = runTest(testDispatcher) {
+        val engine = mockEngine(testDispatcher) {
+            addHandler { respond("", HttpStatusCode.InternalServerError) }
+        }
+        val (viewModel, harness) = viewModel(engine, listOf(testAccount(1)), activeIndex = 1)
+
+        viewModel.onEvent(Event.Shown)
+        runCurrent()
+        viewModel.state.first { it.selectedPage?.errorMessage != null }
+
+        assertEquals(emptyList(), harness.analytics.messageEvents(AnalyticsEvents.MESSAGES_LIST_LOADED))
+        assertEquals(1, harness.analytics.messageEvents(AnalyticsEvents.ERROR_SHOWN).size)
+        viewModel.onEvent(Event.Hidden)
+    }
+
+    @Test
+    fun `load more logs the page and whether it returned threads`() = runTest(testDispatcher) {
+        val offsets = mutableListOf<String?>()
+        val engine = pagedEngine(offsets) { offset ->
+            when (offset) {
+                "0" -> page(1..50)
+                "50" -> page(51..100)
+                // A full page of threads where the account is the buyer: nothing for the seller.
+                else -> page(101..150, buyerSide = (101..150).toSet())
+            }
+        }
+        val (viewModel, harness) = viewModel(engine, listOf(testAccount(1)), activeIndex = 1)
+        viewModel.onEvent(Event.Shown)
+        runCurrent()
+        assertEquals(emptyList(), harness.analytics.messageEvents(AnalyticsEvents.MESSAGES_LOAD_MORE))
+
+        viewModel.onEvent(Event.LoadMoreClicked)
+        runCurrent()
+        viewModel.onEvent(Event.LoadMoreClicked)
+        runCurrent()
+        advanceTimeBy(PollInterval + 1.seconds)
+        runCurrent()
+
+        assertEquals(
+            listOf(
+                mapOf<String, Any>("page" to 1, "result" to "threads"),
+                mapOf<String, Any>("page" to 2, "result" to "empty"),
+            ),
+            harness.analytics.messageEvents(AnalyticsEvents.MESSAGES_LOAD_MORE),
+        )
+        viewModel.onEvent(Event.Hidden)
+    }
+
+    @Test
+    fun `a failing load more is logged as failed`() = runTest(testDispatcher) {
+        val engine = mockEngine(testDispatcher) {
+            addHandler { request ->
+                when {
+                    !request.url.encodedPath.endsWith("/threads") -> respond(advertsJson(), HttpStatusCode.OK, jsonHeaders())
+                    request.url.parameters["offset"] == "0" -> respond(page(1..50), HttpStatusCode.OK, jsonHeaders())
+                    else -> respond("", HttpStatusCode.InternalServerError)
+                }
+            }
+        }
+        val (viewModel, harness) = viewModel(engine, listOf(testAccount(1)), activeIndex = 1)
+        viewModel.onEvent(Event.Shown)
+        runCurrent()
+
+        viewModel.onEvent(Event.LoadMoreClicked)
+        runCurrent()
+
+        assertEquals(
+            listOf(mapOf<String, Any>("page" to 1, "result" to "failed")),
+            harness.analytics.messageEvents(AnalyticsEvents.MESSAGES_LOAD_MORE),
+        )
+        viewModel.onEvent(Event.Hidden)
+    }
+
+    @Test
+    fun `opening a row logs the layout, the account and the listing state`() = runTest(testDispatcher) {
+        val engine = mockEngine(testDispatcher) {
+            addHandler { request ->
+                val path = request.url.encodedPath
+                when {
+                    path.endsWith("/threads") -> respond(
+                        threadsJson(threadJson(1, 10, unread = 3), threadJson(2, 11)),
+                        HttpStatusCode.OK,
+                        jsonHeaders(),
+                    )
+                    path.endsWith("/adverts/11") -> respond(AdvertNotFoundJson, HttpStatusCode.NotFound, jsonHeaders())
+                    else -> respond(advertsJson(10), HttpStatusCode.OK, jsonHeaders())
+                }
+            }
+        }
+        val (viewModel, harness) = viewModel(
+            engine,
+            listOf(testAccount(1), testAccount(2, olxUserId = 2)),
+            activeIndex = 1,
+        )
+        viewModel.onEvent(Event.Shown)
+        runCurrent()
+        val (unreadActive, deleted) = viewModel.state.value.page.threads
+
+        viewModel.onEvent(Event.ThreadClicked(1, unreadActive, isTwoPane = true))
+        viewModel.onEvent(Event.ThreadClicked(2, deleted))
+
+        assertEquals(
+            listOf(
+                mapOf<String, Any>(
+                    "layout" to "two_pane",
+                    "account_count" to 2,
+                    "is_active_account" to true,
+                    "had_unread" to true,
+                    "listing_state" to "active",
+                ),
+                mapOf<String, Any>(
+                    "layout" to "single_pane",
+                    "account_count" to 2,
+                    "is_active_account" to false,
+                    "had_unread" to false,
+                    "listing_state" to "deleted",
+                ),
+            ),
+            harness.analytics.messageEvents(AnalyticsEvents.MESSAGES_CONVERSATION_OPENED),
+        )
+        assertTrue(viewModel.effects.awaitEffect<Effect.OpenThread>().hadUnread)
+        assertFalse(viewModel.effects.awaitEffect<Effect.OpenThread>().hadUnread)
+        viewModel.onEvent(Event.Hidden)
+    }
+
+    @Test
+    fun `no event carries anything but codes, counts and flags`() = runTest(testDispatcher) {
+        val engine = mockEngine(testDispatcher) {
+            addHandler { request ->
+                if (request.url.encodedPath.endsWith("/threads")) {
+                    respond(threadsJson(threadJson(1, 10, unread = 1)), HttpStatusCode.OK, jsonHeaders())
+                } else {
+                    respond(advertsJson(10), HttpStatusCode.OK, jsonHeaders())
+                }
+            }
+        }
+        val (viewModel, harness) = viewModel(engine, listOf(testAccount(1)), activeIndex = 1)
+        viewModel.onEvent(Event.Shown)
+        runCurrent()
+        viewModel.onEvent(Event.ThreadClicked(1, viewModel.state.value.page.threads.single()))
+
+        val params = harness.analytics.events.flatMap { it.second.entries }
+        assertTrue(params.isNotEmpty())
+        params.forEach { (key, value) ->
+            assertTrue(value is Int || value is Boolean || (value is String && value.length <= 20), "$key=$value")
+        }
+        viewModel.onEvent(Event.Hidden)
+    }
+
     private val MessagesContract.State.page: MessagesContract.AccountPage get() = selectedPage!!
 
     /**

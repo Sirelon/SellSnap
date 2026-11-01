@@ -2,6 +2,7 @@ package com.sirelon.sellsnap.features.seller.messages.presentation
 
 import androidx.lifecycle.viewModelScope
 import com.sirelon.sellsnap.analytics.Analytics
+import com.sirelon.sellsnap.analytics.AnalyticsEvents
 import com.sirelon.sellsnap.analytics.reportShownError
 import com.sirelon.sellsnap.features.common.presentation.BaseViewModel
 import com.sirelon.sellsnap.features.seller.ad.publish_success.AdvertStatus
@@ -10,6 +11,7 @@ import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountsRecord
 import com.sirelon.sellsnap.features.seller.auth.domain.shownErrorCause
 import com.sirelon.sellsnap.features.seller.messages.data.MessagesRepository
 import com.sirelon.sellsnap.features.seller.messages.data.activeAccount
+import com.sirelon.sellsnap.features.seller.messages.domain.MessagesAnalyticsBuckets
 import com.sirelon.sellsnap.features.seller.messages.presentation.ConversationContract.Effect
 import com.sirelon.sellsnap.features.seller.messages.presentation.ConversationContract.Event
 import com.sirelon.sellsnap.features.seller.messages.presentation.ConversationContract.State
@@ -25,6 +27,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.getString
+import kotlin.time.TimeSource
 
 /**
  * One open conversation (read-only). [title], [imageUrl], [status] and [isListingDeleted] come
@@ -34,6 +37,9 @@ import org.jetbrains.compose.resources.getString
  * now. It shows the reconnect state while that account needs one, and closes itself if that
  * account is disconnected. As on the list, a failed load is shown (and reported) only while there
  * are no messages to show.
+ *
+ * [hadUnread] is whether the list row had unread messages when it was tapped, and [timeSource]
+ * times the actions for analytics; neither changes what the screen shows.
  */
 class ConversationViewModel internal constructor(
     keyLocalIndex: Int?,
@@ -43,11 +49,16 @@ class ConversationViewModel internal constructor(
     private val imageUrl: String?,
     private val status: AdvertStatus?,
     private val isListingDeleted: Boolean,
+    private val hadUnread: Boolean = false,
     private val repository: MessagesRepository,
     private val myAdvertsRepository: MyAdvertsRepository,
     private val accountRepository: SellerAccountRepository,
     private val analytics: Analytics,
+    timeSource: TimeSource = TimeSource.Monotonic,
 ) : BaseViewModel<State, Event, Effect>() {
+
+    private val openedAt = timeSource.markNow()
+    private var loadedLogged = false
 
     /** The thread's account. Null only while a key saved without one waits for an active account. */
     private var localIndex: Int? = keyLocalIndex
@@ -85,7 +96,26 @@ class ConversationViewModel internal constructor(
 
             Event.RetryClicked -> localIndex?.let { index -> viewModelScope.launch { loadMessages(index, silent = false) } }
             Event.ReconnectClicked -> postEffect(Effect.Reconnect)
+            Event.ReplyOnOlxClicked -> logAction("reply_on_olx")
+            Event.ListingClicked -> logAction("open_listing")
         }
+    }
+
+    private fun logAction(action: String) {
+        val state = currentState()
+        analytics.logEvent(
+            AnalyticsEvents.MESSAGES_CONVERSATION_ACTION,
+            mapOf(
+                "action" to action,
+                "listing_state" to MessagesAnalyticsBuckets.listingState(
+                    status = state.listing?.status ?: state.status,
+                    isDeleted = state.isListingDeleted,
+                ),
+                "had_unread" to hadUnread,
+                "seconds_since_open_bucket" to
+                    MessagesAnalyticsBuckets.secondsSinceOpen(openedAt.elapsedNow().inWholeSeconds),
+            ),
+        )
     }
 
     private fun onAccounts(record: OlxAccountsRecord) {
@@ -157,6 +187,16 @@ class ConversationViewModel internal constructor(
             return
         }
         setState { it.copy(isLoading = false, hasLoaded = true, messages = messages, errorMessage = null) }
+        if (!loadedLogged) {
+            loadedLogged = true
+            analytics.logEvent(
+                AnalyticsEvents.MESSAGES_CONVERSATION_LOADED,
+                mapOf(
+                    "message_count_bucket" to MessagesAnalyticsBuckets.count(messages.size),
+                    "has_sent_message" to messages.any { it.isSent },
+                ),
+            )
+        }
     }
 
     private suspend fun handleFailure(error: Throwable) {

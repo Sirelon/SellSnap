@@ -61,7 +61,8 @@ interface MessagesContract {
         /** Loads the next page of threads of the selected page. */
         data object LoadMoreClicked : Event
         data class PageSelected(val localIndex: Int) : Event
-        data class ThreadClicked(val localIndex: Int, val row: ThreadRow) : Event
+        /** [isTwoPane]: the conversation will open beside the list rather than over it. */
+        data class ThreadClicked(val localIndex: Int, val row: ThreadRow, val isTwoPane: Boolean = false) : Event
         data object ConnectOlxClicked : Event
         data object ReconnectClicked : Event
     }
@@ -80,6 +81,8 @@ interface MessagesContract {
             val imageUrl: String?,
             val status: AdvertStatus?,
             val isListingDeleted: Boolean,
+            /** The row had unread messages when it was tapped; the conversation reports it with its actions. */
+            val hadUnread: Boolean = false,
         ) : Effect
         data object ConnectOlx : Effect
         data object Reconnect : Effect

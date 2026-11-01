@@ -116,6 +116,8 @@ sealed interface AppKey : NavKey, AnalyticsScreen {
         val isListingDeleted: Boolean = false,
         /** The account the thread belongs to. Null in keys saved before accounts were carried: the active account. */
         val localIndex: Int? = null,
+        /** The list row had unread messages when it was opened; only analytics reads it. */
+        val hadUnread: Boolean = false,
     ) : AppKey {
         override val screenName = "Conversation"
     }

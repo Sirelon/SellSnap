@@ -477,6 +477,7 @@ fun App() {
                                         status = thread.status,
                                         isListingDeleted = thread.isListingDeleted,
                                         localIndex = thread.localIndex,
+                                        hadUnread = thread.hadUnread,
                                     )
                                     // One conversation at a time: another thread replaces the open
                                     // one (beside the list), and a double tap does not stack two.
@@ -506,6 +507,7 @@ fun App() {
                                 imageUrl = key.imageUrl,
                                 status = key.status,
                                 isListingDeleted = key.isListingDeleted,
+                                hadUnread = key.hadUnread,
                                 onBack = { navVm.popDestination() },
                                 onReconnectClick = {
                                     navVm.backStack.add(AppKey.Profile(reason = connectOlxReason))

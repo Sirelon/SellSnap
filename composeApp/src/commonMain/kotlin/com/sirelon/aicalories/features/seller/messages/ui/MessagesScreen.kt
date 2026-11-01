@@ -31,6 +31,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.adaptive.navigation3.LocalListDetailSceneScope
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -237,6 +238,8 @@ private fun AccountThreads(
     onEvent: (Event) -> Unit,
     modifier: Modifier,
 ) {
+    // A conversation opens beside the list when the list is inside a list-detail scene.
+    val isTwoPane = LocalListDetailSceneScope.current != null
     when {
         page.needsReconnect -> EmptyScreen(
             modifier = modifier,
@@ -283,7 +286,7 @@ private fun AccountThreads(
                     ThreadCard(
                         row = row,
                         isSelected = row.threadId == selectedThreadId,
-                        onClick = { onEvent(Event.ThreadClicked(page.localIndex, row)) },
+                        onClick = { onEvent(Event.ThreadClicked(page.localIndex, row, isTwoPane)) },
                     )
                 }
                 if (page.canLoadMore) {

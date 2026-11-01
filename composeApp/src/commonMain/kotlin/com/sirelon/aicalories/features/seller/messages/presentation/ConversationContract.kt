@@ -33,6 +33,12 @@ interface ConversationContract {
         data object Hidden : Event
         data object RetryClicked : Event
         data object ReconnectClicked : Event
+
+        /** "Reply on OLX": the screen opens OLX's answers page; this only reports the tap. */
+        data object ReplyOnOlxClicked : Event
+
+        /** The listing header: the screen opens the advert; this only reports the tap. */
+        data object ListingClicked : Event
     }
 
     sealed interface Effect {

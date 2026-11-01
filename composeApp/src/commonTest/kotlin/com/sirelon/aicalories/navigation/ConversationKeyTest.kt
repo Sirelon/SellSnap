@@ -21,6 +21,7 @@ class ConversationKeyTest {
             AppKey.Conversation(threadId = 5, advertId = 6, status = AdvertStatus.RemovedByUser),
             AppKey.Conversation(threadId = 7, advertId = 8, isListingDeleted = true),
             AppKey.Conversation(threadId = 9, advertId = 10, localIndex = 2),
+            AppKey.Conversation(threadId = 11, advertId = 12, hadUnread = true),
         ).forEach { key ->
             assertEquals(key, json.decodeFromString(serializer, json.encodeToString(serializer, key)))
         }

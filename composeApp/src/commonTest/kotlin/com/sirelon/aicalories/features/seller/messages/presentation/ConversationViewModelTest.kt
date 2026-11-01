@@ -27,6 +27,8 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.TestTimeSource
+import kotlin.time.TimeSource
 
 class ConversationViewModelTest {
 
@@ -347,6 +349,126 @@ class ConversationViewModelTest {
         assertNull(viewModel.state.value.imageUrl)
     }
 
+    // --- Analytics (SIR-92) ----------------------------------------------------------------------
+
+    private fun FakeAnalytics.messageEvents(name: String) = events.filter { it.first == name }.map { it.second }
+
+    @Test
+    fun `the first load logs its outcome once, a poll does not`() = runTest(testDispatcher) {
+        val engine = mockEngine(testDispatcher) {
+            addHandler { request ->
+                if (request.url.encodedPath.endsWith("/messages")) {
+                    respond(
+                        messagesJson(messageJson(1, "received", "Placeholder question"), messageJson(2, "sent", "Placeholder answer")),
+                        HttpStatusCode.OK,
+                        jsonHeaders(),
+                    )
+                } else {
+                    respond(advertJson(10), HttpStatusCode.OK, jsonHeaders())
+                }
+            }
+        }
+        val (viewModel, harness) = viewModel(engine)
+
+        viewModel.onEvent(Event.Shown)
+        runCurrent()
+        advanceTimeBy(PollInterval * 2 + 1.seconds)
+        runCurrent()
+
+        assertEquals(
+            listOf(mapOf<String, Any>("message_count_bucket" to "2_5", "has_sent_message" to true)),
+            harness.analytics.messageEvents(AnalyticsEvents.MESSAGES_CONVERSATION_LOADED),
+        )
+        viewModel.onEvent(Event.Hidden)
+    }
+
+    @Test
+    fun `a failed load logs no outcome and a retry that works logs it`() = runTest(testDispatcher) {
+        var fail = true
+        val engine = mockEngine(testDispatcher) {
+            addHandler { request ->
+                when {
+                    !request.url.encodedPath.endsWith("/messages") -> respond(advertJson(10), HttpStatusCode.OK, jsonHeaders())
+                    fail -> respond("", HttpStatusCode.InternalServerError)
+                    else -> respond(messagesJson(messageJson(1, "received", "Placeholder question")), HttpStatusCode.OK, jsonHeaders())
+                }
+            }
+        }
+        val (viewModel, harness) = viewModel(engine)
+        viewModel.onEvent(Event.Shown)
+        runCurrent()
+        viewModel.state.first { it.errorMessage != null }
+        assertEquals(emptyList(), harness.analytics.messageEvents(AnalyticsEvents.MESSAGES_CONVERSATION_LOADED))
+
+        fail = false
+        viewModel.onEvent(Event.RetryClicked)
+        runCurrent()
+
+        assertEquals(
+            listOf(mapOf<String, Any>("message_count_bucket" to "1", "has_sent_message" to false)),
+            harness.analytics.messageEvents(AnalyticsEvents.MESSAGES_CONVERSATION_LOADED),
+        )
+        viewModel.onEvent(Event.Hidden)
+    }
+
+    @Test
+    fun `reply on OLX and the listing link log the listing state, unread and how long after opening`() =
+        runTest(testDispatcher) {
+            val engine = mockEngine(testDispatcher) {
+                addHandler { request ->
+                    if (request.url.encodedPath.endsWith("/messages")) {
+                        respond(messagesJson(messageJson(1, "received", "Placeholder question")), HttpStatusCode.OK, jsonHeaders())
+                    } else {
+                        respond(advertJson(10, status = "removed_by_user"), HttpStatusCode.OK, jsonHeaders())
+                    }
+                }
+            }
+            val clock = TestTimeSource()
+            val (viewModel, harness) = viewModel(engine, status = AdvertStatus.Active, hadUnread = true, timeSource = clock)
+            viewModel.onEvent(Event.Shown)
+            runCurrent()
+
+            clock += 45.seconds
+            viewModel.onEvent(Event.ReplyOnOlxClicked)
+            clock += 100.seconds
+            viewModel.onEvent(Event.ListingClicked)
+
+            // The loaded advert's status supersedes the row's.
+            assertEquals(
+                listOf(
+                    mapOf<String, Any>(
+                        "action" to "reply_on_olx",
+                        "listing_state" to "removed_by_user",
+                        "had_unread" to true,
+                        "seconds_since_open_bucket" to "31_120",
+                    ),
+                    mapOf<String, Any>(
+                        "action" to "open_listing",
+                        "listing_state" to "removed_by_user",
+                        "had_unread" to true,
+                        "seconds_since_open_bucket" to "gt_120",
+                    ),
+                ),
+                harness.analytics.messageEvents(AnalyticsEvents.MESSAGES_CONVERSATION_ACTION),
+            )
+            viewModel.onEvent(Event.Hidden)
+        }
+
+    @Test
+    fun `a deleted listing is its own state on the action`() = runTest(testDispatcher) {
+        val engine = mockEngine(testDispatcher) {
+            addHandler { respond(messagesJson(), HttpStatusCode.OK, jsonHeaders()) }
+        }
+        val (viewModel, harness) = viewModel(engine, isListingDeleted = true)
+
+        viewModel.onEvent(Event.ReplyOnOlxClicked)
+
+        val logged = harness.analytics.messageEvents(AnalyticsEvents.MESSAGES_CONVERSATION_ACTION).single()
+        assertEquals("deleted", logged["listing_state"])
+        assertEquals(false, logged["had_unread"])
+        assertEquals("0_5", logged["seconds_since_open_bucket"])
+    }
+
     private suspend fun viewModel(
         engine: MockEngine,
         accounts: List<OlxAccountRecord> = listOf(testAccount(1)),
@@ -355,6 +477,8 @@ class ConversationViewModelTest {
         status: AdvertStatus? = null,
         isListingDeleted: Boolean = false,
         localIndex: Int? = 1,
+        hadUnread: Boolean = false,
+        timeSource: TimeSource = TimeSource.Monotonic,
     ): Pair<ConversationViewModel, MessagesHarness> {
         val harness = messagesHarness(engine, accounts, activeIndex = 1)
         val viewModel = ConversationViewModel(
@@ -365,10 +489,12 @@ class ConversationViewModelTest {
             imageUrl = imageUrl,
             status = status,
             isListingDeleted = isListingDeleted,
+            hadUnread = hadUnread,
             repository = harness.messagesRepository,
             myAdvertsRepository = harness.myAdvertsRepository,
             accountRepository = harness.accountRepository,
             analytics = harness.analytics,
+            timeSource = timeSource,
         )
         return viewModel to harness
     }

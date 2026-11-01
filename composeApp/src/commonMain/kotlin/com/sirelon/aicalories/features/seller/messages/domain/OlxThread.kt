@@ -18,4 +18,6 @@ class ThreadsPage(
     val threads: List<OlxThread>,
     /** OLX returned a full page, so another may follow. Decided before buyer-side threads are dropped. */
     val canLoadMore: Boolean,
+    /** How many threads of the page were dropped because the account is the buyer on them. */
+    val buyerSideCount: Int = 0,
 )

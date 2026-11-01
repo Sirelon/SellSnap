@@ -24,7 +24,7 @@ val messagesModule = module {
             analytics = get(),
         )
     }
-    // Seven parameters, past what Koin can destructure: read them by position, in the order the
+    // Eight parameters, past what Koin can destructure: read them by position, in the order the
     // conversation route passes them.
     viewModel { params ->
         ConversationViewModel(
@@ -35,6 +35,7 @@ val messagesModule = module {
             imageUrl = params.get(4),
             status = params.get(5),
             isListingDeleted = params.get(6),
+            hadUnread = params.get(7),
             repository = get(),
             myAdvertsRepository = get(),
             accountRepository = get(),
