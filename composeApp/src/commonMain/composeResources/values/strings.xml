@@ -464,4 +464,16 @@
     <string name="advert_edit_price_label">Price</string>
     <string name="advert_edit_save">Send to OLX</string>
     <string name="advert_edit_load_failed">Couldn't load this listing from OLX.</string>
+
+    <!-- Buyer messages -->
+    <string name="messages_screen_title">Messages</string>
+    <string name="messages_buyer_label">Buyer</string>
+    <string name="messages_empty_title">No messages yet</string>
+    <string name="messages_empty_description">No one has written about your listings yet. Buyer messages will show up here.</string>
+    <string name="messages_connect_title">Connect OLX to see your messages</string>
+    <string name="messages_connect_description">Buyer messages for your OLX listings will appear here after you connect an account.</string>
+    <string name="messages_load_failed">Couldn't load messages.</string>
+    <string name="messages_listing_fallback">Your listing</string>
+    <string name="conversation_load_failed">Couldn't load this conversation.</string>
+    <string name="conversation_reply_on_olx">Reply on OLX</string>
 </resources>

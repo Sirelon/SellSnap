@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
@@ -31,6 +33,8 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavMetadataKey
 import androidx.navigation3.runtime.entryProvider
@@ -85,6 +89,9 @@ import com.sirelon.sellsnap.features.seller.categories.presentation.CategoryPick
 import com.sirelon.sellsnap.features.seller.location.OlxLocation
 import com.sirelon.sellsnap.features.seller.location.presentation.LocationPickerSheet
 import com.sirelon.sellsnap.features.seller.drafts.ui.DraftsScreenRoute
+import com.sirelon.sellsnap.features.seller.messages.presentation.MessagesBadgeViewModel
+import com.sirelon.sellsnap.features.seller.messages.ui.ConversationScreenRoute
+import com.sirelon.sellsnap.features.seller.messages.ui.MessagesScreenRoute
 import com.sirelon.sellsnap.features.seller.my_ads.ui.MyAdvertsScreenRoute
 import com.sirelon.sellsnap.features.seller.onboarding.OnboardingScreen
 import com.sirelon.sellsnap.features.seller.profile.data.SellerAccountRepository
@@ -103,8 +110,10 @@ import com.sirelon.sellsnap.generated.resources.Res
 import com.sirelon.sellsnap.generated.resources.generic_error_retry
 import com.sirelon.sellsnap.generated.resources.guest_connect_olx_cta
 import com.sirelon.sellsnap.generated.resources.ic_camera
+import com.sirelon.sellsnap.generated.resources.ic_message_circle
 import com.sirelon.sellsnap.generated.resources.ic_tag
 import com.sirelon.sellsnap.generated.resources.ic_user
+import com.sirelon.sellsnap.generated.resources.messages_screen_title
 import com.sirelon.sellsnap.generated.resources.nav_my_ads
 import com.sirelon.sellsnap.generated.resources.new_listing
 import com.sirelon.sellsnap.generated.resources.profile_screen_title
@@ -187,6 +196,9 @@ fun App() {
             val announcementViewModel: AnnouncementViewModel = koinViewModel()
             val notificationsPromptViewModel: NotificationsPromptViewModel = koinViewModel()
             val reviewPromptCoordinator: ReviewPromptCoordinator = koinInject()
+            val messagesBadgeViewModel: MessagesBadgeViewModel = koinViewModel()
+            val unreadMessages by messagesBadgeViewModel.unreadCount.collectAsStateWithLifecycle()
+            LifecycleEventEffect(Lifecycle.Event.ON_START) { messagesBadgeViewModel.refresh() }
             var pendingCategory by remember { mutableStateOf<OlxCategory?>(null) }
             var pendingLocation by remember { mutableStateOf<OlxLocation?>(null) }
             var isGeneratingAd by remember { mutableStateOf(false) }
@@ -284,18 +296,29 @@ fun App() {
                         item(
                             selected = selectedRootTab == tab,
                             onClick = { switchRootTab(tab) },
+                            modifier = if (tab == SellerRootTab.Messages) Modifier.testTag("messages_tab") else Modifier,
                             icon = {
-                                val icon = tab.icon
-                                if (icon != null) {
-                                    Icon(
-                                        painter = painterResource(icon),
-                                        contentDescription = null,
-                                    )
-                                } else {
-                                    Icon(
-                                        imageVector = Icons.Default.Settings,
-                                        contentDescription = null,
-                                    )
+                                BadgedBox(
+                                    badge = {
+                                        if (tab == SellerRootTab.Messages && unreadMessages > 0) {
+                                            Badge(modifier = Modifier.testTag("messages_tab_badge")) {
+                                                Text(if (unreadMessages > 99) "99+" else unreadMessages.toString())
+                                            }
+                                        }
+                                    },
+                                ) {
+                                    val icon = tab.icon
+                                    if (icon != null) {
+                                        Icon(
+                                            painter = painterResource(icon),
+                                            contentDescription = null,
+                                        )
+                                    } else {
+                                        Icon(
+                                            imageVector = Icons.Default.Settings,
+                                            contentDescription = null,
+                                        )
+                                    }
                                 }
                             },
                             label = {
@@ -414,6 +437,31 @@ fun App() {
                                     // PublishNeedsReconnect below.
                                     navVm.backStack.add(AppKey.Profile(reason = connectOlxReason))
                                 },
+                            )
+                        }
+
+                        entry<AppKey.Messages>(metadata = topLevelMetadata) {
+                            MessagesScreenRoute(
+                                onOpenThread = { threadId, advertId ->
+                                    if (navVm.backStack.lastOrNull() !is AppKey.Conversation) {
+                                        navVm.backStack.add(AppKey.Conversation(threadId, advertId))
+                                    }
+                                },
+                                onConnectOlxClick = {
+                                    pendingCategory = null
+                                    navVm.exitGuestModeToLanding()
+                                },
+                                onReconnectClick = {
+                                    navVm.backStack.add(AppKey.Profile(reason = connectOlxReason))
+                                },
+                            )
+                        }
+
+                        entry<AppKey.Conversation> { key ->
+                            ConversationScreenRoute(
+                                threadId = key.threadId,
+                                advertId = key.advertId,
+                                onBack = { navVm.popDestination() },
                             )
                         }
 
@@ -928,6 +976,7 @@ private enum class SellerRootTab(
 ) {
     GenerateAd(AppKey.GenerateAd, Res.drawable.ic_camera, Res.string.new_listing),
     MyAdverts(AppKey.MyAdverts, Res.drawable.ic_tag, Res.string.nav_my_ads),
+    Messages(AppKey.Messages, Res.drawable.ic_message_circle, Res.string.messages_screen_title),
     Profile(AppKey.Profile(), Res.drawable.ic_user, Res.string.profile_screen_title),
     Settings(AppKey.Settings, icon = null, Res.string.settings_screen_title),
 }
@@ -935,6 +984,7 @@ private enum class SellerRootTab(
 private fun AppKey?.toSellerRootTab(): SellerRootTab? = when (this) {
     AppKey.GenerateAd -> SellerRootTab.GenerateAd
     AppKey.MyAdverts -> SellerRootTab.MyAdverts
+    AppKey.Messages -> SellerRootTab.Messages
     is AppKey.Profile -> if (reason == null) SellerRootTab.Profile else null
     AppKey.Settings -> SellerRootTab.Settings
     else -> null

@@ -471,7 +471,8 @@ the rest is how this app shipped two wrong status meanings.
 - **Read the yaml itself.** It is at `https://developer.olx.<tld>/swagger/v2/partner_api.yaml`,
   nested `$ref` files resolve against the same path, and plain `curl` gets a CloudFront 403.
   `curl https://r.jina.ai/<url>` returns the whole file - about 145 KB - and from there the schema
-  is `grep -n` and `sed -n` like any other file. WebFetch and context7 answer in prose: they
+  is `grep -n` and `sed -n` like any other file. When r.jina.ai refuses the yaml (422), the
+  Wayback raw copy works: `curl -sL "https://web.archive.org/web/2026id_/https://developer.olx.ua/swagger/v2/partner_api.yaml"`. WebFetch and context7 answer in prose: they
   summarize, and the summary is where `location`'s real position, the absence of `ad_delivery`
   from the update schema, and the `value`/`values` split all went missing. Each was five lines of
   yaml and each cost a release.
@@ -494,7 +495,7 @@ rejects violations, so read it before adding a class that maps a JSON response.
 - Every seller VM extends `BaseViewModel<State, Event, Effect>` from `features/common/presentation/BaseViewModel.kt`.
 - Contracts live in `*Contract.kt` files with sealed `Event` and sealed `Effect` interfaces.
 - State updates use `setState { it.copy(...) }`. One-shot side effects use `postEffect(...)`.
-- Repositories return `Flow<T>`; VMs subscribe via `.launchIn(viewModelScope)` and use `.catch { ... }` to keep the stream alive across transient errors. `PreviewAdViewModel` is the canonical reference.
+- Streaming repositories return `Flow<T>`; VMs subscribe via `.launchIn(viewModelScope)` and use `.catch { ... }` to keep the stream alive across transient errors. `PreviewAdViewModel` is the canonical reference. One-shot OLX reads (`MyAdvertsRepository`, `MessagesRepository`) are `suspend` calls wrapped in `withAccountToken`; the VM owns retries and polling.
 - `CategoriesRepository` caches the (filtered) category tree via `shareIn(GlobalScope, Lazily, 1)` — see `BUGS.md` for why this is on the cleanup list.
 - **Assert an effect with `viewModel.effects.awaitEffect<T>()`** (`commonTest`,
   `features/common/presentation/AwaitEffect.kt`); never drain-then-assert. Anything resolved
@@ -502,6 +503,10 @@ rejects violations, so read it before adding a class that maps a JSON response.
   `advanceUntilIdle()` and `runCurrent()` cannot see it, and `withTimeout` inside `runTest` fires
   on the virtual clock. For state rather than an effect, await the state:
   `viewModel.state.first { ... }`.
+- **A test that starts a polling loop must stop it.** `MessagesViewModel` and
+  `ConversationViewModel` poll in `while (true) { delay(PollInterval) }` after `Event.Shown`.
+  If the test ends with that loop alive, `runTest` keeps draining virtual time forever, the test
+  JVM runs out of memory and Gradle hangs with no failure. End every such test with `Event.Hidden`.
 
 ### Ad lifecycle (post-publish actions)
 

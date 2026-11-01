@@ -1,0 +1,89 @@
+package com.sirelon.sellsnap.features.seller.messages.presentation
+
+import io.ktor.client.engine.mock.respond
+import io.ktor.http.HttpStatusCode
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runCurrent
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
+import kotlin.test.Test
+import kotlin.test.assertEquals
+
+class MessagesBadgeViewModelTest {
+
+    private val testDispatcher = StandardTestDispatcher()
+
+    @BeforeTest
+    fun setUp() {
+        Dispatchers.setMain(testDispatcher)
+    }
+
+    @AfterTest
+    fun tearDown() {
+        Dispatchers.resetMain()
+    }
+
+    @Test
+    fun `the badge counts unread messages in seller-side threads only`() = runTest(testDispatcher) {
+        val engine = mockEngine(testDispatcher) {
+            addHandler {
+                respond(
+                    threadsJson(
+                        threadJson(1, 10, unread = 2),
+                        threadJson(2, 11, interlocutorId = OwnUserId, unread = 7),
+                        threadJson(3, 12, unread = 1),
+                    ),
+                    HttpStatusCode.OK,
+                    jsonHeaders(),
+                )
+            }
+        }
+        val harness = messagesHarness(engine, listOf(testAccount(1)), activeIndex = 1)
+
+        val viewModel = MessagesBadgeViewModel(harness.messagesRepository, harness.accountRepository)
+        runCurrent()
+
+        assertEquals(3, viewModel.unreadCount.value)
+    }
+
+    @Test
+    fun `no connected account means no badge`() = runTest(testDispatcher) {
+        val engine = mockEngine(testDispatcher) {
+            addHandler { respond("", HttpStatusCode.InternalServerError) }
+        }
+        val harness = messagesHarness(engine, accounts = emptyList(), activeIndex = null)
+
+        val viewModel = MessagesBadgeViewModel(harness.messagesRepository, harness.accountRepository)
+        runCurrent()
+
+        assertEquals(0, viewModel.unreadCount.value)
+    }
+
+    @Test
+    fun `a failed reload keeps the last count`() = runTest(testDispatcher) {
+        var fail = false
+        val engine = mockEngine(testDispatcher) {
+            addHandler {
+                if (fail) {
+                    respond("", HttpStatusCode.InternalServerError)
+                } else {
+                    respond(threadsJson(threadJson(1, 10, unread = 4)), HttpStatusCode.OK, jsonHeaders())
+                }
+            }
+        }
+        val harness = messagesHarness(engine, listOf(testAccount(1)), activeIndex = 1)
+        val viewModel = MessagesBadgeViewModel(harness.messagesRepository, harness.accountRepository)
+        runCurrent()
+        assertEquals(4, viewModel.unreadCount.value)
+
+        fail = true
+        viewModel.refresh()
+        runCurrent()
+
+        assertEquals(4, viewModel.unreadCount.value)
+    }
+}

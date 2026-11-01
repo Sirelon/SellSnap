@@ -25,6 +25,10 @@ import com.sirelon.sellsnap.features.seller.location.data.response.OlxDistrictRe
 import com.sirelon.sellsnap.features.seller.location.data.response.OlxDistrictsRootResponse
 import com.sirelon.sellsnap.features.seller.location.data.response.OlxLocationResponse
 import com.sirelon.sellsnap.features.seller.location.data.response.OlxLocationsRootResponse
+import com.sirelon.sellsnap.features.seller.messages.data.response.OlxMessagesRootResponse
+import com.sirelon.sellsnap.features.seller.messages.data.response.OlxThreadsRootResponse
+import com.sirelon.sellsnap.features.seller.messages.domain.OlxMessage
+import com.sirelon.sellsnap.features.seller.messages.domain.OlxThread
 import io.ktor.client.HttpClient
 import io.ktor.client.request.bearerAuth
 import io.ktor.client.request.delete
@@ -106,6 +110,38 @@ class OlxApiClient(
         response.ensureSuccess()
 
         return response.decodeBody<OlxAdvertsRootResponse>("user adverts")
+            .data
+            .orEmpty()
+            .mapNotNull { it.toDomain() }
+    }
+
+    /**
+     * `GET threads` - the account's conversations, `{data: [...]}` (developer.olx.ua swagger v2,
+     * `/threads`; the yaml declares a bare array but the live API wraps it, SIR-88).
+     */
+    internal suspend fun getThreads(accessToken: String, offset: Int, limit: Int): List<OlxThread> {
+        val response = httpClient.get("threads") {
+            bearerAuth(accessToken)
+            parameter("offset", offset)
+            parameter("limit", limit)
+        }
+        response.ensureSuccess()
+
+        return response.decodeBody<OlxThreadsRootResponse>("threads")
+            .data
+            .orEmpty()
+            .mapNotNull { it.toDomain() }
+    }
+
+    /**
+     * `GET threads/{id}/messages`, oldest first. The endpoint takes no `offset`/`limit` and returns
+     * the whole conversation (developer.olx.ua swagger v2, `/threads/{threadId}/messages`; SIR-88).
+     */
+    internal suspend fun getThreadMessages(accessToken: String, threadId: Long): List<OlxMessage> {
+        val response = httpClient.get("threads/$threadId/messages") { bearerAuth(accessToken) }
+        response.ensureSuccess()
+
+        return response.decodeBody<OlxMessagesRootResponse>("thread messages")
             .data
             .orEmpty()
             .mapNotNull { it.toDomain() }

@@ -70,6 +70,11 @@ sealed interface AppKey : NavKey, AnalyticsScreen {
     }
 
     @Serializable
+    data object Messages : AppKey {
+        override val screenName = "Messages"
+    }
+
+    @Serializable
     data class Profile(val reason: String? = null) : AppKey {
         override val screenName = "Profile"
     }
@@ -97,6 +102,11 @@ sealed interface AppKey : NavKey, AnalyticsScreen {
     @Serializable
     data object Drafts : AppKey {
         override val screenName = "Drafts"
+    }
+
+    @Serializable
+    data class Conversation(val threadId: Long, val advertId: Long) : AppKey {
+        override val screenName = "Conversation"
     }
 
     @Serializable
@@ -146,12 +156,13 @@ sealed interface AppKey : NavKey, AnalyticsScreen {
 }
 
 /**
- * True for the four bottom-nav tab roots. A restored back stack whose bottom entry satisfies
+ * True for the five bottom-nav tab roots. A restored back stack whose bottom entry satisfies
  * this represents a real in-progress position within the seller flow (mid-draft on PreviewAd,
  * a non-default tab, ...) - see [com.sirelon.sellsnap.startup.AppNavigationViewModel].
  */
 val AppKey.isSellerFlowEntry: Boolean
     get() = this is AppKey.GenerateAd ||
         this is AppKey.MyAdverts ||
+        this is AppKey.Messages ||
         (this is AppKey.Profile && reason == null) ||
         this is AppKey.Settings
