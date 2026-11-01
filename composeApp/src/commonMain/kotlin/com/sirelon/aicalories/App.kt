@@ -9,12 +9,26 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
+import androidx.compose.material3.adaptive.layout.calculatePaneScaffoldDirective
+import androidx.compose.material3.adaptive.navigation.BackNavigationBehavior
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.material3.LocalMinimumInteractiveComponentSize
+import androidx.compose.material3.VerticalDragHandle
+import androidx.compose.material3.adaptive.layout.PaneExpansionAnchor
+import androidx.compose.material3.adaptive.layout.rememberPaneExpansionState
+import androidx.compose.material3.adaptive.layout.PaneExpansionState
+import androidx.compose.material3.adaptive.layout.ThreePaneScaffoldScope
+import androidx.compose.material3.adaptive.navigation3.ListDetailSceneStrategy
+import androidx.compose.material3.adaptive.navigation3.rememberListDetailSceneStrategy
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffoldDefaults
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
@@ -31,6 +45,9 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavMetadataKey
 import androidx.navigation3.runtime.entryProvider
@@ -85,6 +102,10 @@ import com.sirelon.sellsnap.features.seller.categories.presentation.CategoryPick
 import com.sirelon.sellsnap.features.seller.location.OlxLocation
 import com.sirelon.sellsnap.features.seller.location.presentation.LocationPickerSheet
 import com.sirelon.sellsnap.features.seller.drafts.ui.DraftsScreenRoute
+import com.sirelon.sellsnap.features.seller.messages.presentation.MessagesBadgeViewModel
+import com.sirelon.sellsnap.features.seller.messages.ui.ConversationPlaceholder
+import com.sirelon.sellsnap.features.seller.messages.ui.ConversationScreenRoute
+import com.sirelon.sellsnap.features.seller.messages.ui.MessagesScreenRoute
 import com.sirelon.sellsnap.features.seller.my_ads.ui.MyAdvertsScreenRoute
 import com.sirelon.sellsnap.features.seller.onboarding.OnboardingScreen
 import com.sirelon.sellsnap.features.seller.profile.data.SellerAccountRepository
@@ -103,8 +124,10 @@ import com.sirelon.sellsnap.generated.resources.Res
 import com.sirelon.sellsnap.generated.resources.generic_error_retry
 import com.sirelon.sellsnap.generated.resources.guest_connect_olx_cta
 import com.sirelon.sellsnap.generated.resources.ic_camera
+import com.sirelon.sellsnap.generated.resources.ic_message_circle
 import com.sirelon.sellsnap.generated.resources.ic_tag
 import com.sirelon.sellsnap.generated.resources.ic_user
+import com.sirelon.sellsnap.generated.resources.messages_screen_title
 import com.sirelon.sellsnap.generated.resources.nav_my_ads
 import com.sirelon.sellsnap.generated.resources.new_listing
 import com.sirelon.sellsnap.generated.resources.profile_screen_title
@@ -187,6 +210,9 @@ fun App() {
             val announcementViewModel: AnnouncementViewModel = koinViewModel()
             val notificationsPromptViewModel: NotificationsPromptViewModel = koinViewModel()
             val reviewPromptCoordinator: ReviewPromptCoordinator = koinInject()
+            val messagesBadgeViewModel: MessagesBadgeViewModel = koinViewModel()
+            val unreadMessages by messagesBadgeViewModel.unreadCount.collectAsStateWithLifecycle()
+            LifecycleEventEffect(Lifecycle.Event.ON_START) { messagesBadgeViewModel.refresh() }
             var pendingCategory by remember { mutableStateOf<OlxCategory?>(null) }
             var pendingLocation by remember { mutableStateOf<OlxLocation?>(null) }
             var isGeneratingAd by remember { mutableStateOf(false) }
@@ -217,7 +243,15 @@ fun App() {
             // but still correctly disappears under a genuinely pushed full-screen destination
             // (PreviewAd, ImagesPreview, AllReleases, Drafts, SellerPublishSuccess, ...), where tapping a
             // tab would silently discard whatever's in progress there without its own confirm step.
-            val selectedRootTab = navVm.backStack.lastOrNull { !it.isOverlayEntry() }.toSellerRootTab()
+            // Messages shows its conversation beside the list when the window has room for two
+            // panes; the bar stays then, because the Messages tab is still what is on screen.
+            val windowAdaptiveInfo = currentWindowAdaptiveInfoV2()
+            val paneDirective = remember(windowAdaptiveInfo) {
+                // No gap between the panes, as in the Nav3 Material list-detail recipe (b/418201867).
+                calculatePaneScaffoldDirective(windowAdaptiveInfo).copy(horizontalPartitionSpacerSize = 0.dp)
+            }
+            val isTwoPane = paneDirective.maxHorizontalPartitions > 1
+            val selectedRootTab = navVm.backStack.lastOrNull { !it.isOverlayEntry() }.toSellerRootTab(isTwoPane)
 
             // Keyed on whether we're in the seller flow at all (not on the top entry, and not on
             // the specific tab) so a sheet like WhatsNewPrompt pushing/popping on top - which
@@ -268,10 +302,44 @@ fun App() {
                 NavigationSuiteType.None
             }
 
-            val sceneStrategies = remember {
+            // PopLatest: back from an open conversation closes it. The default pops until the
+            // panes change, and the list with a placeholder shows the same two panes, so back
+            // would leave the app instead.
+            // The stock Material drag handle lets the seller resize the two panes.
+            val paneDragHandle: @Composable ThreePaneScaffoldScope.(PaneExpansionState) -> Unit =
+                remember {
+                    { state ->
+                        val interactionSource = remember { MutableInteractionSource() }
+                        VerticalDragHandle(
+                            modifier = Modifier.paneExpansionDraggable(
+                                state = state,
+                                minTouchTargetSize = LocalMinimumInteractiveComponentSize.current,
+                                interactionSource = interactionSource,
+                            ),
+                            interactionSource = interactionSource,
+                        )
+                    }
+                }
+            // A drag snaps to one of these on release, so neither pane stays too narrow to read:
+            // the list keeps room for its thumbnail and title, the conversation for its header.
+            val paneExpansionState = rememberPaneExpansionState(
+                anchors = listOf(
+                    PaneExpansionAnchor.Offset.fromStart(320.dp),
+                    PaneExpansionAnchor.Proportion(0.5f),
+                    PaneExpansionAnchor.Offset.fromEnd(360.dp),
+                ),
+            )
+            val listDetailStrategy = rememberListDetailSceneStrategy<AppKey>(
+                backNavigationBehavior = BackNavigationBehavior.PopLatest,
+                directive = paneDirective,
+                paneExpansionDragHandle = paneDragHandle,
+                paneExpansionState = paneExpansionState,
+            )
+            val sceneStrategies = remember(listDetailStrategy) {
                 listOf(
                     BottomSheetSceneStrategy<AppKey>(),
                     DialogSceneStrategy<AppKey>(),
+                    listDetailStrategy,
                     SinglePaneSceneStrategy<AppKey>(),
                 )
             }
@@ -284,18 +352,29 @@ fun App() {
                         item(
                             selected = selectedRootTab == tab,
                             onClick = { switchRootTab(tab) },
+                            modifier = if (tab == SellerRootTab.Messages) Modifier.testTag("messages_tab") else Modifier,
                             icon = {
-                                val icon = tab.icon
-                                if (icon != null) {
-                                    Icon(
-                                        painter = painterResource(icon),
-                                        contentDescription = null,
-                                    )
-                                } else {
-                                    Icon(
-                                        imageVector = Icons.Default.Settings,
-                                        contentDescription = null,
-                                    )
+                                BadgedBox(
+                                    badge = {
+                                        if (tab == SellerRootTab.Messages && unreadMessages > 0) {
+                                            Badge(modifier = Modifier.testTag("messages_tab_badge")) {
+                                                Text(if (unreadMessages > 99) "99+" else unreadMessages.toString())
+                                            }
+                                        }
+                                    },
+                                ) {
+                                    val icon = tab.icon
+                                    if (icon != null) {
+                                        Icon(
+                                            painter = painterResource(icon),
+                                            contentDescription = null,
+                                        )
+                                    } else {
+                                        Icon(
+                                            imageVector = Icons.Default.Settings,
+                                            contentDescription = null,
+                                        )
+                                    }
                                 }
                             },
                             label = {
@@ -412,6 +491,58 @@ fun App() {
                                     // Reuses Profile's existing reconnect route rather than a
                                     // second OAuth entry point - same pattern as
                                     // PublishNeedsReconnect below.
+                                    navVm.backStack.add(AppKey.Profile(reason = connectOlxReason))
+                                },
+                            )
+                        }
+
+                        entry<AppKey.Messages>(
+                            metadata = topLevelMetadata +
+                                ListDetailSceneStrategy.listPane(detailPlaceholder = { ConversationPlaceholder() }),
+                        ) {
+                            MessagesScreenRoute(
+                                onOpenThread = { thread ->
+                                    val conversation = AppKey.Conversation(
+                                        threadId = thread.threadId,
+                                        advertId = thread.advertId,
+                                        title = thread.title,
+                                        imageUrl = thread.imageUrl,
+                                        status = thread.status,
+                                        isListingDeleted = thread.isListingDeleted,
+                                        localIndex = thread.localIndex,
+                                        hadUnread = thread.hadUnread,
+                                    )
+                                    // One conversation at a time: another thread replaces the open
+                                    // one (beside the list), and a double tap does not stack two.
+                                    when (navVm.backStack.lastOrNull()) {
+                                        conversation -> Unit
+                                        is AppKey.Conversation -> navVm.backStack[navVm.backStack.lastIndex] = conversation
+                                        else -> navVm.backStack.add(conversation)
+                                    }
+                                },
+                                selectedThreadId = (navVm.backStack.lastOrNull() as? AppKey.Conversation)?.threadId,
+                                onConnectOlxClick = {
+                                    pendingCategory = null
+                                    navVm.exitGuestModeToLanding()
+                                },
+                                onReconnectClick = {
+                                    navVm.backStack.add(AppKey.Profile(reason = connectOlxReason))
+                                },
+                            )
+                        }
+
+                        entry<AppKey.Conversation>(metadata = ListDetailSceneStrategy.detailPane()) { key ->
+                            ConversationScreenRoute(
+                                localIndex = key.localIndex,
+                                threadId = key.threadId,
+                                advertId = key.advertId,
+                                title = key.title,
+                                imageUrl = key.imageUrl,
+                                status = key.status,
+                                isListingDeleted = key.isListingDeleted,
+                                hadUnread = key.hadUnread,
+                                onBack = { navVm.popDestination() },
+                                onReconnectClick = {
                                     navVm.backStack.add(AppKey.Profile(reason = connectOlxReason))
                                 },
                             )
@@ -915,11 +1046,12 @@ private val AdvertisementWithAttributes.previewViewModelKey: String
 private object TopLevelTransitionKey : NavMetadataKey<Boolean>
 private val topLevelMetadata = metadata { put(TopLevelTransitionKey, true) }
 
+// The first entry, so that Messages with a conversation beside it counts as its tab.
 private fun isTopLevelTransition(
     initial: Scene<AppKey>,
     target: Scene<AppKey>,
-): Boolean = initial.metadata[TopLevelTransitionKey] == true &&
-    target.metadata[TopLevelTransitionKey] == true
+): Boolean = initial.entries.first().metadata[TopLevelTransitionKey] == true &&
+    target.entries.first().metadata[TopLevelTransitionKey] == true
 
 private enum class SellerRootTab(
     val destination: AppKey,
@@ -928,13 +1060,17 @@ private enum class SellerRootTab(
 ) {
     GenerateAd(AppKey.GenerateAd, Res.drawable.ic_camera, Res.string.new_listing),
     MyAdverts(AppKey.MyAdverts, Res.drawable.ic_tag, Res.string.nav_my_ads),
+    Messages(AppKey.Messages, Res.drawable.ic_message_circle, Res.string.messages_screen_title),
     Profile(AppKey.Profile(), Res.drawable.ic_user, Res.string.profile_screen_title),
     Settings(AppKey.Settings, icon = null, Res.string.settings_screen_title),
 }
 
-private fun AppKey?.toSellerRootTab(): SellerRootTab? = when (this) {
+/** [isTwoPane]: a conversation is shown beside the Messages list rather than over it. */
+private fun AppKey?.toSellerRootTab(isTwoPane: Boolean): SellerRootTab? = when (this) {
     AppKey.GenerateAd -> SellerRootTab.GenerateAd
     AppKey.MyAdverts -> SellerRootTab.MyAdverts
+    AppKey.Messages -> SellerRootTab.Messages
+    is AppKey.Conversation -> if (isTwoPane) SellerRootTab.Messages else null
     is AppKey.Profile -> if (reason == null) SellerRootTab.Profile else null
     AppKey.Settings -> SellerRootTab.Settings
     else -> null

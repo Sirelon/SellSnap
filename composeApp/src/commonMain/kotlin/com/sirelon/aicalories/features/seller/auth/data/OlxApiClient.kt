@@ -25,6 +25,10 @@ import com.sirelon.sellsnap.features.seller.location.data.response.OlxDistrictRe
 import com.sirelon.sellsnap.features.seller.location.data.response.OlxDistrictsRootResponse
 import com.sirelon.sellsnap.features.seller.location.data.response.OlxLocationResponse
 import com.sirelon.sellsnap.features.seller.location.data.response.OlxLocationsRootResponse
+import com.sirelon.sellsnap.features.seller.messages.data.response.OlxMessagesRootResponse
+import com.sirelon.sellsnap.features.seller.messages.data.response.OlxThreadsRootResponse
+import com.sirelon.sellsnap.features.seller.messages.domain.OlxMessage
+import com.sirelon.sellsnap.features.seller.messages.domain.OlxThread
 import io.ktor.client.HttpClient
 import io.ktor.client.request.bearerAuth
 import io.ktor.client.request.delete
@@ -112,6 +116,38 @@ class OlxApiClient(
     }
 
     /**
+     * `GET threads` - the account's conversations, `{data: [...]}` (developer.olx.ua swagger v2,
+     * `/threads`; the yaml declares a bare array but the live API wraps it, SIR-88).
+     */
+    internal suspend fun getThreads(accessToken: String, offset: Int, limit: Int): List<OlxThread> {
+        val response = httpClient.get("threads") {
+            bearerAuth(accessToken)
+            parameter("offset", offset)
+            parameter("limit", limit)
+        }
+        response.ensureSuccess()
+
+        return response.decodeBody<OlxThreadsRootResponse>("threads")
+            .data
+            .orEmpty()
+            .mapNotNull { it.toDomain() }
+    }
+
+    /**
+     * `GET threads/{id}/messages`, oldest first. The endpoint takes no `offset`/`limit` and returns
+     * the whole conversation (developer.olx.ua swagger v2, `/threads/{threadId}/messages`; SIR-88).
+     */
+    internal suspend fun getThreadMessages(accessToken: String, threadId: Long): List<OlxMessage> {
+        val response = httpClient.get("threads/$threadId/messages") { bearerAuth(accessToken) }
+        response.ensureSuccess()
+
+        return response.decodeBody<OlxMessagesRootResponse>("thread messages")
+            .data
+            .orEmpty()
+            .mapNotNull { it.toDomain() }
+    }
+
+    /**
      * `GET adverts/{id}` (SIR-98). Returns the typed view plus the raw `data` object, which the
      * edit path reshapes into a `PUT` body - the two schemas are not the same shape, so the raw
      * response is kept whole here and mapped there. See [AdvertEditSnapshot].
@@ -120,6 +156,23 @@ class OlxApiClient(
         val response = httpClient.get("adverts/$advertId") { bearerAuth(accessToken) }
         response.ensureSuccess()
 
+        return readAdvert(response)
+    }
+
+    /**
+     * [getAdvert], except that a 404 - the advert no longer exists - is `null` rather than an
+     * error. Matches on the status code, never on the error title: the title arrives in the
+     * market's language.
+     */
+    internal suspend fun getAdvertOrNull(accessToken: String, advertId: Long): AdvertEditSnapshot? {
+        val response = httpClient.get("adverts/$advertId") { bearerAuth(accessToken) }
+        if (response.status == HttpStatusCode.NotFound) return null
+        response.ensureSuccess()
+
+        return readAdvert(response)
+    }
+
+    private suspend fun readAdvert(response: HttpResponse): AdvertEditSnapshot {
         val raw = response.decodeBody<OlxAdvertDetailRootResponse>("advert").data
             ?: throw missingResponseData("advert", "data")
         val detail = json.decodeFromJsonElement<OlxAdvertDetailResponse>(raw).toDomain()

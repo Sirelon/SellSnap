@@ -225,4 +225,64 @@ object AnalyticsEvents {
      * characters. Logged in addition to any feature event such as `ad_publish_failed`.
      */
     const val ERROR_SHOWN = "error_shown"
+
+    // Messages (SIR-92, read-only buyer conversations). Counts are banded by
+    // `MessagesAnalyticsBuckets.count` (0, 1, 2_5, 6_10, 11_25, 26_50, gt_50). No event carries
+    // message text, a thread id, a buyer id, an advert id or a title. Failed loads are not here:
+    // they are `error_shown` with `screen` `messages` or `conversation`. Screen views of both
+    // screens are automatic.
+
+    /**
+     * The Messages tab was opened: once per tab visit, on the first time its screen is in the
+     * foreground (coming back from a conversation or from the background does not log it again).
+     * `badge_unread_bucket` is the unread total the tab badge showed at that moment, so it answers
+     * whether the badge pulls sellers in. It is "0" when the badge had not loaded yet.
+     */
+    const val MESSAGES_OPENED = "messages_opened"
+
+    /**
+     * An account's list loaded for the first time in a visit and its listing lookups settled:
+     * once per account page, never on a poll, a refresh or a later page. This is the success
+     * outcome of the list; a failure is `error_shown`. Params: `account_index` (localIndex),
+     * `account_count` (accounts connected in the country), `thread_count_bucket` (seller-side
+     * threads on the first page), `unread_count_bucket` (their unread messages),
+     * `buyer_side_count_bucket` (threads hidden because the account is the buyer on them),
+     * `inactive_listing_count_bucket` (threads whose advert is known and not `active`) and
+     * `deleted_listing_count_bucket` (threads whose advert OLX answered 404 for).
+     */
+    const val MESSAGES_LIST_LOADED = "messages_list_loaded"
+
+    /**
+     * A "Load more" tap on the list, logged when its request ends. `page` is the page asked for
+     * (Int, 1 is the second page) and `result` is `threads` (at least one new thread was added),
+     * `empty` (OLX answered, nothing new for the seller) or `failed`. A tap whose request is
+     * cancelled by leaving the screen logs nothing.
+     */
+    const val MESSAGES_LOAD_MORE = "messages_load_more"
+
+    /**
+     * The seller tapped a thread row. `layout` is `single_pane` (the conversation covers the
+     * list) or `two_pane` (beside it). `account_count` is the accounts connected in the country,
+     * `is_active_account` (Boolean) whether the thread's account is the active one, `had_unread`
+     * (Boolean) whether the row had unread messages and `listing_state` the advert's state:
+     * `deleted`, `unknown` or an OLX status code (`active`, `removed_by_user`, ...). It is the
+     * denominator for `messages_conversation_action`.
+     */
+    const val MESSAGES_CONVERSATION_OPENED = "messages_conversation_opened"
+
+    /**
+     * A conversation's messages loaded for the first time: once per opened conversation, never
+     * on a poll. The success outcome; a failure is `error_shown`. `message_count_bucket` and
+     * `has_sent_message` (Boolean: the seller has already written in this thread).
+     */
+    const val MESSAGES_CONVERSATION_LOADED = "messages_conversation_loaded"
+
+    /**
+     * The seller tapped one of the two ways out of a conversation. `action` is `reply_on_olx`
+     * (the writing session is not in the app, so this is the demand for it) or `open_listing`
+     * (the header). Also `listing_state` (as for `messages_conversation_opened`), `had_unread`
+     * (Boolean, the row had unread messages when it was opened) and `seconds_since_open_bucket`
+     * (0_5, 6_30, 31_120, gt_120) from opening the conversation to the tap.
+     */
+    const val MESSAGES_CONVERSATION_ACTION = "messages_conversation_action"
 }

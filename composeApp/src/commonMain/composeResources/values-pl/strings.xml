@@ -464,4 +464,39 @@
     <string name="advert_edit_price_label">Cena</string>
     <string name="advert_edit_save">Wyślij do OLX</string>
     <string name="advert_edit_load_failed">Nie udało się wczytać tego ogłoszenia z OLX.</string>
+
+    <!-- Buyer messages -->
+    <string name="messages_screen_title">Wiadomości</string>
+    <string name="messages_buyer_label">Kupujący</string>
+    <string name="messages_empty_title">Na razie brak wiadomości</string>
+    <string name="messages_empty_description">Nikt jeszcze nie napisał w sprawie Twoich ogłoszeń. Wiadomości od kupujących pojawią się tutaj.</string>
+    <string name="messages_connect_title">Połącz OLX, aby zobaczyć swoje wiadomości</string>
+    <string name="messages_connect_description">Wiadomości od kupujących o Twoich ogłoszeniach na OLX pojawią się tutaj po połączeniu konta.</string>
+    <string name="messages_load_failed">Nie udało się wczytać wiadomości.</string>
+    <string name="messages_listing_fallback">Twoje ogłoszenie</string>
+    <string name="messages_listing_deleted">Usunięte ogłoszenie</string>
+    <string name="messages_thread_started">Rozpoczęto %1$s</string>
+    <string name="messages_select_conversation">Wybierz rozmowę, aby przeczytać ją tutaj</string>
+    <string name="time_just_now">przed chwilą</string>
+    <plurals name="time_minutes_ago">
+        <item quantity="one">%1$d min temu</item>
+        <item quantity="few">%1$d min temu</item>
+        <item quantity="many">%1$d min temu</item>
+        <item quantity="other">%1$d min temu</item>
+    </plurals>
+    <plurals name="time_hours_ago">
+        <item quantity="one">%1$d godz. temu</item>
+        <item quantity="few">%1$d godz. temu</item>
+        <item quantity="many">%1$d godz. temu</item>
+        <item quantity="other">%1$d godz. temu</item>
+    </plurals>
+    <string name="time_yesterday">wczoraj</string>
+    <plurals name="time_days_ago">
+        <item quantity="one">%1$d dzień temu</item>
+        <item quantity="few">%1$d dni temu</item>
+        <item quantity="many">%1$d dni temu</item>
+        <item quantity="other">%1$d dnia temu</item>
+    </plurals>
+    <string name="conversation_load_failed">Nie udało się wczytać tej rozmowy.</string>
+    <string name="conversation_reply_on_olx">Odpowiedz na OLX</string>
 </resources>

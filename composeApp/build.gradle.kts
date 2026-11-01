@@ -172,6 +172,7 @@ kotlin {
             implementation(libs.compose.preview)
             implementation(libs.material3)
             implementation(libs.material3.adaptive)
+            implementation(libs.material3.adaptive.navigation3)
             implementation(libs.material3.adaptive.navigation.suite)
             implementation(libs.material.icons.extended)
 
@@ -187,6 +188,7 @@ kotlin {
             implementation(libs.coil.compose)
             implementation(libs.coil.network.ktor)
             implementation(libs.kotlinx.coroutines.core)
+            implementation(libs.kotlinx.datetime)
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.sqldelight.runtime)
             implementation(libs.sqldelight.coroutines)

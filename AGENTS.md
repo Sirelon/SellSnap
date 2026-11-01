@@ -33,6 +33,20 @@ Each one is checkable. Where you cannot show it was met, say so (rule 7).
     the spec file, fetched and opened and searched. A tool that answers in prose has already
     dropped whatever you did not know to ask about. Three fixes in a row were refused by OLX
     because each came from a paraphrase rather than from the schema. See OLX partner API.
+11. **Every feature works on every window size and for every connected account.** SellSnap runs
+    on phones, foldables, tablets and desktop, and a seller can connect several OLX accounts per
+    country (SIR-83). A plan for a new screen says how it lays out on a wide window — a list
+    whose rows open a detail uses list-detail panes (Messages is the reference) — and how it
+    behaves with two or more accounts: one page per account like My Ads, and every OLX call
+    carries the `localIndex` it acts for instead of assuming the active account. A ticket that
+    says "active account only" or says nothing about tablets is not an exemption; raise it
+    before building.
+12. **Every feature ships with the analytics to judge it.** Before building, the plan lists the
+    questions the data must answer — is it used, does it work, where do sellers stop, which
+    option they pick — and the events that answer them. Events and their params go in
+    `AnalyticsEvents` with a KDoc per event (what fires it, every param and its values), codes
+    in snake_case, never user text or buyer data. Screen views are already automatic; count
+    the actions and outcomes inside the screen. See Analytics.
 
 Small fixes with obvious files: read the implementation and its immediate callers only,
 validate with the narrowest meaningful build or test command plus `git diff --check`, and skip
@@ -471,7 +485,8 @@ the rest is how this app shipped two wrong status meanings.
 - **Read the yaml itself.** It is at `https://developer.olx.<tld>/swagger/v2/partner_api.yaml`,
   nested `$ref` files resolve against the same path, and plain `curl` gets a CloudFront 403.
   `curl https://r.jina.ai/<url>` returns the whole file - about 145 KB - and from there the schema
-  is `grep -n` and `sed -n` like any other file. WebFetch and context7 answer in prose: they
+  is `grep -n` and `sed -n` like any other file. When r.jina.ai refuses the yaml (422), the
+  Wayback raw copy works: `curl -sL "https://web.archive.org/web/2026id_/https://developer.olx.ua/swagger/v2/partner_api.yaml"`. WebFetch and context7 answer in prose: they
   summarize, and the summary is where `location`'s real position, the absence of `ad_delivery`
   from the update schema, and the `value`/`values` split all went missing. Each was five lines of
   yaml and each cost a release.
@@ -494,7 +509,7 @@ rejects violations, so read it before adding a class that maps a JSON response.
 - Every seller VM extends `BaseViewModel<State, Event, Effect>` from `features/common/presentation/BaseViewModel.kt`.
 - Contracts live in `*Contract.kt` files with sealed `Event` and sealed `Effect` interfaces.
 - State updates use `setState { it.copy(...) }`. One-shot side effects use `postEffect(...)`.
-- Repositories return `Flow<T>`; VMs subscribe via `.launchIn(viewModelScope)` and use `.catch { ... }` to keep the stream alive across transient errors. `PreviewAdViewModel` is the canonical reference.
+- Streaming repositories return `Flow<T>`; VMs subscribe via `.launchIn(viewModelScope)` and use `.catch { ... }` to keep the stream alive across transient errors. `PreviewAdViewModel` is the canonical reference. One-shot OLX reads (`MyAdvertsRepository`, `MessagesRepository`) are `suspend` calls wrapped in `withAccountToken`; the VM owns retries and polling.
 - `CategoriesRepository` caches the (filtered) category tree via `shareIn(GlobalScope, Lazily, 1)` — see `BUGS.md` for why this is on the cleanup list.
 - **Assert an effect with `viewModel.effects.awaitEffect<T>()`** (`commonTest`,
   `features/common/presentation/AwaitEffect.kt`); never drain-then-assert. Anything resolved
@@ -502,6 +517,14 @@ rejects violations, so read it before adding a class that maps a JSON response.
   `advanceUntilIdle()` and `runCurrent()` cannot see it, and `withTimeout` inside `runTest` fires
   on the virtual clock. For state rather than an effect, await the state:
   `viewModel.state.first { ... }`.
+- **A test that starts a polling loop must stop it.** `MessagesViewModel` and
+  `ConversationViewModel` poll in `while (true) { delay(PollInterval) }` after `Event.Shown`.
+  If the test ends with that loop alive, `runTest` keeps draining virtual time forever, the test
+  JVM runs out of memory and Gradle hangs with no failure. End every such test with `Event.Hidden`.
+- **A ViewModel restored after process death starts before the account store is hydrated.**
+  `accountsRecordFlow` first emits the empty default record, so a screen that closes itself when
+  "its" account is missing closed on every restore. Treat the account as gone only after the
+  store has loaded (`ConversationViewModel` is the pattern); never on the first emission.
 
 ### Ad lifecycle (post-publish actions)
 

@@ -462,4 +462,33 @@
     <string name="advert_edit_price_label">Цена</string>
     <string name="advert_edit_save">Изпрати в OLX</string>
     <string name="advert_edit_load_failed">Не успяхме да заредим тази обява от OLX.</string>
+
+    <!-- Buyer messages -->
+    <string name="messages_screen_title">Съобщения</string>
+    <string name="messages_buyer_label">Купувач</string>
+    <string name="messages_empty_title">Още няма съобщения</string>
+    <string name="messages_empty_description">Още никой не е писал по обявите ти. Съобщенията от купувачи ще се появят тук.</string>
+    <string name="messages_connect_title">Свържи OLX, за да виждаш съобщенията си</string>
+    <string name="messages_connect_description">Съобщенията от купувачи по обявите ти в OLX ще се появят тук, след като свържеш акаунт.</string>
+    <string name="messages_load_failed">Не успяхме да заредим съобщенията.</string>
+    <string name="messages_listing_fallback">Твоята обява</string>
+    <string name="messages_listing_deleted">Изтрита обява</string>
+    <string name="messages_thread_started">Започнат %1$s</string>
+    <string name="messages_select_conversation">Избери разговор, за да го прочетеш тук</string>
+    <string name="time_just_now">току-що</string>
+    <plurals name="time_minutes_ago">
+        <item quantity="one">преди %1$d мин</item>
+        <item quantity="other">преди %1$d мин</item>
+    </plurals>
+    <plurals name="time_hours_ago">
+        <item quantity="one">преди %1$d ч</item>
+        <item quantity="other">преди %1$d ч</item>
+    </plurals>
+    <string name="time_yesterday">вчера</string>
+    <plurals name="time_days_ago">
+        <item quantity="one">преди %1$d ден</item>
+        <item quantity="other">преди %1$d дни</item>
+    </plurals>
+    <string name="conversation_load_failed">Не успяхме да заредим този разговор.</string>
+    <string name="conversation_reply_on_olx">Отговори в OLX</string>
 </resources>

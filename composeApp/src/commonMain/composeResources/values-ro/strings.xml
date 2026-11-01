@@ -463,4 +463,36 @@
     <string name="advert_edit_price_label">Preț</string>
     <string name="advert_edit_save">Trimite la OLX</string>
     <string name="advert_edit_load_failed">Nu am putut încărca acest anunț de pe OLX.</string>
+
+    <!-- Buyer messages -->
+    <string name="messages_screen_title">Mesaje</string>
+    <string name="messages_buyer_label">Cumpărător</string>
+    <string name="messages_empty_title">Încă nu ai mesaje</string>
+    <string name="messages_empty_description">Nimeni nu a scris încă despre anunțurile tale. Mesajele de la cumpărători vor apărea aici.</string>
+    <string name="messages_connect_title">Conectează OLX ca să-ți vezi mesajele</string>
+    <string name="messages_connect_description">Mesajele de la cumpărători pentru anunțurile tale de pe OLX vor apărea aici după ce conectezi un cont.</string>
+    <string name="messages_load_failed">Nu am putut încărca mesajele.</string>
+    <string name="messages_listing_fallback">Anunțul tău</string>
+    <string name="messages_listing_deleted">Anunț șters</string>
+    <string name="messages_thread_started">Început %1$s</string>
+    <string name="messages_select_conversation">Alege o conversație ca s-o citești aici</string>
+    <string name="time_just_now">chiar acum</string>
+    <plurals name="time_minutes_ago">
+        <item quantity="one">acum %1$d minut</item>
+        <item quantity="few">acum %1$d minute</item>
+        <item quantity="other">acum %1$d de minute</item>
+    </plurals>
+    <plurals name="time_hours_ago">
+        <item quantity="one">acum %1$d oră</item>
+        <item quantity="few">acum %1$d ore</item>
+        <item quantity="other">acum %1$d de ore</item>
+    </plurals>
+    <string name="time_yesterday">ieri</string>
+    <plurals name="time_days_ago">
+        <item quantity="one">acum %1$d zi</item>
+        <item quantity="few">acum %1$d zile</item>
+        <item quantity="other">acum %1$d de zile</item>
+    </plurals>
+    <string name="conversation_load_failed">Nu am putut încărca această conversație.</string>
+    <string name="conversation_reply_on_olx">Răspunde pe OLX</string>
 </resources>
