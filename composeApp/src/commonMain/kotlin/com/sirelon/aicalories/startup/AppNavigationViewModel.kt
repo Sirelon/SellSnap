@@ -61,6 +61,13 @@ class AppNavigationViewModel(
             reportInterruptedAuthorization()
             olxAccountMigration.migrateIfNeeded()
             resolveStartupDestination()
+            // After routing, so a slow or hung `users/me` (up to the OLX client's 15 s connect +
+            // 90 s request timeouts) never holds the splash; routing never used its result. Same
+            // coroutine as the keep-alive below so the two never refresh a rotating token at once.
+            // It warms the profile cache, lets the bearer-refresh plugin mark a dead token
+            // NeedsReconnect, and backfills a migrated (pre-SIR-83) account's olxUserId/profile -
+            // see SellerAccountRepository.refreshProfile(). No network call without an account.
+            sellerAccountRepository.refreshProfile().exceptionOrNull()?.printStackTrace()
             // Runs after routing so it never delays startup, but still in this same coroutine -
             // a separate launch here raced migrateIfNeeded() above and lost: the account store's
             // recordFlow is only hydrated by loadFromStorage()/migration, both of which suspend,
@@ -213,19 +220,8 @@ class AppNavigationViewModel(
             // F4/D7 fix: Authenticated now means "at least one account is on file for the active
             // country" (see OlxAuthRepository.currentSession), regardless of whether its token is
             // healthy - so this always routes into the seller flow, never back to SellerLanding.
-            // The getAuthenticatedUser() call below just warms the profile cache and, via the
-            // authorized client's bearer-refresh plugin, proactively detects and marks a dead
-            // token NeedsReconnect; its failure (network blip or otherwise) must not bounce an
-            // existing seller back to the landing/guest screen.
-            SellerSessionMode.Authenticated -> {
-                // Also backfills the migrated (pre-SIR-83) account's olxUserId/profile on its
-                // first successful fetch after migration - see SellerAccountRepository.
-                // refreshProfile()'s doc. Without this, that account can never be matched by a
-                // later add-account attempt that resolves to the same OLX user.
-                sellerAccountRepository.refreshProfile().exceptionOrNull()?.printStackTrace()
-                AppKey.GenerateAd
-            }
-
+            // The profile refresh runs after routing, in init.
+            SellerSessionMode.Authenticated,
             SellerSessionMode.Guest -> AppKey.GenerateAd
             SellerSessionMode.Unauthenticated -> AppKey.SellerLanding
         }
