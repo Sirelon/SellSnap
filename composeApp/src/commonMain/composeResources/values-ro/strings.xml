@@ -475,6 +475,7 @@
     <string name="messages_listing_fallback">Anunțul tău</string>
     <string name="messages_listing_deleted">Anunț șters</string>
     <string name="messages_thread_started">Început %1$s</string>
+    <string name="messages_select_conversation">Alege o conversație ca s-o citești aici</string>
     <string name="time_just_now">chiar acum</string>
     <plurals name="time_minutes_ago">
         <item quantity="one">acum %1$d minut</item>

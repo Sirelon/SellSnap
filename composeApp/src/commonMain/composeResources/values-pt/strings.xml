@@ -474,6 +474,7 @@
     <string name="messages_listing_fallback">O seu anúncio</string>
     <string name="messages_listing_deleted">Anúncio eliminado</string>
     <string name="messages_thread_started">Iniciada %1$s</string>
+    <string name="messages_select_conversation">Escolha uma conversa para a ler aqui</string>
     <string name="time_just_now">agora mesmo</string>
     <plurals name="time_minutes_ago">
         <item quantity="one">há %1$d min</item>

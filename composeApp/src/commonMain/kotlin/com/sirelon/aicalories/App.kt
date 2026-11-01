@@ -23,6 +23,8 @@ import androidx.compose.material3.adaptive.navigation.BackNavigationBehavior
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.VerticalDragHandle
+import androidx.compose.material3.adaptive.layout.PaneExpansionAnchor
+import androidx.compose.material3.adaptive.layout.rememberPaneExpansionState
 import androidx.compose.material3.adaptive.layout.PaneExpansionState
 import androidx.compose.material3.adaptive.layout.ThreePaneScaffoldScope
 import androidx.compose.material3.adaptive.navigation3.ListDetailSceneStrategy
@@ -318,10 +320,20 @@ fun App() {
                         )
                     }
                 }
+            // A drag snaps to one of these on release, so neither pane stays too narrow to read:
+            // the list keeps room for its thumbnail and title, the conversation for its header.
+            val paneExpansionState = rememberPaneExpansionState(
+                anchors = listOf(
+                    PaneExpansionAnchor.Offset.fromStart(320.dp),
+                    PaneExpansionAnchor.Proportion(0.5f),
+                    PaneExpansionAnchor.Offset.fromEnd(360.dp),
+                ),
+            )
             val listDetailStrategy = rememberListDetailSceneStrategy<AppKey>(
                 backNavigationBehavior = BackNavigationBehavior.PopLatest,
                 directive = paneDirective,
                 paneExpansionDragHandle = paneDragHandle,
+                paneExpansionState = paneExpansionState,
             )
             val sceneStrategies = remember(listDetailStrategy) {
                 listOf(

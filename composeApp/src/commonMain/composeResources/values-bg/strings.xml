@@ -474,6 +474,7 @@
     <string name="messages_listing_fallback">Твоята обява</string>
     <string name="messages_listing_deleted">Изтрита обява</string>
     <string name="messages_thread_started">Започнат %1$s</string>
+    <string name="messages_select_conversation">Избери разговор, за да го прочетеш тук</string>
     <string name="time_just_now">току-що</string>
     <plurals name="time_minutes_ago">
         <item quantity="one">преди %1$d мин</item>
