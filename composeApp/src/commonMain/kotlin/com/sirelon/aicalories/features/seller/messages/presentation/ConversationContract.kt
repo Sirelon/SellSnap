@@ -23,16 +23,21 @@ interface ConversationContract {
         val hasLoaded: Boolean = false,
         /** Set only while there are no messages to show; see [ConversationViewModel]. */
         val errorMessage: String? = null,
+        /** The thread's account needs a reconnect: nothing loads until it has one. */
+        val needsReconnect: Boolean = false,
+        val accountName: String? = null,
     )
 
     sealed interface Event {
         data object Shown : Event
         data object Hidden : Event
         data object RetryClicked : Event
+        data object ReconnectClicked : Event
     }
 
     sealed interface Effect {
-        /** The active account changed or lost its session: this conversation has nowhere to load from. */
+        /** The thread's account was disconnected: this conversation has nowhere to load from. */
         data object Close : Effect
+        data object Reconnect : Effect
     }
 }

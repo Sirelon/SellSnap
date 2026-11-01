@@ -87,7 +87,7 @@ class MessagesViewModelTest {
             viewModel.onEvent(Event.Shown)
             runCurrent()
 
-            val rows = viewModel.state.value.threads
+            val rows = viewModel.state.value.page.threads
             assertEquals(listOf(1L, 3L), rows.map { it.threadId })
             assertEquals("Placeholder advert 10", rows.first().title)
             assertEquals("https://example.invalid/10.jpg", rows.first().imageUrl)
@@ -126,7 +126,7 @@ class MessagesViewModelTest {
         viewModel.onEvent(Event.Shown)
         runCurrent()
 
-        assertEquals(listOf(1L, 2L), viewModel.state.value.threads.map { it.threadId })
+        assertEquals(listOf(1L, 2L), viewModel.state.value.page.threads.map { it.threadId })
         viewModel.onEvent(Event.Hidden)
     }
 
@@ -146,7 +146,7 @@ class MessagesViewModelTest {
         viewModel.onEvent(Event.Shown)
         runCurrent()
 
-        val state = viewModel.state.value
+        val state = viewModel.state.value.page
         assertEquals(listOf(1L), state.threads.map { it.threadId })
         assertNull(state.threads.single().title)
         assertNull(state.errorMessage)
@@ -164,7 +164,7 @@ class MessagesViewModelTest {
         runCurrent()
 
         // The message comes from compose-resources getString, which resolves off the test scheduler.
-        val state = viewModel.state.first { it.errorMessage != null }
+        val state = viewModel.state.first { it.selectedPage?.errorMessage != null }.page
         assertTrue(state.threads.isEmpty())
         val reported = harness.analytics.events.filter { it.first == AnalyticsEvents.ERROR_SHOWN }
         assertEquals("messages", reported.single().second["screen"])
@@ -183,7 +183,7 @@ class MessagesViewModelTest {
         viewModel.onEvent(Event.Shown)
         runCurrent()
 
-        assertTrue(viewModel.state.value.needsReconnect)
+        assertTrue(viewModel.state.value.page.needsReconnect)
         assertEquals(emptyList(), requests)
         viewModel.onEvent(Event.Hidden)
     }
@@ -217,20 +217,105 @@ class MessagesViewModelTest {
         assertEquals(2, threadCalls)
     }
 
+    // --- Several accounts -----------------------------------------------------------------------
+
     @Test
-    fun `switching the active account drops the old account's list and loads the new one`() = runTest(testDispatcher) {
-        val firstAccountGate = CompletableDeferred<Unit>()
+    fun `each account has its own page, the active one loads first and another loads when selected`() =
+        runTest(testDispatcher) {
+            val tokens = mutableListOf<String?>()
+            val engine = mockEngine(testDispatcher) {
+                addHandler { request ->
+                    val token = request.headers["Authorization"]
+                    when {
+                        !request.url.encodedPath.endsWith("/threads") -> respond(advertsJson(), HttpStatusCode.OK, jsonHeaders())
+                        token == "Bearer token-1" -> {
+                            tokens += token
+                            respond(threadsJson(threadJson(1, 10)), HttpStatusCode.OK, jsonHeaders())
+                        }
+                        else -> {
+                            tokens += token
+                            respond(threadsJson(threadJson(7, 70, interlocutorId = BuyerUserId)), HttpStatusCode.OK, jsonHeaders())
+                        }
+                    }
+                }
+            }
+            val (viewModel, harness) = viewModel(
+                engine,
+                listOf(testAccount(1), testAccount(2, olxUserId = 2)),
+                activeIndex = 2,
+            )
+
+            viewModel.onEvent(Event.Shown)
+            runCurrent()
+
+            val state = viewModel.state.value
+            assertEquals(listOf(1, 2), state.pages.map { it.localIndex })
+            assertEquals(2, state.selectedLocalIndex)
+            assertEquals(listOf(7L), state.page.threads.map { it.threadId })
+            assertFalse(state.pages.first().hasLoaded)
+            assertEquals(listOf<String?>("Bearer token-2"), tokens)
+
+            // Switching the active account elsewhere only moves the "Active" badge.
+            harness.accountRepository.setActiveAccount("ua", 1)
+            runCurrent()
+            assertEquals(2, viewModel.state.value.selectedLocalIndex)
+            assertEquals(listOf(true, false), viewModel.state.value.pages.map { it.isActiveAccount })
+
+            viewModel.onEvent(Event.PageSelected(1))
+            runCurrent()
+            assertEquals(listOf(1L), viewModel.state.value.page.threads.map { it.threadId })
+            assertEquals(listOf(7L), viewModel.state.value.pages.last().threads.map { it.threadId })
+            viewModel.onEvent(Event.Hidden)
+        }
+
+    @Test
+    fun `only the selected page polls, and selecting a loaded page refreshes it silently`() = runTest(testDispatcher) {
+        val calls = mutableMapOf<String?, Int>()
+        val engine = mockEngine(testDispatcher) {
+            addHandler { request ->
+                if (request.url.encodedPath.endsWith("/threads")) {
+                    val token = request.headers["Authorization"]
+                    calls[token] = (calls[token] ?: 0) + 1
+                    respond(threadsJson(threadJson(1, 10)), HttpStatusCode.OK, jsonHeaders())
+                } else {
+                    respond(advertsJson(10), HttpStatusCode.OK, jsonHeaders())
+                }
+            }
+        }
+        val (viewModel, _) = viewModel(engine, listOf(testAccount(1), testAccount(2, olxUserId = 2)), activeIndex = 1)
+
+        viewModel.onEvent(Event.Shown)
+        runCurrent()
+        advanceTimeBy(PollInterval + 1.seconds)
+        runCurrent()
+        assertEquals(mapOf<String?, Int>("Bearer token-1" to 2), calls)
+
+        viewModel.onEvent(Event.PageSelected(2))
+        runCurrent()
+        advanceTimeBy(PollInterval + 1.seconds)
+        runCurrent()
+        assertEquals(mapOf<String?, Int>("Bearer token-1" to 2, "Bearer token-2" to 2), calls)
+
+        viewModel.onEvent(Event.PageSelected(1))
+        assertFalse(viewModel.state.value.page.isLoading, "a loaded page refreshes without blanking")
+        runCurrent()
+        assertEquals(mapOf<String?, Int>("Bearer token-1" to 3, "Bearer token-2" to 2), calls)
+        viewModel.onEvent(Event.Hidden)
+    }
+
+    @Test
+    fun `a page that arrives after its account is disconnected is dropped`() = runTest(testDispatcher) {
+        val secondAccountGate = CompletableDeferred<Unit>()
         val engine = mockEngine(testDispatcher) {
             addHandler { request ->
                 val isFirstAccount = request.headers["Authorization"] == "Bearer token-1"
                 when {
-                    request.url.encodedPath.endsWith("/threads") && isFirstAccount -> {
-                        firstAccountGate.await()
-                        respond(threadsJson(threadJson(1, 10)), HttpStatusCode.OK, jsonHeaders())
+                    !request.url.encodedPath.endsWith("/threads") -> respond(advertsJson(), HttpStatusCode.OK, jsonHeaders())
+                    isFirstAccount -> respond(threadsJson(threadJson(1, 10, unread = 1)), HttpStatusCode.OK, jsonHeaders())
+                    else -> {
+                        secondAccountGate.await()
+                        respond(threadsJson(threadJson(7, 70, unread = 4)), HttpStatusCode.OK, jsonHeaders())
                     }
-                    request.url.encodedPath.endsWith("/threads") ->
-                        respond(threadsJson(threadJson(7, 70)), HttpStatusCode.OK, jsonHeaders())
-                    else -> respond(advertsJson(), HttpStatusCode.OK, jsonHeaders())
                 }
             }
         }
@@ -239,17 +324,64 @@ class MessagesViewModelTest {
             listOf(testAccount(1), testAccount(2, olxUserId = 2)),
             activeIndex = 1,
         )
-
         viewModel.onEvent(Event.Shown)
         runCurrent()
-        harness.accountRepository.setActiveAccount("ua", 2)
+        viewModel.onEvent(Event.PageSelected(2))
         runCurrent()
-        firstAccountGate.complete(Unit)
+        assertTrue(viewModel.state.value.page.isLoading)
+
+        harness.accountStore.disconnect(2)
+        runCurrent()
+        secondAccountGate.complete(Unit)
         runCurrent()
 
         val state = viewModel.state.value
-        assertEquals(2, state.localIndex)
-        assertEquals(listOf(7L), state.threads.map { it.threadId })
+        assertEquals(listOf(1), state.pages.map { it.localIndex })
+        assertEquals(1, state.selectedLocalIndex)
+        assertEquals(listOf(1L), state.page.threads.map { it.threadId })
+        assertEquals(1, harness.messagesRepository.unreadCount.value)
+        viewModel.onEvent(Event.Hidden)
+    }
+
+    @Test
+    fun `advert lookups belong to their account`() = runTest(testDispatcher) {
+        val lookupGate = CompletableDeferred<Unit>()
+        val engine = mockEngine(testDispatcher) {
+            addHandler { request ->
+                val path = request.url.encodedPath
+                val isFirstAccount = request.headers["Authorization"] == "Bearer token-1"
+                when {
+                    path.endsWith("/threads") && isFirstAccount ->
+                        respond(threadsJson(threadJson(1, 11)), HttpStatusCode.OK, jsonHeaders())
+                    path.endsWith("/threads") ->
+                        respond(threadsJson(threadJson(7, 11)), HttpStatusCode.OK, jsonHeaders())
+                    path.endsWith("/adverts/11") && isFirstAccount -> {
+                        lookupGate.await()
+                        respond(AdvertNotFoundJson, HttpStatusCode.NotFound, jsonHeaders())
+                    }
+                    path.endsWith("/adverts/11") ->
+                        respond(advertJson(11, status = "removed_by_user"), HttpStatusCode.OK, jsonHeaders())
+                    else -> respond(advertsJson(), HttpStatusCode.OK, jsonHeaders())
+                }
+            }
+        }
+        val (viewModel, _) = viewModel(
+            engine,
+            listOf(testAccount(1), testAccount(2, olxUserId = 2)),
+            activeIndex = 1,
+        )
+        viewModel.onEvent(Event.Shown)
+        runCurrent()
+        viewModel.onEvent(Event.PageSelected(2))
+        runCurrent()
+        lookupGate.complete(Unit)
+        runCurrent()
+
+        // The first account's 404 for advert 11 marks only its own row deleted.
+        val (first, second) = viewModel.state.value.pages.map { it.threads.single() }
+        assertTrue(first.isListingDeleted)
+        assertFalse(second.isListingDeleted)
+        assertEquals(AdvertStatus.RemovedByUser, second.status)
         viewModel.onEvent(Event.Hidden)
     }
 
@@ -268,13 +400,13 @@ class MessagesViewModelTest {
             viewModel.onEvent(Event.Shown)
             runCurrent()
             // 50 came back, 49 are shown: the buyer-side one does not count against "full".
-            assertEquals(49, viewModel.state.value.threads.size)
-            assertTrue(viewModel.state.value.canLoadMore)
+            assertEquals(49, viewModel.state.value.page.threads.size)
+            assertTrue(viewModel.state.value.page.canLoadMore)
 
             viewModel.onEvent(Event.LoadMoreClicked)
             runCurrent()
 
-            val state = viewModel.state.value
+            val state = viewModel.state.value.page
             assertEquals((1L..60L).filter { it != 3L && it != 55L }, state.threads.map { it.threadId })
             assertFalse(state.canLoadMore)
             assertFalse(state.isLoadingMore)
@@ -295,8 +427,8 @@ class MessagesViewModelTest {
 
             short.onEvent(Event.Shown)
             runCurrent()
-            assertEquals(3, short.state.value.threads.size)
-            assertFalse(short.state.value.canLoadMore)
+            assertEquals(3, short.state.value.page.threads.size)
+            assertFalse(short.state.value.page.canLoadMore)
             short.onEvent(Event.LoadMoreClicked)
             runCurrent()
             assertEquals(listOf<String?>("0"), offsets)
@@ -306,8 +438,8 @@ class MessagesViewModelTest {
             val (buyerOnly, _) = viewModel(buyerOnlyEngine, listOf(testAccount(1)), activeIndex = 1)
             buyerOnly.onEvent(Event.Shown)
             runCurrent()
-            assertTrue(buyerOnly.state.value.threads.isEmpty())
-            assertTrue(buyerOnly.state.value.canLoadMore)
+            assertTrue(buyerOnly.state.value.page.threads.isEmpty())
+            assertTrue(buyerOnly.state.value.page.canLoadMore)
             buyerOnly.onEvent(Event.Hidden)
         }
 
@@ -328,12 +460,12 @@ class MessagesViewModelTest {
         runCurrent()
         viewModel.onEvent(Event.LoadMoreClicked)
         runCurrent()
-        assertEquals(60, viewModel.state.value.threads.size)
+        assertEquals(60, viewModel.state.value.page.threads.size)
 
         advanceTimeBy(PollInterval + 1.seconds)
         runCurrent()
 
-        val state = viewModel.state.value
+        val state = viewModel.state.value.page
         // First page in OLX's new order, then what was loaded before and is not on it: 50, 51..60.
         assertEquals(listOf(100L) + (1L..60L).toList(), state.threads.map { it.threadId })
         assertFalse(state.canLoadMore, "the last page fetched was short, and the poll must not reset that")
@@ -351,51 +483,8 @@ class MessagesViewModelTest {
         advanceTimeBy(PollInterval + 1.seconds)
         runCurrent()
 
-        assertEquals(50, viewModel.state.value.threads.size)
-        assertTrue(viewModel.state.value.canLoadMore)
-        viewModel.onEvent(Event.Hidden)
-    }
-
-    @Test
-    fun `a page that arrives after an account switch is dropped`() = runTest(testDispatcher) {
-        val secondPageGate = CompletableDeferred<Unit>()
-        val engine = mockEngine(testDispatcher) {
-            addHandler { request ->
-                val isFirstAccount = request.headers["Authorization"] == "Bearer token-1"
-                val offset = request.url.parameters["offset"]
-                when {
-                    !request.url.encodedPath.endsWith("/threads") -> respond(advertsJson(), HttpStatusCode.OK, jsonHeaders())
-                    isFirstAccount && offset == "0" -> respond(page(1..50), HttpStatusCode.OK, jsonHeaders())
-                    isFirstAccount -> {
-                        secondPageGate.await()
-                        respond(page(51..60), HttpStatusCode.OK, jsonHeaders())
-                    }
-                    else -> respond(page(listOf(700L)), HttpStatusCode.OK, jsonHeaders())
-                }
-            }
-        }
-        val (viewModel, harness) = viewModel(
-            engine,
-            listOf(testAccount(1), testAccount(2, olxUserId = 2)),
-            activeIndex = 1,
-        )
-        viewModel.onEvent(Event.Shown)
-        runCurrent()
-        viewModel.onEvent(Event.LoadMoreClicked)
-        runCurrent()
-        assertTrue(viewModel.state.value.isLoadingMore)
-
-        harness.accountRepository.setActiveAccount("ua", 2)
-        runCurrent()
-        secondPageGate.complete(Unit)
-        runCurrent()
-
-        val state = viewModel.state.value
-        assertEquals(2, state.localIndex)
-        assertEquals(listOf(700L), state.threads.map { it.threadId })
-        assertFalse(state.canLoadMore)
-        assertFalse(state.isLoadingMore)
-        assertEquals(1, harness.messagesRepository.unreadCount.value)
+        assertEquals(50, viewModel.state.value.page.threads.size)
+        assertTrue(viewModel.state.value.page.canLoadMore)
         viewModel.onEvent(Event.Hidden)
     }
 
@@ -417,7 +506,7 @@ class MessagesViewModelTest {
         viewModel.onEvent(Event.LoadMoreClicked)
         runCurrent()
 
-        val state = viewModel.state.value
+        val state = viewModel.state.value.page
         assertEquals(50, state.threads.size)
         assertTrue(state.canLoadMore)
         assertFalse(state.isLoadingMore)
@@ -442,13 +531,14 @@ class MessagesViewModelTest {
         val (viewModel, _) = viewModel(engine, listOf(testAccount(1)), activeIndex = 1)
         viewModel.onEvent(Event.Shown)
         runCurrent()
-        val (withAdvert, withoutAdvert) = viewModel.state.value.threads
+        val (withAdvert, withoutAdvert) = viewModel.state.value.page.threads
 
-        viewModel.onEvent(Event.ThreadClicked(withAdvert))
-        viewModel.onEvent(Event.ThreadClicked(withoutAdvert))
+        viewModel.onEvent(Event.ThreadClicked(1, withAdvert))
+        viewModel.onEvent(Event.ThreadClicked(1, withoutAdvert))
 
         assertEquals(
             Effect.OpenThread(
+                localIndex = 1,
                 threadId = 1,
                 advertId = 10,
                 title = "Placeholder advert 10",
@@ -459,7 +549,7 @@ class MessagesViewModelTest {
             viewModel.effects.awaitEffect<Effect.OpenThread>(),
         )
         assertEquals(
-            Effect.OpenThread(2, 11, null, null, status = null, isListingDeleted = false),
+            Effect.OpenThread(1, 2, 11, null, null, status = null, isListingDeleted = false),
             viewModel.effects.awaitEffect<Effect.OpenThread>(),
         )
         viewModel.onEvent(Event.Hidden)
@@ -502,7 +592,7 @@ class MessagesViewModelTest {
         viewModel.onEvent(Event.Shown)
         runCurrent()
 
-        val rows = viewModel.state.value.threads
+        val rows = viewModel.state.value.page.threads
         assertEquals(adverts.map { statuses.getValue(it.second) }, rows.map { it.status })
         assertTrue(rows.none { it.isListingDeleted })
         viewModel.onEvent(Event.Hidden)
@@ -522,7 +612,7 @@ class MessagesViewModelTest {
 
             viewModel.onEvent(Event.Shown)
             runCurrent()
-            val (live, deleted) = viewModel.state.value.threads
+            val (live, deleted) = viewModel.state.value.page.threads
             assertEquals(AdvertStatus.Active, live.status)
             assertFalse(live.isListingDeleted)
             assertNull(deleted.status)
@@ -538,7 +628,7 @@ class MessagesViewModelTest {
             runCurrent()
 
             assertEquals(1, requests.count { it.endsWith("/adverts/11") })
-            assertTrue(viewModel.state.value.threads.last().isListingDeleted)
+            assertTrue(viewModel.state.value.page.threads.last().isListingDeleted)
             viewModel.onEvent(Event.Hidden)
         }
 
@@ -559,15 +649,15 @@ class MessagesViewModelTest {
         runCurrent()
 
         // The list is up while the lookup is still waiting.
-        val pending = viewModel.state.value.threads.last()
-        assertTrue(viewModel.state.value.hasLoaded)
+        val pending = viewModel.state.value.page.threads.last()
+        assertTrue(viewModel.state.value.page.hasLoaded)
         assertNull(pending.status)
         assertFalse(pending.isListingDeleted)
 
         gate.complete(Unit)
         runCurrent()
 
-        val found = viewModel.state.value.threads.last()
+        val found = viewModel.state.value.page.threads.last()
         assertEquals(AdvertStatus.Unpaid, found.status)
         assertEquals("Placeholder advert 11", found.title)
         assertFalse(found.isListingDeleted)
@@ -594,7 +684,7 @@ class MessagesViewModelTest {
 
             viewModel.onEvent(Event.Shown)
             runCurrent()
-            val unknown = viewModel.state.value.threads.last()
+            val unknown = viewModel.state.value.page.threads.last()
             assertNull(unknown.status)
             assertFalse(unknown.isListingDeleted)
             assertEquals(1, requests.count { it.endsWith("/adverts/11") })
@@ -610,7 +700,7 @@ class MessagesViewModelTest {
             runCurrent()
 
             assertEquals(2, requests.count { it.endsWith("/adverts/11") })
-            assertEquals(AdvertStatus.RemovedByUser, viewModel.state.value.threads.last().status)
+            assertEquals(AdvertStatus.RemovedByUser, viewModel.state.value.page.threads.last().status)
             viewModel.onEvent(Event.Hidden)
         }
 
@@ -641,7 +731,7 @@ class MessagesViewModelTest {
             }
             assertEquals(4, requests.count { it.endsWith("/threads") })
             assertEquals(1, requests.count { it.endsWith("/adverts") })
-            assertEquals("Placeholder advert 10", viewModel.state.value.threads.first().title)
+            assertEquals("Placeholder advert 10", viewModel.state.value.page.threads.first().title)
 
             viewModel.onEvent(Event.RefreshClicked)
             runCurrent()
@@ -653,49 +743,7 @@ class MessagesViewModelTest {
             viewModel.onEvent(Event.Hidden)
         }
 
-    @Test
-    fun `a lookup that lands after an account switch is discarded`() = runTest(testDispatcher) {
-        val lookupGate = CompletableDeferred<Unit>()
-        val engine = mockEngine(testDispatcher) {
-            addHandler { request ->
-                val path = request.url.encodedPath
-                val isFirstAccount = request.headers["Authorization"] == "Bearer token-1"
-                when {
-                    path.endsWith("/threads") && isFirstAccount ->
-                        respond(threadsJson(threadJson(1, 11)), HttpStatusCode.OK, jsonHeaders())
-                    path.endsWith("/threads") ->
-                        respond(threadsJson(threadJson(7, 11)), HttpStatusCode.OK, jsonHeaders())
-                    path.endsWith("/adverts/11") && isFirstAccount -> {
-                        lookupGate.await()
-                        respond(AdvertNotFoundJson, HttpStatusCode.NotFound, jsonHeaders())
-                    }
-                    path.endsWith("/adverts/11") ->
-                        respond(advertJson(11, status = "removed_by_user"), HttpStatusCode.OK, jsonHeaders())
-                    else -> respond(advertsJson(), HttpStatusCode.OK, jsonHeaders())
-                }
-            }
-        }
-        val (viewModel, harness) = viewModel(
-            engine,
-            listOf(testAccount(1), testAccount(2, olxUserId = 2)),
-            activeIndex = 1,
-        )
-        viewModel.onEvent(Event.Shown)
-        runCurrent()
-
-        harness.accountRepository.setActiveAccount("ua", 2)
-        runCurrent()
-        lookupGate.complete(Unit)
-        runCurrent()
-
-        // The first account's 404 for advert 11 must not mark the second account's row deleted,
-        // and the second account looked advert 11 up for itself.
-        val row = viewModel.state.value.threads.single()
-        assertEquals(7L, row.threadId)
-        assertFalse(row.isListingDeleted)
-        assertEquals(AdvertStatus.RemovedByUser, row.status)
-        viewModel.onEvent(Event.Hidden)
-    }
+    private val MessagesContract.State.page: MessagesContract.AccountPage get() = selectedPage!!
 
     /**
      * Two threads, on adverts 10 (on the adverts page, active) and 11 (not on it). [override]

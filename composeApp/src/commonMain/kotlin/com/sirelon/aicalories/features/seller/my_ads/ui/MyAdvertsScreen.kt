@@ -316,33 +316,40 @@ private fun AccountTabRow(
             Tab(
                 selected = index == selectedTabIndex,
                 onClick = { onPageSelected(page.localIndex) },
-                text = { AccountTabLabel(page = page) },
+                text = {
+                    AccountTabLabel(
+                        accountName = page.accountName,
+                        isActiveAccount = page.isActiveAccount,
+                        needsReconnect = page.needsReconnect,
+                    )
+                },
             )
         }
     }
 }
 
+/** An account's tab in a pager of accounts: its name, and badges for active and needs-reconnect. Messages reuses it. */
 @Composable
-private fun AccountTabLabel(page: AccountPage) {
+internal fun AccountTabLabel(accountName: String?, isActiveAccount: Boolean, needsReconnect: Boolean) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing.xs),
     ) {
         Text(
-            text = page.accountName.orAccountFallback(),
+            text = accountName.orAccountFallback(),
             style = AppTheme.typography.body,
-            color = if (page.needsReconnect) AppTheme.colors.error else AppTheme.colors.onSurface,
+            color = if (needsReconnect) AppTheme.colors.error else AppTheme.colors.onSurface,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
-        if (page.isActiveAccount) {
+        if (isActiveAccount) {
             Pill(
                 text = stringResource(Res.string.profile_account_active_badge),
                 iconResource = Res.drawable.ic_check,
                 color = AppTheme.colors.primary,
             )
         }
-        if (page.needsReconnect) {
+        if (needsReconnect) {
             ErrorPill(label = stringResource(Res.string.account_needs_reconnect_badge))
         }
     }

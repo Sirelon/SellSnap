@@ -33,6 +33,14 @@ Each one is checkable. Where you cannot show it was met, say so (rule 7).
     the spec file, fetched and opened and searched. A tool that answers in prose has already
     dropped whatever you did not know to ask about. Three fixes in a row were refused by OLX
     because each came from a paraphrase rather than from the schema. See OLX partner API.
+11. **Every feature works on every window size and for every connected account.** SellSnap runs
+    on phones, foldables, tablets and desktop, and a seller can connect several OLX accounts per
+    country (SIR-83). A plan for a new screen says how it lays out on a wide window — a list
+    whose rows open a detail uses list-detail panes (Messages is the reference) — and how it
+    behaves with two or more accounts: one page per account like My Ads, and every OLX call
+    carries the `localIndex` it acts for instead of assuming the active account. A ticket that
+    says "active account only" or says nothing about tablets is not an exemption; raise it
+    before building.
 
 Small fixes with obvious files: read the implementation and its immediate callers only,
 validate with the narrowest meaningful build or test command plus `git diff --check`, and skip
@@ -507,6 +515,10 @@ rejects violations, so read it before adding a class that maps a JSON response.
   `ConversationViewModel` poll in `while (true) { delay(PollInterval) }` after `Event.Shown`.
   If the test ends with that loop alive, `runTest` keeps draining virtual time forever, the test
   JVM runs out of memory and Gradle hangs with no failure. End every such test with `Event.Hidden`.
+- **A ViewModel restored after process death starts before the account store is hydrated.**
+  `accountsRecordFlow` first emits the empty default record, so a screen that closes itself when
+  "its" account is missing closed on every restore. Treat the account as gone only after the
+  store has loaded (`ConversationViewModel` is the pattern); never on the first emission.
 
 ### Ad lifecycle (post-publish actions)
 

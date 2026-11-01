@@ -21,20 +21,28 @@ internal fun OlxAccountsRecord.activeAccount(): OlxAccountRecord? {
     return accounts.find { it.localIndex == activeIndex && it.countryCode == country }
 }
 
+/** Every account connected in the current country, in the order My Ads lists them. */
+internal fun OlxAccountsRecord.countryAccounts(): List<OlxAccountRecord> {
+    val country = _currentOlxCountry.code
+    return accounts.filter { it.countryCode == country }.sortedBy { it.localIndex }
+}
+
 /**
- * Read-only buyer messages. Registered as a singleton because it also holds the unread total the
+ * Read-only buyer messages. Registered as a singleton because it also holds the unread counts the
  * Messages tab badge shows, which the list screen and the badge both write.
  */
 class MessagesRepository internal constructor(
     private val accountRepository: SellerAccountRepository,
     private val unauthenticatedOlxApiClient: OlxApiClient,
 ) {
+    /** Unread messages per account, by localIndex. */
+    private var unreadByAccount = emptyMap<Int, Int>()
     private val _unreadCount = MutableStateFlow(0)
 
     /**
-     * Unread messages across the seller-side threads the list screen has loaded (pages of
-     * [ThreadsPageSize], more as the seller asks for them), or the first page when only the badge
-     * has loaded. Threads on pages nobody has loaded are not counted.
+     * Unread messages summed across accounts. Per account: the seller-side threads the list screen
+     * has loaded (pages of [ThreadsPageSize], more as the seller asks for them), or the first page
+     * when only the badge has loaded. Threads on pages nobody has loaded are not counted.
      */
     val unreadCount: StateFlow<Int> = _unreadCount.asStateFlow()
 
@@ -46,7 +54,7 @@ class MessagesRepository internal constructor(
      * Threads where the account is the BUYER are dropped from every page: on those
      * `interlocutor_id` is the account's own user id (SIR-88, olx.ua). [ThreadsPage.canLoadMore]
      * is decided before that filter, from whether OLX returned a full page.
-     * Callers publish the unread total themselves with [publishUnread].
+     * Callers publish the account's unread total themselves with [publishUnread].
      */
     suspend fun loadThreads(localIndex: Int, page: Int = 0): ThreadsPage {
         val threads = accountRepository.withAccountToken(localIndex) { accessToken ->
@@ -70,10 +78,14 @@ class MessagesRepository internal constructor(
             unauthenticatedOlxApiClient.getThreadMessages(accessToken, threadId)
         }
 
-    fun publishUnread(count: Int) {
-        _unreadCount.value = count
+    fun publishUnread(localIndex: Int, count: Int) {
+        unreadByAccount = unreadByAccount + (localIndex to count)
+        _unreadCount.value = unreadByAccount.values.sum()
     }
 
-    /** For when there is no account to count for. */
-    fun clearUnread() = publishUnread(0)
+    /** Drops the counts of every account not in [localIndexes]: disconnected, or needing a reconnect. */
+    fun retainUnread(localIndexes: Set<Int>) {
+        unreadByAccount = unreadByAccount.filterKeys { it in localIndexes }
+        _unreadCount.value = unreadByAccount.values.sum()
+    }
 }

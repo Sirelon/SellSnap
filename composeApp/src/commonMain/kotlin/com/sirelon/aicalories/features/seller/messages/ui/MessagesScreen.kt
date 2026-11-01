@@ -1,6 +1,18 @@
 package com.sirelon.sellsnap.features.seller.messages.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.material3.PrimaryTabRow
+import androidx.compose.material3.Tab
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
+import com.sirelon.sellsnap.features.seller.messages.presentation.MessagesContract.AccountPage
+import com.sirelon.sellsnap.features.seller.my_ads.ui.AccountTabLabel
+import com.sirelon.sellsnap.generated.resources.messages_select_conversation
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -88,23 +100,19 @@ import kotlin.time.Clock
 
 @Composable
 fun MessagesScreenRoute(
-    onOpenThread: (
-        threadId: Long,
-        advertId: Long,
-        title: String?,
-        imageUrl: String?,
-        status: AdvertStatus?,
-        isListingDeleted: Boolean,
-    ) -> Unit,
+    onOpenThread: (MessagesContract.Effect.OpenThread) -> Unit,
     onConnectOlxClick: () -> Unit,
     onReconnectClick: () -> Unit,
+    /** The conversation shown beside the list on a wide window, highlighted there. */
+    selectedThreadId: Long?,
     modifier: Modifier = Modifier,
 ) {
     val viewModel: MessagesViewModel = koinViewModel()
     val state by viewModel.state.collectAsStateWithLifecycle()
 
-    // Polling runs only while this entry is on screen: a pushed conversation takes it out of
-    // composition (single-pane scene), which fires onStopOrDispose.
+    // Polling runs only while this entry is on screen: on a narrow window a pushed conversation
+    // takes it out of composition, which fires onStopOrDispose. Beside a conversation it keeps
+    // polling.
     LifecycleStartEffect(viewModel) {
         viewModel.onEvent(Event.Shown)
         onStopOrDispose { viewModel.onEvent(Event.Hidden) }
@@ -112,26 +120,19 @@ fun MessagesScreenRoute(
 
     ObserveAsEvents(viewModel.effects) { effect ->
         when (effect) {
-            is MessagesContract.Effect.OpenThread ->
-                onOpenThread(
-                    effect.threadId,
-                    effect.advertId,
-                    effect.title,
-                    effect.imageUrl,
-                    effect.status,
-                    effect.isListingDeleted,
-                )
+            is MessagesContract.Effect.OpenThread -> onOpenThread(effect)
             MessagesContract.Effect.ConnectOlx -> onConnectOlxClick()
             MessagesContract.Effect.Reconnect -> onReconnectClick()
         }
     }
 
-    MessagesScreen(state = state, onEvent = viewModel::onEvent, modifier = modifier)
+    MessagesScreen(state = state, selectedThreadId = selectedThreadId, onEvent = viewModel::onEvent, modifier = modifier)
 }
 
 @Composable
 private fun MessagesScreen(
     state: MessagesContract.State,
+    selectedThreadId: Long?,
     onEvent: (Event) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -141,7 +142,7 @@ private fun MessagesScreen(
             TopAppBar(
                 title = { Text(stringResource(Res.string.messages_screen_title)) },
                 actions = {
-                    if (state.localIndex != null && !state.needsReconnect) {
+                    if (state.selectedPage?.needsReconnect == false) {
                         IconButton(onClick = { onEvent(Event.RefreshClicked) }) {
                             Icon(painter = painterResource(Res.drawable.ic_refresh_cw), contentDescription = null)
                         }
@@ -161,65 +162,46 @@ private fun MessagesScreen(
                 onActionClick = { onEvent(Event.ConnectOlxClicked) },
             )
 
-            state.needsReconnect -> EmptyScreen(
-                modifier = contentModifier,
-                icon = Res.drawable.ic_circle_alert,
-                title = stringResource(Res.string.my_ads_reconnect_title),
-                description = stringResource(Res.string.my_ads_reconnect_description),
-                actionLabel = stringResource(
-                    Res.string.profile_reconnect_account_action,
-                    state.accountName?.takeIf { it.isNotBlank() }
-                        ?: stringResource(Res.string.my_ads_account_fallback_name),
-                ),
-                onActionClick = { onEvent(Event.ReconnectClicked) },
-            )
+            state.pages.size <= 1 -> state.pages.firstOrNull()?.let { page ->
+                AccountThreads(page = page, selectedThreadId = selectedThreadId, onEvent = onEvent, modifier = contentModifier)
+            }
 
-            state.errorMessage != null -> EmptyScreen(
-                modifier = contentModifier,
-                icon = Res.drawable.ic_circle_alert,
-                title = state.errorMessage,
-                description = "",
-                actionLabel = stringResource(Res.string.retry),
-                onActionClick = { onEvent(Event.RefreshClicked) },
-            )
+            else -> Column(modifier = contentModifier) {
+                AccountTabs(state = state, onEvent = onEvent)
 
-            // A full page of only buyer-side threads shows nothing but may be followed by more.
-            state.hasLoaded && state.threads.isEmpty() && !state.canLoadMore -> EmptyScreen(
-                modifier = contentModifier,
-                icon = Res.drawable.ic_message_circle,
-                title = stringResource(Res.string.messages_empty_title),
-                description = stringResource(Res.string.messages_empty_description),
-                actionLabel = null,
-            )
+                val initialPage = state.pages
+                    .indexOfFirst { it.localIndex == state.selectedLocalIndex }
+                    .coerceAtLeast(0)
+                val pagerState = rememberPagerState(initialPage = initialPage) { state.pages.size }
 
-            else -> PullToRefreshBox(
-                isRefreshing = state.isLoading && state.hasLoaded,
-                onRefresh = { onEvent(Event.RefreshClicked) },
-                modifier = contentModifier,
-            ) {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(AppDimens.Spacing.xl3),
-                    verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.xl3),
-                ) {
-                    items(items = state.threads, key = { it.threadId }) { row ->
-                        ThreadCard(row = row, onClick = { onEvent(Event.ThreadClicked(row)) })
-                    }
-                    if (state.canLoadMore) {
-                        item {
-                            AppButton(
-                                modifier = Modifier.fillMaxWidth().testTag("messages_load_more"),
-                                text = stringResource(Res.string.my_ads_load_more),
-                                onClick = { onEvent(Event.LoadMoreClicked) },
-                                enabled = !state.isLoadingMore,
-                                style = AppButtonDefaults.outline(),
-                            )
-                        }
+                // Same wiring as My Ads: the settled page selects its account, and a selection
+                // made elsewhere (a tab tap, a disconnected account) scrolls the pager.
+                val currentPages by rememberUpdatedState(state.pages)
+                LaunchedEffect(pagerState) {
+                    snapshotFlow { pagerState.settledPage }.collect { settledPage ->
+                        currentPages.getOrNull(settledPage)?.let { onEvent(Event.PageSelected(it.localIndex)) }
                     }
                 }
-                // Only the first load blanks the screen; a refresh has its own indicator.
-                if (state.isLoading && !state.hasLoaded) {
-                    LoadingOverlay(isLoading = true) {}
+                LaunchedEffect(state.selectedLocalIndex) {
+                    val targetPage = state.pages.indexOfFirst { it.localIndex == state.selectedLocalIndex }
+                    if (targetPage >= 0 && targetPage != pagerState.currentPage) {
+                        pagerState.animateScrollToPage(targetPage)
+                    }
+                }
+
+                HorizontalPager(
+                    state = pagerState,
+                    modifier = Modifier.fillMaxSize(),
+                    key = { pageIndex -> state.pages.getOrNull(pageIndex)?.localIndex ?: pageIndex },
+                ) { pageIndex ->
+                    state.pages.getOrNull(pageIndex)?.let { page ->
+                        AccountThreads(
+                            page = page,
+                            selectedThreadId = selectedThreadId,
+                            onEvent = onEvent,
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    }
                 }
             }
         }
@@ -227,12 +209,123 @@ private fun MessagesScreen(
 }
 
 @Composable
-private fun ThreadCard(row: ThreadRow, onClick: () -> Unit) {
+private fun AccountTabs(state: MessagesContract.State, onEvent: (Event) -> Unit) {
+    val selectedTabIndex = state.pages.indexOfFirst { it.localIndex == state.selectedLocalIndex }.coerceAtLeast(0)
+    PrimaryTabRow(selectedTabIndex = selectedTabIndex) {
+        state.pages.forEachIndexed { index, page ->
+            Tab(
+                modifier = Modifier.testTag("messages_account_tab"),
+                selected = index == selectedTabIndex,
+                onClick = { onEvent(Event.PageSelected(page.localIndex)) },
+                text = {
+                    AccountTabLabel(
+                        accountName = page.accountName,
+                        isActiveAccount = page.isActiveAccount,
+                        needsReconnect = page.needsReconnect,
+                    )
+                },
+            )
+        }
+    }
+}
+
+/** One account's threads, or why there are none. */
+@Composable
+private fun AccountThreads(
+    page: AccountPage,
+    selectedThreadId: Long?,
+    onEvent: (Event) -> Unit,
+    modifier: Modifier,
+) {
+    when {
+        page.needsReconnect -> EmptyScreen(
+            modifier = modifier,
+            icon = Res.drawable.ic_circle_alert,
+            title = stringResource(Res.string.my_ads_reconnect_title),
+            description = stringResource(Res.string.my_ads_reconnect_description),
+            actionLabel = stringResource(
+                Res.string.profile_reconnect_account_action,
+                page.accountName?.takeIf { it.isNotBlank() }
+                    ?: stringResource(Res.string.my_ads_account_fallback_name),
+            ),
+            onActionClick = { onEvent(Event.ReconnectClicked) },
+        )
+
+        page.errorMessage != null -> EmptyScreen(
+            modifier = modifier,
+            icon = Res.drawable.ic_circle_alert,
+            title = page.errorMessage,
+            description = "",
+            actionLabel = stringResource(Res.string.retry),
+            onActionClick = { onEvent(Event.RefreshClicked) },
+        )
+
+        // A full page of only buyer-side threads shows nothing but may be followed by more.
+        page.hasLoaded && page.threads.isEmpty() && !page.canLoadMore -> EmptyScreen(
+            modifier = modifier,
+            icon = Res.drawable.ic_message_circle,
+            title = stringResource(Res.string.messages_empty_title),
+            description = stringResource(Res.string.messages_empty_description),
+            actionLabel = null,
+        )
+
+        else -> PullToRefreshBox(
+            isRefreshing = page.isLoading && page.hasLoaded,
+            onRefresh = { onEvent(Event.RefreshClicked) },
+            modifier = modifier,
+        ) {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(AppDimens.Spacing.xl3),
+                verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.xl3),
+            ) {
+                items(items = page.threads, key = { it.threadId }) { row ->
+                    ThreadCard(
+                        row = row,
+                        isSelected = row.threadId == selectedThreadId,
+                        onClick = { onEvent(Event.ThreadClicked(page.localIndex, row)) },
+                    )
+                }
+                if (page.canLoadMore) {
+                    item {
+                        AppButton(
+                            modifier = Modifier.fillMaxWidth().testTag("messages_load_more"),
+                            text = stringResource(Res.string.my_ads_load_more),
+                            onClick = { onEvent(Event.LoadMoreClicked) },
+                            enabled = !page.isLoadingMore,
+                            style = AppButtonDefaults.outline(),
+                        )
+                    }
+                }
+            }
+            // Only the first load blanks the screen; a refresh has its own indicator.
+            if (page.isLoading && !page.hasLoaded) {
+                LoadingOverlay(isLoading = true) {}
+            }
+        }
+    }
+}
+
+/** The detail pane on a wide window while no conversation is open. */
+@Composable
+fun ConversationPlaceholder() {
+    EmptyScreen(
+        modifier = Modifier.fillMaxSize().testTag("messages_detail_placeholder"),
+        icon = Res.drawable.ic_message_circle,
+        title = stringResource(Res.string.messages_select_conversation),
+        description = "",
+        actionLabel = null,
+    )
+}
+
+@Composable
+private fun ThreadCard(row: ThreadRow, isSelected: Boolean, onClick: () -> Unit) {
     val isUnread = row.unreadCount > 0
     val dimmed = isListingDimmed(row.status, row.isListingDeleted)
     AppCard(
-        modifier = Modifier.fillMaxWidth().testTag("messages_thread_row"),
+        modifier = Modifier.fillMaxWidth().testTag("messages_thread_row").semantics { selected = isSelected },
         onClick = onClick,
+        containerColor = if (isSelected) AppTheme.colors.secondaryContainer else AppTheme.colors.surfaceLowest,
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(AppDimens.Spacing.xl4),

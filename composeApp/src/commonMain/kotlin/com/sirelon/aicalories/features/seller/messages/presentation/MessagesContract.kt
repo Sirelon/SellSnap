@@ -19,13 +19,14 @@ interface MessagesContract {
         val createdAt: String,
     )
 
+    /** One connected account's page in the pager, as in My Ads. Loads, pages and fails on its own. */
     @Immutable
-    data class State(
-        /** The active account being shown. Null when none is connected. */
-        val localIndex: Int? = null,
-        val accountName: String? = null,
-        val requiresOlxConnection: Boolean = false,
-        val needsReconnect: Boolean = false,
+    data class AccountPage(
+        val localIndex: Int,
+        val accountName: String?,
+        /** Drives the "Active" badge on the page's tab; viewing a page never changes the active account. */
+        val isActiveAccount: Boolean,
+        val needsReconnect: Boolean,
         val isLoading: Boolean = false,
         val hasLoaded: Boolean = false,
         val threads: List<ThreadRow> = emptyList(),
@@ -36,15 +37,31 @@ interface MessagesContract {
         val errorMessage: String? = null,
     )
 
+    @Immutable
+    data class State(
+        /** Every connected account of the current country. */
+        val pages: List<AccountPage> = emptyList(),
+        /** The page on screen; the only one that polls. */
+        val selectedLocalIndex: Int? = null,
+        /** No account is connected in the current country. */
+        val requiresOlxConnection: Boolean = false,
+    ) {
+        val selectedPage: AccountPage? get() = pages.find { it.localIndex == selectedLocalIndex }
+    }
+
     sealed interface Event {
         /** The screen is in the foreground: load now and keep polling. */
         data object Shown : Event
 
         /** The screen left the foreground: stop polling. */
         data object Hidden : Event
+        /** Refreshes the selected page. */
         data object RefreshClicked : Event
+
+        /** Loads the next page of threads of the selected page. */
         data object LoadMoreClicked : Event
-        data class ThreadClicked(val row: ThreadRow) : Event
+        data class PageSelected(val localIndex: Int) : Event
+        data class ThreadClicked(val localIndex: Int, val row: ThreadRow) : Event
         data object ConnectOlxClicked : Event
         data object ReconnectClicked : Event
     }
@@ -55,6 +72,8 @@ interface MessagesContract {
          * header has them before its own load.
          */
         data class OpenThread(
+            /** The account the thread belongs to. */
+            val localIndex: Int,
             val threadId: Long,
             val advertId: Long,
             val title: String?,

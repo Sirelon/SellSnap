@@ -6,6 +6,7 @@ import com.sirelon.sellsnap.analytics.reportShownError
 import com.sirelon.sellsnap.features.common.presentation.BaseViewModel
 import com.sirelon.sellsnap.features.seller.ad.publish_success.AdvertStatus
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountState
+import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountsRecord
 import com.sirelon.sellsnap.features.seller.auth.domain.shownErrorCause
 import com.sirelon.sellsnap.features.seller.messages.data.MessagesRepository
 import com.sirelon.sellsnap.features.seller.messages.data.activeAccount
@@ -20,9 +21,7 @@ import com.sirelon.sellsnap.generated.resources.conversation_load_failed
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.getString
@@ -30,11 +29,14 @@ import org.jetbrains.compose.resources.getString
 /**
  * One open conversation (read-only). [title], [imageUrl], [status] and [isListingDeleted] come
  * from the list row that opened it.
- * Loads the messages of [threadId] for the account that was active when it opened and closes
- * itself if that account changes or loses its session. As on the list, a failed load is shown
- * (and reported) only while there are no messages to show.
+ * Loads the messages of [threadId] with the token of the account at [keyLocalIndex] - or, for a
+ * key saved without one, the account that was active when it opened - whichever account is active
+ * now. It shows the reconnect state while that account needs one, and closes itself if that
+ * account is disconnected. As on the list, a failed load is shown (and reported) only while there
+ * are no messages to show.
  */
 class ConversationViewModel internal constructor(
+    keyLocalIndex: Int?,
     private val threadId: Long,
     private val advertId: Long,
     private val title: String?,
@@ -47,17 +49,18 @@ class ConversationViewModel internal constructor(
     private val analytics: Analytics,
 ) : BaseViewModel<State, Event, Effect>() {
 
-    private var localIndex: Int? = null
+    /** The thread's account. Null only while a key saved without one waits for an active account. */
+    private var localIndex: Int? = keyLocalIndex
     private var isShown = false
     private var pollJob: Job? = null
     private var listingRequested = false
+    private var accountSeen = false
+    private var closed = false
 
     init {
         accountRepository
             .accountsRecordFlow
-            .map { record -> record.activeAccount()?.takeIf { it.state != OlxAccountState.NeedsReconnect }?.localIndex }
-            .distinctUntilChanged()
-            .onEach(::onAccount)
+            .onEach(::onAccounts)
             .launchIn(viewModelScope)
     }
 
@@ -81,24 +84,35 @@ class ConversationViewModel internal constructor(
             }
 
             Event.RetryClicked -> localIndex?.let { index -> viewModelScope.launch { loadMessages(index, silent = false) } }
+            Event.ReconnectClicked -> postEffect(Effect.Reconnect)
         }
     }
 
-    private fun onAccount(activeIndex: Int?) {
-        val opened = localIndex
-        if (opened != null && opened != activeIndex) {
-            pollJob?.cancel()
-            postEffect(Effect.Close)
+    private fun onAccounts(record: OlxAccountsRecord) {
+        val index = localIndex ?: record.activeAccount()?.localIndex ?: return
+        val account = record.accounts.find { it.localIndex == index }
+        if (account == null) {
+            // Only an account seen before can disappear: a stack restored after process death
+            // opens before the account store has loaded, and sees no accounts at first.
+            if (accountSeen && !closed) {
+                pollJob?.cancel()
+                postEffect(Effect.Close)
+                closed = true
+            }
             return
         }
-        localIndex = activeIndex
-        startPolling()
+        accountSeen = true
+        localIndex = index
+        val needsReconnect = account.state == OlxAccountState.NeedsReconnect
+        val changed = needsReconnect != currentState().needsReconnect
+        setState { it.copy(needsReconnect = needsReconnect, accountName = account.profile?.name) }
+        if (needsReconnect) pollJob?.cancel() else if (changed || pollJob == null) startPolling()
     }
 
     private fun startPolling() {
         pollJob?.cancel()
         val index = localIndex ?: return
-        if (!isShown) return
+        if (!isShown || !accountSeen || currentState().needsReconnect) return
 
         loadListingOnce(index)
         pollJob = viewModelScope.launch {

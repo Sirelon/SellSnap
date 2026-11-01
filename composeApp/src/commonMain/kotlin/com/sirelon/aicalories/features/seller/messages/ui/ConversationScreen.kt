@@ -22,6 +22,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.adaptive.navigation3.LocalListDetailSceneScope
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -60,7 +61,11 @@ import com.sirelon.sellsnap.generated.resources.ic_circle_alert
 import com.sirelon.sellsnap.generated.resources.messages_buyer_label
 import com.sirelon.sellsnap.generated.resources.messages_listing_deleted
 import com.sirelon.sellsnap.generated.resources.messages_listing_fallback
+import com.sirelon.sellsnap.generated.resources.my_ads_account_fallback_name
 import com.sirelon.sellsnap.generated.resources.my_ads_price_not_set
+import com.sirelon.sellsnap.generated.resources.my_ads_reconnect_description
+import com.sirelon.sellsnap.generated.resources.my_ads_reconnect_title
+import com.sirelon.sellsnap.generated.resources.profile_reconnect_account_action
 import com.sirelon.sellsnap.generated.resources.retry
 import com.sirelon.sellsnap.platform.openUrl
 import kotlinx.datetime.TimeZone
@@ -72,6 +77,7 @@ import kotlin.time.Clock
 
 @Composable
 fun ConversationScreenRoute(
+    localIndex: Int?,
     threadId: Long,
     advertId: Long,
     title: String?,
@@ -79,10 +85,11 @@ fun ConversationScreenRoute(
     status: AdvertStatus?,
     isListingDeleted: Boolean,
     onBack: () -> Unit,
+    onReconnectClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val viewModel: ConversationViewModel = koinViewModel {
-        parametersOf(threadId, advertId, title, imageUrl, status, isListingDeleted)
+        parametersOf(localIndex, threadId, advertId, title, imageUrl, status, isListingDeleted)
     }
     val state by viewModel.state.collectAsStateWithLifecycle()
 
@@ -94,6 +101,7 @@ fun ConversationScreenRoute(
     ObserveAsEvents(viewModel.effects) { effect ->
         when (effect) {
             ConversationContract.Effect.Close -> onBack()
+            ConversationContract.Effect.Reconnect -> onReconnectClick()
         }
     }
 
@@ -107,17 +115,21 @@ private fun ConversationScreen(
     onEvent: (Event) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    // Beside the list on a wide window the list is the way back, so there is no back arrow.
+    val isBesideList = LocalListDetailSceneScope.current != null
     AppScaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(Res.string.messages_buyer_label)) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = Icons.Filled.ArrowBack,
-                            contentDescription = stringResource(Res.string.back),
-                        )
+                    if (!isBesideList) {
+                        IconButton(onClick = onBack) {
+                            Icon(
+                                imageVector = Icons.Filled.ArrowBack,
+                                contentDescription = stringResource(Res.string.back),
+                            )
+                        }
                     }
                 },
             )
@@ -148,7 +160,20 @@ private fun ConversationScreen(
             )
 
             Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
-                if (state.errorMessage != null) {
+                if (state.needsReconnect) {
+                    EmptyScreen(
+                        modifier = Modifier.fillMaxSize(),
+                        icon = Res.drawable.ic_circle_alert,
+                        title = stringResource(Res.string.my_ads_reconnect_title),
+                        description = stringResource(Res.string.my_ads_reconnect_description),
+                        actionLabel = stringResource(
+                            Res.string.profile_reconnect_account_action,
+                            state.accountName?.takeIf { it.isNotBlank() }
+                                ?: stringResource(Res.string.my_ads_account_fallback_name),
+                        ),
+                        onActionClick = { onEvent(Event.ReconnectClicked) },
+                    )
+                } else if (state.errorMessage != null) {
                     EmptyScreen(
                         modifier = Modifier.fillMaxSize(),
                         icon = Res.drawable.ic_circle_alert,

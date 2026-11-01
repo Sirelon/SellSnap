@@ -4,6 +4,8 @@ import com.sirelon.sellsnap.analytics.AnalyticsEvents
 import com.sirelon.sellsnap.features.common.presentation.awaitEffect
 import com.sirelon.sellsnap.features.seller.ad.publish_success.AdvertStatus
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountRecord
+import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountState
+import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountsRecord
 import com.sirelon.sellsnap.features.seller.messages.presentation.ConversationContract.Effect
 import com.sirelon.sellsnap.features.seller.messages.presentation.ConversationContract.Event
 import io.ktor.client.engine.mock.MockEngine
@@ -207,20 +209,108 @@ class ConversationViewModelTest {
     }
 
     @Test
-    fun `switching the active account closes the conversation`() = runTest(testDispatcher) {
-        val engine = mockEngine(testDispatcher) {
-            addHandler { respond(messagesJson(), HttpStatusCode.OK, jsonHeaders()) }
+    fun `the conversation reads with its own account's token and stays open when the active account changes`() =
+        runTest(testDispatcher) {
+            val tokens = mutableListOf<String?>()
+            val engine = mockEngine(testDispatcher) {
+                addHandler { request ->
+                    if (request.url.encodedPath.endsWith("/messages")) tokens += request.headers["Authorization"]
+                    respond(messagesJson(messageJson(1, "received", "Placeholder question")), HttpStatusCode.OK, jsonHeaders())
+                }
+            }
+            val (viewModel, harness) = viewModel(
+                engine,
+                accounts = listOf(testAccount(1), testAccount(2, olxUserId = 2)),
+                localIndex = 2,
+            )
+            viewModel.onEvent(Event.Shown)
+            runCurrent()
+
+            harness.accountRepository.setActiveAccount("ua", 2)
+            runCurrent()
+            harness.accountRepository.setActiveAccount("ua", 1)
+            runCurrent()
+            advanceTimeBy(PollInterval + 1.seconds)
+            runCurrent()
+
+            assertEquals(listOf<String?>("Bearer token-2", "Bearer token-2"), tokens)
+            assertEquals(1, viewModel.state.value.messages.size)
+            viewModel.onEvent(Event.Hidden)
         }
-        val (viewModel, harness) = viewModel(engine, accounts = listOf(testAccount(1), testAccount(2, olxUserId = 2)))
+
+    @Test
+    fun `a key saved without an account reads with the active one`() = runTest(testDispatcher) {
+        val tokens = mutableListOf<String?>()
+        val engine = mockEngine(testDispatcher) {
+            addHandler { request ->
+                if (request.url.encodedPath.endsWith("/messages")) tokens += request.headers["Authorization"]
+                respond(messagesJson(), HttpStatusCode.OK, jsonHeaders())
+            }
+        }
+        val (viewModel, _) = viewModel(
+            engine,
+            accounts = listOf(testAccount(1), testAccount(2, olxUserId = 2)),
+            localIndex = null,
+        )
         viewModel.onEvent(Event.Shown)
         runCurrent()
 
-        harness.accountRepository.setActiveAccount("ua", 2)
-        runCurrent()
-
-        viewModel.effects.awaitEffect<Effect.Close>()
+        assertEquals(listOf<String?>("Bearer token-1"), tokens)
         viewModel.onEvent(Event.Hidden)
     }
+
+    @Test
+    fun `a conversation restored before the accounts have loaded waits for them instead of closing`() =
+        runTest(testDispatcher) {
+            val tokens = mutableListOf<String?>()
+            val engine = mockEngine(testDispatcher) {
+                addHandler { request ->
+                    if (request.url.encodedPath.endsWith("/messages")) tokens += request.headers["Authorization"]
+                    respond(messagesJson(), HttpStatusCode.OK, jsonHeaders())
+                }
+            }
+            val (viewModel, harness) = viewModel(engine, accounts = emptyList(), localIndex = 2)
+            viewModel.onEvent(Event.Shown)
+            runCurrent()
+
+            harness.accountStore.write(
+                OlxAccountsRecord(
+                    accounts = listOf(testAccount(1), testAccount(2, olxUserId = 2)),
+                    activeByCountry = mapOf("ua" to 1),
+                    nextLocalIndex = 3,
+                ),
+            )
+            runCurrent()
+
+            assertEquals(listOf<String?>("Bearer token-2"), tokens)
+            assertTrue(viewModel.state.value.hasLoaded)
+            viewModel.onEvent(Event.Hidden)
+        }
+
+    @Test
+    fun `its account needing a reconnect shows the reconnect state, and disconnecting it closes the conversation`() =
+        runTest(testDispatcher) {
+            val requests = mutableListOf<String>()
+            val engine = mockEngine(testDispatcher) {
+                addHandler { request -> requests += request.url.encodedPath; respond(messagesJson(), HttpStatusCode.OK, jsonHeaders()) }
+            }
+            val (viewModel, harness) = viewModel(
+                engine,
+                accounts = listOf(testAccount(1), testAccount(2, olxUserId = 2, state = OlxAccountState.NeedsReconnect)),
+                localIndex = 2,
+            )
+            viewModel.onEvent(Event.Shown)
+            runCurrent()
+
+            assertTrue(viewModel.state.value.needsReconnect)
+            assertTrue(requests.none { it.endsWith("/messages") })
+
+            harness.accountStore.disconnect(2)
+            runCurrent()
+
+            viewModel.effects.awaitEffect<Effect.Close>()
+            viewModel.onEvent(Event.Hidden)
+        }
 
     @Test
     fun `the header starts from the list row's title and image, then the advert adds its own`() = runTest(testDispatcher) {
@@ -264,9 +354,11 @@ class ConversationViewModelTest {
         imageUrl: String? = null,
         status: AdvertStatus? = null,
         isListingDeleted: Boolean = false,
+        localIndex: Int? = 1,
     ): Pair<ConversationViewModel, MessagesHarness> {
         val harness = messagesHarness(engine, accounts, activeIndex = 1)
         val viewModel = ConversationViewModel(
+            keyLocalIndex = localIndex,
             threadId = 5,
             advertId = 10,
             title = title,

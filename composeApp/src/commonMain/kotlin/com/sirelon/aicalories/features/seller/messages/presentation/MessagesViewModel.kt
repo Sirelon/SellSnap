@@ -6,10 +6,12 @@ import com.sirelon.sellsnap.analytics.reportShownError
 import com.sirelon.sellsnap.features.common.presentation.BaseViewModel
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountState
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountsRecord
+import com.sirelon.sellsnap.features.seller.auth.data._currentOlxCountry
 import com.sirelon.sellsnap.features.seller.auth.domain.shownErrorCause
 import com.sirelon.sellsnap.features.seller.messages.data.MessagesRepository
-import com.sirelon.sellsnap.features.seller.messages.data.activeAccount
+import com.sirelon.sellsnap.features.seller.messages.data.countryAccounts
 import com.sirelon.sellsnap.features.seller.messages.domain.OlxThread
+import com.sirelon.sellsnap.features.seller.messages.presentation.MessagesContract.AccountPage
 import com.sirelon.sellsnap.features.seller.messages.presentation.MessagesContract.Effect
 import com.sirelon.sellsnap.features.seller.messages.presentation.MessagesContract.Event
 import com.sirelon.sellsnap.features.seller.messages.presentation.MessagesContract.State
@@ -35,17 +37,20 @@ internal val PollInterval = 30.seconds
 private const val AdvertsPageSize = 50
 
 /**
- * The Messages tab: the active account's buyer conversations (read-only).
+ * The Messages tab: the buyer conversations of every connected account of the current country,
+ * one page per account (read-only), as in My Ads.
  *
- * Results are tied to the account they were loaded for: a result that lands after the active
- * account changed is dropped. A failed load is shown (and reported) only while there is nothing
- * else to show; a refresh or poll that fails over an existing list leaves the list alone.
+ * Only the selected page polls; another page loads when it is first selected, and selecting a page
+ * that has loaded refreshes it silently. Results are tied to the account they were loaded for: a
+ * result that lands after that account was disconnected or reconnected is dropped. A failed load
+ * is shown (and reported) only while the page has nothing else to show; a refresh or poll that
+ * fails over an existing list leaves the list alone.
  *
- * Each row's listing comes from the first adverts page, joined by advert id. That page is read on
- * the first load, a manual refresh and a load more - never on a poll, which reuses it. An advert
- * that is not on the page is read on its own, once per id: a 404 means it was deleted (kept for
- * the life of the account), another failure leaves the row unknown until the next manual refresh.
- * A lookup never blocks the list and never runs on a poll's schedule of its own.
+ * Each row's listing comes from the account's first adverts page, joined by advert id. That page
+ * is read on the first load, a manual refresh and a load more - never on a poll, which reuses it.
+ * An advert that is not on the page is read on its own, once per id: a 404 means it was deleted
+ * (kept for the life of the page), another failure leaves the row unknown until the next manual
+ * refresh. A lookup never blocks the list and never runs on a poll's schedule of its own.
  */
 class MessagesViewModel internal constructor(
     private val repository: MessagesRepository,
@@ -56,23 +61,34 @@ class MessagesViewModel internal constructor(
 
     private var isShown = false
     private var pollJob: Job? = null
-    private var loadMoreJob: Job? = null
-    private var lookupJob: Job? = null
 
-    /** Pages of threads fetched for the current account, so the next one is [loadedPages]. */
-    private var loadedPages = 0
+    /** What each page knows beyond its rows, by localIndex. Replaced when the account reconnects. */
+    private val caches = HashMap<Int, AccountCache>()
 
-    /** The adverts page last read, by id. Null while none has been read successfully. */
-    private var advertsById: Map<Long, MyAdvertItem>? = null
+    private class AccountCache {
+        /** Pages of threads fetched, so the next one is [loadedPages]. */
+        var loadedPages = 0
 
-    /** An adverts page was requested for this account, whatever came back: polls do not ask again. */
-    private var advertsRequested = false
+        /** The adverts page last read, by id. Null while none has been read successfully. */
+        var advertsById: Map<Long, MyAdvertItem>? = null
 
-    /** Advert ids absent from [advertsById] and what `GET adverts/{id}` said about each. */
-    private val lookups = HashMap<Long, Lookup>()
+        /** An adverts page was requested, whatever came back: polls do not ask again. */
+        var advertsRequested = false
 
-    /** Ids whose lookup failed since the last manual refresh; polls do not retry them. */
-    private val failedLookups = HashSet<Long>()
+        /** Advert ids absent from [advertsById] and what `GET adverts/{id}` said about each. */
+        val lookups = HashMap<Long, Lookup>()
+
+        /** Ids whose lookup failed since the last manual refresh; polls do not retry them. */
+        val failedLookups = HashSet<Long>()
+
+        var lookupJob: Job? = null
+        var loadMoreJob: Job? = null
+
+        fun cancel() {
+            lookupJob?.cancel()
+            loadMoreJob?.cancel()
+        }
+    }
 
     private sealed interface Lookup {
         data class Found(val advert: MyAdvertItem) : Lookup
@@ -82,7 +98,7 @@ class MessagesViewModel internal constructor(
     init {
         accountRepository
             .accountsRecordFlow
-            .onEach(::syncAccount)
+            .onEach(::syncPages)
             .launchIn(viewModelScope)
     }
 
@@ -100,14 +116,17 @@ class MessagesViewModel internal constructor(
                 pollJob?.cancel()
             }
 
-            Event.RefreshClicked -> currentState().localIndex?.let { index ->
-                viewModelScope.launch { load(index, page = 0, silent = false, refresh = true) }
+            Event.RefreshClicked -> currentState().selectedPage?.takeIf { !it.needsReconnect }?.let { page ->
+                viewModelScope.launch { load(page.localIndex, page = 0, silent = false, refresh = true) }
             }
 
             Event.LoadMoreClicked -> loadMore()
 
+            is Event.PageSelected -> selectPage(event.localIndex)
+
             is Event.ThreadClicked -> postEffect(
                 Effect.OpenThread(
+                    localIndex = event.localIndex,
                     threadId = event.row.threadId,
                     advertId = event.row.advertId,
                     title = event.row.title,
@@ -121,42 +140,57 @@ class MessagesViewModel internal constructor(
         }
     }
 
-    private fun syncAccount(record: OlxAccountsRecord) {
-        val account = record.activeAccount()
-        val localIndex = account?.localIndex
-        val needsReconnect = account?.state == OlxAccountState.NeedsReconnect
+    private fun syncPages(record: OlxAccountsRecord) {
+        val activeIndex = record.activeByCountry[_currentOlxCountry.code]
         val previous = currentState()
-        // A reconnected account starts over too: its list was never loaded.
-        val restart = previous.localIndex != localIndex || (previous.needsReconnect && !needsReconnect)
-        if (restart) {
-            loadedPages = 0
-            loadMoreJob?.cancel()
-            lookupJob?.cancel()
-            advertsById = null
-            advertsRequested = false
-            lookups.clear()
-            failedLookups.clear()
-        }
+        val existingByIndex = previous.pages.associateBy { it.localIndex }
 
-        setState {
-            (if (restart) State() else it).copy(
-                localIndex = localIndex,
-                accountName = account?.profile?.name,
-                requiresOlxConnection = account == null,
+        val pages = record.countryAccounts().map { account ->
+            val needsReconnect = account.state == OlxAccountState.NeedsReconnect
+            val existing = existingByIndex[account.localIndex]
+            // A reconnected account starts over: its list was never loaded with the new session.
+            val restart = existing == null || (existing.needsReconnect && !needsReconnect)
+            if (restart) caches.remove(account.localIndex)?.cancel()
+            val page = existing?.takeUnless { restart }
+                ?: AccountPage(localIndex = account.localIndex, accountName = null, isActiveAccount = false, needsReconnect = false)
+            page.copy(
+                accountName = account.profile?.name,
+                isActiveAccount = account.localIndex == activeIndex,
                 needsReconnect = needsReconnect,
             )
         }
-        if (restart) startPolling() else if (needsReconnect) pollJob?.cancel()
+        val listed = pages.mapTo(HashSet()) { it.localIndex }
+        caches.keys.filter { it !in listed }.forEach { caches.remove(it)?.cancel() }
+
+        // Keep the seller's page unless it vanished; an active-account switch elsewhere must not
+        // move it.
+        val selected = previous.selectedLocalIndex?.takeIf { it in listed }
+            ?: activeIndex?.takeIf { it in listed }
+            ?: pages.firstOrNull()?.localIndex
+
+        setState { it.copy(pages = pages, selectedLocalIndex = selected, requiresOlxConnection = pages.isEmpty()) }
+
+        // Another page on screen, or the one on screen lost or regained its session.
+        val before = previous.selectedPage
+        val after = currentState().selectedPage
+        if (before?.localIndex != after?.localIndex || before?.needsReconnect != after?.needsReconnect) startPolling()
+    }
+
+    private fun selectPage(localIndex: Int) {
+        val current = currentState()
+        if (current.selectedLocalIndex == localIndex || current.pages.none { it.localIndex == localIndex }) return
+        setState { it.copy(selectedLocalIndex = localIndex) }
+        startPolling()
     }
 
     private fun startPolling() {
         pollJob?.cancel()
-        val state = currentState()
-        val localIndex = state.localIndex ?: return
-        if (!isShown || state.needsReconnect) return
+        val page = currentState().selectedPage ?: return
+        if (!isShown || page.needsReconnect) return
 
+        val localIndex = page.localIndex
         pollJob = viewModelScope.launch {
-            load(localIndex, page = 0, silent = state.hasLoaded)
+            load(localIndex, page = 0, silent = page.hasLoaded)
             while (true) {
                 delay(PollInterval)
                 load(localIndex, page = 0, silent = true)
@@ -165,29 +199,34 @@ class MessagesViewModel internal constructor(
     }
 
     private fun loadMore() {
-        val state = currentState()
-        val localIndex = state.localIndex ?: return
-        if (!state.canLoadMore || state.isLoadingMore || state.isLoading) return
-        loadMoreJob = viewModelScope.launch { load(localIndex, page = loadedPages, silent = true) }
+        val page = currentState().selectedPage ?: return
+        if (!page.canLoadMore || page.isLoadingMore || page.isLoading) return
+        val cache = cacheFor(page.localIndex)
+        cache.loadMoreJob = viewModelScope.launch {
+            load(page.localIndex, page = cache.loadedPages, silent = true)
+        }
     }
 
+    private fun cacheFor(localIndex: Int): AccountCache = caches.getOrPut(localIndex) { AccountCache() }
+
     /**
-     * Loads [page] of the threads and merges it into the list by thread id. Page 0 (a refresh or
-     * a poll) replaces the first page and keeps whatever later pages are already loaded; a later
-     * page is appended.
+     * Loads [page] of an account's threads and merges it into that page by thread id. Page 0 (a
+     * refresh or a poll) replaces the first page and keeps whatever later pages are already
+     * loaded; a later page is appended.
      *
      * The adverts page is read only on the first load, on a [refresh] and with a later page; a
      * poll joins against the page already read.
      */
     private suspend fun load(localIndex: Int, page: Int, silent: Boolean, refresh: Boolean = false) {
+        val cache = cacheFor(localIndex)
         val isMore = page > 0
         if (isMore) {
-            setState { it.copy(isLoadingMore = true) }
+            setState { it.updatePage(localIndex) { p -> p.copy(isLoadingMore = true) } }
         } else if (!silent) {
-            setState { it.copy(isLoading = true, errorMessage = null) }
+            setState { it.updatePage(localIndex) { p -> p.copy(isLoading = true, errorMessage = null) } }
         }
 
-        val fetchAdverts = refresh || isMore || !advertsRequested
+        val fetchAdverts = refresh || isMore || !cache.advertsRequested
         val loaded = try {
             val threadsPage = repository.loadThreads(localIndex, page)
             // The listing join must not fail the list: without adverts a row just loses its title
@@ -208,44 +247,48 @@ class MessagesViewModel internal constructor(
         } catch (error: CancellationException) {
             throw error
         } catch (error: Exception) {
-            handleFailure(localIndex, error, isMore)
+            handleFailure(localIndex, cache, error, isMore)
             return
         }
 
-        if (currentState().localIndex != localIndex) return
+        if (caches[localIndex] !== cache) return
         val (rows, canLoadMore, adverts) = loaded
         if (fetchAdverts) {
-            advertsRequested = true
+            cache.advertsRequested = true
             // A failed read keeps the page already held rather than blanking every row.
-            if (adverts != null) advertsById = adverts
+            if (adverts != null) cache.advertsById = adverts
         }
         if (refresh) {
-            lookups.values.removeAll { it is Lookup.Found }
-            failedLookups.clear()
+            cache.lookups.values.removeAll { it is Lookup.Found }
+            cache.failedLookups.clear()
         }
-        loadedPages = maxOf(loadedPages, page + 1)
+        cache.loadedPages = maxOf(cache.loadedPages, page + 1)
         setState { state ->
-            val known = state.threads.mapTo(HashSet()) { it.threadId }
-            val fresh = rows.mapTo(HashSet()) { it.threadId }
-            state.copy(
-                isLoading = state.isLoading && isMore,
-                isLoadingMore = state.isLoadingMore && !isMore,
-                hasLoaded = true,
-                threads = (
-                    if (isMore) {
-                        state.threads + rows.filter { it.threadId !in known }
-                    } else {
-                        rows + state.threads.filter { it.threadId !in fresh }
-                    }
-                    ).map { it.withListing() },
-                // A refresh only knows about the first page; once more are loaded, the last one
-                // fetched decides.
-                canLoadMore = if (isMore || loadedPages == 1) canLoadMore else state.canLoadMore,
-                errorMessage = null,
-            )
+            state.updatePage(localIndex) { p ->
+                val known = p.threads.mapTo(HashSet()) { it.threadId }
+                val fresh = rows.mapTo(HashSet()) { it.threadId }
+                p.copy(
+                    isLoading = p.isLoading && isMore,
+                    isLoadingMore = p.isLoadingMore && !isMore,
+                    hasLoaded = true,
+                    threads = (
+                        if (isMore) {
+                            p.threads + rows.filter { it.threadId !in known }
+                        } else {
+                            rows + p.threads.filter { it.threadId !in fresh }
+                        }
+                        ).map { it.withListing(cache) },
+                    // A refresh only knows about the first page; once more are loaded, the last
+                    // one fetched decides.
+                    canLoadMore = if (isMore || cache.loadedPages == 1) canLoadMore else p.canLoadMore,
+                    errorMessage = null,
+                )
+            }
         }
-        repository.publishUnread(currentState().threads.sumOf { it.unreadCount })
-        lookUpMissingAdverts(localIndex)
+        currentState().pages.find { it.localIndex == localIndex }?.let { p ->
+            repository.publishUnread(localIndex, p.threads.sumOf { it.unreadCount })
+        }
+        lookUpMissingAdverts(localIndex, cache)
     }
 
     private fun threadRow(thread: OlxThread) = ThreadRow(
@@ -260,8 +303,8 @@ class MessagesViewModel internal constructor(
     )
 
     /** The adverts page wins over a lookup: it is the fresher of the two. */
-    private fun ThreadRow.withListing(): ThreadRow {
-        val advert = advertsById?.get(advertId) ?: (lookups[advertId] as? Lookup.Found)?.advert
+    private fun ThreadRow.withListing(cache: AccountCache): ThreadRow {
+        val advert = cache.advertsById?.get(advertId) ?: (cache.lookups[advertId] as? Lookup.Found)?.advert
         return when {
             advert != null -> copy(
                 title = advert.title.takeIf(String::isNotBlank),
@@ -270,7 +313,7 @@ class MessagesViewModel internal constructor(
                 isListingDeleted = false,
             )
 
-            lookups[advertId] is Lookup.Deleted -> copy(
+            cache.lookups[advertId] is Lookup.Deleted -> copy(
                 title = null,
                 imageUrl = null,
                 status = null,
@@ -282,51 +325,57 @@ class MessagesViewModel internal constructor(
     }
 
     /**
-     * Advert ids shown in the list that are neither on the adverts page nor looked up yet. Empty
+     * Advert ids shown on the page that are neither on its adverts page nor looked up yet. Empty
      * while no adverts page has been read: with nothing to compare against, every row would look
      * missing.
      */
-    private fun missingAdvertIds(): List<Long> {
-        val page = advertsById ?: return emptyList()
-        return currentState().threads
+    private fun missingAdvertIds(localIndex: Int, cache: AccountCache): List<Long> {
+        val advertsPage = cache.advertsById ?: return emptyList()
+        val page = currentState().pages.find { it.localIndex == localIndex } ?: return emptyList()
+        return page.threads
             .map { it.advertId }
             .distinct()
-            .filter { it !in page && it !in lookups && it !in failedLookups }
+            .filter { it !in advertsPage && it !in cache.lookups && it !in cache.failedLookups }
     }
 
     /**
      * One `GET adverts/{id}` per missing advert, one after another, patching the rows as each
-     * answer lands. A single coroutine drains the list; a load that finds it running adds nothing,
-     * because the loop re-reads what is missing before each request.
+     * answer lands. A single coroutine per account drains the list; a load that finds it running
+     * adds nothing, because the loop re-reads what is missing before each request.
      */
-    private fun lookUpMissingAdverts(localIndex: Int) {
-        if (lookupJob?.isActive == true || missingAdvertIds().isEmpty()) return
-        lookupJob = viewModelScope.launch {
+    private fun lookUpMissingAdverts(localIndex: Int, cache: AccountCache) {
+        if (cache.lookupJob?.isActive == true || missingAdvertIds(localIndex, cache).isEmpty()) return
+        cache.lookupJob = viewModelScope.launch {
             while (true) {
-                val advertId = missingAdvertIds().firstOrNull() ?: break
+                val advertId = missingAdvertIds(localIndex, cache).firstOrNull() ?: break
                 val advert = try {
                     myAdvertsRepository.loadAdvertOrNull(localIndex, advertId)
                 } catch (error: CancellationException) {
                     throw error
                 } catch (_: Exception) {
-                    if (currentState().localIndex != localIndex) return@launch
-                    failedLookups += advertId
+                    if (caches[localIndex] !== cache) return@launch
+                    cache.failedLookups += advertId
                     continue
                 }
-                if (currentState().localIndex != localIndex) return@launch
-                lookups[advertId] = if (advert == null) Lookup.Deleted else Lookup.Found(advert)
-                setState { state -> state.copy(threads = state.threads.map { it.withListing() }) }
+                if (caches[localIndex] !== cache) return@launch
+                cache.lookups[advertId] = if (advert == null) Lookup.Deleted else Lookup.Found(advert)
+                setState { state ->
+                    state.updatePage(localIndex) { p -> p.copy(threads = p.threads.map { it.withListing(cache) }) }
+                }
             }
         }
     }
 
-    private suspend fun handleFailure(localIndex: Int, error: Throwable, isMore: Boolean) {
-        if (currentState().localIndex != localIndex) return
-        // syncAccount already reflects NeedsReconnect from the account store; just stop spinning.
+    private suspend fun handleFailure(localIndex: Int, cache: AccountCache, error: Throwable, isMore: Boolean) {
+        if (caches[localIndex] !== cache) return
+        val page = currentState().pages.find { it.localIndex == localIndex } ?: return
+        // syncPages already reflects NeedsReconnect from the account store; just stop spinning.
         // A failed "load more" leaves the button to press again.
-        if (error is AccountNeedsReconnect || currentState().threads.isNotEmpty()) {
+        if (error is AccountNeedsReconnect || page.threads.isNotEmpty()) {
             setState {
-                if (isMore) it.copy(isLoadingMore = false) else it.copy(isLoading = false)
+                it.updatePage(localIndex) { p ->
+                    if (isMore) p.copy(isLoadingMore = false) else p.copy(isLoading = false)
+                }
             }
             return
         }
@@ -336,6 +385,12 @@ class MessagesViewModel internal constructor(
             throwable = error,
         )
         val message = getString(Res.string.messages_load_failed)
-        setState { it.copy(isLoading = false, hasLoaded = true, errorMessage = message) }
+        if (caches[localIndex] !== cache) return
+        setState {
+            it.updatePage(localIndex) { p -> p.copy(isLoading = false, hasLoaded = true, errorMessage = message) }
+        }
     }
 }
+
+private fun State.updatePage(localIndex: Int, transform: (AccountPage) -> AccountPage): State =
+    copy(pages = pages.map { if (it.localIndex == localIndex) transform(it) else it })

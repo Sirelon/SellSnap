@@ -114,6 +114,8 @@ sealed interface AppKey : NavKey, AnalyticsScreen {
         val imageUrl: String? = null,
         val status: AdvertStatus? = null,
         val isListingDeleted: Boolean = false,
+        /** The account the thread belongs to. Null in keys saved before accounts were carried: the active account. */
+        val localIndex: Int? = null,
     ) : AppKey {
         override val screenName = "Conversation"
     }

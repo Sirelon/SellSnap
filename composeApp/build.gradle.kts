@@ -172,6 +172,7 @@ kotlin {
             implementation(libs.compose.preview)
             implementation(libs.material3)
             implementation(libs.material3.adaptive)
+            implementation(libs.material3.adaptive.navigation3)
             implementation(libs.material3.adaptive.navigation.suite)
             implementation(libs.material.icons.extended)
 
