@@ -467,4 +467,37 @@
     <string name="advert_edit_price_label">Ціна</string>
     <string name="advert_edit_save">Надіслати на OLX</string>
     <string name="advert_edit_load_failed">Не вдалося завантажити це оголошення з OLX.</string>
+
+    <!-- Buyer messages -->
+    <string name="messages_screen_title">Повідомлення</string>
+    <string name="messages_buyer_label">Покупець</string>
+    <string name="messages_empty_title">Повідомлень поки немає</string>
+    <string name="messages_empty_description">Про ваші оголошення ще ніхто не писав. Повідомлення від покупців з'являться тут.</string>
+    <string name="messages_connect_title">Підключіть OLX, щоб бачити повідомлення</string>
+    <string name="messages_connect_description">Повідомлення від покупців щодо ваших оголошень на OLX з'являться тут після підключення акаунта.</string>
+    <string name="messages_load_failed">Не вдалося завантажити повідомлення.</string>
+    <string name="messages_listing_fallback">Ваше оголошення</string>
+    <string name="messages_thread_started">Розпочато %1$s</string>
+    <string name="time_just_now">щойно</string>
+    <plurals name="time_minutes_ago">
+        <item quantity="one">%1$d хв тому</item>
+        <item quantity="few">%1$d хв тому</item>
+        <item quantity="many">%1$d хв тому</item>
+        <item quantity="other">%1$d хв тому</item>
+    </plurals>
+    <plurals name="time_hours_ago">
+        <item quantity="one">%1$d год тому</item>
+        <item quantity="few">%1$d год тому</item>
+        <item quantity="many">%1$d год тому</item>
+        <item quantity="other">%1$d год тому</item>
+    </plurals>
+    <string name="time_yesterday">вчора</string>
+    <plurals name="time_days_ago">
+        <item quantity="one">%1$d день тому</item>
+        <item quantity="few">%1$d дні тому</item>
+        <item quantity="many">%1$d днів тому</item>
+        <item quantity="other">%1$d дня тому</item>
+    </plurals>
+    <string name="conversation_load_failed">Не вдалося завантажити цю розмову.</string>
+    <string name="conversation_reply_on_olx">Відповісти на OLX</string>
 </resources>

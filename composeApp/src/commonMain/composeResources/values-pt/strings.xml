@@ -462,4 +462,31 @@
     <string name="advert_edit_price_label">Preço</string>
     <string name="advert_edit_save">Enviar para o OLX</string>
     <string name="advert_edit_load_failed">Não foi possível carregar este anúncio do OLX.</string>
+
+    <!-- Buyer messages -->
+    <string name="messages_screen_title">Mensagens</string>
+    <string name="messages_buyer_label">Comprador</string>
+    <string name="messages_empty_title">Ainda sem mensagens</string>
+    <string name="messages_empty_description">Ninguém escreveu sobre os seus anúncios ainda. As mensagens dos compradores vão aparecer aqui.</string>
+    <string name="messages_connect_title">Ligue o OLX para ver as suas mensagens</string>
+    <string name="messages_connect_description">As mensagens dos compradores sobre os seus anúncios no OLX vão aparecer aqui depois de ligar uma conta.</string>
+    <string name="messages_load_failed">Não foi possível carregar as mensagens.</string>
+    <string name="messages_listing_fallback">O seu anúncio</string>
+    <string name="messages_thread_started">Iniciada %1$s</string>
+    <string name="time_just_now">agora mesmo</string>
+    <plurals name="time_minutes_ago">
+        <item quantity="one">há %1$d min</item>
+        <item quantity="other">há %1$d min</item>
+    </plurals>
+    <plurals name="time_hours_ago">
+        <item quantity="one">há %1$d h</item>
+        <item quantity="other">há %1$d h</item>
+    </plurals>
+    <string name="time_yesterday">ontem</string>
+    <plurals name="time_days_ago">
+        <item quantity="one">há %1$d dia</item>
+        <item quantity="other">há %1$d dias</item>
+    </plurals>
+    <string name="conversation_load_failed">Não foi possível carregar esta conversa.</string>
+    <string name="conversation_reply_on_olx">Responder no OLX</string>
 </resources>

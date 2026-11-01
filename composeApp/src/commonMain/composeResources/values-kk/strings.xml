@@ -462,4 +462,31 @@
     <string name="advert_edit_price_label">Баға</string>
     <string name="advert_edit_save">OLX-ке жіберу</string>
     <string name="advert_edit_load_failed">Бұл хабарландыруды OLX-тен жүктей алмадық.</string>
+
+    <!-- Buyer messages -->
+    <string name="messages_screen_title">Хабарламалар</string>
+    <string name="messages_buyer_label">Сатып алушы</string>
+    <string name="messages_empty_title">Хабарламалар әзірге жоқ</string>
+    <string name="messages_empty_description">Хабарландыруларың туралы әлі ешкім жазған жоқ. Сатып алушылардың хабарламалары осы жерде шығады.</string>
+    <string name="messages_connect_title">Хабарламаларды көру үшін OLX қос</string>
+    <string name="messages_connect_description">OLX-тегі хабарландыруларың бойынша сатып алушылардың хабарламалары аккаунтты қосқаннан кейін осы жерде көрінеді.</string>
+    <string name="messages_load_failed">Хабарламаларды жүктей алмадық.</string>
+    <string name="messages_listing_fallback">Сенің хабарландыруың</string>
+    <string name="messages_thread_started">Басталды: %1$s</string>
+    <string name="time_just_now">дәл қазір</string>
+    <plurals name="time_minutes_ago">
+        <item quantity="one">%1$d мин бұрын</item>
+        <item quantity="other">%1$d мин бұрын</item>
+    </plurals>
+    <plurals name="time_hours_ago">
+        <item quantity="one">%1$d сағ бұрын</item>
+        <item quantity="other">%1$d сағ бұрын</item>
+    </plurals>
+    <string name="time_yesterday">кеше</string>
+    <plurals name="time_days_ago">
+        <item quantity="one">%1$d күн бұрын</item>
+        <item quantity="other">%1$d күн бұрын</item>
+    </plurals>
+    <string name="conversation_load_failed">Бұл әңгімені жүктей алмадық.</string>
+    <string name="conversation_reply_on_olx">OLX-те жауап беру</string>
 </resources>
