@@ -474,6 +474,21 @@
     <string name="messages_connect_description">Buyer messages for your OLX listings will appear here after you connect an account.</string>
     <string name="messages_load_failed">Couldn't load messages.</string>
     <string name="messages_listing_fallback">Your listing</string>
+    <string name="messages_thread_started">Started %1$s</string>
+    <string name="time_just_now">Just now</string>
+    <plurals name="time_minutes_ago">
+        <item quantity="one">%1$d min ago</item>
+        <item quantity="other">%1$d min ago</item>
+    </plurals>
+    <plurals name="time_hours_ago">
+        <item quantity="one">%1$d h ago</item>
+        <item quantity="other">%1$d h ago</item>
+    </plurals>
+    <string name="time_yesterday">Yesterday</string>
+    <plurals name="time_days_ago">
+        <item quantity="one">%1$d day ago</item>
+        <item quantity="other">%1$d days ago</item>
+    </plurals>
     <string name="conversation_load_failed">Couldn't load this conversation.</string>
     <string name="conversation_reply_on_olx">Reply on OLX</string>
 </resources>

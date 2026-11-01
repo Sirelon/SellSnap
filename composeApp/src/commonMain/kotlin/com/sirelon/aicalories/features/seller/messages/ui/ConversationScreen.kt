@@ -45,7 +45,7 @@ import com.sirelon.sellsnap.designsystem.screens.EmptyScreen
 import com.sirelon.sellsnap.designsystem.screens.LoadingOverlay
 import com.sirelon.sellsnap.features.seller.auth.data._currentOlxCountry
 import com.sirelon.sellsnap.features.seller.messages.domain.OlxMessage
-import com.sirelon.sellsnap.features.seller.messages.domain.formatOlxWallClock
+import com.sirelon.sellsnap.features.seller.messages.domain.messageTime
 import com.sirelon.sellsnap.features.seller.messages.presentation.ConversationContract
 import com.sirelon.sellsnap.features.seller.messages.presentation.ConversationContract.Event
 import com.sirelon.sellsnap.features.seller.messages.presentation.ConversationViewModel
@@ -60,19 +60,23 @@ import com.sirelon.sellsnap.generated.resources.messages_listing_fallback
 import com.sirelon.sellsnap.generated.resources.my_ads_price_not_set
 import com.sirelon.sellsnap.generated.resources.retry
 import com.sirelon.sellsnap.platform.openUrl
+import kotlinx.datetime.TimeZone
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
+import kotlin.time.Clock
 
 @Composable
 fun ConversationScreenRoute(
     threadId: Long,
     advertId: Long,
+    title: String?,
+    imageUrl: String?,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val viewModel: ConversationViewModel = koinViewModel { parametersOf(threadId, advertId) }
+    val viewModel: ConversationViewModel = koinViewModel { parametersOf(threadId, advertId, title, imageUrl) }
     val state by viewModel.state.collectAsStateWithLifecycle()
 
     LifecycleStartEffect(viewModel) {
@@ -128,7 +132,7 @@ private fun ConversationScreen(
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding)) {
             // Sticky by construction: it sits above the list, not inside it.
-            ListingHeader(listing = state.listing)
+            ListingHeader(listing = state.listing, title = state.title, imageUrl = state.imageUrl)
 
             Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
                 if (state.errorMessage != null) {
@@ -162,7 +166,7 @@ private fun ConversationScreen(
 }
 
 @Composable
-private fun ListingHeader(listing: MyAdvertItem?) {
+private fun ListingHeader(listing: MyAdvertItem?, title: String?, imageUrl: String?) {
     AppCard(
         modifier = Modifier
             .fillMaxWidth()
@@ -175,10 +179,11 @@ private fun ListingHeader(listing: MyAdvertItem?) {
             horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing.xl3),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            ListingThumbnail(imageUrl = listing?.primaryImageUrl, size = AppDimens.Size.xl12)
+            ListingThumbnail(imageUrl = listing?.primaryImageUrl ?: imageUrl, size = AppDimens.Size.xl12)
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = listing?.title?.takeIf(String::isNotBlank)
+                        ?: title
                         ?: stringResource(Res.string.messages_listing_fallback),
                     style = AppTheme.typography.title,
                     color = AppTheme.colors.onSurface,
@@ -240,7 +245,12 @@ private fun MessageBubble(message: OlxMessage) {
                 )
             }
             Text(
-                text = formatOlxWallClock(message.createdAt),
+                text = messageTime(
+                    raw = message.createdAt,
+                    marketZone = _currentOlxCountry.timeZone,
+                    now = Clock.System.now(),
+                    zone = TimeZone.currentSystemDefault(),
+                ),
                 style = AppTheme.typography.caption,
                 color = textColor.copy(alpha = 0.7f),
             )

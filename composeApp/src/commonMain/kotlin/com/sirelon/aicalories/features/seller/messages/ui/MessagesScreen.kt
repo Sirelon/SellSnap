@@ -3,6 +3,7 @@ package com.sirelon.sellsnap.features.seller.messages.ui
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.consumeWindowInsets
@@ -36,9 +37,13 @@ import com.sirelon.sellsnap.designsystem.AppDimens
 import com.sirelon.sellsnap.designsystem.AppScaffold
 import com.sirelon.sellsnap.designsystem.AppTheme
 import com.sirelon.sellsnap.designsystem.ObserveAsEvents
+import com.sirelon.sellsnap.designsystem.buttons.AppButton
+import com.sirelon.sellsnap.designsystem.buttons.AppButtonDefaults
 import com.sirelon.sellsnap.designsystem.screens.EmptyScreen
 import com.sirelon.sellsnap.designsystem.screens.LoadingOverlay
-import com.sirelon.sellsnap.features.seller.messages.domain.formatOlxWallClock
+import com.sirelon.sellsnap.features.seller.auth.data._currentOlxCountry
+import com.sirelon.sellsnap.features.seller.messages.domain.RelativeTime
+import com.sirelon.sellsnap.features.seller.messages.domain.relativeTime
 import com.sirelon.sellsnap.features.seller.messages.presentation.MessagesContract
 import com.sirelon.sellsnap.features.seller.messages.presentation.MessagesContract.Event
 import com.sirelon.sellsnap.features.seller.messages.presentation.MessagesContract.ThreadRow
@@ -55,19 +60,29 @@ import com.sirelon.sellsnap.generated.resources.messages_empty_description
 import com.sirelon.sellsnap.generated.resources.messages_empty_title
 import com.sirelon.sellsnap.generated.resources.messages_listing_fallback
 import com.sirelon.sellsnap.generated.resources.messages_screen_title
+import com.sirelon.sellsnap.generated.resources.messages_thread_started
+import com.sirelon.sellsnap.generated.resources.my_ads_load_more
 import com.sirelon.sellsnap.generated.resources.my_ads_account_fallback_name
 import com.sirelon.sellsnap.generated.resources.my_ads_connect_action
 import com.sirelon.sellsnap.generated.resources.my_ads_reconnect_description
 import com.sirelon.sellsnap.generated.resources.my_ads_reconnect_title
 import com.sirelon.sellsnap.generated.resources.profile_reconnect_account_action
 import com.sirelon.sellsnap.generated.resources.retry
+import com.sirelon.sellsnap.generated.resources.time_days_ago
+import com.sirelon.sellsnap.generated.resources.time_hours_ago
+import com.sirelon.sellsnap.generated.resources.time_just_now
+import com.sirelon.sellsnap.generated.resources.time_minutes_ago
+import com.sirelon.sellsnap.generated.resources.time_yesterday
+import kotlinx.datetime.TimeZone
 import org.jetbrains.compose.resources.painterResource
+import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
+import kotlin.time.Clock
 
 @Composable
 fun MessagesScreenRoute(
-    onOpenThread: (threadId: Long, advertId: Long) -> Unit,
+    onOpenThread: (threadId: Long, advertId: Long, title: String?, imageUrl: String?) -> Unit,
     onConnectOlxClick: () -> Unit,
     onReconnectClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -84,7 +99,8 @@ fun MessagesScreenRoute(
 
     ObserveAsEvents(viewModel.effects) { effect ->
         when (effect) {
-            is MessagesContract.Effect.OpenThread -> onOpenThread(effect.threadId, effect.advertId)
+            is MessagesContract.Effect.OpenThread ->
+                onOpenThread(effect.threadId, effect.advertId, effect.title, effect.imageUrl)
             MessagesContract.Effect.ConnectOlx -> onConnectOlxClick()
             MessagesContract.Effect.Reconnect -> onReconnectClick()
         }
@@ -147,7 +163,8 @@ private fun MessagesScreen(
                 onActionClick = { onEvent(Event.RefreshClicked) },
             )
 
-            state.hasLoaded && state.threads.isEmpty() -> EmptyScreen(
+            // A full page of only buyer-side threads shows nothing but may be followed by more.
+            state.hasLoaded && state.threads.isEmpty() && !state.canLoadMore -> EmptyScreen(
                 modifier = contentModifier,
                 icon = Res.drawable.ic_message_circle,
                 title = stringResource(Res.string.messages_empty_title),
@@ -167,6 +184,17 @@ private fun MessagesScreen(
                 ) {
                     items(items = state.threads, key = { it.threadId }) { row ->
                         ThreadCard(row = row, onClick = { onEvent(Event.ThreadClicked(row)) })
+                    }
+                    if (state.canLoadMore) {
+                        item {
+                            AppButton(
+                                modifier = Modifier.fillMaxWidth().testTag("messages_load_more"),
+                                text = stringResource(Res.string.my_ads_load_more),
+                                onClick = { onEvent(Event.LoadMoreClicked) },
+                                enabled = !state.isLoadingMore,
+                                style = AppButtonDefaults.outline(),
+                            )
+                        }
                     }
                 }
                 // Only the first load blanks the screen; a refresh has its own indicator.
@@ -191,37 +219,53 @@ private fun ThreadCard(row: ThreadRow, onClick: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             ListingThumbnail(imageUrl = row.imageUrl)
-            Text(
-                text = row.title ?: stringResource(Res.string.messages_listing_fallback),
-                modifier = Modifier.weight(1f),
-                style = AppTheme.typography.title,
-                fontWeight = if (isUnread) FontWeight.Bold else null,
-                color = AppTheme.colors.onSurface,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing.m),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.s)) {
                 Text(
-                    text = formatOlxWallClock(row.createdAt),
+                    text = row.title ?: stringResource(Res.string.messages_listing_fallback),
+                    style = AppTheme.typography.title,
+                    fontWeight = if (isUnread) FontWeight.Bold else null,
+                    color = AppTheme.colors.onSurface,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                // The list endpoint has no last-message time and rows are in last-activity order,
+                // so the thread's creation date is labelled as what it is.
+                Text(
+                    text = stringResource(
+                        Res.string.messages_thread_started,
+                        relativeTime(
+                            raw = row.createdAt,
+                            marketZone = _currentOlxCountry.timeZone,
+                            now = Clock.System.now(),
+                            zone = TimeZone.currentSystemDefault(),
+                        ).asText(),
+                    ),
                     style = AppTheme.typography.caption,
                     color = AppTheme.colors.onSurfaceMuted,
                     maxLines = 1,
                 )
-                if (isUnread) {
-                    Box(
-                        modifier = Modifier
-                            .size(AppDimens.Size.xl)
-                            .clip(CircleShape)
-                            .background(AppTheme.colors.primary)
-                            .testTag("messages_unread_dot"),
-                    )
-                }
+            }
+            if (isUnread) {
+                Box(
+                    modifier = Modifier
+                        .size(AppDimens.Size.xl)
+                        .clip(CircleShape)
+                        .background(AppTheme.colors.primary)
+                        .testTag("messages_unread_dot"),
+                )
             }
         }
     }
+}
+
+@Composable
+private fun RelativeTime.asText(): String = when (this) {
+    RelativeTime.JustNow -> stringResource(Res.string.time_just_now)
+    is RelativeTime.MinutesAgo -> pluralStringResource(Res.plurals.time_minutes_ago, minutes, minutes)
+    is RelativeTime.HoursAgo -> pluralStringResource(Res.plurals.time_hours_ago, hours, hours)
+    RelativeTime.Yesterday -> stringResource(Res.string.time_yesterday)
+    is RelativeTime.DaysAgo -> pluralStringResource(Res.plurals.time_days_ago, days, days)
+    is RelativeTime.Verbatim -> text
 }
 
 @Composable

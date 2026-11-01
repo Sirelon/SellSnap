@@ -12,3 +12,10 @@ data class OlxThread(
     val unreadCount: Int,
     val createdAt: String,
 )
+
+/** One page of seller-side threads. */
+class ThreadsPage(
+    val threads: List<OlxThread>,
+    /** OLX returned a full page, so another may follow. Decided before buyer-side threads are dropped. */
+    val canLoadMore: Boolean,
+)

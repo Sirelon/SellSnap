@@ -7,7 +7,10 @@ import com.sirelon.sellsnap.features.seller.my_ads.model.MyAdvertItem
 interface ConversationContract {
     @Immutable
     data class State(
-        /** Null until loaded, and when the advert is gone; the header then shows a fallback title. */
+        /** The list row's title, so the header is not empty while [listing] loads. Null when the row had none. */
+        val title: String? = null,
+        val imageUrl: String? = null,
+        /** Null until loaded, and when the advert is gone; the header then shows only [title] and [imageUrl]. */
         val listing: MyAdvertItem? = null,
         /** Oldest first, as OLX returns them. */
         val messages: List<OlxMessage> = emptyList(),

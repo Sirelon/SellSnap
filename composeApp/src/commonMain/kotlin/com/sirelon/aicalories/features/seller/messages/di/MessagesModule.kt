@@ -23,10 +23,12 @@ val messagesModule = module {
             analytics = get(),
         )
     }
-    viewModel { (threadId: Long, advertId: Long) ->
+    viewModel { (threadId: Long, advertId: Long, title: String?, imageUrl: String?) ->
         ConversationViewModel(
             threadId = threadId,
             advertId = advertId,
+            title = title,
+            imageUrl = imageUrl,
             repository = get(),
             myAdvertsRepository = get(),
             accountRepository = get(),

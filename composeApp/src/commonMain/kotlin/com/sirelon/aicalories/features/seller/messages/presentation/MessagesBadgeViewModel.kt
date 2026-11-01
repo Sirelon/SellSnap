@@ -17,7 +17,8 @@ import kotlinx.coroutines.launch
 /**
  * Unread total for the Messages tab badge. It reloads the first page of threads when the app
  * comes to the foreground and when the active account changes; the Messages list refreshes the
- * same total whenever it loads. A failed reload leaves the last total, and nothing is shown.
+ * same total whenever it loads, counting every page it holds. A failed reload leaves the last
+ * total, and nothing is shown.
  */
 class MessagesBadgeViewModel internal constructor(
     private val repository: MessagesRepository,
@@ -45,7 +46,9 @@ class MessagesBadgeViewModel internal constructor(
             return
         }
         refreshJob = viewModelScope.launch {
-            runCatching { repository.loadThreads(account.localIndex) }
+            runCatching {
+                repository.publishUnread(repository.loadThreads(account.localIndex).threads.sumOf { it.unreadCount })
+            }
         }
     }
 }

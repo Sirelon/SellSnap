@@ -27,13 +27,16 @@ import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.getString
 
 /**
- * One open conversation (read-only). Loads the messages of [threadId] for the account that was
- * active when it opened and closes itself if that account changes or loses its session. As on the
- * list, a failed load is shown (and reported) only while there are no messages to show.
+ * One open conversation (read-only). [title] and [imageUrl] come from the list row that opened it.
+ * Loads the messages of [threadId] for the account that was active when it opened and closes
+ * itself if that account changes or loses its session. As on the list, a failed load is shown
+ * (and reported) only while there are no messages to show.
  */
 class ConversationViewModel internal constructor(
     private val threadId: Long,
     private val advertId: Long,
+    private val title: String?,
+    private val imageUrl: String?,
     private val repository: MessagesRepository,
     private val myAdvertsRepository: MyAdvertsRepository,
     private val accountRepository: SellerAccountRepository,
@@ -54,7 +57,7 @@ class ConversationViewModel internal constructor(
             .launchIn(viewModelScope)
     }
 
-    override fun initialState(): State = State()
+    override fun initialState(): State = State(title = title, imageUrl = imageUrl)
 
     override fun onEvent(event: Event) {
         when (event) {

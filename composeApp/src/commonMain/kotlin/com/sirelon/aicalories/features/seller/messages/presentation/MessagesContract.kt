@@ -24,6 +24,9 @@ interface MessagesContract {
         val isLoading: Boolean = false,
         val hasLoaded: Boolean = false,
         val threads: List<ThreadRow> = emptyList(),
+        val isLoadingMore: Boolean = false,
+        /** The last page OLX returned was full, so asking for the next one may find more. */
+        val canLoadMore: Boolean = false,
         /** Set only while there is nothing else to show; see [MessagesViewModel]. */
         val errorMessage: String? = null,
     )
@@ -35,13 +38,20 @@ interface MessagesContract {
         /** The screen left the foreground: stop polling. */
         data object Hidden : Event
         data object RefreshClicked : Event
+        data object LoadMoreClicked : Event
         data class ThreadClicked(val row: ThreadRow) : Event
         data object ConnectOlxClicked : Event
         data object ReconnectClicked : Event
     }
 
     sealed interface Effect {
-        data class OpenThread(val threadId: Long, val advertId: Long) : Effect
+        /** [title] and [imageUrl] are the row's, so the conversation header has them before its own load. */
+        data class OpenThread(
+            val threadId: Long,
+            val advertId: Long,
+            val title: String?,
+            val imageUrl: String?,
+        ) : Effect
         data object ConnectOlx : Effect
         data object Reconnect : Effect
     }

@@ -154,14 +154,53 @@ class ConversationViewModelTest {
         viewModel.onEvent(Event.Hidden)
     }
 
+    @Test
+    fun `the header starts from the list row's title and image, then the advert adds its own`() = runTest(testDispatcher) {
+        val engine = mockEngine(testDispatcher) {
+            addHandler { request ->
+                if (request.url.encodedPath.endsWith("/messages")) {
+                    respond(messagesJson(), HttpStatusCode.OK, jsonHeaders())
+                } else {
+                    respond(advertJson(10), HttpStatusCode.OK, jsonHeaders())
+                }
+            }
+        }
+        val (viewModel, _) = viewModel(engine, title = "Row title", imageUrl = "https://example.invalid/row.jpg")
+
+        // Before anything is loaded, with no listing yet.
+        assertEquals("Row title", viewModel.state.value.title)
+        assertEquals("https://example.invalid/row.jpg", viewModel.state.value.imageUrl)
+        assertNull(viewModel.state.value.listing)
+
+        viewModel.onEvent(Event.Shown)
+        runCurrent()
+
+        assertEquals("Row title", viewModel.state.value.title)
+        assertEquals("Placeholder advert 10", viewModel.state.value.listing?.title)
+        viewModel.onEvent(Event.Hidden)
+    }
+
+    @Test
+    fun `a row without a title leaves the header unseeded`() = runTest(testDispatcher) {
+        val engine = mockEngine(testDispatcher) { addHandler { respond(messagesJson(), HttpStatusCode.OK, jsonHeaders()) } }
+        val (viewModel, _) = viewModel(engine)
+
+        assertNull(viewModel.state.value.title)
+        assertNull(viewModel.state.value.imageUrl)
+    }
+
     private suspend fun viewModel(
         engine: MockEngine,
         accounts: List<OlxAccountRecord> = listOf(testAccount(1)),
+        title: String? = null,
+        imageUrl: String? = null,
     ): Pair<ConversationViewModel, MessagesHarness> {
         val harness = messagesHarness(engine, accounts, activeIndex = 1)
         val viewModel = ConversationViewModel(
             threadId = 5,
             advertId = 10,
+            title = title,
+            imageUrl = imageUrl,
             repository = harness.messagesRepository,
             myAdvertsRepository = harness.myAdvertsRepository,
             accountRepository = harness.accountRepository,

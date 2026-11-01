@@ -105,7 +105,13 @@ sealed interface AppKey : NavKey, AnalyticsScreen {
     }
 
     @Serializable
-    data class Conversation(val threadId: Long, val advertId: Long) : AppKey {
+    data class Conversation(
+        val threadId: Long,
+        val advertId: Long,
+        /** The list row's title and thumbnail, so the header is filled before the advert loads. */
+        val title: String? = null,
+        val imageUrl: String? = null,
+    ) : AppKey {
         override val screenName = "Conversation"
     }
 

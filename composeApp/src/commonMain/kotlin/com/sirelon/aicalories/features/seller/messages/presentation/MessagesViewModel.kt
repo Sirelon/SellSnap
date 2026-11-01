@@ -48,6 +48,10 @@ class MessagesViewModel internal constructor(
 
     private var isShown = false
     private var pollJob: Job? = null
+    private var loadMoreJob: Job? = null
+
+    /** Pages of threads fetched for the current account, so the next one is [loadedPages]. */
+    private var loadedPages = 0
 
     init {
         accountRepository
@@ -71,10 +75,19 @@ class MessagesViewModel internal constructor(
             }
 
             Event.RefreshClicked -> currentState().localIndex?.let { index ->
-                viewModelScope.launch { load(index, silent = false) }
+                viewModelScope.launch { load(index, page = 0, silent = false) }
             }
 
-            is Event.ThreadClicked -> postEffect(Effect.OpenThread(event.row.threadId, event.row.advertId))
+            Event.LoadMoreClicked -> loadMore()
+
+            is Event.ThreadClicked -> postEffect(
+                Effect.OpenThread(
+                    threadId = event.row.threadId,
+                    advertId = event.row.advertId,
+                    title = event.row.title,
+                    imageUrl = event.row.imageUrl,
+                ),
+            )
             Event.ConnectOlxClicked -> postEffect(Effect.ConnectOlx)
             Event.ReconnectClicked -> postEffect(Effect.Reconnect)
         }
@@ -87,6 +100,10 @@ class MessagesViewModel internal constructor(
         val previous = currentState()
         // A reconnected account starts over too: its list was never loaded.
         val restart = previous.localIndex != localIndex || (previous.needsReconnect && !needsReconnect)
+        if (restart) {
+            loadedPages = 0
+            loadMoreJob?.cancel()
+        }
 
         setState {
             (if (restart) State() else it).copy(
@@ -106,19 +123,36 @@ class MessagesViewModel internal constructor(
         if (!isShown || state.needsReconnect) return
 
         pollJob = viewModelScope.launch {
-            load(localIndex, silent = state.hasLoaded)
+            load(localIndex, page = 0, silent = state.hasLoaded)
             while (true) {
                 delay(PollInterval)
-                load(localIndex, silent = true)
+                load(localIndex, page = 0, silent = true)
             }
         }
     }
 
-    private suspend fun load(localIndex: Int, silent: Boolean) {
-        if (!silent) setState { it.copy(isLoading = true, errorMessage = null) }
+    private fun loadMore() {
+        val state = currentState()
+        val localIndex = state.localIndex ?: return
+        if (!state.canLoadMore || state.isLoadingMore || state.isLoading) return
+        loadMoreJob = viewModelScope.launch { load(localIndex, page = loadedPages, silent = true) }
+    }
 
-        val rows = try {
-            val threads = repository.loadThreads(localIndex)
+    /**
+     * Loads [page] of the threads and merges it into the list by thread id. Page 0 (a refresh or
+     * a poll) replaces the first page and keeps whatever later pages are already loaded; a later
+     * page is appended.
+     */
+    private suspend fun load(localIndex: Int, page: Int, silent: Boolean) {
+        val isMore = page > 0
+        if (isMore) {
+            setState { it.copy(isLoadingMore = true) }
+        } else if (!silent) {
+            setState { it.copy(isLoading = true, errorMessage = null) }
+        }
+
+        val loaded = try {
+            val threadsPage = repository.loadThreads(localIndex, page)
             // The listing join must not fail the list: without adverts a row just loses its title
             // and thumbnail. One adverts request per load, never one per row.
             val adverts = try {
@@ -128,7 +162,7 @@ class MessagesViewModel internal constructor(
             } catch (_: Exception) {
                 emptyList()
             }.associateBy { it.id }
-            threads.map { thread ->
+            threadsPage.threads.map { thread ->
                 val advert = adverts[thread.advertId]
                 ThreadRow(
                     threadId = thread.id,
@@ -138,23 +172,46 @@ class MessagesViewModel internal constructor(
                     unreadCount = thread.unreadCount,
                     createdAt = thread.createdAt,
                 )
-            }
+            } to threadsPage.canLoadMore
         } catch (error: CancellationException) {
             throw error
         } catch (error: Exception) {
-            handleFailure(localIndex, error)
+            handleFailure(localIndex, error, isMore)
             return
         }
 
         if (currentState().localIndex != localIndex) return
-        setState { it.copy(isLoading = false, hasLoaded = true, threads = rows, errorMessage = null) }
+        val (rows, canLoadMore) = loaded
+        loadedPages = maxOf(loadedPages, page + 1)
+        setState { state ->
+            val known = state.threads.mapTo(HashSet()) { it.threadId }
+            val fresh = rows.mapTo(HashSet()) { it.threadId }
+            state.copy(
+                isLoading = state.isLoading && isMore,
+                isLoadingMore = state.isLoadingMore && !isMore,
+                hasLoaded = true,
+                threads = if (isMore) {
+                    state.threads + rows.filter { it.threadId !in known }
+                } else {
+                    rows + state.threads.filter { it.threadId !in fresh }
+                },
+                // A refresh only knows about the first page; once more are loaded, the last one
+                // fetched decides.
+                canLoadMore = if (isMore || loadedPages == 1) canLoadMore else state.canLoadMore,
+                errorMessage = null,
+            )
+        }
+        repository.publishUnread(currentState().threads.sumOf { it.unreadCount })
     }
 
-    private suspend fun handleFailure(localIndex: Int, error: Throwable) {
+    private suspend fun handleFailure(localIndex: Int, error: Throwable, isMore: Boolean) {
         if (currentState().localIndex != localIndex) return
         // syncAccount already reflects NeedsReconnect from the account store; just stop spinning.
+        // A failed "load more" leaves the button to press again.
         if (error is AccountNeedsReconnect || currentState().threads.isNotEmpty()) {
-            setState { it.copy(isLoading = false) }
+            setState {
+                if (isMore) it.copy(isLoadingMore = false) else it.copy(isLoading = false)
+            }
             return
         }
         analytics.reportShownError(
