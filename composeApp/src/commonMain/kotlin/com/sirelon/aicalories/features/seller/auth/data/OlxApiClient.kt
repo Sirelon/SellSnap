@@ -156,6 +156,23 @@ class OlxApiClient(
         val response = httpClient.get("adverts/$advertId") { bearerAuth(accessToken) }
         response.ensureSuccess()
 
+        return readAdvert(response)
+    }
+
+    /**
+     * [getAdvert], except that a 404 - the advert no longer exists - is `null` rather than an
+     * error. Matches on the status code, never on the error title: the title arrives in the
+     * market's language.
+     */
+    internal suspend fun getAdvertOrNull(accessToken: String, advertId: Long): AdvertEditSnapshot? {
+        val response = httpClient.get("adverts/$advertId") { bearerAuth(accessToken) }
+        if (response.status == HttpStatusCode.NotFound) return null
+        response.ensureSuccess()
+
+        return readAdvert(response)
+    }
+
+    private suspend fun readAdvert(response: HttpResponse): AdvertEditSnapshot {
         val raw = response.decodeBody<OlxAdvertDetailRootResponse>("advert").data
             ?: throw missingResponseData("advert", "data")
         val detail = json.decodeFromJsonElement<OlxAdvertDetailResponse>(raw).toDomain()

@@ -24,6 +24,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -41,6 +42,7 @@ import com.sirelon.sellsnap.designsystem.buttons.AppButton
 import com.sirelon.sellsnap.designsystem.buttons.AppButtonDefaults
 import com.sirelon.sellsnap.designsystem.screens.EmptyScreen
 import com.sirelon.sellsnap.designsystem.screens.LoadingOverlay
+import com.sirelon.sellsnap.features.seller.ad.publish_success.AdvertStatus
 import com.sirelon.sellsnap.features.seller.auth.data._currentOlxCountry
 import com.sirelon.sellsnap.features.seller.messages.domain.RelativeTime
 import com.sirelon.sellsnap.features.seller.messages.domain.relativeTime
@@ -48,6 +50,9 @@ import com.sirelon.sellsnap.features.seller.messages.presentation.MessagesContra
 import com.sirelon.sellsnap.features.seller.messages.presentation.MessagesContract.Event
 import com.sirelon.sellsnap.features.seller.messages.presentation.MessagesContract.ThreadRow
 import com.sirelon.sellsnap.features.seller.messages.presentation.MessagesViewModel
+import com.sirelon.sellsnap.features.seller.my_ads.domain.AdvertState
+import com.sirelon.sellsnap.features.seller.my_ads.domain.state
+import com.sirelon.sellsnap.features.seller.my_ads.ui.StatusChip
 import com.sirelon.sellsnap.generated.resources.Res
 import com.sirelon.sellsnap.generated.resources.ic_circle_alert
 import com.sirelon.sellsnap.generated.resources.ic_message_circle
@@ -58,6 +63,7 @@ import com.sirelon.sellsnap.generated.resources.messages_connect_description
 import com.sirelon.sellsnap.generated.resources.messages_connect_title
 import com.sirelon.sellsnap.generated.resources.messages_empty_description
 import com.sirelon.sellsnap.generated.resources.messages_empty_title
+import com.sirelon.sellsnap.generated.resources.messages_listing_deleted
 import com.sirelon.sellsnap.generated.resources.messages_listing_fallback
 import com.sirelon.sellsnap.generated.resources.messages_screen_title
 import com.sirelon.sellsnap.generated.resources.messages_thread_started
@@ -82,7 +88,14 @@ import kotlin.time.Clock
 
 @Composable
 fun MessagesScreenRoute(
-    onOpenThread: (threadId: Long, advertId: Long, title: String?, imageUrl: String?) -> Unit,
+    onOpenThread: (
+        threadId: Long,
+        advertId: Long,
+        title: String?,
+        imageUrl: String?,
+        status: AdvertStatus?,
+        isListingDeleted: Boolean,
+    ) -> Unit,
     onConnectOlxClick: () -> Unit,
     onReconnectClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -100,7 +113,14 @@ fun MessagesScreenRoute(
     ObserveAsEvents(viewModel.effects) { effect ->
         when (effect) {
             is MessagesContract.Effect.OpenThread ->
-                onOpenThread(effect.threadId, effect.advertId, effect.title, effect.imageUrl)
+                onOpenThread(
+                    effect.threadId,
+                    effect.advertId,
+                    effect.title,
+                    effect.imageUrl,
+                    effect.status,
+                    effect.isListingDeleted,
+                )
             MessagesContract.Effect.ConnectOlx -> onConnectOlxClick()
             MessagesContract.Effect.Reconnect -> onReconnectClick()
         }
@@ -209,6 +229,7 @@ private fun MessagesScreen(
 @Composable
 private fun ThreadCard(row: ThreadRow, onClick: () -> Unit) {
     val isUnread = row.unreadCount > 0
+    val dimmed = isListingDimmed(row.status, row.isListingDeleted)
     AppCard(
         modifier = Modifier.fillMaxWidth().testTag("messages_thread_row"),
         onClick = onClick,
@@ -218,32 +239,41 @@ private fun ThreadCard(row: ThreadRow, onClick: () -> Unit) {
             horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing.xl4),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            ListingThumbnail(imageUrl = row.imageUrl)
+            ListingThumbnail(imageUrl = row.imageUrl, dimmed = dimmed)
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.s)) {
                 Text(
-                    text = row.title ?: stringResource(Res.string.messages_listing_fallback),
+                    text = when {
+                        row.isListingDeleted -> stringResource(Res.string.messages_listing_deleted)
+                        else -> row.title ?: stringResource(Res.string.messages_listing_fallback)
+                    },
                     style = AppTheme.typography.title,
                     fontWeight = if (isUnread) FontWeight.Bold else null,
-                    color = AppTheme.colors.onSurface,
+                    color = if (dimmed) AppTheme.colors.onSurfaceMuted else AppTheme.colors.onSurface,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
                 // The list endpoint has no last-message time and rows are in last-activity order,
                 // so the thread's creation date is labelled as what it is.
-                Text(
-                    text = stringResource(
-                        Res.string.messages_thread_started,
-                        relativeTime(
-                            raw = row.createdAt,
-                            marketZone = _currentOlxCountry.timeZone,
-                            now = Clock.System.now(),
-                            zone = TimeZone.currentSystemDefault(),
-                        ).asText(),
-                    ),
-                    style = AppTheme.typography.caption,
-                    color = AppTheme.colors.onSurfaceMuted,
-                    maxLines = 1,
-                )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing.m),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    row.status?.takeIf { it.showsStatusChip() }?.let { StatusChip(status = it) }
+                    Text(
+                        text = stringResource(
+                            Res.string.messages_thread_started,
+                            relativeTime(
+                                raw = row.createdAt,
+                                marketZone = _currentOlxCountry.timeZone,
+                                now = Clock.System.now(),
+                                zone = TimeZone.currentSystemDefault(),
+                            ).asText(),
+                        ),
+                        style = AppTheme.typography.caption,
+                        color = AppTheme.colors.onSurfaceMuted,
+                        maxLines = 1,
+                    )
+                }
             }
             if (isUnread) {
                 Box(
@@ -268,11 +298,45 @@ private fun RelativeTime.asText(): String = when (this) {
     is RelativeTime.Verbatim -> text
 }
 
+/**
+ * Whether a row or header names its listing's status with a chip. Live and not known have none,
+ * and deleted says it in the title. Waiting states stay undimmed: the seller may still have to
+ * pay or confirm on OLX.
+ */
+internal fun AdvertStatus?.showsStatusChip(): Boolean = when (this?.state) {
+    AdvertState.UnderReview,
+    AdvertState.NeedsPayment,
+    AdvertState.NeedsConfirmation,
+    AdvertState.Inactive,
+    AdvertState.Rejected -> true
+
+    AdvertState.Active,
+    AdvertState.Unknown,
+    null -> false
+}
+
+/**
+ * Buyers cannot see the listing and it will not come back on its own. Not known is never dimmed:
+ * an unrecognised status could be an active advert.
+ */
+internal fun isListingDimmed(status: AdvertStatus?, isDeleted: Boolean): Boolean = isDeleted || when (status?.state) {
+    AdvertState.Inactive,
+    AdvertState.Rejected -> true
+
+    AdvertState.Active,
+    AdvertState.UnderReview,
+    AdvertState.NeedsPayment,
+    AdvertState.NeedsConfirmation,
+    AdvertState.Unknown,
+    null -> false
+}
+
 @Composable
-internal fun ListingThumbnail(imageUrl: String?, size: Dp = AppDimens.Size.xl15) {
+internal fun ListingThumbnail(imageUrl: String?, size: Dp = AppDimens.Size.xl15, dimmed: Boolean = false) {
     Box(
         modifier = Modifier
             .size(size)
+            .alpha(if (dimmed) DimmedAlpha else 1f)
             .clip(RoundedCornerShape(AppDimens.BorderRadius.xl2))
             .background(AppTheme.colors.surfaceHigh),
         contentAlignment = Alignment.Center,
@@ -289,3 +353,6 @@ internal fun ListingThumbnail(imageUrl: String?, size: Dp = AppDimens.Size.xl15)
         }
     }
 }
+
+/** Matches the disabled-content alpha in `AppButton`; `AppDimens` has no opacity token. */
+private const val DimmedAlpha = 0.5f

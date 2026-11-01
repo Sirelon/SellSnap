@@ -474,6 +474,7 @@
     <string name="messages_connect_description">Buyer messages for your OLX listings will appear here after you connect an account.</string>
     <string name="messages_load_failed">Couldn't load messages.</string>
     <string name="messages_listing_fallback">Your listing</string>
+    <string name="messages_listing_deleted">Deleted listing</string>
     <string name="messages_thread_started">Started %1$s</string>
     <string name="time_just_now">just now</string>
     <plurals name="time_minutes_ago">

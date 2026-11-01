@@ -671,27 +671,6 @@ private fun DateLine(label: String, value: String) {
 }
 
 @Composable
-private fun StatusChip(status: AdvertStatus) {
-    val color = statusColor(status)
-    Box(
-        modifier = Modifier
-            .clip(RoundedCornerShape(AppDimens.BorderRadius.xl))
-            .background(color.copy(alpha = 0.14f))
-            .padding(horizontal = AppDimens.Spacing.m, vertical = AppDimens.Spacing.xs),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = stringResource(statusLabel(status)),
-            style = AppTheme.typography.caption,
-            color = color,
-            fontWeight = FontWeight.SemiBold,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-    }
-}
-
-@Composable
 private fun ErrorCard(
     message: String,
     onRetry: () -> Unit,

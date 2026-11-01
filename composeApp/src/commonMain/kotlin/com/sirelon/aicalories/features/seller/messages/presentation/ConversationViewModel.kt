@@ -4,6 +4,7 @@ import androidx.lifecycle.viewModelScope
 import com.sirelon.sellsnap.analytics.Analytics
 import com.sirelon.sellsnap.analytics.reportShownError
 import com.sirelon.sellsnap.features.common.presentation.BaseViewModel
+import com.sirelon.sellsnap.features.seller.ad.publish_success.AdvertStatus
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountState
 import com.sirelon.sellsnap.features.seller.auth.domain.shownErrorCause
 import com.sirelon.sellsnap.features.seller.messages.data.MessagesRepository
@@ -27,7 +28,8 @@ import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.getString
 
 /**
- * One open conversation (read-only). [title] and [imageUrl] come from the list row that opened it.
+ * One open conversation (read-only). [title], [imageUrl], [status] and [isListingDeleted] come
+ * from the list row that opened it.
  * Loads the messages of [threadId] for the account that was active when it opened and closes
  * itself if that account changes or loses its session. As on the list, a failed load is shown
  * (and reported) only while there are no messages to show.
@@ -37,6 +39,8 @@ class ConversationViewModel internal constructor(
     private val advertId: Long,
     private val title: String?,
     private val imageUrl: String?,
+    private val status: AdvertStatus?,
+    private val isListingDeleted: Boolean,
     private val repository: MessagesRepository,
     private val myAdvertsRepository: MyAdvertsRepository,
     private val accountRepository: SellerAccountRepository,
@@ -57,7 +61,12 @@ class ConversationViewModel internal constructor(
             .launchIn(viewModelScope)
     }
 
-    override fun initialState(): State = State(title = title, imageUrl = imageUrl)
+    override fun initialState(): State = State(
+        title = title,
+        imageUrl = imageUrl,
+        status = status,
+        isListingDeleted = isListingDeleted,
+    )
 
     override fun onEvent(event: Event) {
         when (event) {
@@ -101,19 +110,24 @@ class ConversationViewModel internal constructor(
         }
     }
 
-    /** One advert request per open conversation. A failure leaves the header on its fallback title. */
+    /**
+     * One advert request per open conversation, none when the row already knows the advert is
+     * deleted. A 404 marks the listing deleted; any other failure leaves the header on what the
+     * row passed in.
+     */
     private fun loadListingOnce(index: Int) {
         if (listingRequested) return
         listingRequested = true
+        if (isListingDeleted) return
         viewModelScope.launch {
             val listing = try {
-                myAdvertsRepository.loadAdvert(index, advertId)
+                myAdvertsRepository.loadAdvertOrNull(index, advertId)
             } catch (error: CancellationException) {
                 throw error
             } catch (_: Exception) {
-                null
+                return@launch
             }
-            setState { it.copy(listing = listing) }
+            setState { it.copy(listing = listing, isListingDeleted = listing == null) }
         }
     }
 

@@ -2,6 +2,7 @@ package com.sirelon.sellsnap.features.seller.messages.presentation
 
 import com.sirelon.sellsnap.analytics.AnalyticsEvents
 import com.sirelon.sellsnap.features.common.presentation.awaitEffect
+import com.sirelon.sellsnap.features.seller.ad.publish_success.AdvertStatus
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountRecord
 import com.sirelon.sellsnap.features.seller.messages.presentation.ConversationContract.Effect
 import com.sirelon.sellsnap.features.seller.messages.presentation.ConversationContract.Event
@@ -20,6 +21,7 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.seconds
@@ -72,13 +74,13 @@ class ConversationViewModelTest {
     }
 
     @Test
-    fun `a deleted advert leaves the header on its fallback and the messages still load`() = runTest(testDispatcher) {
+    fun `a 404 advert marks the listing deleted and the messages still load`() = runTest(testDispatcher) {
         val engine = mockEngine(testDispatcher) {
             addHandler { request ->
                 if (request.url.encodedPath.endsWith("/messages")) {
                     respond(messagesJson(messageJson(1, "received", "Placeholder question")), HttpStatusCode.OK, jsonHeaders())
                 } else {
-                    respond("""{"error":{"status":404,"title":"Not Found"}}""", HttpStatusCode.NotFound, jsonHeaders())
+                    respond(AdvertNotFoundJson, HttpStatusCode.NotFound, jsonHeaders())
                 }
             }
         }
@@ -89,9 +91,75 @@ class ConversationViewModelTest {
 
         val state = viewModel.state.value
         assertNull(state.listing)
+        assertTrue(state.isListingDeleted)
         assertEquals(1, state.messages.size)
         assertNull(state.errorMessage)
         assertEquals(emptyList(), harness.analytics.events.filter { it.first == AnalyticsEvents.ERROR_SHOWN })
+        viewModel.onEvent(Event.Hidden)
+    }
+
+    @Test
+    fun `a row that is already deleted skips the advert request`() = runTest(testDispatcher) {
+        val requests = mutableListOf<String>()
+        val engine = mockEngine(testDispatcher) {
+            addHandler { request ->
+                requests += request.url.encodedPath
+                respond(messagesJson(), HttpStatusCode.OK, jsonHeaders())
+            }
+        }
+        val (viewModel, _) = viewModel(engine, isListingDeleted = true)
+
+        assertTrue(viewModel.state.value.isListingDeleted)
+        viewModel.onEvent(Event.Shown)
+        runCurrent()
+
+        assertTrue(requests.any { it.endsWith("/threads/5/messages") })
+        assertTrue(requests.none { it.endsWith("/adverts/10") })
+        assertTrue(viewModel.state.value.isListingDeleted)
+        viewModel.onEvent(Event.Hidden)
+    }
+
+    @Test
+    fun `an advert error other than 404 leaves the row's status and does not mark it deleted`() =
+        runTest(testDispatcher) {
+            val engine = mockEngine(testDispatcher) {
+                addHandler { request ->
+                    if (request.url.encodedPath.endsWith("/messages")) {
+                        respond(messagesJson(), HttpStatusCode.OK, jsonHeaders())
+                    } else {
+                        respond("", HttpStatusCode.InternalServerError)
+                    }
+                }
+            }
+            val (viewModel, _) = viewModel(engine, status = AdvertStatus.RemovedByUser)
+
+            viewModel.onEvent(Event.Shown)
+            runCurrent()
+
+            val state = viewModel.state.value
+            assertNull(state.listing)
+            assertFalse(state.isListingDeleted)
+            assertEquals(AdvertStatus.RemovedByUser, state.status)
+            viewModel.onEvent(Event.Hidden)
+        }
+
+    @Test
+    fun `the loaded advert supersedes the row's status in the header`() = runTest(testDispatcher) {
+        val engine = mockEngine(testDispatcher) {
+            addHandler { request ->
+                if (request.url.encodedPath.endsWith("/messages")) {
+                    respond(messagesJson(), HttpStatusCode.OK, jsonHeaders())
+                } else {
+                    respond(advertJson(10, status = "removed_by_user"), HttpStatusCode.OK, jsonHeaders())
+                }
+            }
+        }
+        val (viewModel, _) = viewModel(engine, status = AdvertStatus.Active)
+
+        viewModel.onEvent(Event.Shown)
+        runCurrent()
+
+        assertEquals(AdvertStatus.RemovedByUser, viewModel.state.value.listing?.status)
         viewModel.onEvent(Event.Hidden)
     }
 
@@ -194,6 +262,8 @@ class ConversationViewModelTest {
         accounts: List<OlxAccountRecord> = listOf(testAccount(1)),
         title: String? = null,
         imageUrl: String? = null,
+        status: AdvertStatus? = null,
+        isListingDeleted: Boolean = false,
     ): Pair<ConversationViewModel, MessagesHarness> {
         val harness = messagesHarness(engine, accounts, activeIndex = 1)
         val viewModel = ConversationViewModel(
@@ -201,6 +271,8 @@ class ConversationViewModelTest {
             advertId = 10,
             title = title,
             imageUrl = imageUrl,
+            status = status,
+            isListingDeleted = isListingDeleted,
             repository = harness.messagesRepository,
             myAdvertsRepository = harness.myAdvertsRepository,
             accountRepository = harness.accountRepository,

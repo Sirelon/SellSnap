@@ -442,9 +442,18 @@ fun App() {
 
                         entry<AppKey.Messages>(metadata = topLevelMetadata) {
                             MessagesScreenRoute(
-                                onOpenThread = { threadId, advertId, title, imageUrl ->
+                                onOpenThread = { threadId, advertId, title, imageUrl, status, isListingDeleted ->
                                     if (navVm.backStack.lastOrNull() !is AppKey.Conversation) {
-                                        navVm.backStack.add(AppKey.Conversation(threadId, advertId, title, imageUrl))
+                                        navVm.backStack.add(
+                                            AppKey.Conversation(
+                                                threadId = threadId,
+                                                advertId = advertId,
+                                                title = title,
+                                                imageUrl = imageUrl,
+                                                status = status,
+                                                isListingDeleted = isListingDeleted,
+                                            ),
+                                        )
                                     }
                                 },
                                 onConnectOlxClick = {
@@ -463,6 +472,8 @@ fun App() {
                                 advertId = key.advertId,
                                 title = key.title,
                                 imageUrl = key.imageUrl,
+                                status = key.status,
+                                isListingDeleted = key.isListingDeleted,
                                 onBack = { navVm.popDestination() },
                             )
                         }

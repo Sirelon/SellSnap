@@ -2,6 +2,7 @@ package com.sirelon.sellsnap.features.seller.messages.presentation
 
 import com.sirelon.sellsnap.analytics.AnalyticsEvents
 import com.sirelon.sellsnap.features.common.presentation.awaitEffect
+import com.sirelon.sellsnap.features.seller.ad.publish_success.AdvertStatus
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountState
 import com.sirelon.sellsnap.features.seller.messages.presentation.MessagesContract.Effect
 import com.sirelon.sellsnap.features.seller.messages.presentation.MessagesContract.Event
@@ -75,6 +76,8 @@ class MessagesViewModelTest {
                             HttpStatusCode.OK,
                             jsonHeaders(),
                         )
+                        path.endsWith("/adverts/12") ->
+                            respond(AdvertNotFoundJson, HttpStatusCode.NotFound, jsonHeaders())
                         else -> respond(advertsJson(10), HttpStatusCode.OK, jsonHeaders())
                     }
                 }
@@ -91,9 +94,12 @@ class MessagesViewModelTest {
             assertEquals(2, rows.first().unreadCount)
             assertNull(rows.last().title)
             assertNull(rows.last().imageUrl)
-            // One threads call and one adverts call, however many rows there are.
+            assertTrue(rows.last().isListingDeleted)
+            // One threads call and one adverts page call, however many rows there are, plus one
+            // lookup for the advert that is not on the page.
             assertEquals(1, requests.count { it.endsWith("/threads") })
             assertEquals(1, requests.count { it.endsWith("/adverts") })
+            assertEquals(1, requests.count { it.endsWith("/adverts/12") })
             // The buyer-side thread's unread messages are not counted for the badge.
             assertEquals(2, harness.messagesRepository.unreadCount.value)
             viewModel.onEvent(Event.Hidden)
@@ -426,6 +432,8 @@ class MessagesViewModelTest {
             addHandler { request ->
                 if (request.url.encodedPath.endsWith("/threads")) {
                     respond(threadsJson(threadJson(1, 10), threadJson(2, 11)), HttpStatusCode.OK, jsonHeaders())
+                } else if (request.url.encodedPath.endsWith("/adverts/11")) {
+                    respond("", HttpStatusCode.InternalServerError)
                 } else {
                     respond(advertsJson(10), HttpStatusCode.OK, jsonHeaders())
                 }
@@ -440,11 +448,272 @@ class MessagesViewModelTest {
         viewModel.onEvent(Event.ThreadClicked(withoutAdvert))
 
         assertEquals(
-            Effect.OpenThread(1, 10, "Placeholder advert 10", "https://example.invalid/10.jpg"),
+            Effect.OpenThread(
+                threadId = 1,
+                advertId = 10,
+                title = "Placeholder advert 10",
+                imageUrl = "https://example.invalid/10.jpg",
+                status = AdvertStatus.Active,
+                isListingDeleted = false,
+            ),
             viewModel.effects.awaitEffect<Effect.OpenThread>(),
         )
-        assertEquals(Effect.OpenThread(2, 11, null, null), viewModel.effects.awaitEffect<Effect.OpenThread>())
+        assertEquals(
+            Effect.OpenThread(2, 11, null, null, status = null, isListingDeleted = false),
+            viewModel.effects.awaitEffect<Effect.OpenThread>(),
+        )
         viewModel.onEvent(Event.Hidden)
+    }
+
+    // --- Listing status on each row -------------------------------------------------------------
+
+    @Test
+    fun `a row carries the status of its advert for every wire status`() = runTest(testDispatcher) {
+        val statuses = mapOf(
+            "new" to AdvertStatus.New,
+            "active" to AdvertStatus.Active,
+            "limited" to AdvertStatus.Limited,
+            "removed_by_user" to AdvertStatus.RemovedByUser,
+            "outdated" to AdvertStatus.Outdated,
+            "unconfirmed" to AdvertStatus.Unconfirmed,
+            "unpaid" to AdvertStatus.Unpaid,
+            "moderated" to AdvertStatus.Moderated,
+            "blocked" to AdvertStatus.Blocked,
+            "disabled" to AdvertStatus.Disabled,
+            "removed_by_moderator" to AdvertStatus.RemovedByModerator,
+            "something_new" to AdvertStatus.Unknown,
+        )
+        val adverts = statuses.keys.mapIndexed { index, wire -> (100L + index) to wire }
+        val engine = mockEngine(testDispatcher) {
+            addHandler { request ->
+                if (request.url.encodedPath.endsWith("/threads")) {
+                    respond(
+                        threadsJson(*adverts.mapIndexed { index, (advertId, _) -> threadJson(index + 1L, advertId) }.toTypedArray()),
+                        HttpStatusCode.OK,
+                        jsonHeaders(),
+                    )
+                } else {
+                    respond(advertsJsonWithStatus(*adverts.toTypedArray()), HttpStatusCode.OK, jsonHeaders())
+                }
+            }
+        }
+        val (viewModel, _) = viewModel(engine, listOf(testAccount(1)), activeIndex = 1)
+
+        viewModel.onEvent(Event.Shown)
+        runCurrent()
+
+        val rows = viewModel.state.value.threads
+        assertEquals(adverts.map { statuses.getValue(it.second) }, rows.map { it.status })
+        assertTrue(rows.none { it.isListingDeleted })
+        viewModel.onEvent(Event.Hidden)
+    }
+
+    @Test
+    fun `an advert missing from the page is read once and a 404 marks the row deleted for good`() =
+        runTest(testDispatcher) {
+            val requests = mutableListOf<String>()
+            val engine = listingEngine(requests) { path ->
+                when {
+                    path.endsWith("/adverts/11") -> respond(AdvertNotFoundJson, HttpStatusCode.NotFound, jsonHeaders())
+                    else -> null
+                }
+            }
+            val (viewModel, _) = viewModel(engine, listOf(testAccount(1)), activeIndex = 1)
+
+            viewModel.onEvent(Event.Shown)
+            runCurrent()
+            val (live, deleted) = viewModel.state.value.threads
+            assertEquals(AdvertStatus.Active, live.status)
+            assertFalse(live.isListingDeleted)
+            assertNull(deleted.status)
+            assertNull(deleted.title)
+            assertTrue(deleted.isListingDeleted)
+
+            // Three polls, and a manual refresh: the deletion is permanent, so nothing asks again.
+            repeat(3) {
+                advanceTimeBy(PollInterval + 1.seconds)
+                runCurrent()
+            }
+            viewModel.onEvent(Event.RefreshClicked)
+            runCurrent()
+
+            assertEquals(1, requests.count { it.endsWith("/adverts/11") })
+            assertTrue(viewModel.state.value.threads.last().isListingDeleted)
+            viewModel.onEvent(Event.Hidden)
+        }
+
+    @Test
+    fun `a found advert fills its row without blocking the list`() = runTest(testDispatcher) {
+        val gate = CompletableDeferred<Unit>()
+        val engine = listingEngine(mutableListOf()) { path ->
+            if (path.endsWith("/adverts/11")) {
+                gate.await()
+                respond(advertJson(11, status = "unpaid"), HttpStatusCode.OK, jsonHeaders())
+            } else {
+                null
+            }
+        }
+        val (viewModel, _) = viewModel(engine, listOf(testAccount(1)), activeIndex = 1)
+
+        viewModel.onEvent(Event.Shown)
+        runCurrent()
+
+        // The list is up while the lookup is still waiting.
+        val pending = viewModel.state.value.threads.last()
+        assertTrue(viewModel.state.value.hasLoaded)
+        assertNull(pending.status)
+        assertFalse(pending.isListingDeleted)
+
+        gate.complete(Unit)
+        runCurrent()
+
+        val found = viewModel.state.value.threads.last()
+        assertEquals(AdvertStatus.Unpaid, found.status)
+        assertEquals("Placeholder advert 11", found.title)
+        assertFalse(found.isListingDeleted)
+        viewModel.onEvent(Event.Hidden)
+    }
+
+    @Test
+    fun `another lookup error leaves the row unknown, the poll does not retry it, a refresh does`() =
+        runTest(testDispatcher) {
+            val requests = mutableListOf<String>()
+            var answerWith = HttpStatusCode.InternalServerError
+            val engine = listingEngine(requests) { path ->
+                if (path.endsWith("/adverts/11")) {
+                    if (answerWith == HttpStatusCode.OK) {
+                        respond(advertJson(11, status = "removed_by_user"), HttpStatusCode.OK, jsonHeaders())
+                    } else {
+                        respond("", answerWith)
+                    }
+                } else {
+                    null
+                }
+            }
+            val (viewModel, _) = viewModel(engine, listOf(testAccount(1)), activeIndex = 1)
+
+            viewModel.onEvent(Event.Shown)
+            runCurrent()
+            val unknown = viewModel.state.value.threads.last()
+            assertNull(unknown.status)
+            assertFalse(unknown.isListingDeleted)
+            assertEquals(1, requests.count { it.endsWith("/adverts/11") })
+
+            repeat(3) {
+                advanceTimeBy(PollInterval + 1.seconds)
+                runCurrent()
+            }
+            assertEquals(1, requests.count { it.endsWith("/adverts/11") })
+
+            answerWith = HttpStatusCode.OK
+            viewModel.onEvent(Event.RefreshClicked)
+            runCurrent()
+
+            assertEquals(2, requests.count { it.endsWith("/adverts/11") })
+            assertEquals(AdvertStatus.RemovedByUser, viewModel.state.value.threads.last().status)
+            viewModel.onEvent(Event.Hidden)
+        }
+
+    @Test
+    fun `a poll reuses the adverts already read and a refresh and a load more read them again`() =
+        runTest(testDispatcher) {
+            val requests = mutableListOf<String>()
+            val engine = mockEngine(testDispatcher) {
+                addHandler { request ->
+                    val path = request.url.encodedPath
+                    requests += path
+                    if (path.endsWith("/threads")) {
+                        respond(page(1..50), HttpStatusCode.OK, jsonHeaders())
+                    } else {
+                        respond(advertsJson(10), HttpStatusCode.OK, jsonHeaders())
+                    }
+                }
+            }
+            val (viewModel, _) = viewModel(engine, listOf(testAccount(1)), activeIndex = 1)
+
+            viewModel.onEvent(Event.Shown)
+            runCurrent()
+            assertEquals(1, requests.count { it.endsWith("/adverts") })
+
+            repeat(3) {
+                advanceTimeBy(PollInterval + 1.seconds)
+                runCurrent()
+            }
+            assertEquals(4, requests.count { it.endsWith("/threads") })
+            assertEquals(1, requests.count { it.endsWith("/adverts") })
+            assertEquals("Placeholder advert 10", viewModel.state.value.threads.first().title)
+
+            viewModel.onEvent(Event.RefreshClicked)
+            runCurrent()
+            assertEquals(2, requests.count { it.endsWith("/adverts") })
+
+            viewModel.onEvent(Event.LoadMoreClicked)
+            runCurrent()
+            assertEquals(3, requests.count { it.endsWith("/adverts") })
+            viewModel.onEvent(Event.Hidden)
+        }
+
+    @Test
+    fun `a lookup that lands after an account switch is discarded`() = runTest(testDispatcher) {
+        val lookupGate = CompletableDeferred<Unit>()
+        val engine = mockEngine(testDispatcher) {
+            addHandler { request ->
+                val path = request.url.encodedPath
+                val isFirstAccount = request.headers["Authorization"] == "Bearer token-1"
+                when {
+                    path.endsWith("/threads") && isFirstAccount ->
+                        respond(threadsJson(threadJson(1, 11)), HttpStatusCode.OK, jsonHeaders())
+                    path.endsWith("/threads") ->
+                        respond(threadsJson(threadJson(7, 11)), HttpStatusCode.OK, jsonHeaders())
+                    path.endsWith("/adverts/11") && isFirstAccount -> {
+                        lookupGate.await()
+                        respond(AdvertNotFoundJson, HttpStatusCode.NotFound, jsonHeaders())
+                    }
+                    path.endsWith("/adverts/11") ->
+                        respond(advertJson(11, status = "removed_by_user"), HttpStatusCode.OK, jsonHeaders())
+                    else -> respond(advertsJson(), HttpStatusCode.OK, jsonHeaders())
+                }
+            }
+        }
+        val (viewModel, harness) = viewModel(
+            engine,
+            listOf(testAccount(1), testAccount(2, olxUserId = 2)),
+            activeIndex = 1,
+        )
+        viewModel.onEvent(Event.Shown)
+        runCurrent()
+
+        harness.accountRepository.setActiveAccount("ua", 2)
+        runCurrent()
+        lookupGate.complete(Unit)
+        runCurrent()
+
+        // The first account's 404 for advert 11 must not mark the second account's row deleted,
+        // and the second account looked advert 11 up for itself.
+        val row = viewModel.state.value.threads.single()
+        assertEquals(7L, row.threadId)
+        assertFalse(row.isListingDeleted)
+        assertEquals(AdvertStatus.RemovedByUser, row.status)
+        viewModel.onEvent(Event.Hidden)
+    }
+
+    /**
+     * Two threads, on adverts 10 (on the adverts page, active) and 11 (not on it). [override]
+     * answers any path first, and returns null to fall through to the defaults.
+     */
+    private fun listingEngine(
+        requests: MutableList<String>,
+        override: suspend io.ktor.client.engine.mock.MockRequestHandleScope.(path: String) -> io.ktor.client.request.HttpResponseData?,
+    ) = mockEngine(testDispatcher) {
+        addHandler { request ->
+            val path = request.url.encodedPath
+            requests += path
+            override(path) ?: if (path.endsWith("/threads")) {
+                respond(threadsJson(threadJson(1, 10), threadJson(2, 11)), HttpStatusCode.OK, jsonHeaders())
+            } else {
+                respond(advertsJson(10), HttpStatusCode.OK, jsonHeaders())
+            }
+        }
     }
 
     /** `GET threads` answers with [threads] for each `offset`; anything else is an empty adverts list. */

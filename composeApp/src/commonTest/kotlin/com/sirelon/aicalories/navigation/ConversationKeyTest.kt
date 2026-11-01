@@ -1,6 +1,7 @@
 package com.sirelon.sellsnap.navigation
 
 import androidx.navigation3.runtime.NavKey
+import com.sirelon.sellsnap.features.seller.ad.publish_success.AdvertStatus
 import kotlinx.serialization.PolymorphicSerializer
 import kotlinx.serialization.json.Json
 import kotlin.test.Test
@@ -13,10 +14,12 @@ class ConversationKeyTest {
     private val serializer = PolymorphicSerializer(NavKey::class)
 
     @Test
-    fun `a key survives saved state with its title and image, or without them`() {
+    fun `a key survives saved state with its title, image and listing status, or without them`() {
         listOf(
             AppKey.Conversation(threadId = 1, advertId = 2, title = "Placeholder title", imageUrl = "https://example.invalid/a.jpg"),
             AppKey.Conversation(threadId = 3, advertId = 4),
+            AppKey.Conversation(threadId = 5, advertId = 6, status = AdvertStatus.RemovedByUser),
+            AppKey.Conversation(threadId = 7, advertId = 8, isListingDeleted = true),
         ).forEach { key ->
             assertEquals(key, json.decodeFromString(serializer, json.encodeToString(serializer, key)))
         }

@@ -43,6 +43,7 @@ import com.sirelon.sellsnap.designsystem.buttons.AppButton
 import com.sirelon.sellsnap.designsystem.buttons.AppButtonDefaults
 import com.sirelon.sellsnap.designsystem.screens.EmptyScreen
 import com.sirelon.sellsnap.designsystem.screens.LoadingOverlay
+import com.sirelon.sellsnap.features.seller.ad.publish_success.AdvertStatus
 import com.sirelon.sellsnap.features.seller.auth.data._currentOlxCountry
 import com.sirelon.sellsnap.features.seller.messages.domain.OlxMessage
 import com.sirelon.sellsnap.features.seller.messages.domain.messageTime
@@ -50,12 +51,14 @@ import com.sirelon.sellsnap.features.seller.messages.presentation.ConversationCo
 import com.sirelon.sellsnap.features.seller.messages.presentation.ConversationContract.Event
 import com.sirelon.sellsnap.features.seller.messages.presentation.ConversationViewModel
 import com.sirelon.sellsnap.features.seller.my_ads.model.MyAdvertItem
+import com.sirelon.sellsnap.features.seller.my_ads.ui.StatusChip
 import com.sirelon.sellsnap.generated.resources.Res
 import com.sirelon.sellsnap.generated.resources.back
 import com.sirelon.sellsnap.generated.resources.conversation_reply_on_olx
 import com.sirelon.sellsnap.generated.resources.ic_arrow_right
 import com.sirelon.sellsnap.generated.resources.ic_circle_alert
 import com.sirelon.sellsnap.generated.resources.messages_buyer_label
+import com.sirelon.sellsnap.generated.resources.messages_listing_deleted
 import com.sirelon.sellsnap.generated.resources.messages_listing_fallback
 import com.sirelon.sellsnap.generated.resources.my_ads_price_not_set
 import com.sirelon.sellsnap.generated.resources.retry
@@ -73,10 +76,14 @@ fun ConversationScreenRoute(
     advertId: Long,
     title: String?,
     imageUrl: String?,
+    status: AdvertStatus?,
+    isListingDeleted: Boolean,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val viewModel: ConversationViewModel = koinViewModel { parametersOf(threadId, advertId, title, imageUrl) }
+    val viewModel: ConversationViewModel = koinViewModel {
+        parametersOf(threadId, advertId, title, imageUrl, status, isListingDeleted)
+    }
     val state by viewModel.state.collectAsStateWithLifecycle()
 
     LifecycleStartEffect(viewModel) {
@@ -132,7 +139,13 @@ private fun ConversationScreen(
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding)) {
             // Sticky by construction: it sits above the list, not inside it.
-            ListingHeader(listing = state.listing, title = state.title, imageUrl = state.imageUrl)
+            ListingHeader(
+                listing = state.listing,
+                title = state.title,
+                imageUrl = state.imageUrl,
+                status = state.listing?.status ?: state.status,
+                isDeleted = state.isListingDeleted,
+            )
 
             Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
                 if (state.errorMessage != null) {
@@ -166,42 +179,67 @@ private fun ConversationScreen(
 }
 
 @Composable
-private fun ListingHeader(listing: MyAdvertItem?, title: String?, imageUrl: String?) {
+private fun ListingHeader(
+    listing: MyAdvertItem?,
+    title: String?,
+    imageUrl: String?,
+    status: AdvertStatus?,
+    isDeleted: Boolean,
+) {
+    val dimmed = isListingDimmed(status, isDeleted)
+    // Deleted: OLX answers 404 for the advert, so there is no listing to open.
+    val url = listing?.url?.takeIf { !isDeleted && it.isNotBlank() }
     AppCard(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = AppDimens.Spacing.xl3, vertical = AppDimens.Spacing.m)
             .testTag("conversation_listing_header"),
-        onClick = listing?.url?.takeIf(String::isNotBlank)?.let { url -> { openUrl(url) } },
+        onClick = url?.let { { openUrl(it) } },
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(AppDimens.Spacing.xl),
             horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing.xl3),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            ListingThumbnail(imageUrl = listing?.primaryImageUrl ?: imageUrl, size = AppDimens.Size.xl12)
+            ListingThumbnail(
+                imageUrl = if (isDeleted) null else listing?.primaryImageUrl ?: imageUrl,
+                size = AppDimens.Size.xl12,
+                dimmed = dimmed,
+            )
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = listing?.title?.takeIf(String::isNotBlank)
-                        ?: title
-                        ?: stringResource(Res.string.messages_listing_fallback),
+                    text = when {
+                        isDeleted -> stringResource(Res.string.messages_listing_deleted)
+                        else -> listing?.title?.takeIf(String::isNotBlank)
+                            ?: title
+                            ?: stringResource(Res.string.messages_listing_fallback)
+                    },
                     style = AppTheme.typography.title,
-                    color = AppTheme.colors.onSurface,
+                    color = if (dimmed) AppTheme.colors.onSurfaceMuted else AppTheme.colors.onSurface,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
-                if (listing != null) {
-                    Text(
-                        text = listing.priceFormatted.takeIf { it.isNotBlank() }
-                            ?: stringResource(Res.string.my_ads_price_not_set),
-                        style = AppTheme.typography.body,
-                        color = AppTheme.colors.primary,
-                        fontWeight = FontWeight.SemiBold,
-                        maxLines = 1,
-                    )
+                val chipStatus = status?.takeIf { !isDeleted && it.showsStatusChip() }
+                if (!isDeleted && (listing != null || chipStatus != null)) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing.m),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        if (listing != null) {
+                            Text(
+                                text = listing.priceFormatted.takeIf { it.isNotBlank() }
+                                    ?: stringResource(Res.string.my_ads_price_not_set),
+                                style = AppTheme.typography.body,
+                                color = AppTheme.colors.primary,
+                                fontWeight = FontWeight.SemiBold,
+                                maxLines = 1,
+                            )
+                        }
+                        chipStatus?.let { StatusChip(status = it) }
+                    }
                 }
             }
-            if (listing != null) {
+            if (url != null) {
                 Icon(
                     painter = painterResource(Res.drawable.ic_arrow_right),
                     contentDescription = null,

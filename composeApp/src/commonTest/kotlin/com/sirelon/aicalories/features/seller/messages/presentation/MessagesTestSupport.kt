@@ -69,11 +69,17 @@ internal fun messagesJson(vararg messages: String) = """{"data":[${messages.join
 
 internal fun advertsJson(vararg ids: Long) = """{"data":[${ids.joinToString(",") { advertJsonBody(it) }}]}"""
 
-internal fun advertJson(id: Long) = """{"data":${advertJsonBody(id)}}"""
+/** An adverts page where each advert carries the given wire status, e.g. `10L to "removed_by_user"`. */
+internal fun advertsJsonWithStatus(vararg adverts: Pair<Long, String>) =
+    """{"data":[${adverts.joinToString(",") { (id, status) -> advertJsonBody(id, status) }}]}"""
 
-private fun advertJsonBody(id: Long) =
-    """{"id":$id,"status":"active","title":"Placeholder advert $id","url":"https://www.olx.ua/d/$id",""" +
+internal fun advertJson(id: Long, status: String = "active") = """{"data":${advertJsonBody(id, status)}}"""
+
+private fun advertJsonBody(id: Long, status: String = "active") =
+    """{"id":$id,"status":"$status","title":"Placeholder advert $id","url":"https://www.olx.ua/d/$id",""" +
         """"images":[{"url":"https://example.invalid/$id.jpg"}]}"""
+
+internal const val AdvertNotFoundJson = """{"error":{"status":404,"title":"Not Found"}}"""
 
 internal fun jsonHeaders() = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
 

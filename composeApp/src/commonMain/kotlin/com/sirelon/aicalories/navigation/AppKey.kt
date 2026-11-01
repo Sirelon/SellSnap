@@ -3,6 +3,7 @@ package com.sirelon.sellsnap.navigation
 import androidx.navigation3.runtime.NavKey
 import com.sirelon.sellsnap.analytics.AnalyticsScreen
 import com.sirelon.sellsnap.features.seller.ad.AdvertisementWithAttributes
+import com.sirelon.sellsnap.features.seller.ad.publish_success.AdvertStatus
 import com.sirelon.sellsnap.features.seller.ad.publish_success.PublishSuccessData
 import com.sirelon.sellsnap.features.seller.location.OlxLocation
 import kotlinx.serialization.Serializable
@@ -111,6 +112,8 @@ sealed interface AppKey : NavKey, AnalyticsScreen {
         /** The list row's title and thumbnail, so the header is filled before the advert loads. */
         val title: String? = null,
         val imageUrl: String? = null,
+        val status: AdvertStatus? = null,
+        val isListingDeleted: Boolean = false,
     ) : AppKey {
         override val screenName = "Conversation"
     }

@@ -26,4 +26,11 @@ class MyAdvertsRepository(
         accountRepository.withAccountToken(localIndex) { accessToken ->
             MyAdvertItemMapper.map(unauthenticatedOlxApiClient.getAdvert(accessToken, advertId).detail)
         }
+
+    /** [loadAdvert], with `null` when OLX answers 404: the advert no longer exists. */
+    suspend fun loadAdvertOrNull(localIndex: Int, advertId: Long): MyAdvertItem? =
+        accountRepository.withAccountToken(localIndex) { accessToken ->
+            unauthenticatedOlxApiClient.getAdvertOrNull(accessToken, advertId)
+                ?.let { MyAdvertItemMapper.map(it.detail) }
+        }
 }

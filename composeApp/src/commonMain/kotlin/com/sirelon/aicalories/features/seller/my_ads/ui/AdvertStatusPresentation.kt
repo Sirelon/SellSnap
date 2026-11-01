@@ -1,11 +1,18 @@
 package com.sirelon.sellsnap.features.seller.my_ads.ui
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.graphics.Color
+import com.sirelon.sellsnap.designsystem.AppDimens
 import com.sirelon.sellsnap.designsystem.AppTheme
 import com.sirelon.sellsnap.features.seller.ad.publish_success.AdvertStatus
 import com.sirelon.sellsnap.features.seller.my_ads.domain.AdvertAction
@@ -67,6 +74,27 @@ internal fun statusColor(status: AdvertStatus): Color = when (status.state) {
     AdvertState.Rejected -> AppTheme.colors.error
     AdvertState.Inactive,
     AdvertState.Unknown -> AppTheme.colors.onSurfaceMuted
+}
+
+@Composable
+internal fun StatusChip(status: AdvertStatus) {
+    val color = statusColor(status)
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(AppDimens.BorderRadius.xl))
+            .background(color.copy(alpha = 0.14f))
+            .padding(horizontal = AppDimens.Spacing.m, vertical = AppDimens.Spacing.xs),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = stringResource(statusLabel(status)),
+            style = AppTheme.typography.caption,
+            color = color,
+            fontWeight = FontWeight.SemiBold,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
 }
 
 /**
