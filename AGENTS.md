@@ -41,6 +41,12 @@ Each one is checkable. Where you cannot show it was met, say so (rule 7).
     carries the `localIndex` it acts for instead of assuming the active account. A ticket that
     says "active account only" or says nothing about tablets is not an exemption; raise it
     before building.
+12. **Every feature ships with the analytics to judge it.** Before building, the plan lists the
+    questions the data must answer — is it used, does it work, where do sellers stop, which
+    option they pick — and the events that answer them. Events and their params go in
+    `AnalyticsEvents` with a KDoc per event (what fires it, every param and its values), codes
+    in snake_case, never user text or buyer data. Screen views are already automatic; count
+    the actions and outcomes inside the screen. See Analytics.
 
 Small fixes with obvious files: read the implementation and its immediate callers only,
 validate with the narrowest meaningful build or test command plus `git diff --check`, and skip
