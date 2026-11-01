@@ -472,6 +472,7 @@
     <string name="messages_connect_description">Съобщенията от купувачи по обявите ти в OLX ще се появят тук, след като свържеш акаунт.</string>
     <string name="messages_load_failed">Не успяхме да заредим съобщенията.</string>
     <string name="messages_listing_fallback">Твоята обява</string>
+    <string name="messages_listing_deleted">Изтрита обява</string>
     <string name="messages_thread_started">Започнат %1$s</string>
     <string name="time_just_now">току-що</string>
     <plurals name="time_minutes_ago">

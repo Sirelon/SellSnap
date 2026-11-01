@@ -473,6 +473,7 @@
     <string name="messages_connect_description">Mesajele de la cumpărători pentru anunțurile tale de pe OLX vor apărea aici după ce conectezi un cont.</string>
     <string name="messages_load_failed">Nu am putut încărca mesajele.</string>
     <string name="messages_listing_fallback">Anunțul tău</string>
+    <string name="messages_listing_deleted">Anunț șters</string>
     <string name="messages_thread_started">Început %1$s</string>
     <string name="time_just_now">chiar acum</string>
     <plurals name="time_minutes_ago">

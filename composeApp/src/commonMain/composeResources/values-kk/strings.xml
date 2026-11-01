@@ -472,6 +472,7 @@
     <string name="messages_connect_description">OLX-тегі хабарландыруларың бойынша сатып алушылардың хабарламалары аккаунтты қосқаннан кейін осы жерде көрінеді.</string>
     <string name="messages_load_failed">Хабарламаларды жүктей алмадық.</string>
     <string name="messages_listing_fallback">Сенің хабарландыруың</string>
+    <string name="messages_listing_deleted">Жойылған хабарландыру</string>
     <string name="messages_thread_started">Басталды: %1$s</string>
     <string name="time_just_now">дәл қазір</string>
     <plurals name="time_minutes_ago">

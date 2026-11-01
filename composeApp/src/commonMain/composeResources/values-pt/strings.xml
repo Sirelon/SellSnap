@@ -472,6 +472,7 @@
     <string name="messages_connect_description">As mensagens dos compradores sobre os seus anúncios no OLX vão aparecer aqui depois de ligar uma conta.</string>
     <string name="messages_load_failed">Não foi possível carregar as mensagens.</string>
     <string name="messages_listing_fallback">O seu anúncio</string>
+    <string name="messages_listing_deleted">Anúncio eliminado</string>
     <string name="messages_thread_started">Iniciada %1$s</string>
     <string name="time_just_now">agora mesmo</string>
     <plurals name="time_minutes_ago">

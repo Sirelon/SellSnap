@@ -477,6 +477,7 @@
     <string name="messages_connect_description">Повідомлення від покупців щодо ваших оголошень на OLX з'являться тут після підключення акаунта.</string>
     <string name="messages_load_failed">Не вдалося завантажити повідомлення.</string>
     <string name="messages_listing_fallback">Ваше оголошення</string>
+    <string name="messages_listing_deleted">Видалене оголошення</string>
     <string name="messages_thread_started">Розпочато %1$s</string>
     <string name="time_just_now">щойно</string>
     <plurals name="time_minutes_ago">
