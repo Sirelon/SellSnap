@@ -20,6 +20,11 @@ import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
 import androidx.compose.material3.adaptive.layout.calculatePaneScaffoldDirective
 import androidx.compose.material3.adaptive.navigation.BackNavigationBehavior
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.material3.LocalMinimumInteractiveComponentSize
+import androidx.compose.material3.VerticalDragHandle
+import androidx.compose.material3.adaptive.layout.PaneExpansionState
+import androidx.compose.material3.adaptive.layout.ThreePaneScaffoldScope
 import androidx.compose.material3.adaptive.navigation3.ListDetailSceneStrategy
 import androidx.compose.material3.adaptive.navigation3.rememberListDetailSceneStrategy
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
@@ -298,9 +303,25 @@ fun App() {
             // PopLatest: back from an open conversation closes it. The default pops until the
             // panes change, and the list with a placeholder shows the same two panes, so back
             // would leave the app instead.
+            // The stock Material drag handle lets the seller resize the two panes.
+            val paneDragHandle: @Composable ThreePaneScaffoldScope.(PaneExpansionState) -> Unit =
+                remember {
+                    { state ->
+                        val interactionSource = remember { MutableInteractionSource() }
+                        VerticalDragHandle(
+                            modifier = Modifier.paneExpansionDraggable(
+                                state = state,
+                                minTouchTargetSize = LocalMinimumInteractiveComponentSize.current,
+                                interactionSource = interactionSource,
+                            ),
+                            interactionSource = interactionSource,
+                        )
+                    }
+                }
             val listDetailStrategy = rememberListDetailSceneStrategy<AppKey>(
                 backNavigationBehavior = BackNavigationBehavior.PopLatest,
                 directive = paneDirective,
+                paneExpansionDragHandle = paneDragHandle,
             )
             val sceneStrategies = remember(listDetailStrategy) {
                 listOf(
