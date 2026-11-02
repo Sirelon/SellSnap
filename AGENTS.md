@@ -22,8 +22,10 @@ Each one is checkable. Where you cannot show it was met, say so (rule 7).
    invisible in telemetry, and every restriction this app invented cost the seller something.
 5. A user-facing state, label, or paragraph exists only if the user does something different
    because of it. Two API values the user treats the same way are one state.
-6. User-facing copy is approved before it is translated: post the English `key → text` list,
-   wait, then run `localize` once. See Localization.
+6. Sentences, explanations, new states and legal text are approved before they are translated:
+   post the English `key → text` list, wait, then run `localize` once. A short label that names
+   its action ("Mark as read", "Retry") needs no approval: use it, translate it in the same pass,
+   and list it in the report. See Localization.
 7. Report what was skipped. "Completed" with a silent gap is wrong; name the gap.
 8. Name the cause before the second fix. If a symptom survives a fix, write the causal chain —
    what was observed, what produced it — before touching code again.
