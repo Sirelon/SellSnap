@@ -124,7 +124,11 @@ fun reviewPromptDecision(
     if (hadPublishErrorThisSession) {
         return ReviewPromptDecision.Skip(ReviewPromptSkipReason.RecentError)
     }
-    if (whatsNewShownThisSession) {
+    // A What's New sheet earlier in the session blocks the copied-listing ask but not the one
+    // after a publish: releases land about weekly, and the first session after an update is the
+    // one in which an active seller publishes. Over ten weeks `whats_new` was the top skip reason
+    // while only two prompts were ever requested.
+    if (whatsNewShownThisSession && trigger == ReviewPromptTrigger.CopiedListing) {
         return ReviewPromptDecision.Skip(ReviewPromptSkipReason.WhatsNew)
     }
     if (announcementShownThisSession) {

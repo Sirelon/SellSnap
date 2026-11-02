@@ -37,6 +37,12 @@
         <meta-data
             android:name="firebase_crashlytics_collection_enabled"
             android:value="true" />
+        <!-- Screens are reported by hand from the single-Activity Compose navigation (see
+             Analytics.logScreenView). The SDK's automatic Activity-level screen_view only adds a
+             "MainActivity" screen next to them and double-counts engagement. -->
+        <meta-data
+            android:name="google_analytics_automatic_screen_reporting_enabled"
+            android:value="false" />
         <!-- Channel and icon used by the FCM SDK when it displays a background notification
              message itself. The channel is created in MainActivity (see createPushChannel). -->
         <meta-data

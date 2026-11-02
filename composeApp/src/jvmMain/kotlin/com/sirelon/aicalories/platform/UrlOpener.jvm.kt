@@ -9,3 +9,6 @@ actual fun openUrl(url: String) {
         Desktop.getDesktop().browse(URI(url))
     }
 }
+
+// No store of its own; the Play listing is the canonical SellSnap page.
+actual fun storePageUrl(): String = "https://play.google.com/store/apps/details?id=com.sirelon.sellsnap"

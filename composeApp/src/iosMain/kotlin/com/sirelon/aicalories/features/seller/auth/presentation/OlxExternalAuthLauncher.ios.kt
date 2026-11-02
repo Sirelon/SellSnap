@@ -60,7 +60,10 @@ actual fun rememberOlxAuthLauncher(
                 session.presentationContextProvider = OlxAuthContextProvider(keyWindow)
             }
             holder.session = session
-            session.start()
+            if (!session.start()) {
+                holder.session = null
+                currentOnDismissed(OlxAuthDismissReason.LaunchFailed)
+            }
         }
     }
 }

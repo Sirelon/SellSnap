@@ -30,10 +30,14 @@ import coil3.compose.AsyncImage
 import com.sirelon.sellsnap.designsystem.AppDimens
 import com.sirelon.sellsnap.designsystem.AppTheme
 import com.sirelon.sellsnap.designsystem.buttons.AppButton
+import com.sirelon.sellsnap.designsystem.buttons.AppButtonDefaults
+import com.sirelon.sellsnap.features.announcements.data.ANNOUNCEMENT_LINK_STORE
 import com.sirelon.sellsnap.features.announcements.model.Announcement
 import com.sirelon.sellsnap.generated.resources.Res
 import com.sirelon.sellsnap.generated.resources.announcement_close
 import com.sirelon.sellsnap.generated.resources.announcement_ok
+import com.sirelon.sellsnap.generated.resources.announcement_open_link
+import com.sirelon.sellsnap.generated.resources.announcement_open_store
 import com.sirelon.sellsnap.generated.resources.ic_x
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
@@ -47,13 +51,20 @@ private val ImageMaxHeight = 180.dp
  * instead.
  *
  * [onDismiss] runs for the close button, OK, and (only when the announcement is dismissible)
- * back or a tap outside.
+ * back or a tap outside. [onLinkClick] gets the announcement's link when its button is tapped.
+ *
+ * A non-dismissible announcement with a link is a gate: no close button and no OK, so the link
+ * (normally the store page, for a version that no longer works) is the only way on. Without a
+ * link, OK stays even when non-dismissible, so nobody is ever stuck behind plain text.
  */
 @Composable
 fun AnnouncementDialog(
     announcement: Announcement,
     onDismiss: () -> Unit,
+    onLinkClick: (String) -> Unit,
 ) {
+    val link = announcement.link
+    val linkIsOnlyExit = link != null && !announcement.dismissible
     BasicAlertDialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(
@@ -76,13 +87,15 @@ fun AnnouncementDialog(
                         color = AppTheme.colors.onBackground,
                         modifier = Modifier.weight(1f).padding(top = AppDimens.Spacing.m),
                     )
-                    IconButton(onClick = onDismiss) {
-                        Icon(
-                            painter = painterResource(Res.drawable.ic_x),
-                            contentDescription = stringResource(Res.string.announcement_close),
-                            tint = AppTheme.colors.onSurfaceMuted,
-                            modifier = Modifier.size(AppDimens.Size.xl6),
-                        )
+                    if (!linkIsOnlyExit) {
+                        IconButton(onClick = onDismiss) {
+                            Icon(
+                                painter = painterResource(Res.drawable.ic_x),
+                                contentDescription = stringResource(Res.string.announcement_close),
+                                tint = AppTheme.colors.onSurfaceMuted,
+                                modifier = Modifier.size(AppDimens.Size.xl6),
+                            )
+                        }
                     }
                 }
 
@@ -106,11 +119,27 @@ fun AnnouncementDialog(
                     }
                 }
 
-                AppButton(
-                    modifier = Modifier.fillMaxWidth(),
-                    text = stringResource(Res.string.announcement_ok),
-                    onClick = onDismiss,
-                )
+                if (link != null) {
+                    AppButton(
+                        modifier = Modifier.fillMaxWidth(),
+                        text = stringResource(
+                            if (link == ANNOUNCEMENT_LINK_STORE) {
+                                Res.string.announcement_open_store
+                            } else {
+                                Res.string.announcement_open_link
+                            },
+                        ),
+                        onClick = { onLinkClick(link) },
+                    )
+                }
+                if (!linkIsOnlyExit) {
+                    AppButton(
+                        modifier = Modifier.fillMaxWidth(),
+                        style = if (link != null) AppButtonDefaults.outline() else AppButtonDefaults.primary(),
+                        text = stringResource(Res.string.announcement_ok),
+                        onClick = onDismiss,
+                    )
+                }
             }
         }
     }

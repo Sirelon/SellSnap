@@ -11,6 +11,9 @@ interface LocationPickerContract {
         val query: String = "",
         val isSearching: Boolean = false,
         val searchFailed: Boolean = false,
+        // Android without Google's geocoder (some AOSP and emulator images): the search box can
+        // never work, so the failure text points to the current-location action instead.
+        val geocoderUnavailable: Boolean = false,
         /** The query [results] belong to; null until a search has finished. */
         val searchedQuery: String? = null,
         val results: List<CitySuggestion> = emptyList(),

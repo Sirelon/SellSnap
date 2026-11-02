@@ -95,13 +95,19 @@ class LocationPickerViewModel(
         val trimmed = query.trim()
         if (trimmed.length < MIN_QUERY_LENGTH) {
             setState {
-                it.copy(isSearching = false, searchFailed = false, searchedQuery = null, results = emptyList())
+                it.copy(
+                    isSearching = false,
+                    searchFailed = false,
+                    geocoderUnavailable = false,
+                    searchedQuery = null,
+                    results = emptyList(),
+                )
             }
             return
         }
         searchJob = viewModelScope.launch {
             if (debounce) delay(SEARCH_DEBOUNCE_MS)
-            setState { it.copy(isSearching = true, searchFailed = false) }
+            setState { it.copy(isSearching = true, searchFailed = false, geocoderUnavailable = false) }
             try {
                 val results = locationRepository.searchCities(trimmed)
                 setState {
@@ -116,7 +122,13 @@ class LocationPickerViewModel(
                     recordNonFatal = e !is GeocoderUnavailableException,
                 )
                 setState {
-                    it.copy(isSearching = false, searchFailed = true, searchedQuery = null, results = emptyList())
+                    it.copy(
+                        isSearching = false,
+                        searchFailed = true,
+                        geocoderUnavailable = e is GeocoderUnavailableException,
+                        searchedQuery = null,
+                        results = emptyList(),
+                    )
                 }
             }
         }

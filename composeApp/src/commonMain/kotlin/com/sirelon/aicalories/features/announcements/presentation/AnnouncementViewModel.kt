@@ -3,12 +3,15 @@ package com.sirelon.sellsnap.features.announcements.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sirelon.sellsnap.config.AppConfig
+import com.sirelon.sellsnap.features.announcements.data.ANNOUNCEMENT_LINK_STORE
 import com.sirelon.sellsnap.features.announcements.data.AnnouncementsRepository
 import com.sirelon.sellsnap.features.announcements.data.AnnouncementsStore
 import com.sirelon.sellsnap.features.announcements.data.selectAnnouncement
 import com.sirelon.sellsnap.features.announcements.model.Announcement
 import com.sirelon.sellsnap.features.review.ReviewPromptCoordinator
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountStore
+import com.sirelon.sellsnap.platform.openUrl
+import com.sirelon.sellsnap.platform.storePageUrl
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -91,6 +94,11 @@ internal class AnnouncementViewModel(
 
     fun dismiss() {
         _state.update { it.copy(announcement = null) }
+    }
+
+    /** The dialog stays up: a gate must still be there when the seller comes back from the store. */
+    fun openLink(link: String) {
+        openUrl(if (link == ANNOUNCEMENT_LINK_STORE) storePageUrl() else link)
     }
 
     private companion object {

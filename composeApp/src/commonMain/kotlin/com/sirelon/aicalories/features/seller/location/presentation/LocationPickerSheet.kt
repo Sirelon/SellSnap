@@ -55,6 +55,7 @@ import com.sirelon.sellsnap.generated.resources.got_it
 import com.sirelon.sellsnap.generated.resources.location_detecting
 import com.sirelon.sellsnap.generated.resources.location_picker_district_title
 import com.sirelon.sellsnap.generated.resources.location_picker_no_results
+import com.sirelon.sellsnap.generated.resources.location_picker_geocoder_unavailable
 import com.sirelon.sellsnap.generated.resources.location_picker_search_failed
 import com.sirelon.sellsnap.generated.resources.location_picker_search_placeholder
 import com.sirelon.sellsnap.generated.resources.location_picker_title
@@ -224,7 +225,13 @@ private fun LocationPickerContent(
                     verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.m),
                 ) {
                     Text(
-                        text = stringResource(Res.string.location_picker_search_failed),
+                        text = stringResource(
+                            if (state.geocoderUnavailable) {
+                                Res.string.location_picker_geocoder_unavailable
+                            } else {
+                                Res.string.location_picker_search_failed
+                            },
+                        ),
                         style = t.body,
                         color = c.onSurfaceMuted,
                     )

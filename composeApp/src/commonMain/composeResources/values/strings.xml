@@ -19,6 +19,10 @@
     <string name="guest_mode_banner_message">Want to go live? You'll need an OLX account. For now, copy the title, description, and price below and paste them into OLX.</string>
     <string name="guest_connect_olx_cta">Connect OLX to post in one tap</string>
     <string name="guest_copy_hint">Tap the copy buttons next to the title, description, and price — then paste them into OLX when you're ready.</string>
+    <string name="guest_open_olx">Open OLX</string>
+    <string name="guest_connect_prompt_title">Post in one tap</string>
+    <string name="guest_connect_prompt_body">You've copied 3 listings. Connect your OLX account and SellSnap can post them for you.</string>
+    <string name="guest_connect_prompt_connect">Connect OLX</string>
     <string name="generate_ad_guest_connect_hint">You're browsing as a guest — connect OLX anytime from Profile to publish in one tap.</string>
     <string name="continue_with_olx">Continue with OLX</string>
     <string name="terms_privacy_prefix">By continuing, you're cool with our </string>
@@ -131,6 +135,8 @@
     <!-- Announcements -->
     <string name="announcement_ok">OK</string>
     <string name="announcement_close">Close</string>
+    <string name="announcement_open_store">Open store</string>
+    <string name="announcement_open_link">Open link</string>
 
     <!-- Notifications -->
     <string name="notifications_prompt_title">Get a heads-up from SellSnap</string>
@@ -271,6 +277,7 @@
     <string name="location_picker_search_placeholder">Search for a city</string>
     <string name="location_picker_no_results">No cities match “%1$s”</string>
     <string name="location_picker_search_failed">Couldn't search right now.</string>
+    <string name="location_picker_geocoder_unavailable">City search isn't available on this device. Use your current location instead.</string>
     <string name="location_picker_district_title">Pick a district in %1$s</string>
     <string name="got_it">Got it</string>
 
@@ -289,6 +296,7 @@
     <string name="error_upload_file_failed">Couldn't upload one of the photos.</string>
     <string name="error_publish_failed">Publishing didn't go through. Give it another shot.</string>
     <string name="error_generate_ad_failed">Couldn't generate the ad. Try again?</string>
+    <string name="error_app_check_failed">Couldn't verify this installation. Update Google Play services, or install SellSnap from Google Play, then try again.</string>
     <string name="error_photo_unreadable">Couldn't recognise the item in your photos. Try retaking them.</string>
     <string name="error_photo_different_items">These look like different items. Remove the ones you're not selling.</string>
     <string name="error_regenerate_description_failed">Couldn't regenerate the description. Try again?</string>

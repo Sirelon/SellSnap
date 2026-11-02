@@ -243,6 +243,7 @@ fun App() {
                 AnnouncementDialog(
                     announcement = announcement,
                     onDismiss = announcementViewModel::dismiss,
+                    onLinkClick = announcementViewModel::openLink,
                 )
             }
             fun switchRootTab(tab: SellerRootTab) {

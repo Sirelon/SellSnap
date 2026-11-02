@@ -6,7 +6,8 @@ import com.sirelon.sellsnap.datastore.createKeyValueStore
 /**
  * The numbers the store-review gate needs across launches: how many adverts this seller has
  * published, how many generated listings were copied from the preview, and when the native review
- * prompt was last asked for.
+ * prompt was last asked for. The copied-listing counter also drives the one-time "connect OLX"
+ * nudge for guests, whose shown flag lives here next to it.
  *
  * Neither platform reports whether the prompt was actually shown or whether a rating was left, so
  * "asked for" is the most that can ever be recorded here - see [ReviewPromptCoordinator].
@@ -29,6 +30,13 @@ class ReviewPromptStore internal constructor(
         storage.putString(KEY_COPIED_LISTING_COUNT, (copiedListingCount() + 1).toString())
     }
 
+    suspend fun guestConnectPromptShown(): Boolean =
+        storage.getString(KEY_GUEST_CONNECT_PROMPT_SHOWN) == "true"
+
+    suspend fun markGuestConnectPromptShown() {
+        storage.putString(KEY_GUEST_CONNECT_PROMPT_SHOWN, "true")
+    }
+
     suspend fun lastPromptEpochSeconds(): Long? =
         storage.getString(KEY_LAST_PROMPT_AT)?.toLongOrNull()
 
@@ -40,5 +48,6 @@ class ReviewPromptStore internal constructor(
         const val KEY_PUBLISH_COUNT = "successful_publish_count"
         const val KEY_COPIED_LISTING_COUNT = "copied_listing_count"
         const val KEY_LAST_PROMPT_AT = "last_prompt_epoch_seconds"
+        const val KEY_GUEST_CONNECT_PROMPT_SHOWN = "guest_connect_prompt_shown"
     }
 }

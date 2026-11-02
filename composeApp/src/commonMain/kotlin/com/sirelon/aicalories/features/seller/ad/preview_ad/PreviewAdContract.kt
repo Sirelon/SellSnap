@@ -79,6 +79,13 @@ interface PreviewAdContract {
         val attributeItems: List<OlxAttributeState> = emptyList(),
         val attributesLoadState: AttributesLoadState = AttributesLoadState.Loading,
         val isGuest: Boolean = false,
+        // Random id minted per generation (also the draft's key); on the copy events so they join
+        // the generation's own events in BigQuery.
+        val generationId: String = "",
+        // Guest-only extras on the preview: the market's website for pasting by hand, and the
+        // one-time "connect OLX" sheet after the third copied listing.
+        val openOlxUrl: String = "",
+        val showGuestConnectPrompt: Boolean = false,
         // SIR-83: the account new listings will publish to. Shown only when there is a real
         // decision to make - i.e. screenshotMode (placeholder identity) or 2+ connected accounts
         // for the active country - so a single-account seller sees no new UI at all (PRD Q20).
@@ -186,6 +193,12 @@ interface PreviewAdContract {
          * until the screen has settled. A seller who leaves within that window is not asked.
          */
         data object CopyFeedbackFinished : PreviewAdEvent
+
+        /** A guest tapped "Open OLX" under the copy hint. */
+        data object OpenOlxClicked : PreviewAdEvent
+
+        /** The one-time "connect OLX" sheet closed; [choice] is `connect`, `not_now` or `dismissed`. */
+        data class GuestConnectPromptAnswered(val choice: String) : PreviewAdEvent
     }
 
     sealed interface PreviewAdEffect {

@@ -116,4 +116,18 @@ class AnnouncementMapperTest {
 
         assertNull(announcement?.minVersion)
     }
+
+    @Test
+    fun `a link is kept only as the store keyword or an https url`() {
+        fun withLink(link: String) = AnnouncementResponse(
+            active = true,
+            content = AnnouncementContentResponse(title = mapOf("en" to "Title"), link = link),
+        ).toDomain("a", "en")
+
+        assertEquals("store", withLink(" store ")?.link)
+        assertEquals("https://sellsnap.app/x", withLink("https://sellsnap.app/x")?.link)
+        assertNull(withLink("http://sellsnap.app/x")?.link)
+        assertNull(withLink("update")?.link)
+        assertNull(response().toDomain("a", "en")?.link)
+    }
 }

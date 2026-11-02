@@ -25,6 +25,7 @@ internal fun AnnouncementResponse.toDomain(id: String, languageCode: String): An
         title = title,
         body = content?.body.resolve(languageCode),
         imageUrl = content?.imageUrl?.takeIf { it.isNotBlank() },
+        link = content?.link.normalizedLink(),
         dismissible = rules?.dismissible ?: true,
         // Anything but "everyLaunch" - including a typo - is "once": the quieter reading.
         showMode = if (rules?.showMode == SHOW_MODE_EVERY_LAUNCH) {
@@ -39,6 +40,14 @@ internal fun AnnouncementResponse.toDomain(id: String, languageCode: String): An
         priority = rules?.priority ?: 0,
     )
 }
+
+/** The `link` value that opens this platform's store page rather than a URL. */
+internal const val ANNOUNCEMENT_LINK_STORE = "store"
+
+// Anything that is neither the store keyword nor an https URL is dropped rather than opened: a
+// typo in the console must not hand the browser a bare word.
+private fun String?.normalizedLink(): String? =
+    this?.trim()?.takeIf { it == ANNOUNCEMENT_LINK_STORE || it.startsWith("https://") }
 
 // Falls back to English when a translation is missing rather than dropping the announcement -
 // content is hand-edited in Firestore and a locale won't always be filled in right away.

@@ -27,7 +27,6 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
-import kotlin.time.Clock
 
 class AppNavigationViewModel(
     savedStateHandle: SavedStateHandle,
@@ -155,20 +154,20 @@ class AppNavigationViewModel(
      * A login the previous process left open: the pending authorization is still on disk and no OLX
      * callback has reached this process. iOS loses its ASWebAuthenticationSession with the process;
      * on Android the Custom Tab outlives it and a redirect may still arrive, which is why the session
-     * is marked rather than cleared. `duration_ms` is wall-clock from the session's creation, whole
-     * seconds.
+     * is marked rather than cleared. No `duration_ms`: the login ended at some unknown moment
+     * before this process started, and the session's wall-clock age (weeks, when the seller simply
+     * never came back) only ever reached Analytics clamped to `Int.MAX_VALUE`. `interrupted` tells
+     * these apart from a login the seller closed in front of us.
      */
     private suspend fun reportInterruptedAuthorization() {
         if (OlxAuthCallbackBridge.publishedCount > 0) return
-        val session = authRepository.abandonPendingAuthorization() ?: return
-        val durationMs = (Clock.System.now().toEpochMilliseconds() - session.createdAtEpochSeconds * 1000)
-            .coerceAtLeast(0L)
+        authRepository.abandonPendingAuthorization() ?: return
         analytics.logEvent(
             AnalyticsEvents.AUTH_ABANDONED,
             mapOf(
                 "reason" to OlxAuthDismissReason.SystemCancelled.analyticsValue,
                 "country" to olxCountryStore.current.code,
-                "duration_ms" to durationMs,
+                "interrupted" to true,
             ),
         )
     }

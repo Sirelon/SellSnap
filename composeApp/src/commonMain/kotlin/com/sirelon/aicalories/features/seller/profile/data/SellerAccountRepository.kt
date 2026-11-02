@@ -195,7 +195,7 @@ class SellerAccountRepository internal constructor(
                 "was_duplicate" to result.wasDuplicate,
             ),
         )
-        analytics.setUserProperty(USER_PROPERTY_CONNECTED_ACCOUNT_COUNT, accountStore.recordFlow.value.accounts.size.toString())
+        analytics.setUserProperty(AnalyticsEvents.USER_PROPERTY_CONNECTED_ACCOUNT_COUNT, accountStore.recordFlow.value.accounts.size.toString())
 
         return if (result.wasDuplicate) {
             AddAccountOutcome.ReconnectedDuplicate(result.account)
@@ -296,7 +296,7 @@ class SellerAccountRepository internal constructor(
             AnalyticsEvents.ACCOUNT_DISCONNECTED,
             mapOf("remaining_account_count" to after.accounts.size, "was_active" to wasActive),
         )
-        analytics.setUserProperty(USER_PROPERTY_CONNECTED_ACCOUNT_COUNT, after.accounts.size.toString())
+        analytics.setUserProperty(AnalyticsEvents.USER_PROPERTY_CONNECTED_ACCOUNT_COUNT, after.accounts.size.toString())
     }
 
     /**
@@ -329,7 +329,7 @@ class SellerAccountRepository internal constructor(
         draftsRepository.deleteAll()
         olxCountryStore.clear()
         analyticsConsentRepository.resetConsent()
-        analytics.setUserProperty(USER_PROPERTY_CONNECTED_ACCOUNT_COUNT, "0")
+        analytics.setUserProperty(AnalyticsEvents.USER_PROPERTY_CONNECTED_ACCOUNT_COUNT, "0")
     }
 
     suspend fun savedLocation(): OlxLocation? = locationRepository.getSavedLocation()
@@ -430,7 +430,6 @@ class SellerAccountRepository internal constructor(
         const val SECONDS_PER_DAY = 86_400L
         const val KEEP_ALIVE_STALE_SECONDS = 20 * SECONDS_PER_DAY
         const val TOKEN_REFRESH_SKEW_SECONDS = 60L
-        const val USER_PROPERTY_CONNECTED_ACCOUNT_COUNT = "connected_account_count"
     }
 }
 

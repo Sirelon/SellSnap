@@ -20,16 +20,19 @@ object AnalyticsEvents {
      *
      * `reason` is `user_cancelled` (iOS: `ASWebAuthenticationSession` reports
      * `ASWebAuthenticationSessionErrorCodeCanceledLogin`; Android: the app resumed after the login
-     * tab with no OLX callback, see OlxAuthReturnTracker) or `system_cancelled` (iOS: any other
+     * tab with no OLX callback, see OlxAuthReturnTracker), `system_cancelled` (iOS: any other
      * `ASWebAuthenticationSession` error; either platform: the process was killed with the login
-     * open, reported on the next start). `country` is the OLX market the seller chose.
-     * `duration_ms` is present in the first-connect flow (time since `auth_started`) and for a
-     * login reported on the next start (wall-clock from the authorization request, whole seconds).
+     * open, reported on the next start with `interrupted` = "true" and no duration) or
+     * `launch_failed` (iOS: the session never presented). `country` is the OLX market the seller
+     * chose. `duration_ms` is present only in the first-connect flow (time since `auth_started`).
      */
     const val AUTH_ABANDONED = "auth_abandoned"
 
     const val ONBOARDING_COMPLETED = "onboarding_completed"
 
+    // `generation_id` - a random UUID minted per generation, also the draft's key (SIR-133) - is
+    // on every generation, copy, vote, regenerate, polish and publish event, so the listing's
+    // whole life joins in BigQuery. It identifies nothing about the seller or the item.
     const val AD_GENERATION_STARTED = "ad_generation_started"
 
     /**
@@ -158,6 +161,26 @@ object AnalyticsEvents {
 
     /** A draft was removed on the Drafts screen. No params. */
     const val DRAFT_REMOVED = "draft_removed"
+
+    /**
+     * A guest who had copied three generated listings out by hand, in a returning session, was
+     * shown the one-time "connect OLX" sheet on the preview (ReviewPromptCoordinator
+     * .shouldNudgeGuestToConnect). Once per install. Carries `generation_id`.
+     */
+    const val GUEST_CONNECT_PROMPT_SHOWN = "guest_connect_prompt_shown"
+
+    /** `choice` is `connect` | `not_now` | `dismissed` (swiped away). Carries `generation_id`. */
+    const val GUEST_CONNECT_PROMPT_ANSWERED = "guest_connect_prompt_answered"
+
+    /** A guest tapped "Open OLX" under the copy hint on the preview. Carries `generation_id`. */
+    const val GUEST_OPEN_OLX_TAPPED = "guest_open_olx_tapped"
+
+    /**
+     * User property: OLX accounts connected on this device, "0" for a guest. Set whenever the
+     * account list changes and when guest mode is entered, so guests are segmentable from the
+     * first session rather than only after a connect.
+     */
+    const val USER_PROPERTY_CONNECTED_ACCOUNT_COUNT = "connected_account_count"
 
     // Which button the seller pressed on the "close this listing?" sheet, as `choice`
     // (stay | leave). Leaving keeps the draft in Drafts. The sheet's own screen_view only says it

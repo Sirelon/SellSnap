@@ -55,6 +55,7 @@ class SellerAuthViewModel(
 
             SellerAuthContract.SellerAuthEvent.ContinueAsGuestClicked -> {
                 viewModelScope.launch {
+                    analytics.setUserProperty(AnalyticsEvents.USER_PROPERTY_CONNECTED_ACCOUNT_COUNT, "0")
                     authRepository.enterGuestMode()
                     postEffect(SellerAuthContract.SellerAuthEffect.OpenHome)
                 }
@@ -90,6 +91,7 @@ class SellerAuthViewModel(
             SellerAuthContract.SellerAuthEvent.LoginClosedGuestChosen -> {
                 setState { it.copy(showLoginClosedSheet = false) }
                 viewModelScope.launch {
+                    analytics.setUserProperty(AnalyticsEvents.USER_PROPERTY_CONNECTED_ACCOUNT_COUNT, "0")
                     authRepository.enterGuestMode(showConnectLaterHint = true)
                     postEffect(SellerAuthContract.SellerAuthEffect.OpenHome)
                 }

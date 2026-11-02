@@ -67,10 +67,22 @@ class ReviewPromptGateTest {
     }
 
     @Test
-    fun `the whats new sheet is the one interruption this session gets`() {
+    fun `the whats new sheet does not block the ask after a publish`() {
+        assertEquals(
+            ReviewPromptDecision.Request,
+            decide(whatsNewShownThisSession = true),
+        )
+    }
+
+    @Test
+    fun `the whats new sheet is the one interruption a copying guest gets`() {
         assertSkip(
             ReviewPromptSkipReason.WhatsNew,
-            decide(whatsNewShownThisSession = true),
+            decide(
+                trigger = ReviewPromptTrigger.CopiedListing,
+                publishCount = ReviewPromptMinCopiedListings,
+                whatsNewShownThisSession = true,
+            ),
         )
     }
 
