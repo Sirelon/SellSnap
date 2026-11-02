@@ -94,3 +94,22 @@ internal enum class AdvertCommand(val wireValue: String) {
     /** Rejected by OLX in some markets - see [com.sirelon.sellsnap.features.seller.auth.domain.OlxCountry.supportsExtendCommand]. */
     Extend("extend"),
 }
+
+/**
+ * Body of `POST threads/{id}/commands`. [isFavourite] belongs to `set-favourite` only, which this
+ * app does not send, so it is never set and the OLX client's `Json` (`explicitNulls = false`)
+ * leaves it off the wire.
+ */
+@Serializable
+internal data class ThreadCommandRequest(
+    @SerialName("command") val command: String,
+    @SerialName("is_favourite") val isFavourite: Boolean? = null,
+)
+
+/**
+ * The thread commands this app sends. OLX accepts `mark-as-read` and `set-favourite`
+ * (developer.olx.ua, swagger v2 `/threads/{threadId}/commands`, `command` enum).
+ */
+internal enum class ThreadCommand(val wireValue: String) {
+    MarkAsRead("mark-as-read"),
+}

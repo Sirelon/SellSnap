@@ -1,6 +1,7 @@
 package com.sirelon.sellsnap.features.seller.auth.domain
 
 import com.sirelon.sellsnap.platform.getDeviceCountryCode
+import kotlinx.datetime.TimeZone
 
 data class OlxCountry(
     val code: String,
@@ -50,6 +51,27 @@ data class OlxCountry(
             "bg" -> "bg-BG"
             else -> null
         }
+
+    /**
+     * The zone OLX's timestamps are written in: they carry no offset, so this is how they are
+     * placed on the timeline. Ukraine is verified: `created_at` matched the token's `issued_at`
+     * in Europe/Kyiv (SIR-88, olx.ua).
+     *
+     * Inferred: the other markets use their own capital's zone the same way. Nothing from OLX
+     * confirms it, and Kazakhstan, which spans two zones, is assumed to be Almaty's.
+     */
+    val timeZone: TimeZone
+        get() = TimeZone.of(
+            when (code) {
+                "ua" -> "Europe/Kyiv"
+                "pl" -> "Europe/Warsaw"
+                "ro" -> "Europe/Bucharest"
+                "bg" -> "Europe/Sofia"
+                "pt" -> "Europe/Lisbon"
+                "kz" -> "Asia/Almaty"
+                else -> "UTC"
+            },
+        )
 
     // Redact credentials so they never leak through logs, analytics, or crash reports.
     override fun toString(): String =

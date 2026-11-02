@@ -3,6 +3,7 @@ package com.sirelon.sellsnap.navigation
 import androidx.navigation3.runtime.NavKey
 import com.sirelon.sellsnap.analytics.AnalyticsScreen
 import com.sirelon.sellsnap.features.seller.ad.AdvertisementWithAttributes
+import com.sirelon.sellsnap.features.seller.ad.publish_success.AdvertStatus
 import com.sirelon.sellsnap.features.seller.ad.publish_success.PublishSuccessData
 import com.sirelon.sellsnap.features.seller.location.OlxLocation
 import kotlinx.serialization.Serializable
@@ -70,6 +71,11 @@ sealed interface AppKey : NavKey, AnalyticsScreen {
     }
 
     @Serializable
+    data object Messages : AppKey {
+        override val screenName = "Messages"
+    }
+
+    @Serializable
     data class Profile(val reason: String? = null) : AppKey {
         override val screenName = "Profile"
     }
@@ -97,6 +103,23 @@ sealed interface AppKey : NavKey, AnalyticsScreen {
     @Serializable
     data object Drafts : AppKey {
         override val screenName = "Drafts"
+    }
+
+    @Serializable
+    data class Conversation(
+        val threadId: Long,
+        val advertId: Long,
+        /** The list row's title and thumbnail, so the header is filled before the advert loads. */
+        val title: String? = null,
+        val imageUrl: String? = null,
+        val status: AdvertStatus? = null,
+        val isListingDeleted: Boolean = false,
+        /** The account the thread belongs to. Null in keys saved before accounts were carried: the active account. */
+        val localIndex: Int? = null,
+        /** The list row had unread messages when it was opened; only analytics reads it. */
+        val hadUnread: Boolean = false,
+    ) : AppKey {
+        override val screenName = "Conversation"
     }
 
     @Serializable
@@ -146,12 +169,13 @@ sealed interface AppKey : NavKey, AnalyticsScreen {
 }
 
 /**
- * True for the four bottom-nav tab roots. A restored back stack whose bottom entry satisfies
+ * True for the five bottom-nav tab roots. A restored back stack whose bottom entry satisfies
  * this represents a real in-progress position within the seller flow (mid-draft on PreviewAd,
  * a non-default tab, ...) - see [com.sirelon.sellsnap.startup.AppNavigationViewModel].
  */
 val AppKey.isSellerFlowEntry: Boolean
     get() = this is AppKey.GenerateAd ||
         this is AppKey.MyAdverts ||
+        this is AppKey.Messages ||
         (this is AppKey.Profile && reason == null) ||
         this is AppKey.Settings
