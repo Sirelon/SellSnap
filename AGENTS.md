@@ -54,6 +54,18 @@ Small fixes with obvious files: read the implementation and its immediate caller
 validate with the narrowest meaningful build or test command plus `git diff --check`, and skip
 anything above that does not apply.
 
+## Linear ticket status after merge
+Agents merge finished work straight to the default branch. The owner later installs the fresh
+build and checks every pending ticket in one pass.
+
+- **Human Check** — the change has behaviour a person must see on a device: UI, flows, copy,
+  notifications, store or ads behaviour, anything that only shows in a real install. Add a
+  comment with numbered check steps and the expected result for each.
+- **Done** — only when the build and tests fully prove the change: refactors, docs, tests,
+  build config.
+- Never move a ticket you implemented to Done when it needs a device check. The owner moves it
+  from Human Check to Done after checking.
+
 ## Subagent limits (append to every brief, after the global block)
 
 > No russian text in any file. Never commit `screenshotMode = true`. Never attempt an OLX
