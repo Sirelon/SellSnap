@@ -1,5 +1,162 @@
 [
   {
+    "version": "3.8",
+    "date": "2026-11-02",
+    "active": true,
+    "changes": [
+      {
+        "id": "buyer-messages",
+        "icon": "feature",
+        "title": {
+          "en": "Buyer messages",
+          "uk": "Повідомлення від покупців",
+          "ru": "Повідомлення від покупців",
+          "bg": "Съобщения от купувачи",
+          "kk": "Сатып алушылардың хабарламалары",
+          "pl": "Wiadomości od kupujących",
+          "pt": "Mensagens de compradores",
+          "ro": "Mesaje de la cumpărători"
+        },
+        "summary": {
+          "en": "A new Messages tab shows what buyers write about your OLX listings",
+          "uk": "Нова вкладка «Повідомлення» показує, що покупці пишуть про ваші оголошення на OLX",
+          "ru": "Нова вкладка «Повідомлення» показує, що покупці пишуть про ваші оголошення на OLX",
+          "bg": "Нов раздел „Съобщения“ показва какво пишат купувачите за твоите обяви в OLX",
+          "kk": "Жаңа «Хабарламалар» қойындысында сатып алушылар OLX хабарландыруларың туралы не жазатынын көресің",
+          "pl": "Nowa karta „Wiadomości” pokazuje, co kupujący piszą o Twoich ogłoszeniach na OLX",
+          "pt": "Um novo separador Mensagens mostra o que os compradores escrevem sobre os seus anúncios no OLX",
+          "ro": "Un tab nou, Mesaje, îți arată ce scriu cumpărătorii despre anunțurile tale de pe OLX"
+        },
+        "detail": {
+          "en": "A badge on the tab counts unread chats. Each conversation shows the listing and its status, and the whole chat with photos. Tap Mark as read when you have seen it, or Reply on OLX to answer.",
+          "uk": "Значок на вкладці показує кількість непрочитаних чатів. Кожна розмова показує оголошення та його статус, а також усе листування з фото. Торкніться «Позначити як прочитане», коли побачите його, або «Відповісти на OLX», щоб відповісти.",
+          "ru": "Значок на вкладці показує кількість непрочитаних чатів. Кожна розмова показує оголошення та його статус, а також усе листування з фото. Торкніться «Позначити як прочитане», коли побачите його, або «Відповісти на OLX», щоб відповісти.",
+          "bg": "Значка на раздела показва колко чата са непрочетени. Всеки разговор показва обявата и нейния статус, както и целия чат със снимките. Докосни „Маркирай като прочетено“, когато го видиш, или „Отговори в OLX“, за да отговориш.",
+          "kk": "Қойындыдағы белгі оқылмаған чаттардың санын көрсетеді. Әр әңгімеде хабарландыру мен оның күйі, сондай-ақ суреттері бар бүкіл чат көрінеді. Көргеннен кейін «Оқылды деп белгілеу» түймесін бас немесе жауап беру үшін «OLX-те жауап беру» түймесін бас.",
+          "pl": "Znaczek na karcie pokazuje liczbę nieprzeczytanych czatów. Każda rozmowa pokazuje ogłoszenie i jego status oraz cały czat ze zdjęciami. Gdy zobaczysz wiadomość, dotknij „Oznacz jako przeczytane”, a żeby odpowiedzieć, „Odpowiedz na OLX”.",
+          "pt": "Um emblema no separador conta as conversas por ler. Cada conversa mostra o anúncio e o respetivo estado, e o chat completo com fotografias. Toque em «Marcar como lida» quando a vir, ou em «Responder no OLX» para responder.",
+          "ro": "O insignă pe tab numără conversațiile necitite. Fiecare conversație arată anunțul și starea lui, plus tot chatul cu poze. Atinge „Marchează ca citit” când ai văzut mesajul sau „Răspunde pe OLX” ca să răspunzi."
+        }
+      },
+      {
+        "id": "guest-connect-prompt",
+        "icon": "upload",
+        "title": {
+          "en": "Post in one tap",
+          "uk": "Публікація в один тап",
+          "ru": "Публікація в один тап",
+          "bg": "Публикувай с един допир",
+          "kk": "Бір түртіп жариялау",
+          "pl": "Publikuj jednym kliknięciem",
+          "pt": "Publique num toque",
+          "ro": "Postează dintr-o atingere"
+        },
+        "summary": {
+          "en": "Copied a few listings? Connect OLX and SellSnap posts them for you",
+          "uk": "Скопіювали кілька оголошень? Підключіть OLX, і SellSnap опублікує їх за вас",
+          "ru": "Скопіювали кілька оголошень? Підключіть OLX, і SellSnap опублікує їх за вас",
+          "bg": "Копира няколко обяви? Свържи OLX и SellSnap ще ги публикува вместо теб",
+          "kk": "Бірнеше хабарландыруды көшірдің бе? OLX-ті қос, SellSnap оларды сен үшін жариялайды",
+          "pl": "Skopiowałeś kilka ogłoszeń? Połącz OLX, a SellSnap opublikuje je za Ciebie",
+          "pt": "Copiou alguns anúncios? Ligue o OLX e o SellSnap publica-os por si",
+          "ro": "Ai copiat câteva anunțuri? Conectează OLX și SellSnap le postează pentru tine"
+        },
+        "detail": {
+          "en": "After you copy 3 listings, SellSnap offers to connect your OLX account. The copy hint also has an Open OLX button.",
+          "uk": "Після того як ви скопіюєте 3 оголошення, SellSnap запропонує підключити ваш обліковий запис OLX. У підказці про копіювання також є кнопка «Відкрити OLX».",
+          "ru": "Після того як ви скопіюєте 3 оголошення, SellSnap запропонує підключити ваш обліковий запис OLX. У підказці про копіювання також є кнопка «Відкрити OLX».",
+          "bg": "След като копираш 3 обяви, SellSnap ще ти предложи да свържеш акаунта си в OLX. В подсказката за копиране има и бутон „Отвори OLX“.",
+          "kk": "3 хабарландыруды көшіргеннен кейін SellSnap OLX аккаунтыңды қосуды ұсынады. Көшіру туралы кеңесте «OLX-ті ашу» түймесі де бар.",
+          "pl": "Po skopiowaniu 3 ogłoszeń SellSnap zaproponuje połączenie Twojego konta OLX. W podpowiedzi o kopiowaniu jest też przycisk „Otwórz OLX”.",
+          "pt": "Depois de copiar 3 anúncios, o SellSnap propõe ligar a sua conta OLX. A dica de cópia também tem um botão «Abrir o OLX».",
+          "ro": "După ce copiezi 3 anunțuri, SellSnap îți propune să conectezi contul tău OLX. Indiciul de copiere are și un buton „Deschide OLX”."
+        }
+      },
+      {
+        "id": "faster-start",
+        "icon": "improvement",
+        "title": {
+          "en": "Faster start",
+          "uk": "Швидший запуск",
+          "ru": "Швидший запуск",
+          "bg": "По-бърз старт",
+          "kk": "Жылдамырақ іске қосылу",
+          "pl": "Szybszy start",
+          "pt": "Arranque mais rápido",
+          "ro": "Pornire mai rapidă"
+        },
+        "summary": {
+          "en": "The app no longer waits for OLX at startup on a slow connection",
+          "uk": "Застосунок більше не чекає на OLX під час запуску за повільного з'єднання",
+          "ru": "Застосунок більше не чекає на OLX під час запуску за повільного з'єднання",
+          "bg": "Приложението вече не чака OLX при стартиране при бавна връзка",
+          "kk": "Баяу байланыс кезінде қолданба енді іске қосылғанда OLX-ті күтіп тұрмайды",
+          "pl": "Aplikacja nie czeka już na OLX przy starcie przy wolnym połączeniu",
+          "pt": "A aplicação já não espera pelo OLX ao arrancar com uma ligação lenta",
+          "ro": "Aplicația nu mai așteaptă OLX la pornire când conexiunea e lentă"
+        }
+      },
+      {
+        "id": "polish-keeps-price",
+        "icon": "fix",
+        "title": {
+          "en": "AI polish keeps your price",
+          "uk": "Покращення від ШІ зберігає вашу ціну",
+          "ru": "Покращення від ШІ зберігає вашу ціну",
+          "bg": "Подобряването с AI запазва цената ти",
+          "kk": "ЖИ жақсартуы бағаңды сақтайды",
+          "pl": "Poprawa przez AI zachowuje Twoją cenę",
+          "pt": "O aperfeiçoamento com IA mantém o seu preço",
+          "ro": "Îmbunătățirea cu AI îți păstrează prețul"
+        },
+        "summary": {
+          "en": "Polishing the description no longer fails when the AI suggests no price",
+          "uk": "Покращення опису більше не завершується помилкою, коли ШІ не пропонує ціну",
+          "ru": "Покращення опису більше не завершується помилкою, коли ШІ не пропонує ціну",
+          "bg": "Подобряването на описанието вече не се проваля, когато AI не предлага цена",
+          "kk": "ЖИ баға ұсынбаса, сипаттаманы жақсарту енді қатемен аяқталмайды",
+          "pl": "Poprawianie opisu nie kończy się już błędem, gdy AI nie proponuje ceny",
+          "pt": "Aperfeiçoar a descrição já não falha quando a IA não sugere preço",
+          "ro": "Îmbunătățirea descrierii nu mai dă eroare când AI nu sugerează un preț"
+        }
+      },
+      {
+        "id": "clearer-errors",
+        "icon": "fix",
+        "title": {
+          "en": "Clearer error messages",
+          "uk": "Зрозуміліші повідомлення про помилки",
+          "ru": "Зрозуміліші повідомлення про помилки",
+          "bg": "По-ясни съобщения за грешки",
+          "kk": "Түсінікті қате хабарламалары",
+          "pl": "Czytelniejsze komunikaty o błędach",
+          "pt": "Mensagens de erro mais claras",
+          "ro": "Mesaje de eroare mai clare"
+        },
+        "summary": {
+          "en": "The app now says what to do when city search or the device check fails",
+          "uk": "Тепер застосунок підказує, що робити, якщо не працює пошук міста або перевірка пристрою",
+          "ru": "Тепер застосунок підказує, що робити, якщо не працює пошук міста або перевірка пристрою",
+          "bg": "Сега приложението казва какво да направиш, когато търсенето на град или проверката на устройството не успее",
+          "kk": "Қала іздеу немесе құрылғыны тексеру сәтсіз болса, қолданба енді не істеу керегін айтады",
+          "pl": "Aplikacja podpowiada teraz, co zrobić, gdy nie działa wyszukiwanie miasta lub weryfikacja urządzenia",
+          "pt": "A aplicação passa a indicar o que fazer quando a pesquisa de cidade ou a verificação do dispositivo falha",
+          "ro": "Aplicația îți spune acum ce să faci când căutarea orașului sau verificarea dispozitivului eșuează"
+        },
+        "detail": {
+          "en": "If city search is not available on your device, the location picker tells you to use your current location. If the device check fails on Android, the message tells you how to fix it.",
+          "uk": "Якщо пошук міста недоступний на вашому пристрої, вибір локації радить скористатися поточним місцеперебуванням. Якщо перевірка пристрою на Android не пройшла, повідомлення підкаже, як це виправити.",
+          "ru": "Якщо пошук міста недоступний на вашому пристрої, вибір локації радить скористатися поточним місцеперебуванням. Якщо перевірка пристрою на Android не пройшла, повідомлення підкаже, як це виправити.",
+          "bg": "Ако търсенето на град не е налично на устройството ти, избирането на локация те насочва да използваш текущото си местоположение. Ако проверката на устройството в Android не успее, съобщението ти казва как да я поправиш.",
+          "kk": "Құрылғыңда қала іздеу қолжетімсіз болса, орынды таңдау терезесі ағымдағы орныңды пайдалануды ұсынады. Android-та құрылғыны тексеру сәтсіз болса, хабарлама мұны қалай түзетуді айтады.",
+          "pl": "Jeśli wyszukiwanie miasta jest niedostępne na Twoim urządzeniu, wybór lokalizacji podpowie, żeby użyć Twojej bieżącej lokalizacji. Jeśli weryfikacja urządzenia na Androidzie się nie powiedzie, komunikat podpowie, jak to naprawić.",
+          "pt": "Se a pesquisa de cidade não estiver disponível no seu dispositivo, o seletor de localização indica que use a sua localização atual. Se a verificação do dispositivo falhar no Android, a mensagem explica como resolver.",
+          "ro": "Dacă căutarea orașului nu e disponibilă pe dispozitivul tău, selectorul de locație îți spune să folosești locația curentă. Dacă verificarea dispozitivului eșuează pe Android, mesajul îți spune cum să rezolvi."
+        }
+      }
+    ]
+  },
+  {
     "version": "3.7",
     "date": "2026-10-31",
     "active": true,
