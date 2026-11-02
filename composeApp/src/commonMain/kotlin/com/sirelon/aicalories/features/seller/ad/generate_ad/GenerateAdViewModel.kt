@@ -48,6 +48,7 @@ import com.sirelon.sellsnap.features.seller.openai.OpenAIClient
 import com.sirelon.sellsnap.features.seller.openai.UnusablePhotoReason
 import com.sirelon.sellsnap.generated.resources.Res
 import com.sirelon.sellsnap.generated.resources.error_category_not_supported
+import com.sirelon.sellsnap.generated.resources.error_app_check_failed
 import com.sirelon.sellsnap.generated.resources.error_generate_ad_failed
 import com.sirelon.sellsnap.generated.resources.error_photo_different_items
 import com.sirelon.sellsnap.generated.resources.error_photo_unreadable
@@ -79,6 +80,7 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.getString
+import com.sirelon.sellsnap.platform.PlatformTargets
 
 private const val GuestProcessingStepCount = 3
 private const val AuthenticatedProcessingStepCount = 5
@@ -291,7 +293,7 @@ class GenerateAdViewModel(
                 photoCount = currentState().uploads.size
                 analytics.logEvent(
                     AnalyticsEvents.AD_GENERATION_STARTED,
-                    mapOf("is_guest" to isGuest),
+                    mapOf("is_guest" to isGuest, "generation_id" to generationSessionId),
                 )
                 setState {
                     it.copy(
@@ -407,7 +409,7 @@ class GenerateAdViewModel(
                 analytics.logEvent(
                     AnalyticsEvents.AD_GENERATION_SUCCEEDED,
                     buildGenerationStageParams(startedAt.elapsedNow().inWholeMilliseconds, photoCount, uploadMs, uploadBytes, modelMs, attributesMs) +
-                        mapOf("retry_count" to retryCount),
+                        mapOf("retry_count" to retryCount, "is_guest" to isGuest, "generation_id" to generationSessionId),
                 )
                 val nowEpochSeconds = Clock.System.now().toEpochMilliseconds() / 1000
                 draftsRepository.upsert(
@@ -423,9 +425,15 @@ class GenerateAdViewModel(
                 postEffect(GenerateAdContract.GenerateAdEffect.OpenAdPreview(ad = ad))
             }
             .catch { error ->
-                val message = when (error) {
-                    is PhotoUploadFailedException -> null
-                    is UnsupportedOlxCategoryException -> getString(Res.string.error_category_not_supported)
+                // 401 after the client already retried once with a fresh App Check token: the
+                // device cannot be verified. Android only - the copy names Google Play services,
+                // and iOS App Check has no remedy a seller can apply.
+                val appCheckRejected = error is OpenAIAPIException && error.statusCode == 401 &&
+                    PlatformTargets.isAndroid()
+                val message = when {
+                    error is PhotoUploadFailedException -> null
+                    error is UnsupportedOlxCategoryException -> getString(Res.string.error_category_not_supported)
+                    appCheckRejected -> getString(Res.string.error_app_check_failed)
                     else -> error.toGenerateAdErrorMessage(
                         defaultMessage = getString(Res.string.error_generate_ad_failed),
                     )
@@ -435,7 +443,7 @@ class GenerateAdViewModel(
                 analytics.logEvent(
                     AnalyticsEvents.AD_GENERATION_FAILED,
                     buildGenerationStageParams(startedAt.elapsedNow().inWholeMilliseconds, photoCount, uploadMs, uploadBytes, modelMs, attributesMs) +
-                        mapOf("reason" to failureReason, "retry_count" to retryCount),
+                        mapOf("reason" to failureReason, "retry_count" to retryCount, "is_guest" to isGuest, "generation_id" to generationSessionId),
                 )
                 setState { it.copy(isLoading = false) }
                 if (message != null) {
@@ -454,6 +462,7 @@ class GenerateAdViewModel(
                             mapOf(
                                 "completed_steps" to currentState().completedSteps,
                                 "trigger" to (cancelTrigger ?: "left"),
+                                "generation_id" to generationSessionId,
                             ),
                     )
                 }
@@ -676,7 +685,7 @@ class GenerateAdViewModel(
         )
         analytics.logEvent(
             AnalyticsEvents.AD_GENERATION_PHOTOS_UNUSABLE,
-            mapOf("reason" to reason.code, "duration_ms" to durationMs),
+            mapOf("reason" to reason.code, "duration_ms" to durationMs, "generation_id" to generationSessionId),
         )
         reportShownError(reason = "photos_unusable:${reason.code}")
         showError(getString(reason.messageRes))

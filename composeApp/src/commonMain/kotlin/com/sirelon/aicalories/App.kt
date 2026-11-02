@@ -277,6 +277,7 @@ fun App() {
                 AnnouncementDialog(
                     announcement = announcement,
                     onDismiss = announcementViewModel::dismiss,
+                    onLinkClick = announcementViewModel::openLink,
                 )
             }
             fun switchRootTab(tab: SellerRootTab) {
@@ -407,6 +408,16 @@ fun App() {
                                 }
                             }
 
+                            top is AppKey.PreviewBackInfo -> {
+                                // Swiped away or system back: neither button was pressed. Both
+                                // arrive here - the sheet's onDismissRequest is this onBack.
+                                analytics.logEvent(
+                                    AnalyticsEvents.AD_DRAFT_EXIT_CHOICE,
+                                    mapOf("choice" to "dismissed"),
+                                )
+                                navVm.popDestination()
+                            }
+
                             else -> navVm.popDestination()
                         }
                     },
@@ -491,7 +502,7 @@ fun App() {
                                     // Reuses Profile's existing reconnect route rather than a
                                     // second OAuth entry point - same pattern as
                                     // PublishNeedsReconnect below.
-                                    navVm.backStack.add(AppKey.Profile(reason = connectOlxReason))
+                                    navVm.backStack.add(AppKey.Profile(reason = connectOlxReason, source = "my_ads_reconnect"))
                                 },
                             )
                         }
@@ -586,7 +597,7 @@ fun App() {
                                         snackbarHostState.showSnackbar(effect.message)
 
                                     is PreviewAdContract.PreviewAdEffect.NavigateToProfile ->
-                                        navVm.backStack.add(AppKey.Profile(effect.reason))
+                                        navVm.backStack.add(AppKey.Profile(reason = effect.reason, source = "publish_contact"))
 
                                     is PreviewAdContract.PreviewAdEffect.PickDistrict ->
                                         navVm.backStack.add(AppKey.SelectLocation(districtsOf = effect.city))
@@ -607,7 +618,7 @@ fun App() {
                                             duration = SnackbarDuration.Long,
                                         )
                                         if (result == SnackbarResult.ActionPerformed) {
-                                            navVm.backStack.add(AppKey.Profile(effect.message))
+                                            navVm.backStack.add(AppKey.Profile(reason = effect.message, source = "publish_reconnect"))
                                         }
                                     }
                                 }
@@ -630,8 +641,8 @@ fun App() {
                                     onChangeLocationClick = { navVm.backStack.add(AppKey.SelectLocation()) },
                                     pendingLocation = pendingLocation,
                                     onLocationConsumed = { pendingLocation = null },
-                                    onConnectOlxClick = {
-                                        navVm.backStack.add(AppKey.Profile(reason = connectOlxReason))
+                                    onConnectOlxClick = { source ->
+                                        navVm.backStack.add(AppKey.Profile(reason = connectOlxReason, source = source))
                                     },
                                     onPublishConfirmationRequested = {
                                         if (navVm.backStack.lastOrNull() !is AppKey.PreviewPublishConfirm) {
@@ -823,6 +834,7 @@ fun App() {
                                 addOrReconnectRequested = addOrReconnectRequested,
                                 onAddOrReconnectConsumed = { addOrReconnectRequested = false },
                                 reason = destination.reason,
+                                source = destination.source,
                             )
                         }
 

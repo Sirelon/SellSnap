@@ -145,11 +145,12 @@ class SellerAccountRepository internal constructor(
      * "reconnect" method is needed - reconnecting a dead account is just another add-account
      * attempt that happens to dedupe against an existing localIndex.
      */
-    internal suspend fun addAccount(callbackUrl: String): AddAccountOutcome {
+    internal suspend fun addAccount(callbackUrl: String, source: String): AddAccountOutcome {
         val countryCode = olxCountryStore.current.code
+        lastAddAccountSource = source
         analytics.logEvent(
             AnalyticsEvents.ACCOUNT_ADD_STARTED,
-            mapOf("country" to countryCode, "existing_account_count" to accountCountFor(countryCode)),
+            mapOf("country" to countryCode, "existing_account_count" to accountCountFor(countryCode), "source" to source),
         )
 
         val tokens = try {
@@ -193,9 +194,10 @@ class SellerAccountRepository internal constructor(
                 "country" to countryCode,
                 "new_account_count" to accountCountFor(countryCode),
                 "was_duplicate" to result.wasDuplicate,
+                "source" to source,
             ),
         )
-        analytics.setUserProperty(USER_PROPERTY_CONNECTED_ACCOUNT_COUNT, accountStore.recordFlow.value.accounts.size.toString())
+        analytics.setUserProperty(AnalyticsEvents.USER_PROPERTY_CONNECTED_ACCOUNT_COUNT, accountStore.recordFlow.value.accounts.size.toString())
 
         return if (result.wasDuplicate) {
             AddAccountOutcome.ReconnectedDuplicate(result.account)
@@ -203,6 +205,9 @@ class SellerAccountRepository internal constructor(
             AddAccountOutcome.Added(result.account)
         }
     }
+
+    // The `source` of the add-account attempt in flight, for the failure event's params.
+    private var lastAddAccountSource: String = "unknown"
 
     private suspend fun addAccountFailure(
         countryCode: String,
@@ -218,6 +223,7 @@ class SellerAccountRepository internal constructor(
                 "country" to countryCode,
                 "reason" to reason.analyticsReason,
                 "consecutive_failures" to accountStore.consecutiveFailureCount(localIndex = null, countryCode = countryCode),
+                "source" to lastAddAccountSource,
             ),
         )
         return AddAccountOutcome.Failed(reason)
@@ -231,7 +237,7 @@ class SellerAccountRepository internal constructor(
      * [addAccount] directly for the full [AddAccountOutcome].
      */
     suspend fun completeAuthorization(callbackUrl: String): Result<OlxUser> = runCatching {
-        when (val outcome = addAccount(callbackUrl)) {
+        when (val outcome = addAccount(callbackUrl, source = "landing")) {
             is AddAccountOutcome.Added, is AddAccountOutcome.ReconnectedDuplicate ->
                 _user.value ?: throw IllegalStateException("OLX account connected, but profile data is unavailable.")
             is AddAccountOutcome.Failed -> throw outcome.reason.toThrowable()
@@ -296,7 +302,7 @@ class SellerAccountRepository internal constructor(
             AnalyticsEvents.ACCOUNT_DISCONNECTED,
             mapOf("remaining_account_count" to after.accounts.size, "was_active" to wasActive),
         )
-        analytics.setUserProperty(USER_PROPERTY_CONNECTED_ACCOUNT_COUNT, after.accounts.size.toString())
+        analytics.setUserProperty(AnalyticsEvents.USER_PROPERTY_CONNECTED_ACCOUNT_COUNT, after.accounts.size.toString())
     }
 
     /**
@@ -329,7 +335,7 @@ class SellerAccountRepository internal constructor(
         draftsRepository.deleteAll()
         olxCountryStore.clear()
         analyticsConsentRepository.resetConsent()
-        analytics.setUserProperty(USER_PROPERTY_CONNECTED_ACCOUNT_COUNT, "0")
+        analytics.setUserProperty(AnalyticsEvents.USER_PROPERTY_CONNECTED_ACCOUNT_COUNT, "0")
     }
 
     suspend fun savedLocation(): OlxLocation? = locationRepository.getSavedLocation()
@@ -430,7 +436,6 @@ class SellerAccountRepository internal constructor(
         const val SECONDS_PER_DAY = 86_400L
         const val KEEP_ALIVE_STALE_SECONDS = 20 * SECONDS_PER_DAY
         const val TOKEN_REFRESH_SKEW_SECONDS = 60L
-        const val USER_PROPERTY_CONNECTED_ACCOUNT_COUNT = "connected_account_count"
     }
 }
 

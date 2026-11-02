@@ -25,9 +25,9 @@ internal class FirebaseAppCheckTokenProvider(
         runCatching { FirebaseApp.initializeApp(context) }
     }
 
-    override suspend fun token(): String? = suspendCancellableCoroutine { continuation ->
+    override suspend fun token(forceRefresh: Boolean): String? = suspendCancellableCoroutine { continuation ->
         FirebaseAppCheck.getInstance()
-            .getAppCheckToken(false)
+            .getAppCheckToken(forceRefresh)
             .addOnSuccessListener { continuation.resume(it.token) }
             .addOnFailureListener { error ->
                 // The proxy answers 401 without a token, so the failure surfaces as a generation

@@ -18,3 +18,5 @@ actual fun openUrl(url: String) {
     }
     context.startActivity(intent)
 }
+
+actual fun storePageUrl(): String = "https://play.google.com/store/apps/details?id=com.sirelon.sellsnap"

@@ -19,6 +19,10 @@
     <string name="guest_mode_banner_message">Vrei să publici? Ai nevoie de un cont OLX. Deocamdată, copiază titlul, descrierea și prețul de mai jos și lipește-le în OLX.</string>
     <string name="guest_connect_olx_cta">Conectează OLX pentru a posta dintr-o atingere</string>
     <string name="guest_copy_hint">Atinge butoanele de copiere de lângă titlu, descriere și preț — apoi lipește-le în OLX când ești gata.</string>
+    <string name="guest_open_olx">Deschide OLX</string>
+    <string name="guest_connect_prompt_title">Postează dintr-o atingere</string>
+    <string name="guest_connect_prompt_body">Ai copiat 3 anunțuri. Conectează-ți contul OLX și SellSnap le poate posta pentru tine.</string>
+    <string name="guest_connect_prompt_connect">Conectează OLX</string>
     <string name="generate_ad_guest_connect_hint">Acum ești în modul oaspete — conectează OLX oricând din Profil, ca să publici dintr-o atingere.</string>
     <string name="continue_with_olx">Continuă cu OLX</string>
     <string name="terms_privacy_prefix">Continuând, ești de acord cu </string>
@@ -129,6 +133,8 @@
     <!-- Announcements -->
     <string name="announcement_ok">OK</string>
     <string name="announcement_close">Închide</string>
+    <string name="announcement_open_store">Deschide magazinul</string>
+    <string name="announcement_open_link">Deschide linkul</string>
 
     <!-- Notifications -->
     <string name="notifications_prompt_title">Primește vești importante de la SellSnap</string>
@@ -269,6 +275,7 @@
     <string name="location_picker_search_placeholder">Caută un oraș</string>
     <string name="location_picker_no_results">Niciun oraș nu se potrivește cu „%1$s”</string>
     <string name="location_picker_search_failed">Nu putem căuta acum.</string>
+    <string name="location_picker_geocoder_unavailable">Căutarea orașelor nu este disponibilă pe acest dispozitiv. Folosește în schimb locația ta curentă.</string>
     <string name="location_picker_district_title">Alege zona: %1$s</string>
     <string name="got_it">Am înțeles</string>
 
@@ -287,6 +294,7 @@
     <string name="error_upload_file_failed">Nu s-a putut încărca una dintre fotografii.</string>
     <string name="error_publish_failed">Publicarea nu a reușit. Mai încearcă o dată.</string>
     <string name="error_generate_ad_failed">Nu s-a putut genera anunțul. Încerci din nou?</string>
+    <string name="error_app_check_failed">Nu am putut verifica această instalare. Actualizează serviciile Google Play sau instalează SellSnap din Google Play, apoi încearcă din nou.</string>
     <string name="error_photo_unreadable">Nu am putut recunoaște articolul din fotografiile tale. Încearcă să le refaci.</string>
     <string name="error_photo_different_items">Par a fi articole diferite. Elimină-le pe cele pe care nu le vinzi.</string>
     <string name="error_regenerate_description_failed">Nu s-a putut regenera descrierea. Încerci din nou?</string>

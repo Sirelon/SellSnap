@@ -16,6 +16,14 @@ import kotlin.time.Clock
 internal var reviewPromptAlwaysRequest = false
 
 /**
+ * Generated listings a guest must have copied out by hand before the one-time "connect OLX" sheet
+ * is shown. Three is where copying has become a habit rather than a try-out - the Polish guests
+ * who produced most copies in 2026 averaged a dozen listings each - while the store-review ask
+ * waits for [ReviewPromptMinCopiedListings].
+ */
+const val GuestConnectPromptMinCopiedListings: Int = 3
+
+/**
  * Owns the store-review decision: the persisted counters, the flags that must not outlive the
  * process, and the analytics that make an otherwise invisible feature diagnosable.
  *
@@ -40,7 +48,7 @@ class ReviewPromptCoordinator(
      */
     var hadPublishErrorThisSession: Boolean = false
 
-    /** The What's New sheet was shown this session; one interruption per session is enough. */
+    /** The What's New sheet was shown this session; blocks the copied-listing ask only, see [reviewPromptDecision]. */
     var whatsNewShownThisSession: Boolean = false
 
     /** An announcement dialog was shown this session. */
@@ -71,6 +79,20 @@ class ReviewPromptCoordinator(
 
     fun onPublishFailed() {
         hadPublishErrorThisSession = true
+    }
+
+    /**
+     * Whether a copying guest should now see the one-time "connect OLX" sheet: at least
+     * [GuestConnectPromptMinCopiedListings] listings copied, in a session that is not the install
+     * session, and never shown before. Storage failures read as "do not ask".
+     */
+    suspend fun shouldNudgeGuestToConnect(): Boolean =
+        isReturningSession &&
+            runCatching { store.copiedListingCount() }.getOrDefault(0) >= GuestConnectPromptMinCopiedListings &&
+            !runCatching { store.guestConnectPromptShown() }.getOrDefault(true)
+
+    suspend fun markGuestConnectPromptShown() {
+        runCatching { store.markGuestConnectPromptShown() }
     }
 
     /**

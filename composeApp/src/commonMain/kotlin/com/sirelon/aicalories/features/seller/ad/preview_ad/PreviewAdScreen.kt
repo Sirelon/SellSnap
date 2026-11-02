@@ -102,6 +102,7 @@ import com.sirelon.sellsnap.designsystem.ThumbsVoteRow
 import com.sirelon.sellsnap.designsystem.TransparentInput
 import com.sirelon.sellsnap.designsystem.buttons.AppButton
 import com.sirelon.sellsnap.designsystem.buttons.AppButtonDefaults
+import com.sirelon.sellsnap.features.seller.ad.preview_ad.ui.GuestConnectPromptSheet
 import com.sirelon.sellsnap.designsystem.dismissKeyboardOnTapOutside
 import com.sirelon.sellsnap.designsystem.pager.ImagesCarousel
 import com.sirelon.sellsnap.designsystem.rememberKeyboardDismissAction
@@ -141,6 +142,8 @@ import com.sirelon.sellsnap.generated.resources.error_attr_must_be_numeric
 import com.sirelon.sellsnap.generated.resources.error_attr_required
 import com.sirelon.sellsnap.generated.resources.guest_connect_olx_cta
 import com.sirelon.sellsnap.generated.resources.guest_copy_hint
+import com.sirelon.sellsnap.generated.resources.guest_open_olx
+import com.sirelon.sellsnap.platform.openUrl
 import com.sirelon.sellsnap.generated.resources.guest_mode_banner_message
 import com.sirelon.sellsnap.generated.resources.guest_mode_banner_title
 import com.sirelon.sellsnap.generated.resources.ic_arrow_left
@@ -209,7 +212,8 @@ internal fun PreviewAdContentRoute(
     onChangeLocationClick: () -> Unit,
     pendingLocation: OlxLocation?,
     onLocationConsumed: () -> Unit,
-    onConnectOlxClick: () -> Unit,
+    // Analytics source for the add-account events: `preview_cta` or `preview_prompt`.
+    onConnectOlxClick: (source: String) -> Unit,
     onPublishConfirmationRequested: () -> Unit,
     onTargetAccountRowClick: () -> Unit,
     showImagesPreview: (List<String>, Int) -> Unit,
@@ -319,7 +323,7 @@ internal fun PreviewAdContentRoute(
                         text = stringResource(Res.string.guest_connect_olx_cta),
                         onClick = {
                             dismissKeyboard()
-                            onConnectOlxClick()
+                            onConnectOlxClick("preview_cta")
                         },
                     )
                 } else if (state.isSessionResolved && state.isUpdatingListing) {
@@ -424,6 +428,7 @@ internal fun PreviewAdContentRoute(
 
             PreviewAdContent(
                 onEvent = viewModel::onEvent,
+                onConnectOlxClick = onConnectOlxClick,
                 state = state,
                 titleState = viewModel.titleState,
                 descriptionState = viewModel.descriptionState,
@@ -636,13 +641,36 @@ private fun GuestModeBanner(modifier: Modifier = Modifier) {
     }
 }
 
+// Copy events carry the listing's generation id and the guest flag, so a copy joins its
+// generation in BigQuery and guest copies are countable without the user property.
+private val PreviewAdContract.PreviewAdState.copyParams: Map<String, Any>
+    get() = mapOf("generation_id" to generationId, "is_guest" to isGuest)
+
+/**
+ * The guest's hand-paste loop starts here: copy, then "Open OLX" takes the seller to the market's
+ * site (the home page - the posting form's path could not be verified per market, see
+ * OlxCountry.websiteUrl) instead of leaving them to find it.
+ */
 @Composable
-private fun GuestCopyHint() {
-    Text(
-        text = stringResource(Res.string.guest_copy_hint),
-        style = AppTheme.typography.caption,
-        color = AppTheme.colors.onSurfaceMuted,
-    )
+private fun GuestCopyHint(
+    openOlxUrl: String,
+    onOpenOlx: () -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.s)) {
+        Text(
+            text = stringResource(Res.string.guest_copy_hint),
+            style = AppTheme.typography.caption,
+            color = AppTheme.colors.onSurfaceMuted,
+        )
+        AppButton(
+            style = AppButtonDefaults.ghost(),
+            text = stringResource(Res.string.guest_open_olx),
+            onClick = {
+                onOpenOlx()
+                openUrl(openOlxUrl)
+            },
+        )
+    }
 }
 
 /**
@@ -668,6 +696,8 @@ private fun PreviewAdContent(
     descriptionDictationLanguageTag: String?,
     state: PreviewAdContract.PreviewAdState,
     onEvent: (PreviewAdEvent) -> Unit,
+    // Analytics source for the add-account events: `preview_cta` or `preview_prompt`.
+    onConnectOlxClick: (source: String) -> Unit,
     autoOpenAttributeCode: String?,
     autoOpenAttributeRequest: Int,
     autoOpenAttributeModifier: Modifier,
@@ -685,6 +715,18 @@ private fun PreviewAdContent(
         onError = { onEvent(PreviewAdEvent.DictationFailed(DictationField.Description, it)) },
     )
     var showPolishSheet by remember { mutableStateOf(false) }
+
+    if (state.showGuestConnectPrompt) {
+        GuestConnectPromptSheet(
+            onConnect = {
+                onEvent(PreviewAdEvent.GuestConnectPromptAnswered("connect"))
+                dismissKeyboard()
+                onConnectOlxClick("preview_prompt")
+            },
+            onNotNow = { onEvent(PreviewAdEvent.GuestConnectPromptAnswered("not_now")) },
+            onDismiss = { onEvent(PreviewAdEvent.GuestConnectPromptAnswered("dismissed")) },
+        )
+    }
 
     if (showPolishSheet) {
         ModalBottomSheet(
@@ -714,6 +756,7 @@ private fun PreviewAdContent(
             titleState = titleState,
             isInvalid = isTitleInvalid,
             onEvent = onEvent,
+            copyParams = state.copyParams,
             readOnly = state.isPolishingDescription,
             modifier = rewriteEffects(ListingField.Title, isRewriting = state.isPolishingDescription, state = state),
         )
@@ -723,6 +766,7 @@ private fun PreviewAdContent(
                 descriptionState = descriptionState,
                 isInvalid = isDescriptionInvalid,
                 onEvent = onEvent,
+                copyParams = state.copyParams,
                 readOnly = state.isUpdatingListing,
                 modifier = rewriteEffects(ListingField.Description, isRewriting = state.isUpdatingListing, state = state),
             )
@@ -784,7 +828,10 @@ private fun PreviewAdContent(
         }
 
         if (state.isSessionResolved && state.isGuest) {
-            GuestCopyHint()
+            GuestCopyHint(
+                openOlxUrl = state.openOlxUrl,
+                onOpenOlx = { onEvent(PreviewAdEvent.OpenOlxClicked) },
+            )
         }
 
         val priceTextFieldState = rememberTextFieldState(state.price.roundToInt().toString())
@@ -813,6 +860,7 @@ private fun PreviewAdContent(
             minPrice = state.minPrice,
             maxPrice = state.maxPrice,
             currency = state.currency,
+            copyParams = state.copyParams,
             readOnly = state.isPolishingDescription,
             modifier = rewriteEffects(ListingField.Price, isRewriting = state.isPolishingDescription, state = state),
         )
@@ -927,6 +975,7 @@ private fun AdTitleCard(
     titleState: TextFieldState,
     isInvalid: Boolean,
     onEvent: (PreviewAdEvent) -> Unit,
+    copyParams: Map<String, Any> = emptyMap(),
     readOnly: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
@@ -944,6 +993,7 @@ private fun AdTitleCard(
             CopyPill(
                 value = titleState.text.toString(),
                 field = "title",
+                extraParams = copyParams,
                 onCopied = { onEvent(PreviewAdEvent.ListingCopied) },
                 onFeedbackFinished = { onEvent(PreviewAdEvent.CopyFeedbackFinished) },
             )
@@ -957,6 +1007,7 @@ private fun AdDescriptionCard(
     descriptionState: TextFieldState,
     isInvalid: Boolean,
     onEvent: (PreviewAdEvent) -> Unit,
+    copyParams: Map<String, Any> = emptyMap(),
     readOnly: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
@@ -974,6 +1025,7 @@ private fun AdDescriptionCard(
             CopyPill(
                 value = descriptionState.text.toString(),
                 field = "description",
+                extraParams = copyParams,
                 onCopied = { onEvent(PreviewAdEvent.ListingCopied) },
                 onFeedbackFinished = { onEvent(PreviewAdEvent.CopyFeedbackFinished) },
             )
@@ -988,6 +1040,7 @@ private fun AdPriceCard(
     minPrice: Float,
     maxPrice: Float,
     currency: OlxCurrency,
+    copyParams: Map<String, Any> = emptyMap(),
     readOnly: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
@@ -1024,6 +1077,7 @@ private fun AdPriceCard(
                     modifier = Modifier.padding(horizontal = AppDimens.Spacing.xl3),
                     value = price.roundToLong().toString(),
                     field = "price",
+                    extraParams = copyParams,
                 )
             }
 
@@ -1314,6 +1368,7 @@ fun CopyPill(
     modifier: Modifier = Modifier,
     label: String = stringResource(Res.string.copy_pill_default),
     eventName: String = AnalyticsEvents.AD_CONTENT_COPIED,
+    extraParams: Map<String, Any> = emptyMap(),
     onCopied: () -> Unit = {},
     onFeedbackFinished: () -> Unit = {},
 ) {
@@ -1339,7 +1394,7 @@ fun CopyPill(
                 onCopied()
                 analytics.logEvent(
                     eventName,
-                    mapOf("field" to field),
+                    mapOf("field" to field) + extraParams,
                 )
             }
         },

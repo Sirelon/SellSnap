@@ -144,8 +144,11 @@ fun ProfileScreenRoute(
     addOrReconnectRequested: Boolean,
     onAddOrReconnectConsumed: () -> Unit,
     reason: String? = null,
+    // Analytics only - where the seller came from, see AppKey.Profile.source.
+    source: String? = null,
 ) {
     val viewModel: ProfileViewModel = koinViewModel()
+    LaunchedEffect(source) { viewModel.setEntrySource(source) }
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 

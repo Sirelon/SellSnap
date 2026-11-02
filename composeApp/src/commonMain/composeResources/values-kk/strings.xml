@@ -19,6 +19,10 @@
     <string name="guest_mode_banner_message">Жариялағың келе ме? OLX аккаунты қажет. Әзірге төмендегі тақырыпты, сипаттаманы және бағаны көшіріп, OLX-ке қой.</string>
     <string name="guest_connect_olx_cta">Бір түртіп жариялау үшін OLX-ті қос</string>
     <string name="guest_copy_hint">Тақырып, сипаттама және баға жанындағы көшіру түймелерін түрт — содан кейін дайын болғанда OLX-ке қой.</string>
+    <string name="guest_open_olx">OLX-ті ашу</string>
+    <string name="guest_connect_prompt_title">Бір түртіп жариялау</string>
+    <string name="guest_connect_prompt_body">Сен 3 хабарландыруды көшірдің. OLX аккаунтыңды қос, сонда SellSnap оларды сенің орныңа жариялай алады.</string>
+    <string name="guest_connect_prompt_connect">OLX-ті қосу</string>
     <string name="generate_ad_guest_connect_hint">Қазір қонақ режиміндесің — бір түртіп жариялау үшін кез келген уақытта Профильде OLX-ті қос.</string>
     <string name="continue_with_olx">OLX арқылы кіру</string>
     <string name="terms_privacy_prefix">Жалғастыру арқылы сен біздің </string>
@@ -129,6 +133,8 @@
     <!-- Announcements -->
     <string name="announcement_ok">ОК</string>
     <string name="announcement_close">Жабу</string>
+    <string name="announcement_open_store">Дүкенді ашу</string>
+    <string name="announcement_open_link">Сілтемені ашу</string>
 
     <!-- Notifications -->
     <string name="notifications_prompt_title">SellSnap-тан маңызды жаңалықтарды біліп отыр</string>
@@ -269,6 +275,7 @@
     <string name="location_picker_search_placeholder">Қала іздеу</string>
     <string name="location_picker_no_results">«%1$s» сұрауына сәйкес қала жоқ</string>
     <string name="location_picker_search_failed">Қазір іздей алмадық.</string>
+    <string name="location_picker_geocoder_unavailable">Бұл құрылғыда қала іздеу қолжетімсіз. Орнына ағымдағы орныңды пайдалан.</string>
     <string name="location_picker_district_title">Ауданды таңда: %1$s</string>
     <string name="got_it">Түсінікті</string>
 
@@ -287,6 +294,7 @@
     <string name="error_upload_file_failed">Фотолардың бірін жүктеу мүмкін болмады.</string>
     <string name="error_publish_failed">Жариялау сәтсіз аяқталды. Қайталап көр.</string>
     <string name="error_generate_ad_failed">Хабарландыруды жасау мүмкін болмады. Қайталап көресің бе?</string>
+    <string name="error_app_check_failed">Бұл орнатуды тексеру мүмкін болмады. Google Play services қызметін жаңарт немесе SellSnap-ты Google Play-ден орнатып, қайталап көр.</string>
     <string name="error_photo_unreadable">Фотодағы затты тани алмадық. Қайта түсіріп көр.</string>
     <string name="error_photo_different_items">Бұл әртүрлі заттар сияқты. Сатылмайтындарын алып таста.</string>
     <string name="error_regenerate_description_failed">Сипаттаманы қайта жасау мүмкін болмады. Қайталап көресің бе?</string>

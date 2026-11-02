@@ -19,6 +19,10 @@
     <string name="guest_mode_banner_message">Искаш да публикуваш? Ще ти трябва OLX акаунт. Засега копирай заглавието, описанието и цената по-долу и ги постни в OLX.</string>
     <string name="guest_connect_olx_cta">Свържи OLX и публикувай с един допир</string>
     <string name="guest_copy_hint">Докосни бутоните за копиране до заглавието, описанието и цената — после ги постни в OLX, когато си готов.</string>
+    <string name="guest_open_olx">Отвори OLX</string>
+    <string name="guest_connect_prompt_title">Публикувай с един допир</string>
+    <string name="guest_connect_prompt_body">Копира 3 обяви. Свържи акаунта си в OLX и SellSnap може да ги публикува вместо теб.</string>
+    <string name="guest_connect_prompt_connect">Свържи OLX</string>
     <string name="generate_ad_guest_connect_hint">Сега си в гостови режим — свържи OLX по всяко време в Профила, за да публикуваш с един допир.</string>
     <string name="continue_with_olx">Продължи с OLX</string>
     <string name="terms_privacy_prefix">С продължаването приемаш нашите </string>
@@ -129,6 +133,8 @@
     <!-- Announcements -->
     <string name="announcement_ok">ОК</string>
     <string name="announcement_close">Затвори</string>
+    <string name="announcement_open_store">Отвори магазина</string>
+    <string name="announcement_open_link">Отвори връзката</string>
 
     <!-- Notifications -->
     <string name="notifications_prompt_title">Получавай важното от SellSnap</string>
@@ -269,6 +275,7 @@
     <string name="location_picker_search_placeholder">Потърси град</string>
     <string name="location_picker_no_results">Няма градове, съвпадащи с „%1$s“</string>
     <string name="location_picker_search_failed">Сега не можем да търсим.</string>
+    <string name="location_picker_geocoder_unavailable">Търсенето на градове не е налично на това устройство. Използвай текущото си местоположение.</string>
     <string name="location_picker_district_title">Избери район: %1$s</string>
     <string name="got_it">Разбрах</string>
 
@@ -287,6 +294,7 @@
     <string name="error_upload_file_failed">Не можах да кача една от снимките.</string>
     <string name="error_publish_failed">Публикуването не се получи. Опитай пак.</string>
     <string name="error_generate_ad_failed">Не можах да генерирам обявата. Опитай отново?</string>
+    <string name="error_app_check_failed">Не успяхме да проверим тази инсталация. Обнови Google Play Services или инсталирай SellSnap от Google Play и опитай отново.</string>
     <string name="error_photo_unreadable">Не можах да разпозная артикула на снимките. Опитай пак.</string>
     <string name="error_photo_different_items">Това изглежда като различни артикули. Премахни тези, които не продаваш.</string>
     <string name="error_regenerate_description_failed">Описанието не можа да се генерира отново. Опитай пак?</string>

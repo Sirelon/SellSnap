@@ -9,6 +9,8 @@ data class Announcement(
     val title: String,
     val body: String?,
     val imageUrl: String?,
+    /** [ANNOUNCEMENT_LINK_STORE][com.sirelon.sellsnap.features.announcements.data.ANNOUNCEMENT_LINK_STORE] or an https URL; null when the document has none or it is malformed. */
+    val link: String? = null,
     val dismissible: Boolean,
     val showMode: ShowMode,
     val minVersion: String?,

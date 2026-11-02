@@ -19,6 +19,10 @@
     <string name="guest_mode_banner_message">Chcesz opublikować? Potrzebujesz konta OLX. Na razie skopiuj tytuł, opis i cenę poniżej i wklej je na OLX.</string>
     <string name="guest_connect_olx_cta">Połącz OLX, by publikować jednym kliknięciem</string>
     <string name="guest_copy_hint">Kliknij przyciski kopiowania przy tytule, opisie i cenie — potem wklej je na OLX, kiedy będziesz gotowy.</string>
+    <string name="guest_open_olx">Otwórz OLX</string>
+    <string name="guest_connect_prompt_title">Publikuj jednym kliknięciem</string>
+    <string name="guest_connect_prompt_body">Skopiowałeś 3 ogłoszenia. Połącz swoje konto OLX, a SellSnap opublikuje je za Ciebie.</string>
+    <string name="guest_connect_prompt_connect">Połącz OLX</string>
     <string name="generate_ad_guest_connect_hint">Teraz jesteś w trybie gościa — połącz OLX w dowolnym momencie w Profilu, by publikować jednym kliknięciem.</string>
     <string name="continue_with_olx">Kontynuuj z OLX</string>
     <string name="terms_privacy_prefix">Kontynuując, akceptujesz nasze </string>
@@ -129,6 +133,8 @@
     <!-- Announcements -->
     <string name="announcement_ok">OK</string>
     <string name="announcement_close">Zamknij</string>
+    <string name="announcement_open_store">Otwórz sklep</string>
+    <string name="announcement_open_link">Otwórz link</string>
 
     <!-- Notifications -->
     <string name="notifications_prompt_title">Dostawaj ważne wieści od SellSnap</string>
@@ -269,6 +275,7 @@
     <string name="location_picker_search_placeholder">Szukaj miasta</string>
     <string name="location_picker_no_results">Brak miast pasujących do „%1$s”</string>
     <string name="location_picker_search_failed">Nie możemy teraz wyszukać.</string>
+    <string name="location_picker_geocoder_unavailable">Wyszukiwanie miast jest niedostępne na tym urządzeniu. Użyj zamiast tego swojej bieżącej lokalizacji.</string>
     <string name="location_picker_district_title">Wybierz dzielnicę: %1$s</string>
     <string name="got_it">Jasne</string>
 
@@ -287,6 +294,7 @@
     <string name="error_upload_file_failed">Nie udało się przesłać jednego ze zdjęć.</string>
     <string name="error_publish_failed">Publikacja nie powiodła się. Spróbuj jeszcze raz.</string>
     <string name="error_generate_ad_failed">Nie udało się wygenerować ogłoszenia. Spróbować ponownie?</string>
+    <string name="error_app_check_failed">Nie udało się zweryfikować tej instalacji. Zaktualizuj Usługi Google Play albo zainstaluj SellSnap z Google Play i spróbuj ponownie.</string>
     <string name="error_photo_unreadable">Nie rozpoznaliśmy przedmiotu na Twoich zdjęciach. Spróbuj zrobić je jeszcze raz.</string>
     <string name="error_photo_different_items">Wygląda na różne przedmioty. Usuń te, których nie sprzedajesz.</string>
     <string name="error_regenerate_description_failed">Nie udało się wygenerować opisu ponownie. Spróbować jeszcze raz?</string>

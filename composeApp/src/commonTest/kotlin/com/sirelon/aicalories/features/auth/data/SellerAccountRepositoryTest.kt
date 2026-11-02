@@ -447,7 +447,10 @@ class SellerAccountRepositoryTest {
 
     private suspend fun completeAddAccount(harness: TestHarness): AddAccountOutcome {
         val request = harness.repository.createAuthorizationRequest()
-        return harness.repository.addAccount("${request.redirectUri}?code=one-time-code&state=${request.state}")
+        return harness.repository.addAccount(
+            "${request.redirectUri}?code=one-time-code&state=${request.state}",
+            source = "profile",
+        )
     }
 
     private fun tokenAndProfileEngine(profileOlxUserId: Long): MockEngine = MockEngine { request ->

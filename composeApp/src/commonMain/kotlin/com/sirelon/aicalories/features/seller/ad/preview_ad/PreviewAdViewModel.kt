@@ -177,6 +177,10 @@ class PreviewAdViewModel internal constructor(
     private val restoredSavedState = readSavedState()
     private val generationSessionId = filledAdvertisement.generationSessionId ?: Uuid.random().toString()
 
+    // On every event of this listing's life, so copies, votes, regenerations and the publish join
+    // the generation's own events in BigQuery. See AnalyticsEvents.AD_GENERATION_STARTED.
+    private val generationParams: Map<String, Any> get() = mapOf("generation_id" to generationSessionId)
+
     // What the seller last set, else the model's suggestion. `advertisement.suggestedPrice` itself
     // stays the model's number: publish records it against the published price.
     private val initialPrice =
@@ -409,6 +413,8 @@ class PreviewAdViewModel internal constructor(
         conversationResponseId = filledAdvertisement.conversationResponseId,
         // Guests never load OLX's currency list, and a publish can land before it arrives.
         currency = OlxCurrency.fallbackFor(olxCountryStore.current),
+        generationId = generationSessionId,
+        openOlxUrl = olxCountryStore.current.websiteUrl,
     )
 
     override fun onEvent(event: PreviewAdEvent) {
@@ -495,11 +501,30 @@ class PreviewAdViewModel internal constructor(
             PreviewAdEvent.CopyFeedbackFinished -> if (listingCopyCounted && !copyReviewDecided) {
                 copyReviewDecided = true
                 viewModelScope.launch {
+                    // The connect nudge wins and is the only sheet of the two: a guest who has just
+                    // been asked to connect is not also asked for a rating.
+                    if (currentState().isGuest && reviewPromptCoordinator.shouldNudgeGuestToConnect()) {
+                        reviewPromptCoordinator.markGuestConnectPromptShown()
+                        analytics.logEvent(AnalyticsEvents.GUEST_CONNECT_PROMPT_SHOWN, generationParams)
+                        setState { it.copy(showGuestConnectPrompt = true) }
+                        return@launch
+                    }
                     if (reviewPromptCoordinator.requestIfEligible(ReviewPromptTrigger.CopiedListing)) {
                         postEffect(PreviewAdEffect.RequestStoreReview)
                     }
                 }
             }
+
+            is PreviewAdEvent.GuestConnectPromptAnswered -> {
+                analytics.logEvent(
+                    AnalyticsEvents.GUEST_CONNECT_PROMPT_ANSWERED,
+                    generationParams + mapOf("choice" to event.choice),
+                )
+                setState { it.copy(showGuestConnectPrompt = false) }
+            }
+
+            PreviewAdEvent.OpenOlxClicked ->
+                analytics.logEvent(AnalyticsEvents.GUEST_OPEN_OLX_TAPPED, generationParams)
 
             is PreviewAdEvent.SwitchAccountRequested -> viewModelScope.launch {
                 accountRepository.setActiveAccount(
@@ -555,6 +580,7 @@ class PreviewAdViewModel internal constructor(
                         mapOf(
                             "vote" to vote.name,
                             "regeneration_count" to currentState().regenerationCount,
+                            "generation_id" to generationSessionId,
                         ),
                     )
                 }
@@ -681,7 +707,7 @@ class PreviewAdViewModel internal constructor(
         val switchEpochBeforePublish = accountRepository.switchEpoch.value
         val accountIndex = targetAccount?.localIndex ?: -1
 
-        analytics.logEvent(AnalyticsEvents.AD_PUBLISH_STARTED, mapOf("account_index" to accountIndex))
+        analytics.logEvent(AnalyticsEvents.AD_PUBLISH_STARTED, generationParams + mapOf("account_index" to accountIndex))
         setState { it.copy(isPublishing = true) }
 
         try {
@@ -766,7 +792,7 @@ class PreviewAdViewModel internal constructor(
             runCatching { reviewPromptCoordinator.onPublishSucceeded() }
             analytics.logEvent(
                 AnalyticsEvents.AD_PUBLISH_SUCCEEDED,
-                mapOf("account_index" to accountIndex, "status" to publishStatusBucket(data.status)),
+                generationParams + mapOf("account_index" to accountIndex, "status" to publishStatusBucket(data.status)),
             )
             s.currentAttemptId?.let { attemptId ->
                 adGenerationLogRepository.markPublished(
@@ -786,7 +812,7 @@ class PreviewAdViewModel internal constructor(
             val failureReason = publishFailureReason(error, olxError)
             analytics.logEvent(
                 AnalyticsEvents.AD_PUBLISH_FAILED,
-                mapOf("account_index" to accountIndex, "reason" to failureReason),
+                generationParams + mapOf("account_index" to accountIndex, "reason" to failureReason),
             )
             // Same reason as ad_publish_failed, so the two events join on it.
             reportShownError(reason = failureReason, throwable = error)
@@ -1043,7 +1069,7 @@ class PreviewAdViewModel internal constructor(
 
         val before = listingSnapshot()
         setState { it.copy(isRegeneratingDescription = true) }
-        analytics.logEvent(AnalyticsEvents.AD_DESCRIPTION_REGENERATE_STARTED)
+        analytics.logEvent(AnalyticsEvents.AD_DESCRIPTION_REGENERATE_STARTED, generationParams)
         try {
             val original = descriptionState.text.toString()
             val analysis = openAiClient.analyzeThing(
@@ -1058,7 +1084,7 @@ class PreviewAdViewModel internal constructor(
             val generated = when (analysis) {
                 is AdAnalysis.Generated -> analysis.advertisement
                 is AdAnalysis.Unusable -> {
-                    analytics.logEvent(AnalyticsEvents.AD_DESCRIPTION_REGENERATE_FAILED)
+                    analytics.logEvent(AnalyticsEvents.AD_DESCRIPTION_REGENERATE_FAILED, generationParams)
                     reportShownError(reason = "regenerate_photos_unusable:${analysis.reason.code}")
                     postEffect(ShowMessage(getString(Res.string.error_regenerate_description_failed)))
                     return
@@ -1098,13 +1124,13 @@ class PreviewAdViewModel internal constructor(
                 )
             }
             highlightChangesSince(before)
-            analytics.logEvent(AnalyticsEvents.AD_DESCRIPTION_REGENERATE_SUCCEEDED)
+            analytics.logEvent(AnalyticsEvents.AD_DESCRIPTION_REGENERATE_SUCCEEDED, generationParams)
         } catch (error: CancellationException) {
             // Leaving the screen mid-request is not a failure and must not skew the metric.
             throw error
         } catch (error: Throwable) {
             if (error is CancellationException) throw error
-            analytics.logEvent(AnalyticsEvents.AD_DESCRIPTION_REGENERATE_FAILED)
+            analytics.logEvent(AnalyticsEvents.AD_DESCRIPTION_REGENERATE_FAILED, generationParams)
             reportShownError(reason = "regenerate_failed", throwable = error)
             postEffect(ShowMessage(getString(Res.string.error_regenerate_description_failed)))
         } finally {
@@ -1119,7 +1145,7 @@ class PreviewAdViewModel internal constructor(
 
         val before = listingSnapshot()
         setState { it.copy(isPolishingDescription = true) }
-        analytics.logEvent(AnalyticsEvents.AD_DESCRIPTION_POLISH_STARTED)
+        analytics.logEvent(AnalyticsEvents.AD_DESCRIPTION_POLISH_STARTED, generationParams)
         try {
             val original = descriptionState.text.toString()
             val polished = openAiClient.polishListing(
@@ -1141,7 +1167,7 @@ class PreviewAdViewModel internal constructor(
             if (merged == null) {
                 // The seller changed the text while the request ran; their edit wins, and the
                 // kept instruction lets them polish again.
-                analytics.logEvent(AnalyticsEvents.AD_DESCRIPTION_POLISH_FAILED)
+                analytics.logEvent(AnalyticsEvents.AD_DESCRIPTION_POLISH_FAILED, generationParams)
                 reportShownError(reason = "polish_stale", recordNonFatal = false)
                 postEffect(ShowMessage(getString(Res.string.error_polish_failed)))
                 return
@@ -1168,7 +1194,7 @@ class PreviewAdViewModel internal constructor(
             }
             analytics.logEvent(
                 AnalyticsEvents.AD_DESCRIPTION_POLISH_SUCCEEDED,
-                mapOf(
+                generationParams + mapOf(
                     "same_item" to polished.sameItem,
                     "price_was_hand_set" to priceWasHandSetBeforePolish,
                     "price_change_pct" to percentChange(from = priceBefore, to = listing.suggestedPrice),
@@ -1182,7 +1208,7 @@ class PreviewAdViewModel internal constructor(
             // Leaving the screen mid-request is not a failure and must not skew the metric.
             throw error
         } catch (error: Throwable) {
-            analytics.logEvent(AnalyticsEvents.AD_DESCRIPTION_POLISH_FAILED)
+            analytics.logEvent(AnalyticsEvents.AD_DESCRIPTION_POLISH_FAILED, generationParams)
             reportShownError(reason = "polish_failed", throwable = error)
             postEffect(ShowMessage(getString(Res.string.error_polish_failed)))
         } finally {
