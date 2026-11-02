@@ -2,7 +2,7 @@
 
 Copy-paste text for every listing field. The app ships 8 in-app languages, but this doc
 only has 7 sections — russian shares Ukrainian's in-app UI and has no separate store
-listing (see the "No russian store listing" note below). Written for SellSnap 3.7 (build 19).
+listing (see the "No russian store listing" note below). Written for SellSnap 3.8 (build 20).
 
 The per-language **What's New** blocks below match what's pushed to the stores automatically from `.claude/tmp/release-metadata/` (gitignored, regenerated fresh each release): Android reads `android/<locale>/changelogs/<version_code>.txt`, iOS reads `ios/<locale>/release_notes.txt` (App Store) and the same file feeds TestFlight's localized build info. The `sellsnap-release` skill regenerates both those files and this section on every release.
 
@@ -73,15 +73,16 @@ From snap to live on OLX in about a minute. Download SellSnap and turn your clut
 SellSnap is an independent app and is not affiliated with or endorsed by OLX. Publishing requires an OLX account.
 ```
 
-**What's New (v3.7):**
+**What's New (v3.8):**
 
 ```
-SellSnap 3.7 — speak it, polish it
+SellSnap 3.8 — buyer messages
 
-• Dictate: tap the mic and say the description or the AI hint instead of typing
-• Polish: tell the AI what to change and it rewrites the description in seconds
-• Text you add while the AI regenerates is kept
-• Fixed item details sometimes failing to load after the AI wrote the listing
+• New Messages tab: read what buyers write about your OLX listings, with an unread badge
+• Each conversation shows the listing and its status, plus a button to reply on OLX
+• The app starts faster on a slow connection
+• AI polish keeps your price when it does not suggest a new one
+• Fewer AI generation errors and clearer hints in the location picker
 ```
 
 ---
@@ -129,15 +130,16 @@ SellSnap підтримує OLX в Україні, Польщі, Румунії,
 SellSnap — незалежний застосунок, не афілійований з OLX. Для публікації потрібен акаунт OLX.
 ```
 
-**What's New (v3.7):**
+**What's New (v3.8):**
 
 ```
-SellSnap 3.7 — надиктуйте й покращте
+SellSnap 3.8 — повідомлення від покупців
 
-• Надиктувати: торкніться мікрофона й скажіть опис або підказку для ШІ замість набору
-• Покращити: скажіть ШІ, що змінити, і він перепише опис за кілька секунд
-• Текст, який ви додаєте, поки ШІ генерує заново, зберігається
-• Виправлено: деталі товару іноді не завантажувалися після того, як ШІ написав оголошення
+• Нова вкладка «Повідомлення»: читайте, що покупці пишуть про ваші оголошення на OLX, з позначкою непрочитаних
+• Кожна розмова показує оголошення та його статус і кнопку, щоб відповісти на OLX
+• Застосунок швидше запускається за повільного з'єднання
+• Покращення ШІ зберігає вашу ціну, якщо не пропонує нову
+• Менше помилок генерації ШІ та зрозуміліші підказки у виборі місця
 ```
 
 ---
@@ -185,15 +187,16 @@ Od zdjęcia do ogłoszenia na OLX w około minutę. Pobierz SellSnap i zamień n
 SellSnap to niezależna aplikacja, niepowiązana z OLX. Do publikacji wymagane jest konto OLX.
 ```
 
-**What's New (v3.7):**
+**What's New (v3.8):**
 
 ```
-SellSnap 3.7 — podyktuj i dopracuj
+SellSnap 3.8 — wiadomości od kupujących
 
-• Podyktuj: dotknij mikrofonu i powiedz opis lub wskazówkę dla AI zamiast pisać
-• Dopracuj: powiedz AI, co zmienić, a przepisze opis w kilka sekund
-• Tekst dodany podczas ponownego generowania przez AI zostaje zachowany
-• Naprawiono: szczegóły przedmiotu czasem nie wczytywały się po napisaniu ogłoszenia przez AI
+• Nowa karta Wiadomości: czytaj, co kupujący piszą o Twoich ogłoszeniach na OLX, z oznaczeniem nieprzeczytanych
+• Każda rozmowa pokazuje ogłoszenie i jego status oraz przycisk, by odpowiedzieć na OLX
+• Aplikacja szybciej się uruchamia przy wolnym połączeniu
+• Dopracowanie przez AI zachowuje Twoją cenę, gdy nie proponuje nowej
+• Mniej błędów generowania AI i jaśniejsze wskazówki przy wyborze lokalizacji
 ```
 
 ---
@@ -241,15 +244,16 @@ De la poză la anunț publicat pe OLX în aproximativ un minut. Descarcă SellSn
 SellSnap este o aplicație independentă, neafiliată cu OLX. Publicarea necesită un cont OLX.
 ```
 
-**What's New (v3.7):**
+**What's New (v3.8):**
 
 ```
-SellSnap 3.7 — dictează și îmbunătățește
+SellSnap 3.8 — mesaje de la cumpărători
 
-• Dictează: atinge microfonul și spune descrierea sau indiciul pentru AI în loc să tastezi
-• Îmbunătățește: spune-i AI-ului ce să schimbe și rescrie descrierea în câteva secunde
-• Textul adăugat cât timp AI-ul regenerează anunțul se păstrează
-• Am reparat: detaliile produsului uneori nu se încărcau după ce AI-ul scria anunțul
+• Fila nouă Mesaje: citește ce scriu cumpărătorii despre anunțurile tale OLX, cu marcaj pentru necitite
+• Fiecare conversație arată anunțul și starea lui, plus un buton ca să răspunzi pe OLX
+• Aplicația pornește mai repede pe o conexiune lentă
+• Îmbunătățirea cu AI îți păstrează prețul când nu propune unul nou
+• Mai puține erori la generarea cu AI și indicii mai clare la alegerea locației
 ```
 
 ---
@@ -297,15 +301,16 @@ SellSnap поддържа OLX в България, Украйна, Полша, �
 SellSnap е независимо приложение и не е свързано с OLX. За публикуване е необходим акаунт в OLX.
 ```
 
-**What's New (v3.7):**
+**What's New (v3.8):**
 
 ```
-SellSnap 3.7 — диктувай и подобри
+SellSnap 3.8 — съобщения от купувачи
 
-• Диктувай: докоснете микрофона и кажете описанието или подсказката за AI, вместо да пишете
-• Подобри: кажете на AI какво да промени и той пренаписва описанието за секунди
-• Текстът, който добавите, докато AI генерира наново, се запазва
-• Поправено: детайлите на вещта понякога не се зареждаха, след като AI напише обявата
+• Нов раздел „Съобщения“: четете какво пишат купувачите за обявите ви в OLX, с отбелязване на непрочетените
+• Всеки разговор показва обявата и статуса ѝ, както и бутон за отговор в OLX
+• Приложението стартира по-бързо при бавна връзка
+• Подобряването с AI запазва цената ви, когато не предлага нова
+• По-малко грешки при генериране с AI и по-ясни подсказки при избора на местоположение
 ```
 
 ---
@@ -353,15 +358,16 @@ Da foto ao anúncio publicado no OLX em cerca de um minuto. Descarregue o SellSn
 O SellSnap é uma aplicação independente, sem qualquer afiliação com o OLX. Para publicar é necessária uma conta OLX.
 ```
 
-**What's New (v3.7):**
+**What's New (v3.8):**
 
 ```
-SellSnap 3.7 — dite e melhore
+SellSnap 3.8 — mensagens de compradores
 
-• Ditar: toque no microfone e diga a descrição ou a dica para a IA em vez de escrever
-• Melhorar: diga à IA o que mudar e ela reescreve a descrição em segundos
-• O texto que adiciona enquanto a IA gera de novo é mantido
-• Corrigimos: os detalhes do artigo por vezes não carregavam depois de a IA escrever o anúncio
+• Novo separador Mensagens: leia o que os compradores escrevem sobre os seus anúncios no OLX, com indicação das não lidas
+• Cada conversa mostra o anúncio e o respetivo estado, e um botão para responder no OLX
+• A app abre mais depressa com uma ligação lenta
+• Melhorar com IA mantém o seu preço quando não sugere um novo
+• Menos erros na geração com IA e dicas mais claras ao escolher a localização
 ```
 
 ---
@@ -407,13 +413,14 @@ OLX аккаунтыңыз жоқ па? Қонақ режимін пайдала
 SellSnap — OLX-пен байланысы жоқ тәуелсіз қосымша. Жариялау үшін OLX аккаунты қажет.
 ```
 
-**What's New (v3.7):**
+**What's New (v3.8):**
 
 ```
-SellSnap 3.7 — айтыңыз да, жақсартыңыз
+SellSnap 3.8 — сатып алушылардан хабарламалар
 
-• Дауыспен жазу: микрофонды басып, сипаттаманы не ЖИ кеңесін теру орнына айтыңыз
-• Жақсарту: ЖИ-ге не өзгерту керегін айтыңыз, ол сипаттаманы бірнеше секундта қайта жазады
-• ЖИ қайта жасап жатқанда қосқан мәтініңіз сақталады
-• Түзетілді: ЖИ хабарландыру жазғаннан кейін зат мәліметтері кейде жүктелмейтін
+• Жаңа «Хабарламалар» қойындысы: сатып алушылардың OLX-тегі хабарландыруларыңыз туралы жазғанын оқыңыз, оқылмағандары белгіленеді
+• Әр әңгімеде хабарландыру мен оның күйі және OLX-те жауап беру түймесі көрсетіледі
+• Баяу байланыста қолданба жылдамырақ ашылады
+• ЖИ жақсартуы жаңа баға ұсынбаса, сіздің бағаңызды сақтайды
+• ЖИ генерациясында қателер азайды, орынды таңдауда кеңестер түсініктірек
 ```
