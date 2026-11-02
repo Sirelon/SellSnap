@@ -110,6 +110,22 @@ class MessagesViewModel internal constructor(
             .accountsRecordFlow
             .onEach(::syncPages)
             .launchIn(viewModelScope)
+        // The seller marked a thread as read in its conversation: clear the row now, not on the
+        // next poll. The repository has already dropped it from the badge.
+        repository
+            .markedRead
+            .onEach { marked ->
+                setState { state ->
+                    state.updatePage(marked.localIndex) { page ->
+                        page.copy(
+                            threads = page.threads.map {
+                                if (it.threadId == marked.threadId) it.copy(unreadCount = 0) else it
+                            },
+                        )
+                    }
+                }
+            }
+            .launchIn(viewModelScope)
     }
 
     override fun initialState(): State = State()
@@ -334,7 +350,7 @@ class MessagesViewModel internal constructor(
             }
         }
         currentState().pages.find { it.localIndex == localIndex }?.let { p ->
-            repository.publishUnread(localIndex, p.threads.sumOf { it.unreadCount })
+            repository.publishUnread(localIndex, p.threads.associate { it.threadId to it.unreadCount })
         }
         lookUpMissingAdverts(localIndex, cache)
         logListLoadedOnce(localIndex, cache)

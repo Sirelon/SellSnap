@@ -20,6 +20,7 @@ import com.sirelon.sellsnap.features.seller.my_ads.data.MyAdvertsRepository
 import com.sirelon.sellsnap.features.seller.profile.data.SellerAccountRepository
 import com.sirelon.sellsnap.generated.resources.Res
 import com.sirelon.sellsnap.generated.resources.conversation_load_failed
+import com.sirelon.sellsnap.generated.resources.generic_error_retry
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -38,8 +39,11 @@ import kotlin.time.TimeSource
  * account is disconnected. As on the list, a failed load is shown (and reported) only while there
  * are no messages to show.
  *
- * [hadUnread] is whether the list row had unread messages when it was tapped, and [timeSource]
- * times the actions for analytics; neither changes what the screen shows.
+ * [hadUnread] is whether the list row had unread messages when it was tapped: it is what offers
+ * "Mark as read", which is the only thing that clears a thread's unread count (OLX does not clear
+ * it when the messages are read) and runs only when the seller taps it, never on open or poll. A
+ * failed command is shown as a snackbar and leaves the action to try again. [timeSource] times the
+ * actions for analytics and changes nothing on screen.
  */
 class ConversationViewModel internal constructor(
     keyLocalIndex: Int?,
@@ -80,6 +84,7 @@ class ConversationViewModel internal constructor(
         imageUrl = imageUrl,
         status = status,
         isListingDeleted = isListingDeleted,
+        canMarkAsRead = hadUnread,
     )
 
     override fun onEvent(event: Event) {
@@ -98,15 +103,44 @@ class ConversationViewModel internal constructor(
             Event.ReconnectClicked -> postEffect(Effect.Reconnect)
             Event.ReplyOnOlxClicked -> logAction("reply_on_olx")
             Event.ListingClicked -> logAction("open_listing")
+            Event.MarkAsReadClicked -> markAsRead()
         }
     }
 
-    private fun logAction(action: String) {
+    private fun markAsRead() {
+        val index = localIndex ?: return
+        val state = currentState()
+        if (!state.canMarkAsRead || state.isMarkingAsRead) return
+        setState { it.copy(isMarkingAsRead = true) }
+        viewModelScope.launch {
+            try {
+                repository.markAsRead(index, threadId)
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: Exception) {
+                logAction("mark_as_read", result = "failed")
+                analytics.reportShownError(
+                    screen = "conversation",
+                    reason = "mark_read_failed:${error.shownErrorCause}",
+                    throwable = error,
+                )
+                val message = getString(Res.string.generic_error_retry)
+                setState { it.copy(isMarkingAsRead = false) }
+                postEffect(Effect.ShowMessage(message))
+                return@launch
+            }
+            setState { it.copy(isMarkingAsRead = false, canMarkAsRead = false) }
+            logAction("mark_as_read", result = "success")
+        }
+    }
+
+    private fun logAction(action: String, result: String? = null) {
         val state = currentState()
         analytics.logEvent(
             AnalyticsEvents.MESSAGES_CONVERSATION_ACTION,
-            mapOf(
+            listOfNotNull(
                 "action" to action,
+                result?.let { "result" to it },
                 "listing_state" to MessagesAnalyticsBuckets.listingState(
                     status = state.listing?.status ?: state.status,
                     isDeleted = state.isListingDeleted,
@@ -114,7 +148,7 @@ class ConversationViewModel internal constructor(
                 "had_unread" to hadUnread,
                 "seconds_since_open_bucket" to
                     MessagesAnalyticsBuckets.secondsSinceOpen(openedAt.elapsedNow().inWholeSeconds),
-            ),
+            ).toMap(),
         )
     }
 

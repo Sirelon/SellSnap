@@ -49,7 +49,7 @@ class MessagesBadgeViewModel internal constructor(
                 launch {
                     runCatching {
                         val threads = repository.loadThreads(localIndex).threads
-                        repository.publishUnread(localIndex, threads.sumOf { it.unreadCount })
+                        repository.publishUnread(localIndex, threads.associate { it.id to it.unreadCount })
                     }
                 }
             }

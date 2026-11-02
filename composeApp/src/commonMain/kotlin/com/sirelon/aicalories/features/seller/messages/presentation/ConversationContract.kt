@@ -26,6 +26,13 @@ interface ConversationContract {
         /** The thread's account needs a reconnect: nothing loads until it has one. */
         val needsReconnect: Boolean = false,
         val accountName: String? = null,
+        /**
+         * "Mark as read" is on offer: the thread had unread messages when it was opened and the
+         * seller has not marked it yet. It is never set by opening, reading or polling.
+         */
+        val canMarkAsRead: Boolean = false,
+        /** The mark-as-read command is in flight; the action is disabled meanwhile. */
+        val isMarkingAsRead: Boolean = false,
     )
 
     sealed interface Event {
@@ -37,6 +44,9 @@ interface ConversationContract {
         /** "Reply on OLX": the screen opens OLX's answers page; this only reports the tap. */
         data object ReplyOnOlxClicked : Event
 
+        /** The seller tapped "Mark as read" - the only thing that sends the command. */
+        data object MarkAsReadClicked : Event
+
         /** The listing header: the screen opens the advert; this only reports the tap. */
         data object ListingClicked : Event
     }
@@ -45,5 +55,8 @@ interface ConversationContract {
         /** The thread's account was disconnected: this conversation has nowhere to load from. */
         data object Close : Effect
         data object Reconnect : Effect
+
+        /** A failure to show the seller in a snackbar. */
+        data class ShowMessage(val message: String) : Effect
     }
 }

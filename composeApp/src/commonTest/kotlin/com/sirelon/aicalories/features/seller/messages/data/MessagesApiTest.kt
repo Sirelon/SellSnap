@@ -2,6 +2,7 @@ package com.sirelon.sellsnap.features.seller.messages.data
 
 import com.sirelon.sellsnap.features.seller.auth.data.OlxApiClient
 import com.sirelon.sellsnap.features.seller.auth.data.OlxRemoteErrorParser
+import com.sirelon.sellsnap.features.seller.auth.data.ThreadCommand
 import com.sirelon.sellsnap.features.seller.auth.data.createOlxHttpClient
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxApiError
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxApiException
@@ -11,6 +12,7 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.content.TextContent
 import io.ktor.http.headersOf
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
@@ -169,6 +171,48 @@ class MessagesApiTest {
         }
 
         val failure = assertFailsWith<OlxApiException> { apiClient(engine).getThreadMessages("token", threadId = 9) }
+        assertIs<OlxApiError>(failure.error)
+        Unit
+    }
+
+    @Test
+    fun `sendThreadCommand posts the spec's mark-as-read payload and nothing else`() = runBlocking {
+        // developer.olx.ua swagger v2 `/threads/{threadId}/commands` has no example payload: its
+        // schema is an object with a required `command` (enum mark-as-read | set-favourite) and an
+        // `is_favourite` that only `set-favourite` needs. So the body is exactly the one key.
+        var method: HttpMethod? = null
+        var path: String? = null
+        var authorization: String? = null
+        var body: String? = null
+        val engine = MockEngine { request ->
+            method = request.method
+            path = request.url.encodedPath
+            authorization = request.headers[HttpHeaders.Authorization]
+            body = (request.body as TextContent).text
+            respond(content = "", status = HttpStatusCode.NoContent)
+        }
+
+        apiClient(engine).sendThreadCommand("token", threadId = 5, command = ThreadCommand.MarkAsRead)
+
+        assertEquals(HttpMethod.Post, method)
+        assertTrue(path!!.endsWith("/threads/5/commands"), "got $path")
+        assertEquals("Bearer token", authorization)
+        assertEquals("""{"command":"mark-as-read"}""", body)
+    }
+
+    @Test
+    fun `sendThreadCommand turns a refusal into a typed error`() = runBlocking {
+        val engine = MockEngine {
+            respond(
+                content = """{"error":{"status":404,"title":"Not Found","detail":"Placeholder detail"}}""",
+                status = HttpStatusCode.NotFound,
+                headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
+            )
+        }
+
+        val failure = assertFailsWith<OlxApiException> {
+            apiClient(engine).sendThreadCommand("token", threadId = 9, command = ThreadCommand.MarkAsRead)
+        }
         assertIs<OlxApiError>(failure.error)
         Unit
     }

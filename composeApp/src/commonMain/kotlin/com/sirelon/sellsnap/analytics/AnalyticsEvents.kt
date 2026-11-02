@@ -278,11 +278,14 @@ object AnalyticsEvents {
     const val MESSAGES_CONVERSATION_LOADED = "messages_conversation_loaded"
 
     /**
-     * The seller tapped one of the two ways out of a conversation. `action` is `reply_on_olx`
-     * (the writing session is not in the app, so this is the demand for it) or `open_listing`
-     * (the header). Also `listing_state` (as for `messages_conversation_opened`), `had_unread`
-     * (Boolean, the row had unread messages when it was opened) and `seconds_since_open_bucket`
-     * (0_5, 6_30, 31_120, gt_120) from opening the conversation to the tap.
+     * The seller tapped an action in a conversation. `action` is `reply_on_olx` (the writing
+     * session is not in the app, so this is the demand for it), `open_listing` (the header) or
+     * `mark_as_read` (the top bar action, offered while the thread has unread messages). Also
+     * `listing_state` (as for `messages_conversation_opened`), `had_unread` (Boolean, the row had
+     * unread messages when it was opened) and `seconds_since_open_bucket` (0_5, 6_30, 31_120,
+     * gt_120) from opening the conversation to the tap. `mark_as_read` also carries `result`:
+     * `success` (OLX accepted the command) or `failed` (the seller saw an error, also logged as
+     * `error_shown`); the other actions have no `result`.
      */
     const val MESSAGES_CONVERSATION_ACTION = "messages_conversation_action"
 }

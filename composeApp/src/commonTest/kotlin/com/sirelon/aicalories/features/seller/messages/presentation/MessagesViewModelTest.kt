@@ -753,7 +753,7 @@ class MessagesViewModelTest {
             addHandler { respond(threadsJson(), HttpStatusCode.OK, jsonHeaders()) }
         }
         val (viewModel, harness) = viewModel(engine, listOf(testAccount(1)), activeIndex = 1)
-        harness.messagesRepository.publishUnread(1, 3)
+        harness.messagesRepository.publishUnread(1, mapOf(7L to 3))
 
         viewModel.onEvent(Event.Shown)
         runCurrent()

@@ -20,7 +20,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.adaptive.navigation3.LocalListDetailSceneScope
 import androidx.compose.runtime.Composable
@@ -34,6 +37,7 @@ import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import com.sirelon.sellsnap.designsystem.AppAsyncImage
 import com.sirelon.sellsnap.designsystem.AppCard
 import com.sirelon.sellsnap.designsystem.AppDimens
@@ -61,6 +65,7 @@ import com.sirelon.sellsnap.generated.resources.ic_circle_alert
 import com.sirelon.sellsnap.generated.resources.messages_buyer_label
 import com.sirelon.sellsnap.generated.resources.messages_listing_deleted
 import com.sirelon.sellsnap.generated.resources.messages_listing_fallback
+import com.sirelon.sellsnap.generated.resources.messages_mark_as_read
 import com.sirelon.sellsnap.generated.resources.my_ads_account_fallback_name
 import com.sirelon.sellsnap.generated.resources.my_ads_price_not_set
 import com.sirelon.sellsnap.generated.resources.my_ads_reconnect_description
@@ -93,6 +98,7 @@ fun ConversationScreenRoute(
         parametersOf(localIndex, threadId, advertId, title, imageUrl, status, isListingDeleted, hadUnread)
     }
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     LifecycleStartEffect(viewModel) {
         viewModel.onEvent(Event.Shown)
@@ -103,15 +109,23 @@ fun ConversationScreenRoute(
         when (effect) {
             ConversationContract.Effect.Close -> onBack()
             ConversationContract.Effect.Reconnect -> onReconnectClick()
+            is ConversationContract.Effect.ShowMessage -> snackbarHostState.showSnackbar(effect.message)
         }
     }
 
-    ConversationScreen(state = state, onBack = onBack, onEvent = viewModel::onEvent, modifier = modifier)
+    ConversationScreen(
+        state = state,
+        snackbarHostState = snackbarHostState,
+        onBack = onBack,
+        onEvent = viewModel::onEvent,
+        modifier = modifier,
+    )
 }
 
 @Composable
 private fun ConversationScreen(
     state: ConversationContract.State,
+    snackbarHostState: SnackbarHostState,
     onBack: () -> Unit,
     onEvent: (Event) -> Unit,
     modifier: Modifier = Modifier,
@@ -120,6 +134,7 @@ private fun ConversationScreen(
     val isBesideList = LocalListDetailSceneScope.current != null
     AppScaffold(
         modifier = modifier.fillMaxSize(),
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(Res.string.messages_buyer_label)) },
@@ -130,6 +145,18 @@ private fun ConversationScreen(
                                 imageVector = Icons.Filled.ArrowBack,
                                 contentDescription = stringResource(Res.string.back),
                             )
+                        }
+                    }
+                },
+                actions = {
+                    // Without a session the command cannot be sent: the reconnect state is on screen.
+                    if (state.canMarkAsRead && !state.needsReconnect) {
+                        TextButton(
+                            onClick = { onEvent(Event.MarkAsReadClicked) },
+                            enabled = !state.isMarkingAsRead,
+                            modifier = Modifier.testTag("conversation_mark_as_read"),
+                        ) {
+                            Text(stringResource(Res.string.messages_mark_as_read))
                         }
                     }
                 },

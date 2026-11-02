@@ -238,6 +238,32 @@ class OlxApiClient(
     }
 
     /**
+     * `POST threads/{id}/commands` with `{"command":"mark-as-read"}`. Success is 204 with no body,
+     * so the status code is the whole result.
+     *
+     * developer.olx.ua, swagger v2 `/threads/{threadId}/commands`, `post` "Take action on thread"
+     * (security `access_token`: `v2`, `write`):
+     * ```
+     * requestBody: application/json: type: object, required: [command]
+     *   command: string, enum [mark-as-read, set-favourite]
+     *     "Commands `mark-as-read` - to mark thread as read, `set-favourite` - to set thread as
+     *      favourite or not"
+     *   is_favourite: boolean, "Required for `set-favourite` command"
+     * responses: 204 "Status 204"
+     * ```
+     * Reading a thread's messages does not clear its `unread_count`; only this command does
+     * (SIR-88 findings, olx.ua, 2026-11-02).
+     */
+    internal suspend fun sendThreadCommand(accessToken: String, threadId: Long, command: ThreadCommand) {
+        val response = httpClient.post("threads/$threadId/commands") {
+            bearerAuth(accessToken)
+            contentType(ContentType.Application.Json)
+            setBody(ThreadCommandRequest(command = command.wireValue))
+        }
+        response.ensureSuccess()
+    }
+
+    /**
      * `DELETE adverts/{id}` (SIR-98). 204 on success. OLX rejects this while the advert is still
      * active, with `field: "ad", title: "Invalid status"` - the caller is responsible for
      * deactivating first, and for telling the seller when only that half succeeded.
