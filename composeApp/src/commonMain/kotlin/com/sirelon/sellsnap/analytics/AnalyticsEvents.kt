@@ -111,7 +111,10 @@ object AnalyticsEvents {
     // only localIndex/counts, per PRD §11. First-connect lands through the same addAccount path as
     // add-account/reconnect, so a seller's first login fires account_add_started/completed/failed
     // (with existing_account_count = 0) alongside auth_started/completed/failed. Count a login
-    // funnel in one family; summing both double-counts first-connect.
+    // funnel in one family; summing both double-counts first-connect. `source` on the add
+    // events says where the attempt began: `landing` (first connect), `profile` (the tab),
+    // `preview_cta`, `preview_prompt` (the guest nudge sheet), `publish_contact`,
+    // `publish_reconnect`, `my_ads_reconnect` - see AppKey.Profile.
     const val ACCOUNT_SWITCHED = "account_switched"
     const val ACCOUNT_ADD_STARTED = "account_add_started"
     const val ACCOUNT_ADD_COMPLETED = "account_add_completed"
@@ -183,7 +186,8 @@ object AnalyticsEvents {
     const val USER_PROPERTY_CONNECTED_ACCOUNT_COUNT = "connected_account_count"
 
     // Which button the seller pressed on the "close this listing?" sheet, as `choice`
-    // (stay | leave). Leaving keeps the draft in Drafts. The sheet's own screen_view only says it
+    // (stay | leave | dismissed - swiped away or system back, which keeps editing like stay).
+    // Leaving keeps the draft in Drafts. The sheet's own screen_view only says it
     // was shown; without this, a seller who backs out and keeps editing is indistinguishable from
     // one who closes the listing.
     const val AD_DRAFT_EXIT_CHOICE = "ad_draft_exit_choice"

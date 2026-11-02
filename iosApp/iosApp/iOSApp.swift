@@ -54,8 +54,8 @@ private class AppAttestProviderFactory: NSObject, AppCheckProviderFactory {
 // Kotlin cannot see FirebaseAppCheck, so the shared code asks for tokens through this bridge
 // (see OpenAIEndpointModule.ios.kt).
 private class FirebaseAppCheckTokenFetcher: NSObject, AppCheckTokenFetcher {
-    func fetch(onResult: @escaping (String?) -> Void) {
-        AppCheck.appCheck().token(forcingRefresh: false) { token, _ in
+    func fetch(forceRefresh: Bool, onResult: @escaping (String?) -> Void) {
+        AppCheck.appCheck().token(forcingRefresh: forceRefresh) { token, _ in
             onResult(token?.token)
         }
     }

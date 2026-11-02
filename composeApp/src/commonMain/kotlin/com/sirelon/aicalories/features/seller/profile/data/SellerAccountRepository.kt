@@ -145,11 +145,12 @@ class SellerAccountRepository internal constructor(
      * "reconnect" method is needed - reconnecting a dead account is just another add-account
      * attempt that happens to dedupe against an existing localIndex.
      */
-    internal suspend fun addAccount(callbackUrl: String): AddAccountOutcome {
+    internal suspend fun addAccount(callbackUrl: String, source: String): AddAccountOutcome {
         val countryCode = olxCountryStore.current.code
+        lastAddAccountSource = source
         analytics.logEvent(
             AnalyticsEvents.ACCOUNT_ADD_STARTED,
-            mapOf("country" to countryCode, "existing_account_count" to accountCountFor(countryCode)),
+            mapOf("country" to countryCode, "existing_account_count" to accountCountFor(countryCode), "source" to source),
         )
 
         val tokens = try {
@@ -193,6 +194,7 @@ class SellerAccountRepository internal constructor(
                 "country" to countryCode,
                 "new_account_count" to accountCountFor(countryCode),
                 "was_duplicate" to result.wasDuplicate,
+                "source" to source,
             ),
         )
         analytics.setUserProperty(AnalyticsEvents.USER_PROPERTY_CONNECTED_ACCOUNT_COUNT, accountStore.recordFlow.value.accounts.size.toString())
@@ -203,6 +205,9 @@ class SellerAccountRepository internal constructor(
             AddAccountOutcome.Added(result.account)
         }
     }
+
+    // The `source` of the add-account attempt in flight, for the failure event's params.
+    private var lastAddAccountSource: String = "unknown"
 
     private suspend fun addAccountFailure(
         countryCode: String,
@@ -218,6 +223,7 @@ class SellerAccountRepository internal constructor(
                 "country" to countryCode,
                 "reason" to reason.analyticsReason,
                 "consecutive_failures" to accountStore.consecutiveFailureCount(localIndex = null, countryCode = countryCode),
+                "source" to lastAddAccountSource,
             ),
         )
         return AddAccountOutcome.Failed(reason)
@@ -231,7 +237,7 @@ class SellerAccountRepository internal constructor(
      * [addAccount] directly for the full [AddAccountOutcome].
      */
     suspend fun completeAuthorization(callbackUrl: String): Result<OlxUser> = runCatching {
-        when (val outcome = addAccount(callbackUrl)) {
+        when (val outcome = addAccount(callbackUrl, source = "landing")) {
             is AddAccountOutcome.Added, is AddAccountOutcome.ReconnectedDuplicate ->
                 _user.value ?: throw IllegalStateException("OLX account connected, but profile data is unavailable.")
             is AddAccountOutcome.Failed -> throw outcome.reason.toThrowable()

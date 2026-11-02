@@ -212,7 +212,8 @@ internal fun PreviewAdContentRoute(
     onChangeLocationClick: () -> Unit,
     pendingLocation: OlxLocation?,
     onLocationConsumed: () -> Unit,
-    onConnectOlxClick: () -> Unit,
+    // Analytics source for the add-account events: `preview_cta` or `preview_prompt`.
+    onConnectOlxClick: (source: String) -> Unit,
     onPublishConfirmationRequested: () -> Unit,
     onTargetAccountRowClick: () -> Unit,
     showImagesPreview: (List<String>, Int) -> Unit,
@@ -322,7 +323,7 @@ internal fun PreviewAdContentRoute(
                         text = stringResource(Res.string.guest_connect_olx_cta),
                         onClick = {
                             dismissKeyboard()
-                            onConnectOlxClick()
+                            onConnectOlxClick("preview_cta")
                         },
                     )
                 } else if (state.isSessionResolved && state.isUpdatingListing) {
@@ -695,7 +696,8 @@ private fun PreviewAdContent(
     descriptionDictationLanguageTag: String?,
     state: PreviewAdContract.PreviewAdState,
     onEvent: (PreviewAdEvent) -> Unit,
-    onConnectOlxClick: () -> Unit,
+    // Analytics source for the add-account events: `preview_cta` or `preview_prompt`.
+    onConnectOlxClick: (source: String) -> Unit,
     autoOpenAttributeCode: String?,
     autoOpenAttributeRequest: Int,
     autoOpenAttributeModifier: Modifier,
@@ -719,7 +721,7 @@ private fun PreviewAdContent(
             onConnect = {
                 onEvent(PreviewAdEvent.GuestConnectPromptAnswered("connect"))
                 dismissKeyboard()
-                onConnectOlxClick()
+                onConnectOlxClick("preview_prompt")
             },
             onNotNow = { onEvent(PreviewAdEvent.GuestConnectPromptAnswered("not_now")) },
             onDismiss = { onEvent(PreviewAdEvent.GuestConnectPromptAnswered("dismissed")) },

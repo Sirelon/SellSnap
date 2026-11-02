@@ -12,7 +12,8 @@ import kotlin.time.Duration.Companion.seconds
  * Registered on [AppCheckBridge] right after `FirebaseApp.configure()`.
  */
 interface AppCheckTokenFetcher {
-    fun fetch(onResult: (String?) -> Unit)
+    /** [forceRefresh] maps to `AppCheck.token(forcingRefresh:)`; the proxy answering 401 is its one caller. */
+    fun fetch(forceRefresh: Boolean, onResult: (String?) -> Unit)
 }
 
 object AppCheckBridge {
@@ -22,14 +23,11 @@ object AppCheckBridge {
 private val APP_CHECK_TIMEOUT = 15.seconds
 
 internal class IosAppCheckTokenProvider : AppCheckTokenProvider {
-    // The Swift fetcher has no force-refresh path (`AppCheck.token(forcingRefresh:)` would need
-    // a second bridge method), so a 401 retry on iOS re-sends the cached token and is skipped by
-    // the plugin. Android, where the stale-token failures were seen, does refresh.
     override suspend fun token(forceRefresh: Boolean): String? {
         val fetcher = AppCheckBridge.fetcher ?: return null
         return withTimeoutOrNull(APP_CHECK_TIMEOUT) {
             suspendCancellableCoroutine { continuation ->
-                fetcher.fetch { token ->
+                fetcher.fetch(forceRefresh) { token ->
                     if (continuation.isActive) continuation.resume(token)
                 }
             }

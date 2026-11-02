@@ -70,7 +70,12 @@ sealed interface AppKey : NavKey, AnalyticsScreen {
     }
 
     @Serializable
-    data class Profile(val reason: String? = null) : AppKey {
+    /**
+     * [reason] is shown as a banner. [source] is analytics only - where the seller came from, on
+     * the add-account events: `preview_cta` | `preview_prompt` | `publish_contact` |
+     * `publish_reconnect` | `my_ads_reconnect`; null is the Profile tab itself.
+     */
+    data class Profile(val reason: String? = null, val source: String? = null) : AppKey {
         override val screenName = "Profile"
     }
 

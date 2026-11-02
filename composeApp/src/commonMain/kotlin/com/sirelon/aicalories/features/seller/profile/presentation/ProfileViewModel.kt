@@ -82,6 +82,18 @@ class ProfileViewModel(
 
     override fun initialState(): ProfileState = ProfileState()
 
+    /**
+     * Where this Profile was opened from (`AppKey.Profile.source`), carried onto the add-account
+     * events so a "connect OLX" tap on the preview can be told from a login started on the tab.
+     * Remembered at launch time: the OLX round-trip comes back through [onCallbackReceived].
+     */
+    private var entrySource: String? = null
+    private var pendingAddAccountSource: String? = null
+
+    fun setEntrySource(source: String?) {
+        entrySource = source
+    }
+
     override fun onEvent(event: ProfileEvent) {
         when (event) {
             ProfileEvent.LoginClicked -> startAuthorization(forceReauth = false)
@@ -110,7 +122,8 @@ class ProfileViewModel(
     fun onCallbackReceived(callbackUrl: String) {
         viewModelScope.launch {
             setState { it.copy(isAuthenticating = true, errorMessage = null) }
-            when (val outcome = accountRepository.addAccount(callbackUrl)) {
+            val source = pendingAddAccountSource ?: entrySource ?: SOURCE_PROFILE_TAB
+            when (val outcome = accountRepository.addAccount(callbackUrl, source = source)) {
                 is AddAccountOutcome.Added -> {
                     setState { it.copy(isAuthenticating = false, expandedReconnectLocalIndex = null) }
                 }
@@ -165,6 +178,7 @@ class ProfileViewModel(
     }
 
     private fun startAuthorization(forceReauth: Boolean) {
+        pendingAddAccountSource = entrySource ?: SOURCE_PROFILE_TAB
         viewModelScope.launch {
             setState { it.copy(isAuthenticating = true, errorMessage = null) }
             runCatching { accountRepository.createAuthorizationRequest(forceReauth) }
@@ -249,6 +263,9 @@ class ProfileViewModel(
 }
 
 private const val AnalyticsScreenCode = "profile"
+
+// `source` on the add-account events when Profile was opened from its own tab (AppKey.Profile.source is null).
+private const val SOURCE_PROFILE_TAB = "profile"
 
 private fun OlxAccountRecord.toUiModel(isActive: Boolean): SellerAccountUiModel {
     val snapshot = profile
