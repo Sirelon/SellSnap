@@ -503,9 +503,12 @@
         <item quantity="other">%1$d күн бұрын</item>
     </plurals>
     <string name="conversation_load_failed">Бұл әңгімені жүктей алмадық.</string>
+    <string name="conversation_price_floor">Мұны тек сен көресің · қабылдайтын ең төмен бағаң: %1$s · сұралған баға: %2$s</string>
+    <string name="conversation_price_floor_no_ask">Мұны тек сен көресің · қабылдайтын ең төмен бағаң: %1$s</string>
     <string name="conversation_reply_on_olx">OLX-те жауап беру</string>
     <string name="conversation_reply_hint">Жауап жаз</string>
     <string name="conversation_send">Жіберу</string>
     <string name="conversation_message_sending">Жіберілуде…</string>
     <string name="conversation_message_not_sent">Жіберілмеді</string>
+    <string name="conversation_scam_warning">Алаяқтық болуы мүмкін. OLX сатылымды сілтеме немесе мессенджердегі бот арқылы растауды ешқашан сұрамайды. Карта деректерін бөліспе.</string>
 </resources>

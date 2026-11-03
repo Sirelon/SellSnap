@@ -503,9 +503,12 @@
         <item quantity="other">há %1$d dias</item>
     </plurals>
     <string name="conversation_load_failed">Não foi possível carregar esta conversa.</string>
+    <string name="conversation_price_floor">Visível só para si · o mínimo que aceita: %1$s · pedido: %2$s</string>
+    <string name="conversation_price_floor_no_ask">Visível só para si · o mínimo que aceita: %1$s</string>
     <string name="conversation_reply_on_olx">Responder no OLX</string>
     <string name="conversation_reply_hint">Escreva uma resposta</string>
     <string name="conversation_send">Enviar</string>
     <string name="conversation_message_sending">A enviar…</string>
     <string name="conversation_message_not_sent">Não enviada</string>
+    <string name="conversation_scam_warning">Possível burla. O OLX nunca pede para confirmar uma venda através de um link ou de um bot de mensagens. Não partilhe os dados do cartão.</string>
 </resources>

@@ -508,9 +508,12 @@
         <item quantity="other">acum %1$d de zile</item>
     </plurals>
     <string name="conversation_load_failed">Nu am putut încărca această conversație.</string>
+    <string name="conversation_price_floor">Doar tu vezi asta · cel mai mic preț pe care l-ai accepta: %1$s · cerut: %2$s</string>
+    <string name="conversation_price_floor_no_ask">Doar tu vezi asta · cel mai mic preț pe care l-ai accepta: %1$s</string>
     <string name="conversation_reply_on_olx">Răspunde pe OLX</string>
     <string name="conversation_reply_hint">Scrie un răspuns</string>
     <string name="conversation_send">Trimite</string>
     <string name="conversation_message_sending">Se trimite…</string>
     <string name="conversation_message_not_sent">Netrimis</string>
+    <string name="conversation_scam_warning">Posibilă înșelătorie. OLX nu îți cere niciodată să confirmi o vânzare printr-un link sau un bot de mesagerie. Nu da datele cardului.</string>
 </resources>
