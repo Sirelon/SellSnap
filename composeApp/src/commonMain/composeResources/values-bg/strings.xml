@@ -510,5 +510,7 @@
     <string name="conversation_send">Изпрати</string>
     <string name="conversation_message_sending">Изпращане…</string>
     <string name="conversation_message_not_sent">Не е изпратено</string>
+    <string name="conversation_suggest_replies">Предложи отговори</string>
+    <string name="conversation_suggestions_dismiss">Скрий предложенията</string>
     <string name="conversation_scam_warning">Възможна измама. OLX никога не те моли да потвърдиш продажба през линк или месинджър бот. Не споделяй данните на картата си.</string>
 </resources>

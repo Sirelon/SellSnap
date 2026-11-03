@@ -515,5 +515,7 @@
     <string name="conversation_send">Trimite</string>
     <string name="conversation_message_sending">Se trimite…</string>
     <string name="conversation_message_not_sent">Netrimis</string>
+    <string name="conversation_suggest_replies">Sugerează răspunsuri</string>
+    <string name="conversation_suggestions_dismiss">Ascunde sugestiile</string>
     <string name="conversation_scam_warning">Posibilă înșelătorie. OLX nu îți cere niciodată să confirmi o vânzare printr-un link sau un bot de mesagerie. Nu da datele cardului.</string>
 </resources>

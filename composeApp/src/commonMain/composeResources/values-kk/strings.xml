@@ -510,5 +510,7 @@
     <string name="conversation_send">Жіберу</string>
     <string name="conversation_message_sending">Жіберілуде…</string>
     <string name="conversation_message_not_sent">Жіберілмеді</string>
+    <string name="conversation_suggest_replies">Жауап ұсын</string>
+    <string name="conversation_suggestions_dismiss">Ұсыныстарды жасыр</string>
     <string name="conversation_scam_warning">Алаяқтық болуы мүмкін. OLX сатылымды сілтеме немесе мессенджердегі бот арқылы растауды ешқашан сұрамайды. Карта деректерін бөліспе.</string>
 </resources>

@@ -523,5 +523,7 @@
     <string name="conversation_send">Надіслати</string>
     <string name="conversation_message_sending">Надсилання…</string>
     <string name="conversation_message_not_sent">Не надіслано</string>
+    <string name="conversation_suggest_replies">Запропонувати відповіді</string>
+    <string name="conversation_suggestions_dismiss">Сховати пропозиції</string>
     <string name="conversation_scam_warning">Можливе шахрайство. OLX ніколи не просить підтверджувати продаж через посилання чи бота в месенджері. Не повідомляйте дані картки.</string>
 </resources>

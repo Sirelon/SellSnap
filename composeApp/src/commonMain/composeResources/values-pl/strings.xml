@@ -520,5 +520,7 @@
     <string name="conversation_send">Wyślij</string>
     <string name="conversation_message_sending">Wysyłanie…</string>
     <string name="conversation_message_not_sent">Nie wysłano</string>
+    <string name="conversation_suggest_replies">Zaproponuj odpowiedzi</string>
+    <string name="conversation_suggestions_dismiss">Ukryj podpowiedzi</string>
     <string name="conversation_scam_warning">Możliwe oszustwo. OLX nigdy nie prosi o potwierdzenie sprzedaży przez link ani bota w komunikatorze. Nie podawaj danych karty.</string>
 </resources>
