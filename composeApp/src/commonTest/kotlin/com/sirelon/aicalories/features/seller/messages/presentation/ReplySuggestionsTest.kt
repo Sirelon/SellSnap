@@ -1,5 +1,6 @@
 package com.sirelon.sellsnap.features.seller.messages.presentation
 
+import com.sirelon.sellsnap.features.seller.openai.REPLY_SUGGESTIONS_MODEL_ID
 import com.sirelon.sellsnap.analytics.AnalyticsEvents
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountRecord
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountState
@@ -214,7 +215,7 @@ class ReplySuggestionsTest {
             runCurrent()
 
             val body = fakes.openAIBodies.single()
-            assertTrue(body.contains("\"model\":\"gpt-4.1-mini\""), body)
+            assertTrue(body.contains("\"model\":\"$REPLY_SUGGESTIONS_MODEL_ID\""), body)
             assertTrue(body.contains("\"store\":false"), body)
             assertTrue(body.contains("\"text\":{\"format\":{\"type\":\"json_object\"}}"), body)
             assertTrue(body.contains("Placeholder lamp"), body)
@@ -241,7 +242,7 @@ class ReplySuggestionsTest {
                     "dropped_below_floor" to 0,
                     "needs_review_count" to 1,
                     "prompt_version" to "v1",
-                    "model" to "gpt-4.1-mini",
+                    "model" to REPLY_SUGGESTIONS_MODEL_ID,
                 ),
                 harness.eventsOf(AnalyticsEvents.SUGGESTIONS_SHOWN).single(),
             )

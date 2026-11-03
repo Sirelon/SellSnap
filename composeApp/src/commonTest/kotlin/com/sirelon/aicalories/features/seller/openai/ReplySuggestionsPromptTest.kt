@@ -89,6 +89,18 @@ class ReplySuggestionsPromptTest {
     }
 
     @Test
+    fun `the input says json, which json_object output requires of an input message`() {
+        val input = replySuggestionsInput(
+            title = "Bike",
+            description = null,
+            attributes = emptyList(),
+            messages = listOf(message(1, isSent = false, text = "Hi")),
+        )
+
+        assertTrue(input.contains("json", ignoreCase = true))
+    }
+
+    @Test
     fun `the answer decodes with fields missing or extra`() {
         val response = json.decodeFromString<OpenAIReplySuggestionsResponse>(
             """{"replies":[

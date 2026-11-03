@@ -7,7 +7,7 @@ import com.sirelon.sellsnap.features.seller.my_ads.model.ListingAttribute
 import com.sirelon.sellsnap.features.seller.openai.response.OpenAIReplySuggestionsResponse
 
 /** The model behind "Suggest replies" (SIR-96). The proxy's `ALLOWED_MODELS` must list it. */
-const val REPLY_SUGGESTIONS_MODEL_ID = "gpt-4.1-mini"
+const val REPLY_SUGGESTIONS_MODEL_ID = "gpt-4.1"
 
 // Bump whenever replySuggestionsInstructions or replySuggestionsInput changes, so
 // suggestions_shown stays attributable to the exact prompt.
@@ -43,6 +43,7 @@ internal fun replySuggestionsInstructions(
     appendLine("Facts:")
     appendLine("- Use only facts from the listing and from the seller's own earlier messages. Invent nothing: no condition, defects, size, location, delivery, shipping, payment method, warranty, receipt or reason for selling that they do not state.")
     appendLine("- When the buyer asks something they do not answer, say you will check, or ask the buyer a short question. Never guess.")
+    appendLine("- When the buyer asks about condition, damage, scratches, defects or wear and the listing does not describe them, never say yes or no and never describe the condition: say you will check, or offer more photos.")
     appendLine("- When the buyer asks whether the item is still available, confirm that it is.")
     appendLine()
     appendLine("Price:")
@@ -93,7 +94,9 @@ internal fun replySuggestionsInput(
         val text = message.text.trim().replace(Regex("""\s*\n\s*"""), " ").ifEmpty { "[photo]" }
         appendLine("${if (message.isSent) "Seller" else "Buyer"}: $text")
     }
-    append("Suggest the seller's replies to the buyer's last message.")
+    // The Responses API refuses `json_object` output unless an input message says "json"
+    // (400 "Response input messages must contain the word 'json'"); the instructions do not count.
+    append("Suggest the seller's replies to the buyer's last message, as JSON.")
 }
 
 /**

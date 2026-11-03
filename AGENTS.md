@@ -113,7 +113,7 @@ build and checks every pending ticket in one pass.
 
 ### `functions`
 - Firebase Cloud Functions (TypeScript, Node 22), outside the Gradle build.
-- `openai`: HTTP proxy in `europe-west1` that holds the OpenAI key as a Secret Manager secret, verifies the `X-Firebase-AppCheck` header, allows only `POST /v1/responses` with `gpt-4.1` (listings) or `gpt-4.1-mini` (reply suggestions), and forwards OpenAI's status and body unchanged.
+- `openai`: HTTP proxy in `europe-west1` that holds the OpenAI key as a Secret Manager secret, verifies the `X-Firebase-AppCheck` header, allows only `POST /v1/responses` with `gpt-4.1` (listings and reply suggestions), and forwards OpenAI's status and body unchanged.
 - Deploy: `cd functions && npm install && npm run deploy` (the Firebase CLI runs through `npx firebase-tools`).
 
 ## Gradle Structure

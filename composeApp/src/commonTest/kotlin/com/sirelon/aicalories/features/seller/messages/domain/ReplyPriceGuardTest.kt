@@ -36,6 +36,21 @@ class ReplyPriceGuardTest {
     }
 
     @Test
+    fun `quoting the buyer's offer is kept only next to a counter at or above the floor`() {
+        val replies = listOf(
+            reply("I can't do 1 500, I can do 2 200."),
+            reply("Sorry, not for 1500. The price is 2500."),
+            reply("OK, 1500 works."),
+            reply("I can't do 1 500, but 1 800 is fine."),
+        )
+
+        val result = ReplyPriceGuard.apply(replies, floor = 2000, buyerText = "Will you take 1500?")
+
+        assertEquals(replies.take(2), result.kept)
+        assertEquals(2, result.dropped)
+    }
+
+    @Test
     fun `without a floor nothing is dropped`() {
         val replies = listOf(reply("I can do 1 500.", price = 1500), reply("Fine, 10."))
 

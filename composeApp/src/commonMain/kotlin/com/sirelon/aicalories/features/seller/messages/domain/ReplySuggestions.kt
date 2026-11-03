@@ -35,12 +35,22 @@ internal object ReplyPriceGuard {
      * whole number in `[floor / 2, floor)` - a price under the floor the model did not report.
      * Smaller numbers are left alone: a size, a year or a count is not a price. Without a floor
      * nothing is dropped.
+     *
+     * A number the buyer wrote ([buyerText]) may be quoted when the reply also names a price at or
+     * above the floor: "I can't do 200, 400 is my price" refuses the offer and counters. A reply
+     * that repeats the buyer's number and names nothing higher may be accepting it, so it is still
+     * dropped. The SIR-96 bench showed most lowball answers quote the offer this way.
      */
-    fun apply(suggestions: List<ReplySuggestion>, floor: Long?): Result {
+    fun apply(suggestions: List<ReplySuggestion>, floor: Long?, buyerText: String = ""): Result {
         if (floor == null || floor <= 0) return Result(suggestions, dropped = 0)
+        val buyerNumbers = numbersIn(buyerText).toSet()
         val kept = suggestions.filter { suggestion ->
             val pricedBelow = suggestion.price != null && suggestion.price < floor
-            !pricedBelow && numbersIn(suggestion.text).none { it in (floor / 2) until floor }
+            val numbers = numbersIn(suggestion.text)
+            val counters = numbers.any { it >= floor }
+            val below = numbers.filter { it in (floor / 2) until floor }
+                .filterNot { counters && it in buyerNumbers }
+            !pricedBelow && below.isEmpty()
         }
         return Result(kept, dropped = suggestions.size - kept.size)
     }

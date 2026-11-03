@@ -281,7 +281,7 @@ class ConversationViewModel internal constructor(
                 failSuggestions(error.suggestionFailureReason(), error, latency)
                 return@launch
             }
-            val guarded = ReplyPriceGuard.apply(suggestions, floor?.floor)
+            val guarded = ReplyPriceGuard.apply(suggestions, floor?.floor, buyerText = buyerMessage.text)
             val shown = guarded.kept.take(MAX_REPLY_SUGGESTIONS)
             if (shown.isEmpty()) {
                 failSuggestions(
