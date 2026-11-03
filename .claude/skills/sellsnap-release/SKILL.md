@@ -289,6 +289,30 @@ collection that `features/whatsnew/` reads from. That skill owns the Firestore s
 translation voice, and publish pipeline end to end — don't re-derive or duplicate any of
 that here.
 
+## 10a. Update the feature lists for a complete new capability
+
+Run this step only when the release completes a capability that sellers could not use
+before. Examples: dictation, AI polish, or buyer messages once replies and notifications
+ship. Skip it for improvements, fixes, and partial slices of a feature. A partial feature
+on the website promises what the app cannot do yet; wait for the slice that completes it.
+
+Draft the updates, show them to the owner, and wait for his OK before you publish
+anything. These surfaces list SellSnap's features:
+
+1. Website features grid: `docs/index.html` (`.features-grid`, `feature_*` i18n keys).
+   Add or replace a card; keep the grid focused on the strongest capabilities.
+2. Store descriptions: the Description block per language in
+   `store/copy/store-listing.md`. To push them, write the approved text into the
+   metadata folders from step 3 (`ios/<locale>/description.txt`,
+   `android/<locale>/full_description.txt`); the next `ship.sh` run uploads every file
+   it finds there. Nothing writes these files by default, so the stores keep their
+   current descriptions until you add them.
+3. Store screenshots, if the capability has its own screen: the `sellsnap-screenshots`
+   skill.
+4. Onboarding (`features/seller/onboarding/OnboardingScreen.kt`, same three steps as the
+   website hero): change it only if the capability changes the core snap, write, publish
+   loop.
+
 ## 11. Report back
 
 Show the user, per language, the What's New text that just shipped (it's short — showing
