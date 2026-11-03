@@ -498,6 +498,7 @@ fun App() {
                                     navVm.exitGuestModeToLanding()
                                 },
                                 onCreateListingClick = { switchRootTab(SellerRootTab.GenerateAd) },
+                                onOpenMessagesClick = { switchRootTab(SellerRootTab.Messages) },
                                 onReconnectClick = {
                                     // Reuses Profile's existing reconnect route rather than a
                                     // second OAuth entry point - same pattern as

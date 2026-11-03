@@ -452,6 +452,10 @@
         <item quantity="one">%1$d day left</item>
         <item quantity="other">%1$d days left</item>
     </plurals>
+    <plurals name="my_ads_unread_messages">
+        <item quantity="one">%1$d unread message</item>
+        <item quantity="other">%1$d unread messages</item>
+    </plurals>
     <string name="advert_extend_unavailable">You can only extend this on OLX, not from here.</string>
 
     <!-- Ad lifecycle — statistics -->

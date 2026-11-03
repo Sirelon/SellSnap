@@ -31,6 +31,7 @@ import com.sirelon.sellsnap.features.seller.location.data.LocationStore
 import com.sirelon.sellsnap.features.seller.my_ads.data.MyAdvertsRepository
 import com.sirelon.sellsnap.analytics.AnalyticsEvents
 import com.sirelon.sellsnap.features.seller.ad.publish_success.AdvertStatus
+import com.sirelon.sellsnap.features.seller.messages.data.MessagesRepository
 import com.sirelon.sellsnap.features.seller.my_ads.data.AdvertLifecycleRepository
 import com.sirelon.sellsnap.features.seller.my_ads.domain.AdvertAction
 import com.sirelon.sellsnap.features.common.presentation.awaitEffect
@@ -124,8 +125,9 @@ class MyAdvertsViewModelTest {
 
         // Only the initially-selected page (the active account) fetches on screen entry - never
         // all connected accounts at once.
-        assertEquals(1, requestLog.size)
-        assertEquals("Bearer token-1", requestLog.single().authHeader)
+        val advertRequests = requestLog.filterNot { it.path.contains("threads") }
+        assertEquals(1, advertRequests.size)
+        assertEquals("Bearer token-1", advertRequests.single().authHeader)
     }
 
     @Test
@@ -206,6 +208,9 @@ class MyAdvertsViewModelTest {
                 if (request.url.encodedPath.contains(OlxConfig.authTokenPath)) {
                     refreshCallCount += 1
                     respond(refreshTokenJson("token-1-refreshed"), status = HttpStatusCode.OK, headers = jsonHeaders())
+                } else if (request.url.encodedPath.contains("threads")) {
+                    // The unread markers' own call (SIR-162); this test counts the adverts calls.
+                    respond("", status = HttpStatusCode.InternalServerError)
                 } else {
                     advertsCallCount += 1
                     advertsAuthHeaders += request.headers[HttpHeaders.Authorization]
@@ -1727,6 +1732,7 @@ class MyAdvertsViewModelTest {
         val viewModel = MyAdvertsViewModel(
             repository = repository,
             accountRepository = harness.repository,
+            messagesRepository = MessagesRepository(harness.repository, harness.unauthenticatedOlxApiClient),
             lifecycleRepository = AdvertLifecycleRepository(
                 accountRepository = harness.repository,
                 unauthenticatedOlxApiClient = harness.unauthenticatedOlxApiClient,

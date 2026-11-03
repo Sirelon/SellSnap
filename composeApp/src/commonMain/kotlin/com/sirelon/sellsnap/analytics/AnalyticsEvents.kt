@@ -315,4 +315,15 @@ object AnalyticsEvents {
      * `error_shown`); the other actions have no `result`.
      */
     const val MESSAGES_CONVERSATION_ACTION = "messages_conversation_action"
+
+    // My Ads (SIR-162).
+
+    /**
+     * The seller tapped the unread-messages marker on a My Ads row, which opens the Messages tab.
+     * `unread_bucket` is the unread total the marker showed, banded by
+     * `MessagesAnalyticsBuckets.count` (1, 2_5, 6_10, 11_25, 26_50, gt_50). Compared with
+     * `messages_opened` it answers whether the marker pulls sellers into their conversations. No
+     * advert id, title or message text.
+     */
+    const val MY_ADS_UNREAD_MARKER_TAPPED = "my_ads_unread_marker_tapped"
 }

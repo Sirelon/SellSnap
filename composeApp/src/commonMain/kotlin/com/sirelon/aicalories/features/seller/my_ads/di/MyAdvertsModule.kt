@@ -25,6 +25,7 @@ val myAdvertsModule = module {
         MyAdvertsViewModel(
             repository = get(),
             accountRepository = get(),
+            messagesRepository = get(),
             lifecycleRepository = get(),
             outcomeStore = get(),
             analytics = get(),

@@ -117,6 +117,7 @@ internal class MessagesHarness(
     val messagesRepository: MessagesRepository,
     val myAdvertsRepository: MyAdvertsRepository,
     val analytics: FakeAnalytics,
+    val unauthenticatedOlxApiClient: OlxApiClient,
 )
 
 internal suspend fun messagesHarness(
@@ -190,6 +191,7 @@ internal suspend fun messagesHarness(
         messagesRepository = MessagesRepository(accountRepository, unauthenticatedOlxApiClient),
         myAdvertsRepository = MyAdvertsRepository(accountRepository, unauthenticatedOlxApiClient),
         analytics = analytics,
+        unauthenticatedOlxApiClient = unauthenticatedOlxApiClient,
     )
 }
 
