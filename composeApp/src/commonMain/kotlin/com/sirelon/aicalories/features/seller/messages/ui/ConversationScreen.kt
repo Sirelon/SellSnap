@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -16,7 +17,10 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -29,9 +33,13 @@ import androidx.compose.material3.adaptive.navigation3.LocalListDetailSceneScope
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -43,9 +51,9 @@ import com.sirelon.sellsnap.designsystem.AppCard
 import com.sirelon.sellsnap.designsystem.AppDimens
 import com.sirelon.sellsnap.designsystem.AppScaffold
 import com.sirelon.sellsnap.designsystem.AppTheme
+import com.sirelon.sellsnap.designsystem.Input
 import com.sirelon.sellsnap.designsystem.ObserveAsEvents
-import com.sirelon.sellsnap.designsystem.buttons.AppButton
-import com.sirelon.sellsnap.designsystem.buttons.AppButtonDefaults
+import com.sirelon.sellsnap.designsystem.buttons.AppIconButton
 import com.sirelon.sellsnap.designsystem.screens.EmptyScreen
 import com.sirelon.sellsnap.designsystem.screens.LoadingOverlay
 import com.sirelon.sellsnap.features.seller.ad.publish_success.AdvertStatus
@@ -58,8 +66,13 @@ import com.sirelon.sellsnap.features.seller.messages.presentation.ConversationVi
 import com.sirelon.sellsnap.features.seller.my_ads.model.MyAdvertItem
 import com.sirelon.sellsnap.features.seller.my_ads.ui.StatusChip
 import com.sirelon.sellsnap.generated.resources.Res
+import com.sirelon.sellsnap.generated.resources.advert_action_failed
 import com.sirelon.sellsnap.generated.resources.back
+import com.sirelon.sellsnap.generated.resources.conversation_message_not_sent
+import com.sirelon.sellsnap.generated.resources.conversation_message_sending
+import com.sirelon.sellsnap.generated.resources.conversation_reply_hint
 import com.sirelon.sellsnap.generated.resources.conversation_reply_on_olx
+import com.sirelon.sellsnap.generated.resources.conversation_send
 import com.sirelon.sellsnap.generated.resources.ic_arrow_right
 import com.sirelon.sellsnap.generated.resources.ic_circle_alert
 import com.sirelon.sellsnap.generated.resources.messages_buyer_label
@@ -159,25 +172,35 @@ private fun ConversationScreen(
                             Text(stringResource(Res.string.messages_mark_as_read))
                         }
                     }
+                    // Inferred: the thread deep link is undocumented, so this opens the account's
+                    // answers page. The path resolves (200, no redirect) on every olx domain this
+                    // app supports.
+                    IconButton(
+                        onClick = {
+                            onEvent(Event.ReplyOnOlxClicked)
+                            openUrl("https://www.${_currentOlxCountry.domain}/myaccount/answers/")
+                        },
+                        modifier = Modifier.testTag("conversation_reply_on_olx"),
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.OpenInNew,
+                            contentDescription = stringResource(Res.string.conversation_reply_on_olx),
+                        )
+                    }
                 },
             )
         },
         bottomBar = {
-            // Inferred: the thread deep link is undocumented, so this opens the account's answers
-            // page. The path resolves (200, no redirect) on every olx domain this app supports.
-            AppButton(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .navigationBarsPadding()
-                    .padding(AppDimens.Spacing.xl3)
-                    .testTag("conversation_reply_on_olx"),
-                text = stringResource(Res.string.conversation_reply_on_olx),
-                onClick = {
-                    onEvent(Event.ReplyOnOlxClicked)
-                    openUrl("https://www.${_currentOlxCountry.domain}/myaccount/answers/")
-                },
-                style = AppButtonDefaults.outline(),
-            )
+            // While the account needs a reconnect, the reconnect state above takes the input's
+            // place: a reply could only fail.
+            if (!state.needsReconnect) {
+                ReplyInput(
+                    draft = state.draft,
+                    canSend = state.canSend,
+                    onDraftChange = { onEvent(Event.DraftChanged(it)) },
+                    onSend = { onEvent(Event.SendClicked(isTwoPane = isBesideList)) },
+                )
+            }
         },
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding)) {
@@ -208,7 +231,7 @@ private fun ConversationScreen(
                         ),
                         onActionClick = { onEvent(Event.ReconnectClicked) },
                     )
-                } else if (state.errorMessage != null) {
+                } else if (state.errorMessage != null && state.pendingMessages.isEmpty()) {
                     EmptyScreen(
                         modifier = Modifier.fillMaxSize(),
                         icon = Res.drawable.ic_circle_alert,
@@ -225,6 +248,12 @@ private fun ConversationScreen(
                         contentPadding = PaddingValues(AppDimens.Spacing.xl3),
                         verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.m),
                     ) {
+                        items(items = state.pendingMessages.asReversed(), key = { "pending-${it.localId}" }) { pending ->
+                            PendingMessageBubble(
+                                message = pending,
+                                onRetry = { onEvent(Event.RetrySendClicked(pending.localId, isTwoPane = isBesideList)) },
+                            )
+                        }
                         items(items = state.messages.asReversed(), key = { it.id }) { message ->
                             MessageBubble(message = message)
                         }
@@ -354,5 +383,110 @@ private fun MessageBubble(message: OlxMessage) {
                 color = textColor.copy(alpha = 0.7f),
             )
         }
+    }
+}
+
+/**
+ * A reply this screen sent that the loaded messages do not show yet. Sending: dimmed. Sent: a plain
+ * sent bubble without a time (OLX's answer has none; the next load brings the real one). Failed:
+ * the text stays, with OLX's refusal when it gave one, and Retry.
+ */
+@Composable
+private fun PendingMessageBubble(message: ConversationContract.PendingMessage, onRetry: () -> Unit) {
+    val textColor = AppTheme.colors.onPrimary
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.End,
+    ) {
+        Column(
+            modifier = Modifier
+                .widthIn(max = AppDimens.Size.xl24)
+                .alpha(if (message.status == ConversationContract.PendingStatus.Sending) 0.6f else 1f)
+                .clip(RoundedCornerShape(AppDimens.BorderRadius.xl3))
+                .background(AppTheme.colors.primary)
+                .padding(AppDimens.Spacing.xl)
+                .testTag("conversation_message_pending"),
+            verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.s),
+        ) {
+            Text(text = message.text, style = AppTheme.typography.body, color = textColor)
+            if (message.status == ConversationContract.PendingStatus.Sending) {
+                Text(
+                    text = stringResource(Res.string.conversation_message_sending),
+                    style = AppTheme.typography.caption,
+                    color = textColor.copy(alpha = 0.7f),
+                )
+            }
+        }
+        if (message.status == ConversationContract.PendingStatus.Failed) {
+            Row(
+                modifier = Modifier.widthIn(max = AppDimens.Size.xl24),
+                horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing.s),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(
+                    painter = painterResource(Res.drawable.ic_circle_alert),
+                    contentDescription = null,
+                    tint = AppTheme.colors.error,
+                    modifier = Modifier.size(AppDimens.Size.xl3),
+                )
+                Text(
+                    text = message.olxRefusal
+                        ?.let { stringResource(Res.string.advert_action_failed, it) }
+                        ?: stringResource(Res.string.conversation_message_not_sent),
+                    style = AppTheme.typography.caption,
+                    color = AppTheme.colors.error,
+                    modifier = Modifier.weight(1f, fill = false),
+                )
+                TextButton(
+                    onClick = onRetry,
+                    modifier = Modifier.testTag("conversation_message_retry"),
+                ) {
+                    Text(stringResource(Res.string.retry))
+                }
+            }
+        }
+    }
+}
+
+/**
+ * The reply field and Send. It sits in the scaffold's bottom bar and pads itself above the
+ * keyboard and the navigation bar, like the publish bar on the preview screen.
+ */
+@Composable
+private fun ReplyInput(
+    draft: String,
+    canSend: Boolean,
+    onDraftChange: (String) -> Unit,
+    onSend: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .imePadding()
+            .navigationBarsPadding()
+            .padding(horizontal = AppDimens.Spacing.xl3, vertical = AppDimens.Spacing.m),
+        horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing.m),
+        verticalAlignment = Alignment.Bottom,
+    ) {
+        Input(
+            value = draft,
+            onValueChange = onDraftChange,
+            modifier = Modifier.weight(1f).testTag("conversation_reply_input"),
+            placeholder = stringResource(Res.string.conversation_reply_hint),
+            singleLine = false,
+            maxLines = 5,
+            // Return inserts a line break; Send is the button.
+            keyboardOptions = KeyboardOptions(
+                capitalization = KeyboardCapitalization.Sentences,
+                imeAction = ImeAction.None,
+            ),
+        )
+        AppIconButton(
+            icon = rememberVectorPainter(Icons.AutoMirrored.Filled.Send),
+            onClick = onSend,
+            enabled = canSend,
+            contentDescription = stringResource(Res.string.conversation_send),
+            modifier = Modifier.testTag("conversation_send"),
+        )
     }
 }

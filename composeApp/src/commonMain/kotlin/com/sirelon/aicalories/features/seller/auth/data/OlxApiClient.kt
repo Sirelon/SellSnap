@@ -264,6 +264,33 @@ class OlxApiClient(
     }
 
     /**
+     * `POST threads/{id}/messages` with `{"text": ...}`: the account writes [text] into the
+     * thread. The status code is the whole result: the spec declares no response body, so the
+     * caller re-reads the thread to see the message.
+     *
+     * developer.olx.ua, swagger v2 `/threads/{threadId}/messages`, `post` "Post Message"
+     * (security `access_token`: `v2`, `write`); developer.olx.pl declares the same:
+     * ```
+     * description: Posts new message in a given thread. Field 'phone' is optional and depends on
+     *   the category - used in Jobs categories right now.
+     * requestBody: application/json: type: object, required: [text]
+     *   text: string, "Text of the message"
+     *   attachments: array of {url: string}
+     * responses: 200 "Status 200" (no content schema)
+     * ```
+     * Neither spec lists a refusal (an inactive or deleted listing, a length limit), so nothing
+     * is checked here: OLX's own error is what the seller sees.
+     */
+    internal suspend fun postThreadMessage(accessToken: String, threadId: Long, text: String) {
+        val response = httpClient.post("threads/$threadId/messages") {
+            bearerAuth(accessToken)
+            contentType(ContentType.Application.Json)
+            setBody(ThreadMessageRequest(text = text))
+        }
+        response.ensureSuccess()
+    }
+
+    /**
      * `DELETE adverts/{id}` (SIR-98). 204 on success. OLX rejects this while the advert is still
      * active, with `field: "ad", title: "Invalid status"` - the caller is responsible for
      * deactivating first, and for telling the seller when only that half succeeded.

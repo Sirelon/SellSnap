@@ -506,4 +506,8 @@
     </plurals>
     <string name="conversation_load_failed">Couldn't load this conversation.</string>
     <string name="conversation_reply_on_olx">Reply on OLX</string>
+    <string name="conversation_reply_hint">Write a reply</string>
+    <string name="conversation_send">Send</string>
+    <string name="conversation_message_sending">Sending…</string>
+    <string name="conversation_message_not_sent">Not sent</string>
 </resources>

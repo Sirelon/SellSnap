@@ -8,12 +8,19 @@ import com.sirelon.sellsnap.features.common.presentation.BaseViewModel
 import com.sirelon.sellsnap.features.seller.ad.publish_success.AdvertStatus
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountState
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountsRecord
+import com.sirelon.sellsnap.features.seller.auth.domain.OlxApiError
+import com.sirelon.sellsnap.features.seller.auth.domain.OlxApiException
 import com.sirelon.sellsnap.features.seller.auth.domain.shownErrorCause
 import com.sirelon.sellsnap.features.seller.messages.data.MessagesRepository
 import com.sirelon.sellsnap.features.seller.messages.data.activeAccount
+import com.sirelon.sellsnap.features.seller.messages.data.countryAccounts
+import com.sirelon.sellsnap.features.seller.messages.domain.MessageSource
 import com.sirelon.sellsnap.features.seller.messages.domain.MessagesAnalyticsBuckets
+import com.sirelon.sellsnap.features.seller.messages.domain.OlxMessage
 import com.sirelon.sellsnap.features.seller.messages.presentation.ConversationContract.Effect
 import com.sirelon.sellsnap.features.seller.messages.presentation.ConversationContract.Event
+import com.sirelon.sellsnap.features.seller.messages.presentation.ConversationContract.PendingMessage
+import com.sirelon.sellsnap.features.seller.messages.presentation.ConversationContract.PendingStatus
 import com.sirelon.sellsnap.features.seller.messages.presentation.ConversationContract.State
 import com.sirelon.sellsnap.features.seller.my_ads.data.AccountNeedsReconnect
 import com.sirelon.sellsnap.features.seller.my_ads.data.MyAdvertsRepository
@@ -31,7 +38,7 @@ import org.jetbrains.compose.resources.getString
 import kotlin.time.TimeSource
 
 /**
- * One open conversation (read-only). [title], [imageUrl], [status] and [isListingDeleted] come
+ * One open conversation. [title], [imageUrl], [status] and [isListingDeleted] come
  * from the list row that opened it.
  * Loads the messages of [threadId] with the token of the account at [keyLocalIndex] - or, for a
  * key saved without one, the account that was active when it opened - whichever account is active
@@ -44,6 +51,12 @@ import kotlin.time.TimeSource
  * it when the messages are read) and runs only when the seller taps it, never on open or poll. A
  * failed command is shown as a snackbar and leaves the action to try again. [timeSource] times the
  * actions for analytics and changes nothing on screen.
+ *
+ * A reply is sent with the same account, never the active one. Send clears the draft and adds a
+ * pending bubble at once; OLX's answer carries no message, so a success re-reads the thread, and
+ * the bubble stays until a load shows the reply (see [withoutDelivered]). A failure keeps the
+ * bubble and its text with Retry. Nothing is withheld on the listing's state: OLX's refusal, if
+ * any, is what the seller sees. Sending does not mark the thread read.
  */
 class ConversationViewModel internal constructor(
     keyLocalIndex: Int?,
@@ -71,6 +84,10 @@ class ConversationViewModel internal constructor(
     private var listingRequested = false
     private var accountSeen = false
     private var closed = false
+    private var nextPendingId = 0L
+
+    /** Every message id a load has returned, so each load can tell which sent messages are new. */
+    private val seenMessageIds = mutableSetOf<Long>()
 
     init {
         accountRepository
@@ -104,7 +121,110 @@ class ConversationViewModel internal constructor(
             Event.ReplyOnOlxClicked -> logAction("reply_on_olx")
             Event.ListingClicked -> logAction("open_listing")
             Event.MarkAsReadClicked -> markAsRead()
+            is Event.DraftChanged -> setState { it.copy(draft = event.text) }
+            is Event.SendClicked -> send(event.isTwoPane)
+            is Event.RetrySendClicked -> retrySend(event.localId, event.isTwoPane)
         }
+    }
+
+    private fun send(isTwoPane: Boolean) {
+        val index = localIndex ?: return
+        val state = currentState()
+        val text = state.draft.trim()
+        // The input is not on screen while the account needs a reconnect; a send would only fail.
+        if (text.isEmpty() || state.needsReconnect) return
+        val pending = PendingMessage(localId = nextPendingId++, text = text, status = PendingStatus.Sending)
+        setState { it.copy(draft = "", pendingMessages = it.pendingMessages + pending) }
+        deliver(index, pending, isRetry = false, isTwoPane = isTwoPane)
+    }
+
+    private fun retrySend(localId: Long, isTwoPane: Boolean) {
+        val index = localIndex ?: return
+        val state = currentState()
+        if (state.needsReconnect) return
+        val pending = state.pendingMessages
+            .find { it.localId == localId && it.status == PendingStatus.Failed }
+            ?: return
+        updatePending(localId) { it.copy(status = PendingStatus.Sending, olxRefusal = null) }
+        deliver(index, pending, isRetry = true, isTwoPane = isTwoPane)
+    }
+
+    private fun deliver(index: Int, pending: PendingMessage, isRetry: Boolean, isTwoPane: Boolean) {
+        viewModelScope.launch {
+            try {
+                repository.sendMessage(index, threadId, pending.text)
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: Exception) {
+                val refusal = ((error as? OlxApiException)?.error as? OlxApiError.ValidationError)
+                    ?.let { "${it.field}: ${it.fieldDetail}" }
+                updatePending(pending.localId) { it.copy(status = PendingStatus.Failed, olxRefusal = refusal) }
+                logMessageSent(result = "failed", isRetry = isRetry, isTwoPane = isTwoPane)
+                // A dead token is not this bubble's error: onAccounts puts the reconnect state on
+                // screen, as it does for a failed load.
+                if (error !is AccountNeedsReconnect) {
+                    analytics.reportShownError(
+                        screen = "conversation",
+                        reason = "send_failed:${error.shownErrorCause}",
+                        throwable = error,
+                    )
+                }
+                return@launch
+            }
+            updatePending(pending.localId) { it.copy(status = PendingStatus.Sent) }
+            logMessageSent(result = "success", isRetry = isRetry, isTwoPane = isTwoPane)
+            // Re-read now. Restarting the poll also cancels a read that started before OLX had the
+            // reply, so that read cannot land after this one and hide the reply until the next poll.
+            startPolling()
+        }
+    }
+
+    /** A no-op when a load has already shown the reply and dropped its bubble. */
+    private fun updatePending(localId: Long, transform: (PendingMessage) -> PendingMessage) {
+        setState { state ->
+            state.copy(
+                pendingMessages = state.pendingMessages.map { if (it.localId == localId) transform(it) else it },
+            )
+        }
+    }
+
+    /**
+     * [pending] minus the replies [messages] now shows. A sent message no earlier load returned is
+     * one of these replies when its text matches, whatever the bubble's status: a reply still in
+     * flight, or one whose answer was lost, is on OLX all the same.
+     * Inferred: OLX stores the text as sent; no live reply was checked (SIR-95). If it does not, a
+     * new sent message left unmatched takes the oldest bubble OLX accepted, so an accepted reply
+     * is never drawn twice.
+     */
+    private fun withoutDelivered(pending: List<PendingMessage>, messages: List<OlxMessage>): List<PendingMessage> {
+        val newSent = messages.filter { it.isSent && it.id !in seenMessageIds }
+        messages.forEach { seenMessageIds += it.id }
+        if (pending.isEmpty() || newSent.isEmpty()) return pending
+
+        val remaining = pending.toMutableList()
+        val unmatched = newSent.filter { message ->
+            val match = remaining.indexOfFirst { it.text == message.text.trim() }
+            if (match >= 0) remaining.removeAt(match)
+            match < 0
+        }
+        repeat(unmatched.size) {
+            val match = remaining.indexOfFirst { it.status == PendingStatus.Sent }
+            if (match >= 0) remaining.removeAt(match)
+        }
+        return remaining
+    }
+
+    private fun logMessageSent(result: String, isRetry: Boolean, isTwoPane: Boolean) {
+        analytics.logEvent(
+            AnalyticsEvents.MESSAGE_SENT,
+            mapOf(
+                "source" to MessageSource.Typed.code,
+                "result" to result,
+                "is_retry" to isRetry,
+                "layout" to if (isTwoPane) "two_pane" else "single_pane",
+                "account_count" to accountRepository.accountsRecordFlow.value.countryAccounts().size,
+            ),
+        )
     }
 
     private fun markAsRead() {
@@ -220,7 +340,17 @@ class ConversationViewModel internal constructor(
             handleFailure(error)
             return
         }
-        setState { it.copy(isLoading = false, hasLoaded = true, messages = messages, errorMessage = null) }
+        // Computed and set with no suspension between, so a bubble added meanwhile is not lost.
+        val pending = withoutDelivered(currentState().pendingMessages, messages)
+        setState {
+            it.copy(
+                isLoading = false,
+                hasLoaded = true,
+                messages = messages,
+                errorMessage = null,
+                pendingMessages = pending,
+            )
+        }
         if (!loadedLogged) {
             loadedLogged = true
             analytics.logEvent(

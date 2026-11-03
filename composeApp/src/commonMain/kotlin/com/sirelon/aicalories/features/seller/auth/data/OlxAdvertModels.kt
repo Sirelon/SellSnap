@@ -107,6 +107,16 @@ internal data class ThreadCommandRequest(
 )
 
 /**
+ * Body of `POST threads/{id}/messages`. The schema also takes optional `attachments`
+ * (`[{url}]`); this app sends text only, so the body is the one required key
+ * (developer.olx.ua and developer.olx.pl, swagger v2 `/threads/{threadId}/messages`, `post`).
+ */
+@Serializable
+internal data class ThreadMessageRequest(
+    @SerialName("text") val text: String,
+)
+
+/**
  * The thread commands this app sends. OLX accepts `mark-as-read` and `set-favourite`
  * (developer.olx.ua, swagger v2 `/threads/{threadId}/commands`, `command` enum).
  */

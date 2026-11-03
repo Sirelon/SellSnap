@@ -33,7 +33,41 @@ interface ConversationContract {
         val canMarkAsRead: Boolean = false,
         /** The mark-as-read command is in flight; the action is disabled meanwhile. */
         val isMarkingAsRead: Boolean = false,
+        /** The reply the seller is typing. */
+        val draft: String = "",
+        /**
+         * Replies written here that the loaded [messages] do not show yet, oldest first. They are
+         * drawn after [messages]; a poll replaces [messages] and leaves these alone.
+         */
+        val pendingMessages: List<PendingMessage> = emptyList(),
+    ) {
+        /** Send is enabled: there is something to send besides spaces and line breaks. */
+        val canSend: Boolean get() = draft.isNotBlank()
+    }
+
+    /** A reply on its way to OLX, sent, or refused. [localId] is this screen's own, not OLX's. */
+    @Immutable
+    data class PendingMessage(
+        val localId: Long,
+        val text: String,
+        val status: PendingStatus,
+        /**
+         * OLX's own words when it refused the message (`field: detail` of a validation error), or
+         * null when it gave none: a network failure, a server error.
+         */
+        val olxRefusal: String? = null,
     )
+
+    enum class PendingStatus {
+        /** The request is in flight. */
+        Sending,
+
+        /** OLX accepted it; it stays until a load of the thread shows it. */
+        Sent,
+
+        /** OLX refused it or could not be reached: shown with Retry, its text kept. */
+        Failed,
+    }
 
     sealed interface Event {
         data object Shown : Event
@@ -41,7 +75,7 @@ interface ConversationContract {
         data object RetryClicked : Event
         data object ReconnectClicked : Event
 
-        /** "Reply on OLX": the screen opens OLX's answers page; this only reports the tap. */
+        /** "Reply on OLX" in the top bar: the screen opens OLX's answers page; this only reports the tap. */
         data object ReplyOnOlxClicked : Event
 
         /** The seller tapped "Mark as read" - the only thing that sends the command. */
@@ -49,6 +83,14 @@ interface ConversationContract {
 
         /** The listing header: the screen opens the advert; this only reports the tap. */
         data object ListingClicked : Event
+
+        data class DraftChanged(val text: String) : Event
+
+        /** [isTwoPane]: the conversation is beside the list. Only analytics reads it. */
+        data class SendClicked(val isTwoPane: Boolean) : Event
+
+        /** Retry on a failed reply: sends its text again. */
+        data class RetrySendClicked(val localId: Long, val isTwoPane: Boolean) : Event
     }
 
     sealed interface Effect {

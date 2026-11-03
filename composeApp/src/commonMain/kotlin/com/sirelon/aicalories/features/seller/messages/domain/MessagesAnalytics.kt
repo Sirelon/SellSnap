@@ -3,6 +3,14 @@ package com.sirelon.sellsnap.features.seller.messages.domain
 import com.sirelon.sellsnap.features.seller.ad.publish_success.AdvertStatus
 
 /**
+ * Where a reply's text came from, the `source` of `message_sent`. Only typing exists so far; AI
+ * suggestions (SIR-96) add their own codes here.
+ */
+internal enum class MessageSource(val code: String) {
+    Typed("typed"),
+}
+
+/**
  * Codes for the Messages analytics (SIR-92). Counts and times are banded before they leave the
  * device, and a listing's state is a code: no event carries message text, a title, an id or
  * anything else a buyer or a listing could be recognised by.

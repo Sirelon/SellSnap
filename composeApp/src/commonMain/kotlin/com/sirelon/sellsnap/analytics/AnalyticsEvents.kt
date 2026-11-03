@@ -253,7 +253,7 @@ object AnalyticsEvents {
      */
     const val ERROR_SHOWN = "error_shown"
 
-    // Messages (SIR-92, read-only buyer conversations). Counts are banded by
+    // Messages (SIR-92, buyer conversations). Counts are banded by
     // `MessagesAnalyticsBuckets.count` (0, 1, 2_5, 6_10, 11_25, 26_50, gt_50). No event carries
     // message text, a thread id, a buyer id, an advert id or a title. Failed loads are not here:
     // they are `error_shown` with `screen` `messages` or `conversation`. Screen views of both
@@ -305,8 +305,8 @@ object AnalyticsEvents {
     const val MESSAGES_CONVERSATION_LOADED = "messages_conversation_loaded"
 
     /**
-     * The seller tapped an action in a conversation. `action` is `reply_on_olx` (the writing
-     * session is not in the app, so this is the demand for it), `open_listing` (the header) or
+     * The seller tapped an action in a conversation. `action` is `reply_on_olx` (the top-bar
+     * link to OLX's own messages page, beside the in-app reply), `open_listing` (the header) or
      * `mark_as_read` (the top bar action, offered while the thread has unread messages). Also
      * `listing_state` (as for `messages_conversation_opened`), `had_unread` (Boolean, the row had
      * unread messages when it was opened) and `seconds_since_open_bucket` (0_5, 6_30, 31_120,
@@ -315,6 +315,17 @@ object AnalyticsEvents {
      * `error_shown`); the other actions have no `result`.
      */
     const val MESSAGES_CONVERSATION_ACTION = "messages_conversation_action"
+
+    /**
+     * A reply the seller sent from a conversation (SIR-95), logged when OLX answers. `source` is
+     * where the text came from: `typed` (only value for now; AI suggestions add their own codes).
+     * `result` is `success` (OLX accepted it) or `failed` (the bubble shows Retry; also
+     * `error_shown` with reason `send_failed:<cause>`, except for an account that needs a
+     * reconnect). `is_retry` (Boolean) is true for a Retry tap on a failed reply. `layout` is
+     * `single_pane` or `two_pane`, and `account_count` the accounts connected in the country, as
+     * for `messages_conversation_opened`. No text, length or id.
+     */
+    const val MESSAGE_SENT = "message_sent"
 
     // My Ads (SIR-162).
 
