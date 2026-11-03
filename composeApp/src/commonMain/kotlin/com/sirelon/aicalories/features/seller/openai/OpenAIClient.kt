@@ -1,5 +1,7 @@
 package com.sirelon.sellsnap.features.seller.openai
 
+import com.aallam.openai.api.chat.Effort
+import com.aallam.openai.api.response.ResponseReasoning
 import com.aallam.openai.api.chat.ChatResponseFormat
 import com.aallam.openai.api.exception.OpenAIAPIException
 import com.aallam.openai.api.model.ModelId
@@ -437,7 +439,9 @@ class OpenAIClient(
             request = ResponseRequest(
                 model = ModelId(REPLY_SUGGESTIONS_MODEL_ID),
                 instructions = instructions,
-                temperature = 0.3,
+                // A reasoning model: it refuses `temperature`, and effort "none" keeps a reply
+                // under ~2 s (SIR-96 bench, .context/bench).
+                reasoning = ResponseReasoning(effort = Effort("none")),
                 // Three replies of at most 160 characters plus the JSON around them; Polish and
                 // Ukrainian run at roughly two characters per token.
                 maxOutputTokens = 400,

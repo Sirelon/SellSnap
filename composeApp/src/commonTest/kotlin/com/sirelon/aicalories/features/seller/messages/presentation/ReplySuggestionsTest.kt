@@ -217,6 +217,8 @@ class ReplySuggestionsTest {
             val body = fakes.openAIBodies.single()
             assertTrue(body.contains("\"model\":\"$REPLY_SUGGESTIONS_MODEL_ID\""), body)
             assertTrue(body.contains("\"store\":false"), body)
+            assertTrue(body.contains("\"reasoning\":{\"effort\":\"none\"}"), body)
+            assertFalse(body.contains("temperature"), body)
             assertTrue(body.contains("\"text\":{\"format\":{\"type\":\"json_object\"}}"), body)
             assertTrue(body.contains("Placeholder lamp"), body)
             assertTrue(body.contains("Placeholder description"), body)

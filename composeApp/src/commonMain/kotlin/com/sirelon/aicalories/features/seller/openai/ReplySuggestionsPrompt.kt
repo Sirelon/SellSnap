@@ -7,7 +7,10 @@ import com.sirelon.sellsnap.features.seller.my_ads.model.ListingAttribute
 import com.sirelon.sellsnap.features.seller.openai.response.OpenAIReplySuggestionsResponse
 
 /** The model behind "Suggest replies" (SIR-96). The proxy's `ALLOWED_MODELS` must list it. */
-const val REPLY_SUGGESTIONS_MODEL_ID = "gpt-4.1"
+// gpt-5.6-luna: in the SIR-96 bench (30 conversations, uk/pl/ro/pt/bg) it invented no facts, kept
+// the floor, held the asking price on a lowball more often than gpt-6-luna, and costs about a tenth
+// of gpt-4.1. gpt-4.1-mini invented item condition.
+const val REPLY_SUGGESTIONS_MODEL_ID = "gpt-5.6-luna"
 
 // Bump whenever replySuggestionsInstructions or replySuggestionsInput changes, so
 // suggestions_shown stays attributable to the exact prompt.
