@@ -512,4 +512,5 @@
     <string name="conversation_send">Send</string>
     <string name="conversation_message_sending">Sending…</string>
     <string name="conversation_message_not_sent">Not sent</string>
+    <string name="conversation_scam_warning">Possible scam. OLX never asks you to confirm a sale through a link or a messenger bot. Don't share card details.</string>
 </resources>

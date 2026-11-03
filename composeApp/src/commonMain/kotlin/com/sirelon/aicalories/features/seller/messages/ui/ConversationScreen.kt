@@ -76,9 +76,11 @@ import com.sirelon.sellsnap.generated.resources.conversation_price_floor
 import com.sirelon.sellsnap.generated.resources.conversation_price_floor_no_ask
 import com.sirelon.sellsnap.generated.resources.conversation_reply_hint
 import com.sirelon.sellsnap.generated.resources.conversation_reply_on_olx
+import com.sirelon.sellsnap.generated.resources.conversation_scam_warning
 import com.sirelon.sellsnap.generated.resources.conversation_send
 import com.sirelon.sellsnap.generated.resources.ic_arrow_right
 import com.sirelon.sellsnap.generated.resources.ic_circle_alert
+import com.sirelon.sellsnap.generated.resources.ic_triangle_alert
 import com.sirelon.sellsnap.generated.resources.messages_buyer_label
 import com.sirelon.sellsnap.generated.resources.messages_listing_deleted
 import com.sirelon.sellsnap.generated.resources.messages_listing_fallback
@@ -260,7 +262,7 @@ private fun ConversationScreen(
                             )
                         }
                         items(items = state.messages.asReversed(), key = { it.id }) { message ->
-                            MessageBubble(message = message)
+                            MessageBubble(message = message, isFlagged = message.id in state.flaggedMessageIds)
                         }
                     }
                     if (state.isLoading && !state.hasLoaded) {
@@ -374,7 +376,7 @@ private fun ListingHeader(
 }
 
 @Composable
-private fun MessageBubble(message: OlxMessage) {
+private fun MessageBubble(message: OlxMessage, isFlagged: Boolean) {
     val alignment = if (message.isSent) Alignment.End else Alignment.Start
     val textColor = if (message.isSent) AppTheme.colors.onPrimary else AppTheme.colors.onSurface
     Column(
@@ -404,6 +406,7 @@ private fun MessageBubble(message: OlxMessage) {
                         .clickable { openUrl(url) },
                 )
             }
+            if (isFlagged) ScamWarning()
             Text(
                 text = messageTime(
                     raw = message.createdAt,
@@ -415,6 +418,29 @@ private fun MessageBubble(message: OlxMessage) {
                 color = textColor.copy(alpha = 0.7f),
             )
         }
+    }
+}
+
+/** The warning attached to a received message that matches a scam rule (SIR-176). */
+@Composable
+private fun ScamWarning() {
+    Row(
+        modifier = Modifier.testTag("conversation_scam_warning"),
+        horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing.s),
+        verticalAlignment = Alignment.Top,
+    ) {
+        Icon(
+            painter = painterResource(Res.drawable.ic_triangle_alert),
+            contentDescription = null,
+            tint = AppTheme.colors.error,
+            modifier = Modifier.size(AppDimens.Size.xl3),
+        )
+        Text(
+            text = stringResource(Res.string.conversation_scam_warning),
+            style = AppTheme.typography.caption,
+            color = AppTheme.colors.error,
+            modifier = Modifier.weight(1f),
+        )
     }
 }
 

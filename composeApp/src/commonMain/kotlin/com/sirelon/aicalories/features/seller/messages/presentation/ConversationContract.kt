@@ -42,6 +42,11 @@ interface ConversationContract {
         val pendingMessages: List<PendingMessage> = emptyList(),
         /** The seller's private lowest price for this advert; null when none was kept, and then nothing is shown. */
         val priceFloor: PriceFloor? = null,
+        /**
+         * Ids of the received [messages] that match a scam rule (SIR-176, see `ScamSignals`). Each
+         * one's bubble carries a warning. Never holds a sent message.
+         */
+        val flaggedMessageIds: Set<Long> = emptySet(),
     ) {
         /** Send is enabled: there is something to send besides spaces and line breaks. */
         val canSend: Boolean get() = draft.isNotBlank()

@@ -327,9 +327,25 @@ object AnalyticsEvents {
      * `error_shown` with reason `send_failed:<cause>`, except for an account that needs a
      * reconnect). `is_retry` (Boolean) is true for a Retry tap on a failed reply. `layout` is
      * `single_pane` or `two_pane`, and `account_count` the accounts connected in the country, as
-     * for `messages_conversation_opened`. No text, length or id.
+     * for `messages_conversation_opened`. `had_scam_warning` (Boolean, SIR-176) is true when the
+     * conversation showed at least one scam warning at the moment of sending: compared with
+     * `messages_scam_warning_shown`, it says whether sellers still reply after a warning. No
+     * text, length or id.
      */
     const val MESSAGE_SENT = "message_sent"
+
+    /**
+     * A conversation showed the "Possible scam" warning on at least one buyer message (SIR-176).
+     * Logged once per opened conversation, at the first load that has a flagged message; polls
+     * and later flagged messages never log it again. `signals` is the codes of the signals that
+     * matched across the flagged messages, sorted and comma-joined: `card_request`,
+     * `fake_olx_delivery`, `messenger_link`, `olx_lookalike_link`, `short_link`.
+     * `flagged_count_bucket` is the number of flagged messages, banded by
+     * `MessagesAnalyticsBuckets.count`. It is the denominator for `had_scam_warning` on
+     * `message_sent`, and the sample for judging the rules: a high rate on ordinary threads means
+     * the rules are too loose. No text, no thread, advert or buyer id.
+     */
+    const val MESSAGES_SCAM_WARNING_SHOWN = "messages_scam_warning_shown"
 
     // My Ads (SIR-162).
 

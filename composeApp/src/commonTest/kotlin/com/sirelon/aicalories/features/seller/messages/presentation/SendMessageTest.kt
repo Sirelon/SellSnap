@@ -143,6 +143,7 @@ class SendMessageTest {
                     "is_retry" to false,
                     "layout" to "single_pane",
                     "account_count" to 1,
+                    "had_scam_warning" to false,
                 ),
                 sentEvents(harness).single(),
             )

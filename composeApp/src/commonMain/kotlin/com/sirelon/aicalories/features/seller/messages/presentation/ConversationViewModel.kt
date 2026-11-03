@@ -17,6 +17,7 @@ import com.sirelon.sellsnap.features.seller.messages.data.countryAccounts
 import com.sirelon.sellsnap.features.seller.messages.domain.MessageSource
 import com.sirelon.sellsnap.features.seller.messages.domain.MessagesAnalyticsBuckets
 import com.sirelon.sellsnap.features.seller.messages.domain.OlxMessage
+import com.sirelon.sellsnap.features.seller.messages.domain.ScamSignals
 import com.sirelon.sellsnap.features.seller.messages.presentation.ConversationContract.Effect
 import com.sirelon.sellsnap.features.seller.messages.presentation.ConversationContract.Event
 import com.sirelon.sellsnap.features.seller.messages.presentation.ConversationContract.PendingMessage
@@ -63,6 +64,10 @@ import kotlin.time.TimeSource
  * [State.priceFloor] is the seller's private lowest price, read once from [outcomeStore] by advert
  * id, so it shows for every account and is absent when none was kept. The asking price beside it
  * is the advert's own once loaded, else the price it was published at.
+ *
+ * A received message that matches a scam rule is flagged in [State.flaggedMessageIds] and its
+ * bubble shows a warning (SIR-176). The first load with a flagged message logs
+ * `messages_scam_warning_shown` once; `message_sent` says whether a warning was on screen.
  */
 class ConversationViewModel internal constructor(
     keyLocalIndex: Int?,
@@ -83,6 +88,7 @@ class ConversationViewModel internal constructor(
 
     private val openedAt = timeSource.markNow()
     private var loadedLogged = false
+    private var scamWarningLogged = false
 
     /** The thread's account. Null only while a key saved without one waits for an active account. */
     private var localIndex: Int? = keyLocalIndex
@@ -235,6 +241,7 @@ class ConversationViewModel internal constructor(
                 "is_retry" to isRetry,
                 "layout" to if (isTwoPane) "two_pane" else "single_pane",
                 "account_count" to accountRepository.accountsRecordFlow.value.countryAccounts().size,
+                "had_scam_warning" to currentState().flaggedMessageIds.isNotEmpty(),
             ),
         )
     }
@@ -367,6 +374,7 @@ class ConversationViewModel internal constructor(
         }
         // Computed and set with no suspension between, so a bubble added meanwhile is not lost.
         val pending = withoutDelivered(currentState().pendingMessages, messages)
+        val signalsByMessage = scamSignalsOf(messages)
         setState {
             it.copy(
                 isLoading = false,
@@ -374,8 +382,10 @@ class ConversationViewModel internal constructor(
                 messages = messages,
                 errorMessage = null,
                 pendingMessages = pending,
+                flaggedMessageIds = signalsByMessage.keys,
             )
         }
+        logScamWarningOnce(signalsByMessage)
         if (!loadedLogged) {
             loadedLogged = true
             analytics.logEvent(
@@ -386,6 +396,26 @@ class ConversationViewModel internal constructor(
                 ),
             )
         }
+    }
+
+    /** The signals of each received message that matches a scam rule, by message id. The seller's own are never checked. */
+    private fun scamSignalsOf(messages: List<OlxMessage>): Map<Long, List<String>> =
+        messages
+            .filter { !it.isSent }
+            .associate { it.id to ScamSignals.detect(it.text) }
+            .filterValues { it.isNotEmpty() }
+
+    /** Once per open conversation, at the first load that shows a warning; see `messages_scam_warning_shown`. */
+    private fun logScamWarningOnce(signalsByMessage: Map<Long, List<String>>) {
+        if (scamWarningLogged || signalsByMessage.isEmpty()) return
+        scamWarningLogged = true
+        analytics.logEvent(
+            AnalyticsEvents.MESSAGES_SCAM_WARNING_SHOWN,
+            mapOf(
+                "signals" to signalsByMessage.values.flatten().distinct().sorted().joinToString(","),
+                "flagged_count_bucket" to MessagesAnalyticsBuckets.count(signalsByMessage.size),
+            ),
+        )
     }
 
     private suspend fun handleFailure(error: Throwable) {
