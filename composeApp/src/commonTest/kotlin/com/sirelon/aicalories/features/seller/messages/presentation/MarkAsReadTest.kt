@@ -239,6 +239,7 @@ class MarkAsReadTest {
         outcomeStore = harness.outcomeStore,
         accountRepository = harness.accountRepository,
         analytics = harness.analytics,
+        openAIClient = harness.openAIClient,
     )
 
     private fun list(harness: MessagesHarness) = MessagesViewModel(

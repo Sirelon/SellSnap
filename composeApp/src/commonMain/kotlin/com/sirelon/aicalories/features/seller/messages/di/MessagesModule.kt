@@ -42,6 +42,7 @@ val messagesModule = module {
             outcomeStore = get(),
             accountRepository = get(),
             analytics = get(),
+            openAIClient = get(),
         )
     }
     viewModel { MessagesBadgeViewModel(repository = get(), accountRepository = get()) }

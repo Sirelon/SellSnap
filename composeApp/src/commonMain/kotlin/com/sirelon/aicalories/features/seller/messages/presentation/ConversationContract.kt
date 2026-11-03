@@ -2,7 +2,9 @@ package com.sirelon.sellsnap.features.seller.messages.presentation
 
 import androidx.compose.runtime.Immutable
 import com.sirelon.sellsnap.features.seller.ad.publish_success.AdvertStatus
+import com.sirelon.sellsnap.features.seller.messages.domain.MessageSource
 import com.sirelon.sellsnap.features.seller.messages.domain.OlxMessage
+import com.sirelon.sellsnap.features.seller.messages.domain.ReplySuggestion
 import com.sirelon.sellsnap.features.seller.my_ads.model.MyAdvertItem
 
 interface ConversationContract {
@@ -47,9 +49,32 @@ interface ConversationContract {
          * one's bubble carries a warning. Never holds a sent message.
          */
         val flaggedMessageIds: Set<Long> = emptySet(),
+        /** This platform can reach the model: false on web, which the AI proxy refuses (SIR-96). */
+        val suggestionsSupported: Boolean = true,
+        /** A suggestion request is in flight; placeholders stand where the suggestions will be. */
+        val isSuggesting: Boolean = false,
+        /** AI-suggested replies to the last buyer message, in the model's order. Empty when none are on offer. */
+        val suggestions: List<ReplySuggestion> = emptyList(),
     ) {
         /** Send is enabled: there is something to send besides spaces and line breaks. */
         val canSend: Boolean get() = draft.isNotBlank()
+
+        /** The newest message when the buyer wrote it, else null: the seller had the last word. */
+        val lastBuyerMessage: OlxMessage? get() = messages.lastOrNull()?.takeIf { !it.isSent }
+
+        /**
+         * "Suggest replies" is on offer: the buyer wrote last, with no scam warning on it, nothing
+         * of the seller's is on its way, the field is empty and the account can send.
+         */
+        val canSuggestReplies: Boolean
+            get() {
+                val buyerMessage = lastBuyerMessage ?: return false
+                return suggestionsSupported && !needsReconnect && draft.isBlank() && pendingMessages.isEmpty() &&
+                    !isSuggesting && suggestions.isEmpty() && buyerMessage.id !in flaggedMessageIds
+            }
+
+        /** The suggestions are on screen: they step aside while the seller has text in the field. */
+        val showsSuggestions: Boolean get() = suggestions.isNotEmpty() && draft.isBlank() && !needsReconnect
     }
 
     /**
@@ -64,12 +89,21 @@ interface ConversationContract {
         val currencyCode: String,
     )
 
-    /** A reply on its way to OLX, sent, or refused. [localId] is this screen's own, not OLX's. */
+    /**
+     * A reply on its way to OLX, sent, or refused. [localId] is this screen's own, not OLX's.
+     * [source], [suggestionIndex] and [suggestionEdited] are for `message_sent` only, so a Retry
+     * reports the reply as it was first sent.
+     */
     @Immutable
     data class PendingMessage(
         val localId: Long,
         val text: String,
         val status: PendingStatus,
+        val source: MessageSource = MessageSource.Typed,
+        /** The suggestion chip's position, for either suggestion source. */
+        val suggestionIndex: Int? = null,
+        /** For [MessageSource.EditedSuggestion]: the seller changed the text before sending. */
+        val suggestionEdited: Boolean? = null,
         /**
          * OLX's own words when it refused the message (`field: detail` of a validation error), or
          * null when it gave none: a network failure, a server error.
@@ -110,6 +144,19 @@ interface ConversationContract {
 
         /** Retry on a failed reply: sends its text again. */
         data class RetrySendClicked(val localId: Long, val isTwoPane: Boolean) : Event
+
+        /** "Suggest replies" (SIR-96). [isTwoPane] is for analytics only. */
+        data class SuggestRepliesClicked(val isTwoPane: Boolean) : Event
+
+        /**
+         * A suggestion chip. [isTruncated]: the chip could not show the whole text (and is
+         * treated as truncated until it has been laid out). A whole text the model did not mark
+         * for review is sent; any other goes into the field.
+         */
+        data class SuggestionClicked(val index: Int, val isTruncated: Boolean, val isTwoPane: Boolean) : Event
+
+        /** The suggestions' close icon. */
+        data object SuggestionsDismissed : Event
     }
 
     sealed interface Effect {

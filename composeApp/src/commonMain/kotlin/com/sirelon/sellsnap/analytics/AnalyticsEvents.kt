@@ -322,8 +322,11 @@ object AnalyticsEvents {
 
     /**
      * A reply the seller sent from a conversation (SIR-95), logged when OLX answers. `source` is
-     * where the text came from: `typed` (only value for now; AI suggestions add their own codes).
-     * `result` is `success` (OLX accepted it) or `failed` (the bubble shows Retry; also
+     * where the text came from: `typed`, `suggestion` (an AI suggestion sent with one tap, SIR-96)
+     * or `edited_suggestion` (a suggestion put into the field, then sent from it). With either
+     * suggestion source, `suggestion_index` is the chip's position (0 = first); with
+     * `edited_suggestion`, `suggestion_edited` (Boolean) says whether the seller changed the text
+     * before sending. A Retry keeps the source of the reply it sends again. `result` is `success` (OLX accepted it) or `failed` (the bubble shows Retry; also
      * `error_shown` with reason `send_failed:<cause>`, except for an account that needs a
      * reconnect). `is_retry` (Boolean) is true for a Retry tap on a failed reply. `layout` is
      * `single_pane` or `two_pane`, and `account_count` the accounts connected in the country, as
@@ -346,6 +349,51 @@ object AnalyticsEvents {
      * the rules are too loose. No text, no thread, advert or buyer id.
      */
     const val MESSAGES_SCAM_WARNING_SHOWN = "messages_scam_warning_shown"
+
+    // AI reply suggestions in a conversation (SIR-96). No event carries suggestion or buyer text,
+    // an id or a price.
+
+    /**
+     * The seller tapped "Suggest replies" and a model call starts; a tap that shows the
+     * suggestions already kept for the same buyer message calls nothing and logs nothing. Each
+     * one ends in `suggestions_shown` or `suggestions_failed`, except when a newer message
+     * arrives before the answer: that answer is dropped unlogged. `layout` is `single_pane` or
+     * `two_pane`; `has_listing_text` (Boolean) is true when the advert's description or
+     * attributes reached the prompt (false for a deleted advert or a failed read: the title and
+     * the conversation only); `has_price_floor` (Boolean) is true when the seller's private
+     * lowest price bounded the suggestions.
+     */
+    const val SUGGESTIONS_REQUESTED = "suggestions_requested"
+
+    /**
+     * Suggestions appeared above the reply field. `count` (1-3) is how many; `latency_ms_bucket`
+     * is the time from the tap (`lt_1000`, `1000_2000`, `2000_4000`, `4000_8000`, `gt_8000`);
+     * `dropped_below_floor` is how many the price-floor guard removed; `needs_review_count` how
+     * many the model marked for review (they go into the field instead of being sent);
+     * `prompt_version` and `model` name the prompt and model that wrote them.
+     */
+    const val SUGGESTIONS_SHOWN = "suggestions_shown"
+
+    /**
+     * A suggestion request ended with nothing to show; the seller sees no error and the button
+     * comes back. `reason`: `timeout` (no answer within 15 s), `openai_<status>` (OpenAI or the
+     * proxy answered with an HTTP error, e.g. `openai_500`), `network` (no answer could be read),
+     * `parse` (the answer was not the expected JSON) or `empty` (no usable reply was left; then
+     * `dropped_below_floor` says how many the price-floor guard removed). `latency_ms_bucket` as
+     * for `suggestions_shown`. Also recorded as a Crashlytics non-fatal.
+     */
+    const val SUGGESTIONS_FAILED = "suggestions_failed"
+
+    /**
+     * The seller tapped a suggestion that was not sent but put into the reply field to review.
+     * `suggestion_index` is the chip's position (0 = first); `reason` is `needs_review` (the
+     * model marked it: delivery, payment, a meeting or contact details) or `truncated` (the chip
+     * could not show the whole text).
+     */
+    const val SUGGESTION_INSERTED = "suggestion_inserted"
+
+    /** The seller hid the suggestions with their close icon. `count` is how many were showing. */
+    const val SUGGESTIONS_DISMISSED = "suggestions_dismissed"
 
     // My Ads (SIR-162).
 

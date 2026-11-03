@@ -30,7 +30,11 @@ import com.sirelon.sellsnap.features.seller.location.data.LocationStore
 import com.sirelon.sellsnap.features.seller.messages.data.MessagesRepository
 import com.sirelon.sellsnap.features.seller.my_ads.data.AdvertOutcomeStore
 import com.sirelon.sellsnap.features.seller.my_ads.data.MyAdvertsRepository
+import com.sirelon.sellsnap.features.seller.openai.OpenAIClient
 import com.sirelon.sellsnap.features.seller.profile.data.SellerAccountRepository
+import com.sirelon.sellsnap.network.OPENAI_DIRECT_BASE_URL
+import com.sirelon.sellsnap.network.OpenAIEndpoint
+import com.sirelon.sellsnap.network.createOpenAI
 import com.sirelon.sellsnap.startup.AnalyticsConsentRepository
 import com.sirelon.sellsnap.startup.AnalyticsConsentStore
 import io.ktor.client.engine.mock.MockEngine
@@ -121,6 +125,8 @@ internal class MessagesHarness(
     val outcomeStore: AdvertOutcomeStore,
     val analytics: FakeAnalytics,
     val unauthenticatedOlxApiClient: OlxApiClient,
+    /** Calls OpenAI through the same [MockEngine], at `api.openai.com/v1/responses`. */
+    val openAIClient: OpenAIClient,
 )
 
 internal suspend fun messagesHarness(
@@ -197,11 +203,20 @@ internal suspend fun messagesHarness(
         outcomeStore = outcomeStore,
         analytics = analytics,
         unauthenticatedOlxApiClient = unauthenticatedOlxApiClient,
+        openAIClient = OpenAIClient(
+            openAI = createOpenAI(
+                endpoint = OpenAIEndpoint(baseUrl = OPENAI_DIRECT_BASE_URL, bearerToken = "sk-test", appCheck = null),
+                engine = engine,
+            ),
+            json = messagesTestJson,
+            compactJson = messagesTestJson,
+        ),
     )
 }
 
 internal class FakeAnalytics : Analytics {
     val events = mutableListOf<Pair<String, Map<String, Any>>>()
+    val exceptions = mutableListOf<Throwable>()
 
     override fun logEvent(name: String, params: Map<String, Any>) {
         events += name to params
@@ -209,7 +224,9 @@ internal class FakeAnalytics : Analytics {
 
     override fun setUserId(userId: String?) {}
     override fun setUserProperty(name: String, value: String?) {}
-    override fun recordException(throwable: Throwable, message: String?) {}
+    override fun recordException(throwable: Throwable, message: String?) {
+        exceptions += throwable
+    }
     override fun log(message: String) {}
     override fun setAnalyticsCollectionEnabled(enabled: Boolean) {}
     override fun setCrashlyticsCollectionEnabled(enabled: Boolean) {}

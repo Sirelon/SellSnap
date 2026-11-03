@@ -1,6 +1,10 @@
 package com.sirelon.sellsnap.features.seller.messages.presentation
 
 import androidx.lifecycle.viewModelScope
+import com.aallam.openai.api.exception.OpenAIAPIException
+import com.aallam.openai.api.exception.OpenAIException
+import com.aallam.openai.api.exception.OpenAIServerException
+import com.aallam.openai.api.exception.OpenAITimeoutException
 import com.sirelon.sellsnap.analytics.Analytics
 import com.sirelon.sellsnap.analytics.AnalyticsEvents
 import com.sirelon.sellsnap.analytics.reportShownError
@@ -8,8 +12,10 @@ import com.sirelon.sellsnap.features.common.presentation.BaseViewModel
 import com.sirelon.sellsnap.features.seller.ad.publish_success.AdvertStatus
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountState
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountsRecord
+import com.sirelon.sellsnap.features.seller.auth.data._currentOlxCountry
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxApiError
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxApiException
+import com.sirelon.sellsnap.features.seller.auth.domain.OlxCountry
 import com.sirelon.sellsnap.features.seller.auth.domain.shownErrorCause
 import com.sirelon.sellsnap.features.seller.messages.data.MessagesRepository
 import com.sirelon.sellsnap.features.seller.messages.data.activeAccount
@@ -17,6 +23,8 @@ import com.sirelon.sellsnap.features.seller.messages.data.countryAccounts
 import com.sirelon.sellsnap.features.seller.messages.domain.MessageSource
 import com.sirelon.sellsnap.features.seller.messages.domain.MessagesAnalyticsBuckets
 import com.sirelon.sellsnap.features.seller.messages.domain.OlxMessage
+import com.sirelon.sellsnap.features.seller.messages.domain.ReplyPriceGuard
+import com.sirelon.sellsnap.features.seller.messages.domain.ReplySuggestion
 import com.sirelon.sellsnap.features.seller.messages.domain.ScamSignals
 import com.sirelon.sellsnap.features.seller.messages.presentation.ConversationContract.Effect
 import com.sirelon.sellsnap.features.seller.messages.presentation.ConversationContract.Event
@@ -27,18 +35,34 @@ import com.sirelon.sellsnap.features.seller.my_ads.data.AccountNeedsReconnect
 import com.sirelon.sellsnap.features.seller.my_ads.data.AdvertOutcomeRecord
 import com.sirelon.sellsnap.features.seller.my_ads.data.AdvertOutcomeStore
 import com.sirelon.sellsnap.features.seller.my_ads.data.MyAdvertsRepository
+import com.sirelon.sellsnap.features.seller.my_ads.model.AdvertListingSnapshot
+import com.sirelon.sellsnap.features.seller.openai.MAX_REPLY_SUGGESTIONS
+import com.sirelon.sellsnap.features.seller.openai.OpenAIClient
+import com.sirelon.sellsnap.features.seller.openai.REPLY_SUGGESTIONS_MODEL_ID
+import com.sirelon.sellsnap.features.seller.openai.REPLY_SUGGESTIONS_PROMPT_VERSION
+import com.sirelon.sellsnap.features.seller.openai.replySuggestionsInput
+import com.sirelon.sellsnap.features.seller.openai.replySuggestionsInstructions
 import com.sirelon.sellsnap.features.seller.profile.data.SellerAccountRepository
 import com.sirelon.sellsnap.generated.resources.Res
 import com.sirelon.sellsnap.generated.resources.conversation_load_failed
 import com.sirelon.sellsnap.generated.resources.generic_error_retry
+import com.sirelon.sellsnap.platform.PlatformTargets
+import io.ktor.client.plugins.ResponseException
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import org.jetbrains.compose.resources.getString
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 import kotlin.time.TimeSource
+
+/** The whole wait for reply suggestions, from the tap: the listing read, then the model. No retry beyond it. */
+private val SuggestionsBudget = 15.seconds
 
 /**
  * One open conversation. [title], [imageUrl], [status] and [isListingDeleted] come
@@ -68,6 +92,15 @@ import kotlin.time.TimeSource
  * A received message that matches a scam rule is flagged in [State.flaggedMessageIds] and its
  * bubble shows a warning (SIR-176). The first load with a flagged message logs
  * `messages_scam_warning_shown` once; `message_sent` says whether a warning was on screen.
+ *
+ * "Suggest replies" (SIR-96) asks [openAIClient] for up to three replies to the last buyer
+ * message, on a tap only, never on its own. The prompt carries the listing from the same advert
+ * read the header uses ([listingSnapshot]), the newest messages, the account's market language
+ * and the price floor; [ReplyPriceGuard] drops what offers less than the floor. A chip whose
+ * whole text is on screen and that the model did not mark for review is sent at once; any other
+ * goes into the field for the seller to read first. The answer is kept for its buyer message, so
+ * tapping again shows it without a new call, until a newer message arrives. A failure shows
+ * nothing: the button comes back. Nothing about the suggestions is stored on the device.
  */
 class ConversationViewModel internal constructor(
     keyLocalIndex: Int?,
@@ -83,7 +116,10 @@ class ConversationViewModel internal constructor(
     private val outcomeStore: AdvertOutcomeStore,
     private val accountRepository: SellerAccountRepository,
     private val analytics: Analytics,
-    timeSource: TimeSource = TimeSource.Monotonic,
+    private val openAIClient: OpenAIClient,
+    /** Web has no App Check, so the AI proxy refuses it: no suggestions there. */
+    private val suggestionsSupported: Boolean = !PlatformTargets.isWeb(),
+    private val timeSource: TimeSource = TimeSource.Monotonic,
 ) : BaseViewModel<State, Event, Effect>() {
 
     private val openedAt = timeSource.markNow()
@@ -99,6 +135,22 @@ class ConversationViewModel internal constructor(
     private var closed = false
     private var nextPendingId = 0L
     private var outcome: AdvertOutcomeRecord? = null
+
+    /** The thread account's market: the suggestions' language and currency (rule 11). */
+    private var country: OlxCountry = _currentOlxCountry
+
+    /** The advert read once per conversation; null when it is deleted or could not be read. */
+    private val listingSnapshot = CompletableDeferred<AdvertListingSnapshot?>()
+
+    /** The last suggestions shown, for the buyer message they answer. */
+    private var keptSuggestions: KeptSuggestions? = null
+
+    /** The suggestion the seller put into the field, until the field is cleared or sent. */
+    private var insertedSuggestion: InsertedSuggestion? = null
+
+    private class KeptSuggestions(val buyerMessageId: Long, val suggestions: List<ReplySuggestion>)
+
+    private class InsertedSuggestion(val index: Int, val text: String)
 
     /** Every message id a load has returned, so each load can tell which sent messages are new. */
     private val seenMessageIds = mutableSetOf<Long>()
@@ -120,6 +172,7 @@ class ConversationViewModel internal constructor(
         status = status,
         isListingDeleted = isListingDeleted,
         canMarkAsRead = hadUnread,
+        suggestionsSupported = suggestionsSupported,
     )
 
     override fun onEvent(event: Event) {
@@ -139,21 +192,221 @@ class ConversationViewModel internal constructor(
             Event.ReplyOnOlxClicked -> logAction("reply_on_olx")
             Event.ListingClicked -> logAction("open_listing")
             Event.MarkAsReadClicked -> markAsRead()
-            is Event.DraftChanged -> setState { it.copy(draft = event.text) }
+            is Event.DraftChanged -> {
+                // An emptied field is no longer the suggestion that was put into it.
+                if (event.text.isBlank()) insertedSuggestion = null
+                setState { it.copy(draft = event.text) }
+            }
             is Event.SendClicked -> send(event.isTwoPane)
             is Event.RetrySendClicked -> retrySend(event.localId, event.isTwoPane)
+            is Event.SuggestRepliesClicked -> suggestReplies(event.isTwoPane)
+            is Event.SuggestionClicked -> onSuggestionClicked(event.index, event.isTruncated, event.isTwoPane)
+            Event.SuggestionsDismissed -> dismissSuggestions()
         }
     }
 
     private fun send(isTwoPane: Boolean) {
-        val index = localIndex ?: return
-        val state = currentState()
-        val text = state.draft.trim()
+        val text = currentState().draft.trim()
+        if (text.isEmpty()) return
+        val inserted = insertedSuggestion
+        val queued = enqueue(
+            text = text,
+            source = if (inserted != null) MessageSource.EditedSuggestion else MessageSource.Typed,
+            suggestionIndex = inserted?.index,
+            suggestionEdited = inserted?.let { text != it.text.trim() },
+            isTwoPane = isTwoPane,
+        )
+        if (queued) insertedSuggestion = null
+    }
+
+    /** Clears the field, adds the pending bubble and sends it; false when nothing can be sent now. */
+    private fun enqueue(
+        text: String,
+        source: MessageSource,
+        suggestionIndex: Int?,
+        suggestionEdited: Boolean?,
+        isTwoPane: Boolean,
+    ): Boolean {
+        val index = localIndex ?: return false
         // The input is not on screen while the account needs a reconnect; a send would only fail.
-        if (text.isEmpty() || state.needsReconnect) return
-        val pending = PendingMessage(localId = nextPendingId++, text = text, status = PendingStatus.Sending)
+        if (currentState().needsReconnect) return false
+        val pending = PendingMessage(
+            localId = nextPendingId++,
+            text = text,
+            status = PendingStatus.Sending,
+            source = source,
+            suggestionIndex = suggestionIndex,
+            suggestionEdited = suggestionEdited,
+        )
         setState { it.copy(draft = "", pendingMessages = it.pendingMessages + pending) }
         deliver(index, pending, isRetry = false, isTwoPane = isTwoPane)
+        return true
+    }
+
+    private fun suggestReplies(isTwoPane: Boolean) {
+        val state = currentState()
+        if (!state.canSuggestReplies) return
+        val buyerMessage = state.lastBuyerMessage ?: return
+        keptSuggestions?.takeIf { it.buyerMessageId == buyerMessage.id }?.let { kept ->
+            setState { it.copy(suggestions = kept.suggestions) }
+            return
+        }
+        setState { it.copy(isSuggesting = true) }
+        val tappedAt = timeSource.markNow()
+        viewModelScope.launch {
+            // Read in parallel with the messages at open, so this is normally done already.
+            val listing = withTimeoutOrNull(SuggestionsBudget) { listingSnapshot.await() }
+            val floor = currentState().priceFloor
+            analytics.logEvent(
+                AnalyticsEvents.SUGGESTIONS_REQUESTED,
+                mapOf(
+                    "layout" to layoutCode(isTwoPane),
+                    "has_listing_text" to
+                        (listing != null && (listing.description.isNotBlank() || listing.attributes.isNotEmpty())),
+                    "has_price_floor" to (floor != null),
+                ),
+            )
+            val result = requestSuggestions(listing, floor, budget = SuggestionsBudget - tappedAt.elapsedNow())
+            val latency = MessagesAnalyticsBuckets.latencyMs(tappedAt.elapsedNow().inWholeMilliseconds)
+            // A newer message arrived meanwhile: these replies answer one the seller no longer sees last.
+            if (currentState().lastBuyerMessage?.id != buyerMessage.id) {
+                setState { it.copy(isSuggesting = false) }
+                return@launch
+            }
+            if (result == null) {
+                failSuggestions("timeout", IllegalStateException("Reply suggestions timed out"), latency)
+                return@launch
+            }
+            val suggestions = result.getOrElse { error ->
+                failSuggestions(error.suggestionFailureReason(), error, latency)
+                return@launch
+            }
+            val guarded = ReplyPriceGuard.apply(suggestions, floor?.floor)
+            val shown = guarded.kept.take(MAX_REPLY_SUGGESTIONS)
+            if (shown.isEmpty()) {
+                failSuggestions(
+                    reason = "empty",
+                    error = IllegalStateException("Reply suggestions: no usable reply"),
+                    latency = latency,
+                    droppedBelowFloor = guarded.dropped,
+                )
+                return@launch
+            }
+            keptSuggestions = KeptSuggestions(buyerMessage.id, shown)
+            setState { it.copy(isSuggesting = false, suggestions = shown) }
+            analytics.logEvent(
+                AnalyticsEvents.SUGGESTIONS_SHOWN,
+                mapOf(
+                    "count" to shown.size,
+                    "latency_ms_bucket" to latency,
+                    "dropped_below_floor" to guarded.dropped,
+                    "needs_review_count" to shown.count { it.needsReview },
+                    "prompt_version" to REPLY_SUGGESTIONS_PROMPT_VERSION,
+                    "model" to REPLY_SUGGESTIONS_MODEL_ID,
+                ),
+            )
+        }
+    }
+
+    /**
+     * One model call within [budget]: null when it ran out, else the replies or the failure.
+     * Without the listing ([listing] null) the row title and the conversation are all it gets.
+     */
+    private suspend fun requestSuggestions(
+        listing: AdvertListingSnapshot?,
+        floor: ConversationContract.PriceFloor?,
+        budget: Duration,
+    ): Result<List<ReplySuggestion>>? {
+        val item = listing?.item
+        val currencyCode = listOfNotNull(floor?.currencyCode, item?.currencyCode, outcome?.currency)
+            .firstOrNull { it.isNotBlank() }
+            ?: country.currencyCode
+        val instructions = replySuggestionsInstructions(
+            country = country,
+            currencyCode = currencyCode,
+            askingPrice = floor?.asking ?: item?.priceValue ?: outcome?.publishedPrice,
+            priceFloor = floor?.floor,
+        )
+        val input = replySuggestionsInput(
+            title = item?.title?.takeIf { it.isNotBlank() } ?: title.orEmpty(),
+            description = listing?.description,
+            attributes = listing?.attributes.orEmpty(),
+            messages = currentState().messages,
+        )
+        return withTimeoutOrNull(budget) {
+            try {
+                Result.success(openAIClient.suggestReplies(instructions = instructions, input = input))
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: Exception) {
+                Result.failure(error)
+            }
+        }
+    }
+
+    /** Nothing is shown to the seller: the button comes back. Logged and recorded, never `error_shown`. */
+    private fun failSuggestions(reason: String, error: Throwable, latency: String, droppedBelowFloor: Int? = null) {
+        setState { it.copy(isSuggesting = false) }
+        analytics.logEvent(
+            AnalyticsEvents.SUGGESTIONS_FAILED,
+            listOfNotNull(
+                "reason" to reason,
+                "latency_ms_bucket" to latency,
+                droppedBelowFloor?.let { "dropped_below_floor" to it },
+            ).toMap(),
+        )
+        analytics.recordException(throwable = error, message = "suggestions_failed: $reason")
+    }
+
+    private fun Throwable.suggestionFailureReason(): String = when (this) {
+        is OpenAITimeoutException -> "timeout"
+        is OpenAIAPIException -> "openai_$statusCode"
+        // A 5xx: the status is on the Ktor exception it wraps.
+        is OpenAIServerException -> (cause as? ResponseException)?.response?.status?.value
+            ?.let { "openai_$it" } ?: "network"
+        is OpenAIException -> "network"
+        else -> "parse"
+    }
+
+    /**
+     * A chip whose whole text is on screen and that the model did not mark for review is sent;
+     * any other goes into the field, so the seller never sends what they have not read in full.
+     */
+    private fun onSuggestionClicked(index: Int, isTruncated: Boolean, isTwoPane: Boolean) {
+        val state = currentState()
+        if (!state.showsSuggestions) return
+        val suggestion = state.suggestions.getOrNull(index) ?: return
+        if (!isTruncated && !suggestion.needsReview) {
+            val queued = enqueue(
+                text = suggestion.text,
+                source = MessageSource.Suggestion,
+                suggestionIndex = index,
+                suggestionEdited = null,
+                isTwoPane = isTwoPane,
+            )
+            if (queued) {
+                keptSuggestions = null
+                setState { it.copy(suggestions = emptyList()) }
+            }
+            return
+        }
+        insertedSuggestion = InsertedSuggestion(index, suggestion.text)
+        setState { it.copy(draft = suggestion.text) }
+        analytics.logEvent(
+            AnalyticsEvents.SUGGESTION_INSERTED,
+            mapOf(
+                "suggestion_index" to index,
+                "reason" to if (suggestion.needsReview) "needs_review" else "truncated",
+            ),
+        )
+    }
+
+    /** Hidden, not forgotten: "Suggest replies" shows the same ones again without a new call. */
+    private fun dismissSuggestions() {
+        val count = currentState().suggestions.size
+        if (count == 0) return
+        setState { it.copy(suggestions = emptyList()) }
+        analytics.logEvent(AnalyticsEvents.SUGGESTIONS_DISMISSED, mapOf("count" to count))
     }
 
     private fun retrySend(localId: Long, isTwoPane: Boolean) {
@@ -177,7 +430,7 @@ class ConversationViewModel internal constructor(
                 val refusal = ((error as? OlxApiException)?.error as? OlxApiError.ValidationError)
                     ?.let { "${it.field}: ${it.fieldDetail}" }
                 updatePending(pending.localId) { it.copy(status = PendingStatus.Failed, olxRefusal = refusal) }
-                logMessageSent(result = "failed", isRetry = isRetry, isTwoPane = isTwoPane)
+                logMessageSent(pending, result = "failed", isRetry = isRetry, isTwoPane = isTwoPane)
                 // A dead token is not this bubble's error: onAccounts puts the reconnect state on
                 // screen, as it does for a failed load.
                 if (error !is AccountNeedsReconnect) {
@@ -190,7 +443,7 @@ class ConversationViewModel internal constructor(
                 return@launch
             }
             updatePending(pending.localId) { it.copy(status = PendingStatus.Sent) }
-            logMessageSent(result = "success", isRetry = isRetry, isTwoPane = isTwoPane)
+            logMessageSent(pending, result = "success", isRetry = isRetry, isTwoPane = isTwoPane)
             // Re-read now. Restarting the poll also cancels a read that started before OLX had the
             // reply, so that read cannot land after this one and hide the reply until the next poll.
             startPolling()
@@ -232,19 +485,23 @@ class ConversationViewModel internal constructor(
         return remaining
     }
 
-    private fun logMessageSent(result: String, isRetry: Boolean, isTwoPane: Boolean) {
+    private fun logMessageSent(pending: PendingMessage, result: String, isRetry: Boolean, isTwoPane: Boolean) {
         analytics.logEvent(
             AnalyticsEvents.MESSAGE_SENT,
-            mapOf(
-                "source" to MessageSource.Typed.code,
+            listOfNotNull(
+                "source" to pending.source.code,
                 "result" to result,
                 "is_retry" to isRetry,
-                "layout" to if (isTwoPane) "two_pane" else "single_pane",
+                "layout" to layoutCode(isTwoPane),
                 "account_count" to accountRepository.accountsRecordFlow.value.countryAccounts().size,
                 "had_scam_warning" to currentState().flaggedMessageIds.isNotEmpty(),
-            ),
+                pending.suggestionIndex?.let { "suggestion_index" to it },
+                pending.suggestionEdited?.let { "suggestion_edited" to it },
+            ).toMap(),
         )
     }
+
+    private fun layoutCode(isTwoPane: Boolean) = if (isTwoPane) "two_pane" else "single_pane"
 
     private fun markAsRead() {
         val index = localIndex ?: return
@@ -306,6 +563,7 @@ class ConversationViewModel internal constructor(
         }
         accountSeen = true
         localIndex = index
+        country = OlxCountry.fromCode(account.countryCode) ?: country
         val needsReconnect = account.state == OlxAccountState.NeedsReconnect
         val changed = needsReconnect != currentState().needsReconnect
         setState { it.copy(needsReconnect = needsReconnect, accountName = account.profile?.name) }
@@ -330,20 +588,26 @@ class ConversationViewModel internal constructor(
     /**
      * One advert request per open conversation, none when the row already knows the advert is
      * deleted. A 404 marks the listing deleted; any other failure leaves the header on what the
-     * row passed in.
+     * row passed in. Either way [listingSnapshot] completes, so suggestions never wait on it.
      */
     private fun loadListingOnce(index: Int) {
         if (listingRequested) return
         listingRequested = true
-        if (isListingDeleted) return
+        if (isListingDeleted) {
+            listingSnapshot.complete(null)
+            return
+        }
         viewModelScope.launch {
-            val listing = try {
-                myAdvertsRepository.loadAdvertOrNull(index, advertId)
+            val snapshot = try {
+                myAdvertsRepository.loadAdvertSnapshotOrNull(index, advertId)
             } catch (error: CancellationException) {
                 throw error
             } catch (_: Exception) {
+                listingSnapshot.complete(null)
                 return@launch
             }
+            listingSnapshot.complete(snapshot)
+            val listing = snapshot?.item
             setState { it.copy(listing = listing, isListingDeleted = listing == null) }
             updatePriceFloor()
         }
@@ -375,6 +639,10 @@ class ConversationViewModel internal constructor(
         // Computed and set with no suspension between, so a bubble added meanwhile is not lost.
         val pending = withoutDelivered(currentState().pendingMessages, messages)
         val signalsByMessage = scamSignalsOf(messages)
+        // Kept suggestions answer one buyer message; once anything newer is last, they are stale.
+        val lastBuyerMessageId = messages.lastOrNull()?.takeIf { !it.isSent }?.id
+        if (keptSuggestions?.buyerMessageId != lastBuyerMessageId) keptSuggestions = null
+        val suggestionsKept = keptSuggestions != null
         setState {
             it.copy(
                 isLoading = false,
@@ -383,6 +651,7 @@ class ConversationViewModel internal constructor(
                 errorMessage = null,
                 pendingMessages = pending,
                 flaggedMessageIds = signalsByMessage.keys,
+                suggestions = if (suggestionsKept) it.suggestions else emptyList(),
             )
         }
         logScamWarningOnce(signalsByMessage)

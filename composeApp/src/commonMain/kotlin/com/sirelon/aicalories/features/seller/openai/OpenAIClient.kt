@@ -1,5 +1,6 @@
 package com.sirelon.sellsnap.features.seller.openai
 
+import com.aallam.openai.api.chat.ChatResponseFormat
 import com.aallam.openai.api.exception.OpenAIAPIException
 import com.aallam.openai.api.model.ModelId
 import com.aallam.openai.api.response.Response
@@ -7,6 +8,7 @@ import com.aallam.openai.api.response.ResponseId
 import com.aallam.openai.api.response.ResponseInput
 import com.aallam.openai.api.response.ResponseInputItem
 import com.aallam.openai.api.response.ResponseRequest
+import com.aallam.openai.api.response.ResponseText
 import com.aallam.openai.client.OpenAI
 import com.sirelon.sellsnap.features.seller.ad.Advertisement
 import com.sirelon.sellsnap.features.seller.ad.data.GeneratedAdMapper
@@ -15,6 +17,7 @@ import com.sirelon.sellsnap.features.seller.auth.domain.OlxCountry
 import com.sirelon.sellsnap.features.seller.categories.domain.AttributeInputType
 import com.sirelon.sellsnap.features.seller.categories.domain.OlxAttribute
 import com.sirelon.sellsnap.features.seller.categories.domain.OlxAttributeValue
+import com.sirelon.sellsnap.features.seller.messages.domain.ReplySuggestion
 import com.sirelon.sellsnap.features.seller.openai.requests.OpenAIAttributeOptionRequest
 import com.sirelon.sellsnap.features.seller.openai.requests.OpenAIAttributeRequest
 import com.sirelon.sellsnap.features.seller.openai.requests.OpenAIAttributesRequest
@@ -22,6 +25,7 @@ import com.sirelon.sellsnap.features.seller.openai.response.OpenAIAttributeSugge
 import com.sirelon.sellsnap.features.seller.openai.response.OpenAIAttributeSuggestionsResponse
 import com.sirelon.sellsnap.features.seller.openai.response.OpenAIGeneratedAd
 import com.sirelon.sellsnap.features.seller.openai.response.OpenAIPolishedListing
+import com.sirelon.sellsnap.features.seller.openai.response.OpenAIReplySuggestionsResponse
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
@@ -420,6 +424,30 @@ class OpenAIClient(
             sameItem = polished.sameItem,
             advertisement = advertisement,
         )
+    }
+
+    /**
+     * SIR-96: replies the seller could send to a buyer, from [instructions] and [input] (see
+     * `replySuggestionsInstructions` and `replySuggestionsInput`). JSON mode on top of the
+     * prompt's own shape; nothing is stored at OpenAI. Empty when the model answered with no
+     * usable reply. Throws on an API error and on an answer that is not the expected JSON.
+     */
+    suspend fun suggestReplies(instructions: String, input: String): List<ReplySuggestion> {
+        val response = openAI.response(
+            request = ResponseRequest(
+                model = ModelId(REPLY_SUGGESTIONS_MODEL_ID),
+                instructions = instructions,
+                temperature = 0.3,
+                // Three replies of at most 160 characters plus the JSON around them; Polish and
+                // Ukrainian run at roughly two characters per token.
+                maxOutputTokens = 400,
+                store = false,
+                text = ResponseText(format = ChatResponseFormat.JsonObject),
+                input = ResponseInput(items = listOf(createTextUserResponseItem(input))),
+            )
+        )
+        return json.decodeFromString<OpenAIReplySuggestionsResponse>(extractTextPayload(response))
+            .toReplySuggestions()
     }
 
     /** The listing's prices before a polish; see [polishListing]. */

@@ -3,11 +3,13 @@ package com.sirelon.sellsnap.features.seller.messages.domain
 import com.sirelon.sellsnap.features.seller.ad.publish_success.AdvertStatus
 
 /**
- * Where a reply's text came from, the `source` of `message_sent`. Only typing exists so far; AI
- * suggestions (SIR-96) add their own codes here.
+ * Where a reply's text came from, the `source` of `message_sent`: typed by the seller, an AI
+ * suggestion sent with one tap, or a suggestion put into the field and then sent from it (SIR-96).
  */
-internal enum class MessageSource(val code: String) {
+enum class MessageSource(val code: String) {
     Typed("typed"),
+    Suggestion("suggestion"),
+    EditedSuggestion("edited_suggestion"),
 }
 
 /**
@@ -57,6 +59,18 @@ internal object MessagesAnalyticsBuckets {
             AdvertStatus.RemovedByModerator -> "removed_by_moderator"
             AdvertStatus.Unknown -> "unknown"
         }
+    }
+
+    /**
+     * Milliseconds from tapping "Suggest replies" to the answer: `lt_1000`, `1000_2000`,
+     * `2000_4000`, `4000_8000` or `gt_8000`.
+     */
+    fun latencyMs(millis: Long): String = when {
+        millis < 1_000 -> "lt_1000"
+        millis < 2_000 -> "1000_2000"
+        millis < 4_000 -> "2000_4000"
+        millis < 8_000 -> "4000_8000"
+        else -> "gt_8000"
     }
 
     /**

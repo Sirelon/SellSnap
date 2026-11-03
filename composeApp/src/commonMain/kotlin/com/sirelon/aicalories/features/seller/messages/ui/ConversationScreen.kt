@@ -9,6 +9,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -27,6 +31,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -46,8 +51,11 @@ import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import com.sirelon.sellsnap.designsystem.AppAsyncImage
+import com.sirelon.sellsnap.designsystem.AppChip
 import com.sirelon.sellsnap.designsystem.AppCard
 import com.sirelon.sellsnap.designsystem.AppDimens
 import com.sirelon.sellsnap.designsystem.AppScaffold
@@ -57,9 +65,11 @@ import com.sirelon.sellsnap.designsystem.ObserveAsEvents
 import com.sirelon.sellsnap.designsystem.buttons.AppIconButton
 import com.sirelon.sellsnap.designsystem.screens.EmptyScreen
 import com.sirelon.sellsnap.designsystem.screens.LoadingOverlay
+import com.sirelon.sellsnap.designsystem.shimmer
 import com.sirelon.sellsnap.features.seller.ad.publish_success.AdvertStatus
 import com.sirelon.sellsnap.features.seller.auth.data._currentOlxCountry
 import com.sirelon.sellsnap.features.seller.messages.domain.OlxMessage
+import com.sirelon.sellsnap.features.seller.messages.domain.ReplySuggestion
 import com.sirelon.sellsnap.features.seller.messages.domain.messageTime
 import com.sirelon.sellsnap.features.seller.messages.presentation.ConversationContract
 import com.sirelon.sellsnap.features.seller.messages.presentation.ConversationContract.Event
@@ -78,9 +88,13 @@ import com.sirelon.sellsnap.generated.resources.conversation_reply_hint
 import com.sirelon.sellsnap.generated.resources.conversation_reply_on_olx
 import com.sirelon.sellsnap.generated.resources.conversation_scam_warning
 import com.sirelon.sellsnap.generated.resources.conversation_send
+import com.sirelon.sellsnap.generated.resources.conversation_suggest_replies
+import com.sirelon.sellsnap.generated.resources.conversation_suggestions_dismiss
 import com.sirelon.sellsnap.generated.resources.ic_arrow_right
 import com.sirelon.sellsnap.generated.resources.ic_circle_alert
+import com.sirelon.sellsnap.generated.resources.ic_sparkles
 import com.sirelon.sellsnap.generated.resources.ic_triangle_alert
+import com.sirelon.sellsnap.generated.resources.ic_x
 import com.sirelon.sellsnap.generated.resources.messages_buyer_label
 import com.sirelon.sellsnap.generated.resources.messages_listing_deleted
 import com.sirelon.sellsnap.generated.resources.messages_listing_fallback
@@ -200,12 +214,28 @@ private fun ConversationScreen(
             // While the account needs a reconnect, the reconnect state above takes the input's
             // place: a reply could only fail.
             if (!state.needsReconnect) {
-                ReplyInput(
-                    draft = state.draft,
-                    canSend = state.canSend,
-                    onDraftChange = { onEvent(Event.DraftChanged(it)) },
-                    onSend = { onEvent(Event.SendClicked(isTwoPane = isBesideList)) },
-                )
+                // One padded container, so the keyboard never covers the suggestions either.
+                Column(modifier = Modifier.fillMaxWidth().imePadding().navigationBarsPadding()) {
+                    when {
+                        state.isSuggesting -> SuggestionsLoading()
+                        state.showsSuggestions -> SuggestionsRow(
+                            suggestions = state.suggestions,
+                            onClick = { index, isTruncated ->
+                                onEvent(Event.SuggestionClicked(index, isTruncated, isTwoPane = isBesideList))
+                            },
+                            onDismiss = { onEvent(Event.SuggestionsDismissed) },
+                        )
+                        state.canSuggestReplies -> SuggestRepliesButton(
+                            onClick = { onEvent(Event.SuggestRepliesClicked(isTwoPane = isBesideList)) },
+                        )
+                    }
+                    ReplyInput(
+                        draft = state.draft,
+                        canSend = state.canSend,
+                        onDraftChange = { onEvent(Event.DraftChanged(it)) },
+                        onSend = { onEvent(Event.SendClicked(isTwoPane = isBesideList)) },
+                    )
+                }
             }
         },
     ) { padding ->
@@ -506,9 +536,115 @@ private fun PendingMessageBubble(message: ConversationContract.PendingMessage, o
     }
 }
 
+/** "Suggest replies" above the reply field (SIR-96). */
+@Composable
+private fun SuggestRepliesButton(onClick: () -> Unit) {
+    AppChip(
+        text = stringResource(Res.string.conversation_suggest_replies),
+        onClick = onClick,
+        enabled = true,
+        leadingIcon = {
+            Icon(
+                painter = painterResource(Res.drawable.ic_sparkles),
+                contentDescription = null,
+                modifier = Modifier.size(AppDimens.Size.xl3),
+            )
+        },
+        modifier = Modifier
+            .padding(horizontal = AppDimens.Spacing.xl3)
+            .testTag("conversation_suggest_replies"),
+    )
+}
+
+/** Three placeholders where the suggestions will appear, while the model writes them. */
+@Composable
+private fun SuggestionsLoading() {
+    val shape = RoundedCornerShape(AppDimens.BorderRadius.pill)
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = AppDimens.Spacing.xl3, vertical = AppDimens.Spacing.xs)
+            .testTag("conversation_suggestions_loading"),
+        horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing.m),
+    ) {
+        repeat(3) {
+            Box(
+                modifier = Modifier
+                    .width(AppDimens.Size.xl21)
+                    .height(AppDimens.Size.xl12)
+                    .clip(shape)
+                    .background(AppTheme.colors.surfaceVariant)
+                    .shimmer(visible = true, color = AppTheme.colors.onSurface.copy(alpha = 0.08f), shape = shape),
+            )
+        }
+    }
+}
+
 /**
- * The reply field and Send. It sits in the scaffold's bottom bar and pads itself above the
- * keyboard and the navigation bar, like the publish bar on the preview screen.
+ * The suggestions in one row that scrolls sideways, with a close icon that stays in reach.
+ * [onClick] gets the chip's index and whether its text did not fit.
+ */
+@Composable
+private fun SuggestionsRow(
+    suggestions: List<ReplySuggestion>,
+    onClick: (index: Int, isTruncated: Boolean) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth().testTag("conversation_suggestions"),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Row(
+            modifier = Modifier
+                .weight(1f)
+                .horizontalScroll(rememberScrollState())
+                .padding(start = AppDimens.Spacing.xl3, top = AppDimens.Spacing.xs, bottom = AppDimens.Spacing.xs),
+            horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing.m),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            suggestions.forEachIndexed { index, suggestion ->
+                SuggestionChip(text = suggestion.text, onClick = { isTruncated -> onClick(index, isTruncated) })
+            }
+        }
+        IconButton(onClick = onDismiss, modifier = Modifier.testTag("conversation_suggestions_dismiss")) {
+            Icon(
+                painter = painterResource(Res.drawable.ic_x),
+                contentDescription = stringResource(Res.string.conversation_suggestions_dismiss),
+                tint = AppTheme.colors.onSurfaceMuted,
+                modifier = Modifier.size(AppDimens.Size.xl5),
+            )
+        }
+    }
+}
+
+/**
+ * One suggestion, up to two lines. It reports whether its text was cut, which decides between
+ * sending it and putting it into the field; until it has been laid out it counts as cut.
+ */
+@Composable
+private fun SuggestionChip(text: String, onClick: (isTruncated: Boolean) -> Unit) {
+    var isTruncated by remember(text) { mutableStateOf(true) }
+    Surface(
+        onClick = { onClick(isTruncated) },
+        modifier = Modifier.widthIn(max = AppDimens.Size.xl23).testTag("conversation_suggestion"),
+        shape = RoundedCornerShape(AppDimens.BorderRadius.pill),
+        color = AppTheme.colors.surfaceVariant,
+        contentColor = AppTheme.colors.onSurface,
+    ) {
+        Text(
+            text = text,
+            style = AppTheme.typography.caption,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            onTextLayout = { isTruncated = it.hasVisualOverflow },
+            modifier = Modifier.padding(horizontal = AppDimens.Spacing.xl, vertical = AppDimens.Spacing.m),
+        )
+    }
+}
+
+/**
+ * The reply field and Send. It sits in the scaffold's bottom bar, in the container that pads above
+ * the keyboard and the navigation bar, like the publish bar on the preview screen.
  */
 @Composable
 private fun ReplyInput(
@@ -520,8 +656,6 @@ private fun ReplyInput(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .imePadding()
-            .navigationBarsPadding()
             .padding(horizontal = AppDimens.Spacing.xl3, vertical = AppDimens.Spacing.m),
         horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing.m),
         verticalAlignment = Alignment.Bottom,

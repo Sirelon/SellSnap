@@ -71,6 +71,7 @@ class ScamWarningTest {
             outcomeStore = harness.outcomeStore,
             accountRepository = harness.accountRepository,
             analytics = harness.analytics,
+            openAIClient = harness.openAIClient,
         )
         return viewModel to harness
     }

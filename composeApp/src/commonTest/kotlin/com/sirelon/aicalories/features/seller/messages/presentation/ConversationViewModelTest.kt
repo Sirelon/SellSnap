@@ -559,6 +559,7 @@ class ConversationViewModelTest {
             outcomeStore = harness.outcomeStore,
             accountRepository = harness.accountRepository,
             analytics = harness.analytics,
+            openAIClient = harness.openAIClient,
             timeSource = timeSource,
         )
         return viewModel to harness
