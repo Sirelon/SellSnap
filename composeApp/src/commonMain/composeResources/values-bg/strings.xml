@@ -450,6 +450,10 @@
         <item quantity="one">Остава %1$d ден</item>
         <item quantity="other">Остават %1$d дни</item>
     </plurals>
+    <plurals name="my_ads_unread_messages">
+        <item quantity="one">%1$d непрочетено съобщение</item>
+        <item quantity="other">%1$d непрочетени съобщения</item>
+    </plurals>
     <string name="advert_extend_unavailable">Можеш да удължиш това само в OLX, не оттук.</string>
 
     <!-- Ad lifecycle — statistics -->
@@ -500,4 +504,8 @@
     </plurals>
     <string name="conversation_load_failed">Не успяхме да заредим този разговор.</string>
     <string name="conversation_reply_on_olx">Отговори в OLX</string>
+    <string name="conversation_reply_hint">Напиши отговор</string>
+    <string name="conversation_send">Изпрати</string>
+    <string name="conversation_message_sending">Изпращане…</string>
+    <string name="conversation_message_not_sent">Не е изпратено</string>
 </resources>

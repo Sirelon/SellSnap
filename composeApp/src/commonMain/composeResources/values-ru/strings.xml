@@ -455,6 +455,12 @@
         <item quantity="many">Залишилося %1$d днів</item>
         <item quantity="other">Залишилося %1$d дня</item>
     </plurals>
+    <plurals name="my_ads_unread_messages">
+        <item quantity="one">%1$d непрочитане повідомлення</item>
+        <item quantity="few">%1$d непрочитані повідомлення</item>
+        <item quantity="many">%1$d непрочитаних повідомлень</item>
+        <item quantity="other">%1$d непрочитаного повідомлення</item>
+    </plurals>
     <string name="advert_extend_unavailable">Продовжити це можна лише на OLX, не звідси.</string>
 
     <!-- Ad lifecycle — statistics -->
@@ -511,4 +517,8 @@
     </plurals>
     <string name="conversation_load_failed">Не вдалося завантажити цю розмову.</string>
     <string name="conversation_reply_on_olx">Відповісти на OLX</string>
+    <string name="conversation_reply_hint">Напишіть відповідь</string>
+    <string name="conversation_send">Надіслати</string>
+    <string name="conversation_message_sending">Надсилання…</string>
+    <string name="conversation_message_not_sent">Не надіслано</string>
 </resources>

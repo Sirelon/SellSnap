@@ -452,6 +452,12 @@
         <item quantity="many">Zostało %1$d dni</item>
         <item quantity="other">Zostało %1$d dnia</item>
     </plurals>
+    <plurals name="my_ads_unread_messages">
+        <item quantity="one">%1$d nieprzeczytana wiadomość</item>
+        <item quantity="few">%1$d nieprzeczytane wiadomości</item>
+        <item quantity="many">%1$d nieprzeczytanych wiadomości</item>
+        <item quantity="other">%1$d nieprzeczytanej wiadomości</item>
+    </plurals>
     <string name="advert_extend_unavailable">To ogłoszenie możesz przedłużyć tylko na OLX, nie stąd.</string>
 
     <!-- Ad lifecycle — statistics -->
@@ -508,4 +514,8 @@
     </plurals>
     <string name="conversation_load_failed">Nie udało się wczytać tej rozmowy.</string>
     <string name="conversation_reply_on_olx">Odpowiedz na OLX</string>
+    <string name="conversation_reply_hint">Napisz odpowiedź</string>
+    <string name="conversation_send">Wyślij</string>
+    <string name="conversation_message_sending">Wysyłanie…</string>
+    <string name="conversation_message_not_sent">Nie wysłano</string>
 </resources>
