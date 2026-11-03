@@ -98,6 +98,7 @@ class SendMessageTest {
             hadUnread = true,
             repository = harness.messagesRepository,
             myAdvertsRepository = harness.myAdvertsRepository,
+            outcomeStore = harness.outcomeStore,
             accountRepository = harness.accountRepository,
             analytics = harness.analytics,
         )

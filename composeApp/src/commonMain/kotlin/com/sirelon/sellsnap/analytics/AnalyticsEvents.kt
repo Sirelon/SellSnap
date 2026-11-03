@@ -292,8 +292,12 @@ object AnalyticsEvents {
      * list) or `two_pane` (beside it). `account_count` is the accounts connected in the country,
      * `is_active_account` (Boolean) whether the thread's account is the active one, `had_unread`
      * (Boolean) whether the row had unread messages and `listing_state` the advert's state:
-     * `deleted`, `unknown` or an OLX status code (`active`, `removed_by_user`, ...). It is the
-     * denominator for `messages_conversation_action`.
+     * `deleted`, `unknown` or an OLX status code (`active`, `removed_by_user`, ...).
+     * `has_price_floor` (Boolean) is whether this device kept a lowest price for the advert, the
+     * one the conversation header shows the seller. `floor_gap_bucket` is sent only with a floor
+     * and a published price: how far that price is above the floor, in percent of the floor
+     * (`0` at or below it, `1_10`, `11_25`, `26_50`, `gt_50`). No price or id leaves the device.
+     * It is the denominator for `messages_conversation_action`.
      */
     const val MESSAGES_CONVERSATION_OPENED = "messages_conversation_opened"
 

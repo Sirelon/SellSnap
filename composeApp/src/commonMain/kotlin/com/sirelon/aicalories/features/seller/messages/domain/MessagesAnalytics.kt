@@ -58,4 +58,21 @@ internal object MessagesAnalyticsBuckets {
             AdvertStatus.Unknown -> "unknown"
         }
     }
+
+    /**
+     * How far the asking price is above the seller's lowest price, in percent of that lowest
+     * price: `0` (at or below it), `1_10`, `11_25`, `26_50` or `gt_50`. Null when there is no
+     * asking price or no usable floor, so the param is left out.
+     */
+    fun floorGap(floor: Long, asking: Long?): String? {
+        if (asking == null || floor <= 0) return null
+        val percent = ((asking - floor) * 100) / floor
+        return when {
+            percent <= 0 -> "0"
+            percent <= 10 -> "1_10"
+            percent <= 25 -> "11_25"
+            percent <= 50 -> "26_50"
+            else -> "gt_50"
+        }
+    }
 }

@@ -23,6 +23,8 @@ import com.sirelon.sellsnap.features.seller.messages.presentation.ConversationCo
 import com.sirelon.sellsnap.features.seller.messages.presentation.ConversationContract.PendingStatus
 import com.sirelon.sellsnap.features.seller.messages.presentation.ConversationContract.State
 import com.sirelon.sellsnap.features.seller.my_ads.data.AccountNeedsReconnect
+import com.sirelon.sellsnap.features.seller.my_ads.data.AdvertOutcomeRecord
+import com.sirelon.sellsnap.features.seller.my_ads.data.AdvertOutcomeStore
 import com.sirelon.sellsnap.features.seller.my_ads.data.MyAdvertsRepository
 import com.sirelon.sellsnap.features.seller.profile.data.SellerAccountRepository
 import com.sirelon.sellsnap.generated.resources.Res
@@ -57,6 +59,10 @@ import kotlin.time.TimeSource
  * the bubble stays until a load shows the reply (see [withoutDelivered]). A failure keeps the
  * bubble and its text with Retry. Nothing is withheld on the listing's state: OLX's refusal, if
  * any, is what the seller sees. Sending does not mark the thread read.
+ *
+ * [State.priceFloor] is the seller's private lowest price, read once from [outcomeStore] by advert
+ * id, so it shows for every account and is absent when none was kept. The asking price beside it
+ * is the advert's own once loaded, else the price it was published at.
  */
 class ConversationViewModel internal constructor(
     keyLocalIndex: Int?,
@@ -69,6 +75,7 @@ class ConversationViewModel internal constructor(
     private val hadUnread: Boolean = false,
     private val repository: MessagesRepository,
     private val myAdvertsRepository: MyAdvertsRepository,
+    private val outcomeStore: AdvertOutcomeStore,
     private val accountRepository: SellerAccountRepository,
     private val analytics: Analytics,
     timeSource: TimeSource = TimeSource.Monotonic,
@@ -85,11 +92,16 @@ class ConversationViewModel internal constructor(
     private var accountSeen = false
     private var closed = false
     private var nextPendingId = 0L
+    private var outcome: AdvertOutcomeRecord? = null
 
     /** Every message id a load has returned, so each load can tell which sent messages are new. */
     private val seenMessageIds = mutableSetOf<Long>()
 
     init {
+        viewModelScope.launch {
+            outcome = runCatching { outcomeStore.outcomeFor(advertId) }.getOrNull()
+            updatePriceFloor()
+        }
         accountRepository
             .accountsRecordFlow
             .onEach(::onAccounts)
@@ -326,6 +338,19 @@ class ConversationViewModel internal constructor(
                 return@launch
             }
             setState { it.copy(listing = listing, isListingDeleted = listing == null) }
+            updatePriceFloor()
+        }
+    }
+
+    private fun updatePriceFloor() {
+        val record = outcome ?: return
+        val floor = record.minPrice?.takeIf { it > 0 } ?: return
+        val listing = currentState().listing
+        val sameCurrency = listing != null &&
+            (record.currency.isBlank() || listing.currencyCode.equals(record.currency, ignoreCase = true))
+        val asking = (if (sameCurrency) listing?.priceValue else null) ?: record.publishedPrice
+        setState {
+            it.copy(priceFloor = ConversationContract.PriceFloor(floor, asking, record.currency))
         }
     }
 

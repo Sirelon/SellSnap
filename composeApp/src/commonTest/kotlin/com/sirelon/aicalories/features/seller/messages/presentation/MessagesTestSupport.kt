@@ -73,10 +73,12 @@ internal fun advertsJson(vararg ids: Long) = """{"data":[${ids.joinToString(",")
 internal fun advertsJsonWithStatus(vararg adverts: Pair<Long, String>) =
     """{"data":[${adverts.joinToString(",") { (id, status) -> advertJsonBody(id, status) }}]}"""
 
-internal fun advertJson(id: Long, status: String = "active") = """{"data":${advertJsonBody(id, status)}}"""
+internal fun advertJson(id: Long, status: String = "active", price: Long? = null) =
+    """{"data":${advertJsonBody(id, status, price)}}"""
 
-private fun advertJsonBody(id: Long, status: String = "active") =
+private fun advertJsonBody(id: Long, status: String = "active", price: Long? = null) =
     """{"id":$id,"status":"$status","title":"Placeholder advert $id","url":"https://www.olx.ua/d/$id",""" +
+        price?.let { """"price":{"value":$it,"currency":"UAH"},""" }.orEmpty() +
         """"images":[{"url":"https://example.invalid/$id.jpg"}]}"""
 
 internal const val AdvertNotFoundJson = """{"error":{"status":404,"title":"Not Found"}}"""
@@ -116,6 +118,7 @@ internal class MessagesHarness(
     val accountStore: OlxAccountStore,
     val messagesRepository: MessagesRepository,
     val myAdvertsRepository: MyAdvertsRepository,
+    val outcomeStore: AdvertOutcomeStore,
     val analytics: FakeAnalytics,
     val unauthenticatedOlxApiClient: OlxApiClient,
 )
@@ -134,6 +137,7 @@ internal suspend fun messagesHarness(
         ),
     )
     val analytics = FakeAnalytics()
+    val outcomeStore = AdvertOutcomeStore(InMemoryOlxKeyValueStore(), messagesTestJson)
     val countryStore = OlxCountryStore(InMemoryOlxKeyValueStore(), analytics).apply { save(OlxCountry.UA) }
     val errorParser = OlxRemoteErrorParser(messagesTestJson)
     val unauthenticatedHttpClient = createOlxHttpClient(engine)
@@ -179,7 +183,7 @@ internal suspend fun messagesHarness(
         locationRepository = locationRepository,
         olxCountryStore = countryStore,
         draftMediaFileStore = FakeDraftMediaFileStore,
-        advertOutcomeStore = AdvertOutcomeStore(InMemoryOlxKeyValueStore(), messagesTestJson),
+        advertOutcomeStore = outcomeStore,
         draftsRepository = InMemoryDraftsRepository(),
         analyticsConsentRepository = analyticsConsentRepository,
         errorParser = errorParser,
@@ -190,6 +194,7 @@ internal suspend fun messagesHarness(
         accountStore = accountStore,
         messagesRepository = MessagesRepository(accountRepository, unauthenticatedOlxApiClient),
         myAdvertsRepository = MyAdvertsRepository(accountRepository, unauthenticatedOlxApiClient),
+        outcomeStore = outcomeStore,
         analytics = analytics,
         unauthenticatedOlxApiClient = unauthenticatedOlxApiClient,
     )

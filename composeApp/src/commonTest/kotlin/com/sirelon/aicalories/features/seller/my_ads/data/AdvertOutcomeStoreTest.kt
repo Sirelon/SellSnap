@@ -127,6 +127,21 @@ class AdvertOutcomeStoreTest {
     }
 
     @Test
+    fun `a record stored before the published price existed still decodes with its floor`() = runBlocking {
+        val storage = InMemoryOlxKeyValueStore()
+        storage.putString(
+            "outcomes",
+            """{"outcomes":[{"advert_id":9,"suggested_price":1000,"min_price":800,"max_price":1100,"currency":"UAH"}]}""",
+        )
+        val store = AdvertOutcomeStore(storage, testJson)
+
+        val outcome = store.outcomeFor(9)
+
+        assertEquals(800L, outcome?.minPrice)
+        assertNull(outcome?.publishedPrice)
+    }
+
+    @Test
     fun `corrupt stored JSON reads back as empty instead of throwing`() = runBlocking {
         val storage = InMemoryOlxKeyValueStore()
         storage.putString("outcomes", "{not valid json")

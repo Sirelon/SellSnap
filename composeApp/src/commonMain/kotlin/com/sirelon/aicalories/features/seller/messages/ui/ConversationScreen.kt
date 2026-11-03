@@ -22,6 +22,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.SnackbarHost
@@ -63,6 +64,7 @@ import com.sirelon.sellsnap.features.seller.messages.domain.messageTime
 import com.sirelon.sellsnap.features.seller.messages.presentation.ConversationContract
 import com.sirelon.sellsnap.features.seller.messages.presentation.ConversationContract.Event
 import com.sirelon.sellsnap.features.seller.messages.presentation.ConversationViewModel
+import com.sirelon.sellsnap.features.seller.my_ads.data.MyAdvertItemMapper
 import com.sirelon.sellsnap.features.seller.my_ads.model.MyAdvertItem
 import com.sirelon.sellsnap.features.seller.my_ads.ui.StatusChip
 import com.sirelon.sellsnap.generated.resources.Res
@@ -70,6 +72,8 @@ import com.sirelon.sellsnap.generated.resources.advert_action_failed
 import com.sirelon.sellsnap.generated.resources.back
 import com.sirelon.sellsnap.generated.resources.conversation_message_not_sent
 import com.sirelon.sellsnap.generated.resources.conversation_message_sending
+import com.sirelon.sellsnap.generated.resources.conversation_price_floor
+import com.sirelon.sellsnap.generated.resources.conversation_price_floor_no_ask
 import com.sirelon.sellsnap.generated.resources.conversation_reply_hint
 import com.sirelon.sellsnap.generated.resources.conversation_reply_on_olx
 import com.sirelon.sellsnap.generated.resources.conversation_send
@@ -216,6 +220,7 @@ private fun ConversationScreen(
                     openUrl(url)
                 },
             )
+            state.priceFloor?.let { PriceFloorLine(it) }
 
             Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
                 if (state.needsReconnect) {
@@ -264,6 +269,33 @@ private fun ConversationScreen(
                 }
             }
         }
+    }
+}
+
+/** Private to the seller: muted and plain, never a message bubble. */
+@Composable
+private fun PriceFloorLine(priceFloor: ConversationContract.PriceFloor) {
+    val floor = MyAdvertItemMapper.formatAdvertPrice(priceFloor.floor, priceFloor.currencyCode)
+    val text = priceFloor.asking
+        ?.let { MyAdvertItemMapper.formatAdvertPrice(it, priceFloor.currencyCode) }
+        ?.let { stringResource(Res.string.conversation_price_floor, floor, it) }
+        ?: stringResource(Res.string.conversation_price_floor_no_ask, floor)
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = AppDimens.Spacing.xl3)
+            .padding(bottom = AppDimens.Spacing.m)
+            .testTag("conversation_price_floor"),
+        horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing.m),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            imageVector = Icons.Filled.Lock,
+            contentDescription = null,
+            tint = AppTheme.colors.onSurfaceMuted,
+            modifier = Modifier.size(AppDimens.Size.xl4),
+        )
+        Text(text = text, style = AppTheme.typography.caption, color = AppTheme.colors.onSurfaceMuted)
     }
 }
 

@@ -40,10 +40,24 @@ interface ConversationContract {
          * drawn after [messages]; a poll replaces [messages] and leaves these alone.
          */
         val pendingMessages: List<PendingMessage> = emptyList(),
+        /** The seller's private lowest price for this advert; null when none was kept, and then nothing is shown. */
+        val priceFloor: PriceFloor? = null,
     ) {
         /** Send is enabled: there is something to send besides spaces and line breaks. */
         val canSend: Boolean get() = draft.isNotBlank()
     }
+
+    /**
+     * What the seller said they would accept, kept on this device when the listing was published
+     * here. For the seller's eyes only; whole units of [currencyCode]. [asking] is the advert's
+     * current price, else the price it was published at; null when neither is known.
+     */
+    @Immutable
+    data class PriceFloor(
+        val floor: Long,
+        val asking: Long?,
+        val currencyCode: String,
+    )
 
     /** A reply on its way to OLX, sent, or refused. [localId] is this screen's own, not OLX's. */
     @Immutable

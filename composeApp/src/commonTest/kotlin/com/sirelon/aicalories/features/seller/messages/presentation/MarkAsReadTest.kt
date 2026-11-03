@@ -236,6 +236,7 @@ class MarkAsReadTest {
         hadUnread = hadUnread,
         repository = harness.messagesRepository,
         myAdvertsRepository = harness.myAdvertsRepository,
+        outcomeStore = harness.outcomeStore,
         accountRepository = harness.accountRepository,
         analytics = harness.analytics,
     )
@@ -243,6 +244,7 @@ class MarkAsReadTest {
     private fun list(harness: MessagesHarness) = MessagesViewModel(
         repository = harness.messagesRepository,
         myAdvertsRepository = harness.myAdvertsRepository,
+        outcomeStore = harness.outcomeStore,
         accountRepository = harness.accountRepository,
         analytics = harness.analytics,
     )
