@@ -19,6 +19,10 @@
     <string name="guest_mode_banner_message">Искаш да публикуваш? Ще ти трябва OLX акаунт. Засега копирай заглавието, описанието и цената по-долу и ги постни в OLX.</string>
     <string name="guest_connect_olx_cta">Свържи OLX и публикувай с един допир</string>
     <string name="guest_copy_hint">Докосни бутоните за копиране до заглавието, описанието и цената — после ги постни в OLX, когато си готов.</string>
+    <string name="guest_open_olx">Отвори OLX</string>
+    <string name="guest_connect_prompt_title">Публикувай с един допир</string>
+    <string name="guest_connect_prompt_body">Копира 3 обяви. Свържи акаунта си в OLX и SellSnap може да ги публикува вместо теб.</string>
+    <string name="guest_connect_prompt_connect">Свържи OLX</string>
     <string name="generate_ad_guest_connect_hint">Сега си в гостови режим — свържи OLX по всяко време в Профила, за да публикуваш с един допир.</string>
     <string name="continue_with_olx">Продължи с OLX</string>
     <string name="terms_privacy_prefix">С продължаването приемаш нашите </string>
@@ -129,6 +133,8 @@
     <!-- Announcements -->
     <string name="announcement_ok">ОК</string>
     <string name="announcement_close">Затвори</string>
+    <string name="announcement_open_store">Отвори магазина</string>
+    <string name="announcement_open_link">Отвори връзката</string>
 
     <!-- Notifications -->
     <string name="notifications_prompt_title">Получавай важното от SellSnap</string>
@@ -255,12 +261,23 @@
     <string name="ad_category_label">Категория</string>
     <string name="ad_location_label">Местоположение</string>
     <string name="location_detecting">Намираме те…</string>
-    <string name="location_not_available">Не можем да намерим местоположението ти</string>
+    <string name="location_not_available">Докосни, за да избереш града си</string>
     <string name="location_rationale_title">Нужно ни е местоположението ти</string>
     <string name="location_rationale_message">За да предложим най-близкия град за обявата ти, трябва да видим местоположението ти.</string>
     <string name="location_settings_title">Включи местоположението в настройките</string>
     <string name="location_settings_message_android">Местоположението е блокирано. Отвори настройките на приложението и го включи за SellSnap.</string>
-    <string name="location_settings_message_ios">Местоположението е блокирано. Отиди в Настройки → Поверителност → Услуги за местоположение и включи SellSnap.</string>
+    <string name="location_settings_message_ios">Местоположението е блокирано. Докосни Отвори настройките, после Местоположение → Докато приложението се използва.</string>
+    <string name="location_services_off_title">Местоположението е изключено на телефона ти</string>
+    <string name="location_services_off_message_android">Включи местоположението в настройките на телефона или потърси града си.</string>
+    <string name="location_services_off_message_ios">Включи Услуги за местоположение в Настройки → Поверителност и сигурност или потърси града си.</string>
+    <string name="location_picker_title">Къде продаваш?</string>
+    <string name="location_picker_use_current">Използвай текущото ми местоположение</string>
+    <string name="location_picker_search_placeholder">Потърси град</string>
+    <string name="location_picker_no_results">Няма градове, съвпадащи с „%1$s“</string>
+    <string name="location_picker_search_failed">Сега не можем да търсим.</string>
+    <string name="location_picker_geocoder_unavailable">Търсенето на градове не е налично на това устройство. Използвай текущото си местоположение.</string>
+    <string name="location_picker_district_title">Избери район: %1$s</string>
+    <string name="got_it">Разбрах</string>
 
     <!-- Error Messages -->
     <string name="error_location_fetch_failed">Не можах да намеря местоположението ти.</string>
@@ -277,10 +294,21 @@
     <string name="error_upload_file_failed">Не можах да кача една от снимките.</string>
     <string name="error_publish_failed">Публикуването не се получи. Опитай пак.</string>
     <string name="error_generate_ad_failed">Не можах да генерирам обявата. Опитай отново?</string>
+    <string name="error_app_check_failed">Не успяхме да проверим тази инсталация. Обнови Google Play Services или инсталирай SellSnap от Google Play и опитай отново.</string>
     <string name="error_photo_unreadable">Не можах да разпозная артикула на снимките. Опитай пак.</string>
     <string name="error_photo_different_items">Това изглежда като различни артикули. Премахни тези, които не продаваш.</string>
     <string name="error_regenerate_description_failed">Описанието не можа да се генерира отново. Опитай пак?</string>
     <string name="regenerate_pill_default">Регенерирай</string>
+    <string name="dictate_pill">Диктувай</string>
+    <string name="dictate_pill_listening">Слушам… докосни за стоп</string>
+    <string name="error_dictation_permission">Разреши достъп до микрофона, за да диктуваш.</string>
+    <string name="error_dictation_failed">Не те чух. Опитай пак?</string>
+    <string name="polish_pill">Подобри</string>
+    <string name="polish_sheet_title">Какво да се промени?</string>
+    <string name="polish_sheet_placeholder">напр. направи го по-кратко, спомени безплатна доставка</string>
+    <string name="polish_sheet_action">Подобри описанието</string>
+    <string name="error_polish_failed">Описанието не можа да се подобри. Опитай пак?</string>
+    <string name="publish_updating_listing">Обновяване на обявата…</string>
     <string name="vote_up_label">Полезно</string>
     <string name="vote_down_label">Безполезно</string>
 
@@ -442,4 +470,34 @@
     <string name="advert_edit_price_label">Цена</string>
     <string name="advert_edit_save">Изпрати в OLX</string>
     <string name="advert_edit_load_failed">Не успяхме да заредим тази обява от OLX.</string>
+
+    <!-- Buyer messages -->
+    <string name="messages_screen_title">Съобщения</string>
+    <string name="messages_buyer_label">Купувач</string>
+    <string name="messages_empty_title">Още няма съобщения</string>
+    <string name="messages_empty_description">Още никой не е писал по обявите ти. Съобщенията от купувачи ще се появят тук.</string>
+    <string name="messages_connect_title">Свържи OLX, за да виждаш съобщенията си</string>
+    <string name="messages_connect_description">Съобщенията от купувачи по обявите ти в OLX ще се появят тук, след като свържеш акаунт.</string>
+    <string name="messages_load_failed">Не успяхме да заредим съобщенията.</string>
+    <string name="messages_listing_fallback">Твоята обява</string>
+    <string name="messages_listing_deleted">Изтрита обява</string>
+    <string name="messages_thread_started">Започнат %1$s</string>
+    <string name="messages_mark_as_read">Маркирай като прочетено</string>
+    <string name="messages_select_conversation">Избери разговор, за да го прочетеш тук</string>
+    <string name="time_just_now">току-що</string>
+    <plurals name="time_minutes_ago">
+        <item quantity="one">преди %1$d мин</item>
+        <item quantity="other">преди %1$d мин</item>
+    </plurals>
+    <plurals name="time_hours_ago">
+        <item quantity="one">преди %1$d ч</item>
+        <item quantity="other">преди %1$d ч</item>
+    </plurals>
+    <string name="time_yesterday">вчера</string>
+    <plurals name="time_days_ago">
+        <item quantity="one">преди %1$d ден</item>
+        <item quantity="other">преди %1$d дни</item>
+    </plurals>
+    <string name="conversation_load_failed">Не успяхме да заредим този разговор.</string>
+    <string name="conversation_reply_on_olx">Отговори в OLX</string>
 </resources>

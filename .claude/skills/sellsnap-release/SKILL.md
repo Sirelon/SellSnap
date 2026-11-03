@@ -260,6 +260,24 @@ The iOS framework's release link is the peak-memory task in the build and needs
 `org.gradle.jvmargs=-Xmx8g`; at 4g it died with a Kotlin/Native `OutOfMemoryError` partway
 through the archive, after Android had already uploaded.
 
+### Copy the App Store banners onto the new version
+
+App Store banners (the product-page header and search-results images) are placements on
+one version, and a new version starts with none. Once step 9 has prepared the App Store
+draft, copy them over:
+
+```bash
+ruby .claude/skills/sellsnap-release/copy-banners.rb
+```
+
+It takes the newest iOS version as target and the newest earlier version with banners as
+source, per locale, and skips placements the target already has. The draft
+(`PREPARE_FOR_SUBMISSION`) accepts them at once and they go live with that release. A
+version in review rejects placements (409 `waitingForReview`): if the App Store step was
+skipped because a version was in review, run the script again once that version is
+released, passing its version string. Making or replacing a banner belongs to the
+`store-banners` skill.
+
 ## 10. Hand off for in-app What's New
 
 After a real version bump ships — skip this for a build-only/hotfix bump where
@@ -271,6 +289,30 @@ collection that `features/whatsnew/` reads from. That skill owns the Firestore s
 translation voice, and publish pipeline end to end — don't re-derive or duplicate any of
 that here.
 
+## 10a. Update the feature lists for a complete new capability
+
+Run this step only when the release completes a capability that sellers could not use
+before. Examples: dictation, AI polish, or buyer messages once replies and notifications
+ship. Skip it for improvements, fixes, and partial slices of a feature. A partial feature
+on the website promises what the app cannot do yet; wait for the slice that completes it.
+
+Draft the updates, show them to the owner, and wait for his OK before you publish
+anything. These surfaces list SellSnap's features:
+
+1. Website features grid: `docs/index.html` (`.features-grid`, `feature_*` i18n keys).
+   Add or replace a card; keep the grid focused on the strongest capabilities.
+2. Store descriptions: the Description block per language in
+   `store/copy/store-listing.md`. To push them, write the approved text into the
+   metadata folders from step 3 (`ios/<locale>/description.txt`,
+   `android/<locale>/full_description.txt`); the next `ship.sh` run uploads every file
+   it finds there. Nothing writes these files by default, so the stores keep their
+   current descriptions until you add them.
+3. Store screenshots, if the capability has its own screen: the `sellsnap-screenshots`
+   skill.
+4. Onboarding (`features/seller/onboarding/OnboardingScreen.kt`, same three steps as the
+   website hero): change it only if the capability changes the core snap, write, publish
+   loop.
+
 ## 11. Report back
 
 Show the user, per language, the What's New text that just shipped (it's short — showing
@@ -279,6 +321,6 @@ testers). Confirm the Play and TestFlight uploads succeeded. Remind them that
 `version.properties` and `store/copy/store-listing.md` are modified but not committed —
 committing is their call, not automatic (the release-metadata files themselves are
 gitignored, so they never show up in `git status` at all). Tell them the App Store draft
-is prepared and populated but NOT submitted — submitting for review, and promoting on
+is prepared and populated, banners included, but NOT submitted — submitting for review, and promoting on
 Play, are the two steps that stay theirs — and that step 10 (in-app What's New) is a
 separate hand-off, not automatic.

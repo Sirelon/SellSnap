@@ -190,7 +190,7 @@ platform :ios do
     )
   end
 
-  desc "Create/update the App Store version for the build already on TestFlight and publish its metadata (does not rebuild, does not submit for review)"
+  desc "Create/update the App Store version for the build already on TestFlight and publish its metadata (does not rebuild, does not submit for review; releases automatically once approved)"
   lane :release do
     props = read_version_properties
     upload_to_app_store(
@@ -201,7 +201,7 @@ platform :ios do
       skip_screenshots: true,
       skip_metadata: false,
       submit_for_review: false,
-      automatic_release: false,
+      automatic_release: true,
       run_precheck_before_submit: false,
       metadata_path: IOS_METADATA_DIR,
       force: true

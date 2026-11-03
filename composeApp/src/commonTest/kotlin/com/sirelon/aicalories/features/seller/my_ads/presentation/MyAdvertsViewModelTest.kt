@@ -25,8 +25,7 @@ import com.sirelon.sellsnap.features.seller.auth.domain.OlxAuthCallback
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxCountry
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxTokens
 import com.sirelon.sellsnap.features.seller.drafts.InMemoryDraftsRepository
-import com.sirelon.sellsnap.features.seller.location.DeviceLocation
-import com.sirelon.sellsnap.features.seller.location.LocationProvider
+import com.sirelon.sellsnap.features.seller.location.FakeLocationProvider
 import com.sirelon.sellsnap.features.seller.location.data.LocationRepository
 import com.sirelon.sellsnap.features.seller.location.data.LocationStore
 import com.sirelon.sellsnap.features.seller.my_ads.data.MyAdvertsRepository
@@ -1770,11 +1769,10 @@ class MyAdvertsViewModelTest {
             applicationScope = CoroutineScope(Dispatchers.Default),
         )
         val locationRepository = LocationRepository(
-            locationProvider = object : LocationProvider {
-                override suspend fun getCurrentLocation(): DeviceLocation? = null
-            },
+            locationProvider = FakeLocationProvider(),
             olxApiClient = olxApiClient,
             locationStore = LocationStore(InMemoryOlxKeyValueStore(), testJson),
+            countryStore = countryStore,
         )
         val repository = SellerAccountRepository(
             authRepository = authRepository,

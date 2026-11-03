@@ -4,6 +4,8 @@ import android.content.Context
 import com.google.firebase.FirebaseApp
 import com.google.firebase.appcheck.FirebaseAppCheck
 import com.sirelon.sellsnap.analytics.Analytics
+import dev.gitlive.firebase.Firebase
+import dev.gitlive.firebase.crashlytics.crashlytics
 import kotlinx.coroutines.suspendCancellableCoroutine
 import org.koin.core.module.Module
 import org.koin.dsl.module
@@ -23,9 +25,9 @@ internal class FirebaseAppCheckTokenProvider(
         runCatching { FirebaseApp.initializeApp(context) }
     }
 
-    override suspend fun token(): String? = suspendCancellableCoroutine { continuation ->
+    override suspend fun token(forceRefresh: Boolean): String? = suspendCancellableCoroutine { continuation ->
         FirebaseAppCheck.getInstance()
-            .getAppCheckToken(false)
+            .getAppCheckToken(forceRefresh)
             .addOnSuccessListener { continuation.resume(it.token) }
             .addOnFailureListener { error ->
                 // The proxy answers 401 without a token, so the failure surfaces as a generation
@@ -34,6 +36,23 @@ internal class FirebaseAppCheckTokenProvider(
                 continuation.resume(null)
             }
     }
+}
+
+/**
+ * Requests the first App Check token of the process right after the provider factory is installed.
+ * The SDK backs off after a failed exchange (up to a day for a 403) and every later call, ours or
+ * Firestore's, only sees "Too many attempts". Owning the first call puts the real cause in
+ * Crashlytics; on success the token is cached, so the first generation skips the attestation.
+ */
+fun prefetchAndroidAppCheckToken() {
+    FirebaseAppCheck.getInstance()
+        .getAppCheckToken(false)
+        .addOnFailureListener { error ->
+            runCatching {
+                Firebase.crashlytics.log("First App Check token request failed")
+                Firebase.crashlytics.recordException(error)
+            }
+        }
 }
 
 actual val openAIEndpointModule: Module = module {

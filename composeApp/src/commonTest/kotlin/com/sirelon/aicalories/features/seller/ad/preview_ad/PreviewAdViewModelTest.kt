@@ -2,10 +2,12 @@ package com.sirelon.sellsnap.features.seller.ad.preview_ad
 
 import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.runtime.snapshots.Snapshot
+import androidx.compose.ui.text.TextRange
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModelStore
 import com.sirelon.sellsnap.analytics.Analytics
 import com.sirelon.sellsnap.analytics.AnalyticsEvents
+import com.sirelon.sellsnap.analytics.ShownErrorException
 import com.sirelon.sellsnap.features.auth.data.InMemoryOlxKeyValueStore
 import com.sirelon.sellsnap.features.common.presentation.awaitEffect
 import com.sirelon.sellsnap.features.media.upload.DraftMediaFileStore
@@ -36,6 +38,8 @@ import com.sirelon.sellsnap.features.seller.auth.data.OlxRedirectHandler
 import com.sirelon.sellsnap.features.seller.auth.data.OlxRemoteErrorParser
 import com.sirelon.sellsnap.features.seller.auth.data.createOlxAuthorizedHttpClient
 import com.sirelon.sellsnap.features.seller.auth.data.createOlxHttpClient
+import com.sirelon.sellsnap.features.seller.auth.domain.OlxApiError
+import com.sirelon.sellsnap.features.seller.auth.domain.OlxApiException
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxAuthCallback
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxCountry
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxTokens
@@ -47,13 +51,13 @@ import com.sirelon.sellsnap.features.seller.currency.data.CurrencyRepository
 import com.sirelon.sellsnap.features.seller.categories.domain.OlxAttributeValue
 import com.sirelon.sellsnap.features.seller.drafts.Draft
 import com.sirelon.sellsnap.features.seller.drafts.InMemoryDraftsRepository
-import com.sirelon.sellsnap.features.seller.location.DeviceLocation
-import com.sirelon.sellsnap.features.seller.location.LocationProvider
+import com.sirelon.sellsnap.features.seller.location.FakeLocationProvider
 import com.sirelon.sellsnap.features.seller.location.OlxLocation
 import com.sirelon.sellsnap.features.seller.location.data.LocationRepository
 import com.sirelon.sellsnap.features.seller.openai.OpenAIClient
 import com.aallam.openai.client.OpenAI
 import com.aallam.openai.client.OpenAIConfig
+import com.aallam.openai.client.RetryStrategy
 import com.sirelon.sellsnap.features.seller.location.data.LocationStore
 import com.sirelon.sellsnap.features.seller.my_ads.data.AdvertOutcomeStore
 import com.sirelon.sellsnap.features.seller.profile.data.SellerAccountRepository
@@ -62,6 +66,7 @@ import com.sirelon.sellsnap.startup.AnalyticsConsentStore
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.MockEngineConfig
 import io.ktor.client.engine.mock.respond
+import io.ktor.client.engine.mock.toByteArray
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
@@ -77,6 +82,7 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.Json
 import kotlinx.coroutines.flow.first
 import kotlin.test.AfterTest
@@ -93,6 +99,11 @@ private const val TestSessionId = "test-session"
 
 // Old enough that a rewrite of the seeded draft, which stamps the current time, is visible.
 private const val SeededDraftEpochSeconds = 1_000L
+
+// One required attribute, the shape OLX returns for a category that needs `state`.
+private const val STATE_ATTRIBUTE_JSON = """{"data":[
+    {"code":"state","label":"Стан","unit":"","validation":{"type":"attribute","required":true,"numeric":false,"min":null,"max":null,"allow_multiple_values":false},"values":[{"code":"used","label":"Вживане"}]}
+]}"""
 
 /**
  * SIR-83 D6/A5: the identity assertion before publish is the primary defence against publishing
@@ -275,17 +286,18 @@ class PreviewAdViewModelTest {
             viewModel.onEvent(PreviewAdEvent.ListingCopied)
             advanceUntilIdle()
             assertEquals(5, harness.reviewPromptStore.copiedListingCount())
-            assertTrue(harness.analytics.events.isEmpty(), "no ask at the tap")
+            // error_shown: the harness's category suggestion fails, unrelated to the review ask.
+            val reviewEvents = {
+                harness.analytics.events.map { it.first }.filter { it != AnalyticsEvents.ERROR_SHOWN }
+            }
+            assertTrue(reviewEvents().isEmpty(), "no ask at the tap")
 
             viewModel.onEvent(PreviewAdEvent.CopyFeedbackFinished)
             viewModel.onEvent(PreviewAdEvent.CopyFeedbackFinished)
             advanceUntilIdle()
             viewModel.effects.awaitEffect<PreviewAdEffect.RequestStoreReview>()
             // The second finish is not decided again: a repeat would log a cooldown skip.
-            assertEquals(
-                listOf(AnalyticsEvents.REVIEW_PROMPT_REQUESTED),
-                harness.analytics.events.map { it.first },
-            )
+            assertEquals(listOf(AnalyticsEvents.REVIEW_PROMPT_REQUESTED), reviewEvents())
         }
 
     @Test
@@ -388,6 +400,126 @@ class PreviewAdViewModelTest {
             "a seller shown a publish error is not asked to rate the app later in the same session",
         )
         assertEquals(0, harness.reviewPromptStore.publishCount())
+    }
+
+    @Test
+    fun `publish without a district in a city with districts opens the district step instead of posting`() =
+        runTest(testDispatcher) {
+            val accountStore = OlxAccountStore(InMemoryOlxKeyValueStore(), testJson)
+            accountStore.write(
+                OlxAccountsRecord(
+                    accounts = listOf(account(localIndex = 1, olxUserId = 100L, accessToken = "token-a")),
+                    activeByCountry = mapOf("ua" to 1),
+                    nextLocalIndex = 2,
+                ),
+            )
+            var postAdvertRequests = 0
+            val engine = buildEngine {
+                addHandler { request ->
+                    when {
+                        request.url.encodedPath.endsWith("cities/1/districts") ->
+                            respond(
+                                """{"data":[{"id":1,"city_id":1,"name":"Holosiivskyi","latitude":50.35,"longitude":30.51}]}""",
+                                status = HttpStatusCode.OK,
+                                headers = jsonHeaders(),
+                            )
+
+                        request.url.encodedPath.contains("users/me") ->
+                            respond(userJson(id = 100L, name = "Seller One"), status = HttpStatusCode.OK, headers = jsonHeaders())
+
+                        request.url.encodedPath.contains("adverts") && request.method == HttpMethod.Post -> {
+                            postAdvertRequests++
+                            respond(postAdvertJson(id = 1L), status = HttpStatusCode.OK, headers = jsonHeaders())
+                        }
+
+                        else -> respond("{}", status = HttpStatusCode.OK, headers = jsonHeaders())
+                    }
+                }
+            }
+            val harness = harness(engine, accountStore)
+            val viewModel = buildViewModel(harness)
+            viewModel.setState { it.copy(selectedCategory = testCategory, location = testLocation, attributesLoadState = AttributesLoadState.Loaded) }
+            val effects = mutableListOf<PreviewAdEffect>()
+            backgroundScope.launch { viewModel.effects.collect { effects += it } }
+
+            viewModel.onEvent(PreviewAdEvent.Publish)
+            advanceUntilIdle()
+
+            assertEquals(0, postAdvertRequests, "OLX rejects an advert in a city with districts that has none")
+            assertTrue(effects.contains(PreviewAdEffect.PickDistrict(testLocation)))
+            assertTrue(effects.none { it is PreviewAdEffect.PublishFailure })
+            assertFalse(viewModel.state.value.isPublishing)
+        }
+
+    @Test
+    fun `an OLX district_id rejection opens the district step, not the generic failure`() = runTest(testDispatcher) {
+        val accountStore = OlxAccountStore(InMemoryOlxKeyValueStore(), testJson)
+        accountStore.write(
+            OlxAccountsRecord(
+                accounts = listOf(account(localIndex = 1, olxUserId = 100L, accessToken = "token-a")),
+                activeByCountry = mapOf("ua" to 1),
+                nextLocalIndex = 2,
+            ),
+        )
+        val engine = buildEngine {
+            addHandler { request ->
+                when {
+                    request.url.encodedPath.contains("users/me") ->
+                        respond(userJson(id = 100L, name = "Seller One"), status = HttpStatusCode.OK, headers = jsonHeaders())
+
+                    request.url.encodedPath.contains("adverts") && request.method == HttpMethod.Post ->
+                        respond(
+                            """{"error":{"status":400,"validation":[{"field":"district_id","detail":"Invalid district."}]}}""",
+                            status = HttpStatusCode.BadRequest,
+                            headers = jsonHeaders(),
+                        )
+
+                    // The districts lookup before the POST finds none, so the POST goes out.
+                    else -> respond("""{"data":[]}""", status = HttpStatusCode.OK, headers = jsonHeaders())
+                }
+            }
+        }
+        val harness = harness(engine, accountStore)
+        val viewModel = buildViewModel(harness)
+        viewModel.setState { it.copy(selectedCategory = testCategory, location = testLocation, attributesLoadState = AttributesLoadState.Loaded) }
+        val effects = mutableListOf<PreviewAdEffect>()
+        backgroundScope.launch { viewModel.effects.collect { effects += it } }
+
+        viewModel.onEvent(PreviewAdEvent.Publish)
+        advanceUntilIdle()
+
+        assertTrue(effects.contains(PreviewAdEffect.PickDistrict(testLocation)))
+        assertTrue(effects.none { it is PreviewAdEffect.PublishFailure })
+        val failed = harness.analytics.events.single { it.first == AnalyticsEvents.AD_PUBLISH_FAILED }
+        assertEquals("validation:district_id", failed.second["reason"])
+        // SIR-155: the seller was shown this, so it is reported loudly - once.
+        // The harness's title also gets a category suggestion OLX cannot answer, which is shown
+        // and reported on its own; only the publish's report is under test here.
+        val shown = harness.analytics.events.single {
+            it.first == AnalyticsEvents.ERROR_SHOWN && it.second["reason"] != "category_not_supported"
+        }
+        assertEquals(mapOf("screen" to "preview_ad", "reason" to "validation:district_id"), shown.second)
+        val recorded = harness.analytics.exceptions.filterIsInstance<OlxApiException>().single()
+        assertEquals("district_id", (recorded.error as OlxApiError.ValidationError).field)
+    }
+
+    @Test
+    fun `a too-short title is reported as shown but records no non-fatal`() = runTest(testDispatcher) {
+        val engine = buildEngine {
+            addHandler { respond("{}", status = HttpStatusCode.OK, headers = jsonHeaders()) }
+        }
+        val harness = harness(engine, OlxAccountStore(InMemoryOlxKeyValueStore(), testJson))
+        val viewModel = buildViewModel(harness)
+        viewModel.titleState.setTextAndPlaceCursorAtEnd("Short")
+
+        viewModel.onEvent(PreviewAdEvent.Publish)
+        viewModel.effects.awaitEffect<PreviewAdEffect.ShowMessage>()
+
+        val shown = harness.analytics.events.single {
+            it.first == AnalyticsEvents.ERROR_SHOWN && it.second["reason"] == "title_too_short"
+        }
+        assertEquals("preview_ad", shown.second["screen"])
+        assertTrue(harness.analytics.exceptions.none { it is ShownErrorException })
     }
 
     @Test
@@ -824,6 +956,99 @@ class PreviewAdViewModelTest {
     }
 
     @Test
+    fun `picking the category already shown keeps its attributes loaded`() = runTest(testDispatcher) {
+        var attributeRequests = 0
+        val engine = buildEngine {
+            addHandler { request ->
+                when {
+                    request.url.encodedPath.contains("attributes") -> {
+                        attributeRequests += 1
+                        respond(STATE_ATTRIBUTE_JSON, status = HttpStatusCode.OK, headers = jsonHeaders())
+                    }
+
+                    else -> respond("{}", status = HttpStatusCode.OK, headers = jsonHeaders())
+                }
+            }
+        }
+        val harness = harness(engine, loggedInAccountStore())
+        val viewModel = buildViewModel(harness)
+        advanceUntilIdle()
+
+        viewModel.onEvent(PreviewAdEvent.CategorySelected(testCategory))
+        advanceUntilIdle()
+        // The same category again, as a repeated OLX suggestion for the title delivers it. It
+        // used to clear the attributes and never fetch them again: the preview showed no details
+        // and "Не вдалося завантажити деталі", and publish stayed blocked.
+        viewModel.onEvent(PreviewAdEvent.CategorySelected(testCategory))
+        advanceUntilIdle()
+
+        assertEquals(AttributesLoadState.Loaded, viewModel.state.value.attributesLoadState)
+        assertEquals(listOf("state"), viewModel.state.value.attributeItems.map { it.attribute.code })
+        assertEquals(1, attributeRequests, "a category already loaded needs no second fetch")
+    }
+
+    @Test
+    fun `a failed attributes fetch does not stop the next pick from loading`() = runTest(testDispatcher) {
+        var attributeRequests = 0
+        val engine = buildEngine {
+            addHandler { request ->
+                when {
+                    request.url.encodedPath.contains("attributes") -> {
+                        attributeRequests += 1
+                        if (attributeRequests == 1) {
+                            respond("{}", status = HttpStatusCode.InternalServerError, headers = jsonHeaders())
+                        } else {
+                            respond(STATE_ATTRIBUTE_JSON, status = HttpStatusCode.OK, headers = jsonHeaders())
+                        }
+                    }
+
+                    else -> respond("{}", status = HttpStatusCode.OK, headers = jsonHeaders())
+                }
+            }
+        }
+        val harness = harness(engine, loggedInAccountStore())
+        val viewModel = buildViewModel(harness)
+        advanceUntilIdle()
+
+        viewModel.onEvent(PreviewAdEvent.CategorySelected(testCategory))
+        advanceUntilIdle()
+        assertEquals(AttributesLoadState.Failed, viewModel.state.value.attributesLoadState)
+
+        // Picking the category again is the seller's way to retry.
+        viewModel.onEvent(PreviewAdEvent.CategorySelected(testCategory))
+        advanceUntilIdle()
+
+        assertEquals(AttributesLoadState.Loaded, viewModel.state.value.attributesLoadState)
+        assertEquals(listOf("state"), viewModel.state.value.attributeItems.map { it.attribute.code })
+    }
+
+    @Test
+    fun `moving the cursor in the title does not ask OLX for a category again`() = runTest(testDispatcher) {
+        var suggestionRequests = 0
+        val engine = buildEngine {
+            addHandler { request ->
+                if (request.url.encodedPath.contains("categories/suggestion")) suggestionRequests += 1
+                respond("{}", status = HttpStatusCode.OK, headers = jsonHeaders())
+            }
+        }
+        val harness = harness(engine, loggedInAccountStore())
+        val viewModel = buildViewModel(harness)
+        advanceUntilIdle()
+        assertEquals(1, suggestionRequests, "the generated title gets one suggestion on open")
+
+        viewModel.titleState.edit { selection = TextRange(0) }
+        Snapshot.sendApplyNotifications()
+        advanceUntilIdle()
+        assertEquals(1, suggestionRequests, "a cursor move is not a new title")
+
+        // The harness's suggestion fails; a later real edit must still be asked about.
+        viewModel.titleState.setTextAndPlaceCursorAtEnd("Another title for the advert")
+        Snapshot.sendApplyNotifications()
+        advanceUntilIdle()
+        assertEquals(2, suggestionRequests)
+    }
+
+    @Test
     fun `price starts in the country's currency before OLX's currency list arrives`() = runTest(testDispatcher) {
         val engine = buildEngine {
             addHandler { respond(content = "", status = HttpStatusCode.InternalServerError) }
@@ -1210,6 +1435,258 @@ class PreviewAdViewModelTest {
 
     // --- test harness -----------------------------------------------------------------------
 
+    private suspend fun loggedInAccountStore(): OlxAccountStore =
+        OlxAccountStore(InMemoryOlxKeyValueStore(), testJson).apply {
+            write(
+                OlxAccountsRecord(
+                    accounts = listOf(account(localIndex = 1, olxUserId = 100L, accessToken = "token-a")),
+                    activeByCountry = mapOf("ua" to 1),
+                    nextLocalIndex = 2,
+                ),
+            )
+        }
+
+    @Test
+    fun `a polish prices the listing again, a hand-set price included, and keeps the title of the same item`() =
+        runTest(testDispatcher) {
+            val (harness, viewModel) = polishHarness(sameItem = true, title = "A different title")
+            advanceUntilIdle()
+            viewModel.onEvent(PreviewAdEvent.OnPriceChanged(120f))
+            viewModel.onEvent(PreviewAdEvent.PolishInstructionChanged("make it shorter"))
+
+            viewModel.onEvent(PreviewAdEvent.PolishDescription)
+            advanceUntilIdle()
+
+            val state = viewModel.state.value
+            assertEquals(150f, state.price)
+            assertEquals(1, state.priceRevision)
+            assertEquals("A perfectly fine test title", viewModel.titleState.text.toString())
+            assertEquals(
+                "A polished test description that is long enough to publish.",
+                viewModel.descriptionState.text.toString(),
+            )
+            val succeeded = harness.analytics.events.single { it.first == AnalyticsEvents.AD_DESCRIPTION_POLISH_SUCCEEDED }
+            assertEquals(true, succeeded.second["same_item"])
+            assertEquals(true, succeeded.second["price_was_hand_set"])
+            assertEquals(25, succeeded.second["price_change_pct"])
+        }
+
+    @Test
+    fun `changing the price a polish set is logged once, with whether it had been set by hand`() =
+        runTest(testDispatcher) {
+            val (harness, viewModel) = polishHarness(sameItem = true, title = "A perfectly fine test title")
+            advanceUntilIdle()
+            viewModel.onEvent(PreviewAdEvent.PolishInstructionChanged("make it shorter"))
+            viewModel.onEvent(PreviewAdEvent.PolishDescription)
+            advanceUntilIdle()
+
+            // The field echoes the polished price back first; that is not an edit.
+            viewModel.onEvent(PreviewAdEvent.OnPriceChanged(150f))
+            viewModel.onEvent(PreviewAdEvent.OnPriceChanged(120f))
+            viewModel.onEvent(PreviewAdEvent.OnPriceChanged(110f))
+
+            val edited = harness.analytics.events.filter { it.first == AnalyticsEvents.AD_PRICE_EDITED_AFTER_POLISH }
+            assertEquals(1, edited.size)
+            assertEquals(false, edited.single().second["price_was_hand_set_before_polish"])
+            assertEquals(-20, edited.single().second["change_pct"])
+        }
+
+    @Test
+    fun `a polish that names a different item takes its title too`() = runTest(testDispatcher) {
+        val (harness, viewModel) = polishHarness(sameItem = false, title = "Nike Air Max 90 size 42")
+        advanceUntilIdle()
+        viewModel.onEvent(PreviewAdEvent.PolishInstructionChanged("these are Nike Air Max 90, not Adidas"))
+
+        viewModel.onEvent(PreviewAdEvent.PolishDescription)
+        advanceUntilIdle()
+
+        assertEquals("Nike Air Max 90 size 42", viewModel.titleState.text.toString())
+        assertEquals(150f, viewModel.state.value.price)
+        val succeeded = harness.analytics.events.single { it.first == AnalyticsEvents.AD_DESCRIPTION_POLISH_SUCCEEDED }
+        assertEquals(false, succeeded.second["same_item"])
+        assertFalse(viewModel.state.value.isPolishingDescription)
+    }
+
+    @Test
+    fun `a polish highlights the fields it changed, and a polish that changes nothing highlights none`() =
+        runTest(testDispatcher) {
+            val (_, viewModel) = polishHarness(sameItem = true, title = "A perfectly fine test title")
+            advanceUntilIdle()
+            viewModel.onEvent(PreviewAdEvent.PolishInstructionChanged("make it shorter"))
+            viewModel.onEvent(PreviewAdEvent.PolishDescription)
+            advanceUntilIdle()
+
+            // The title of the same item is unchanged, so it is not highlighted.
+            assertEquals(setOf(ListingField.Description, ListingField.Price), viewModel.state.value.changedFields)
+            assertEquals(1, viewModel.state.value.changedFieldsRevision)
+
+            // The same answer again leaves every field as it is.
+            viewModel.onEvent(PreviewAdEvent.PolishInstructionChanged("make it shorter"))
+            viewModel.onEvent(PreviewAdEvent.PolishDescription)
+            advanceUntilIdle()
+
+            assertEquals(1, viewModel.state.value.changedFieldsRevision)
+        }
+
+    @Test
+    fun `a polish that names a different item highlights its title too`() = runTest(testDispatcher) {
+        val (_, viewModel) = polishHarness(sameItem = false, title = "Nike Air Max 90 size 42")
+        advanceUntilIdle()
+        viewModel.onEvent(PreviewAdEvent.PolishInstructionChanged("these are Nike Air Max 90, not Adidas"))
+
+        viewModel.onEvent(PreviewAdEvent.PolishDescription)
+        advanceUntilIdle()
+
+        assertEquals(
+            setOf(ListingField.Title, ListingField.Description, ListingField.Price),
+            viewModel.state.value.changedFields,
+        )
+    }
+
+    @Test
+    fun `Publish does nothing while a regeneration or a polish is rewriting the listing`() = runTest(testDispatcher) {
+        var postAdvertRequests = 0
+        val engine = buildEngine {
+            addHandler { request ->
+                when {
+                    request.url.encodedPath.contains("users/me") ->
+                        respond(userJson(id = 100L, name = "Seller"), status = HttpStatusCode.OK, headers = jsonHeaders())
+
+                    request.url.encodedPath.contains("adverts") && request.method == HttpMethod.Post -> {
+                        postAdvertRequests += 1
+                        respond(postAdvertJson(id = 7L), status = HttpStatusCode.OK, headers = jsonHeaders())
+                    }
+
+                    else -> respond("{}", status = HttpStatusCode.OK, headers = jsonHeaders())
+                }
+            }
+        }
+        val harness = harness(engine, loggedInAccountStore())
+        val viewModel = buildViewModel(harness)
+        viewModel.setState { it.copy(selectedCategory = testCategory, location = testLocation, attributesLoadState = AttributesLoadState.Loaded) }
+        val effects = mutableListOf<PreviewAdEffect>()
+        backgroundScope.launch { viewModel.effects.collect { effects += it } }
+
+        viewModel.setState { it.copy(isRegeneratingDescription = true) }
+        viewModel.onEvent(PreviewAdEvent.Publish)
+        advanceUntilIdle()
+        viewModel.setState { it.copy(isRegeneratingDescription = false, isPolishingDescription = true) }
+        viewModel.onEvent(PreviewAdEvent.Publish)
+        advanceUntilIdle()
+
+        assertEquals(0, postAdvertRequests)
+        assertTrue(effects.none { it is PreviewAdEffect.PublishSuccess || it is PreviewAdEffect.PublishFailure })
+
+        // Once the rewrite has landed, the same Publish goes through.
+        viewModel.setState { it.copy(isPolishingDescription = false) }
+        viewModel.onEvent(PreviewAdEvent.Publish)
+        advanceUntilIdle()
+
+        assertEquals(1, postAdvertRequests)
+    }
+
+    @Test
+    fun `a polish continues the listing conversation without sending the photos again`() = runTest(testDispatcher) {
+        val requests = mutableListOf<String>()
+        val (_, viewModel) = polishHarness(
+            sameItem = true,
+            title = "A perfectly fine test title",
+            listing = chainedListing,
+            openAiRequests = requests,
+        )
+        advanceUntilIdle()
+        viewModel.onEvent(PreviewAdEvent.PolishInstructionChanged("make it shorter"))
+
+        viewModel.onEvent(PreviewAdEvent.PolishDescription)
+        advanceUntilIdle()
+
+        val request = requests.single()
+        assertTrue(request.contains("\"previous_response_id\":\"resp_listing\""))
+        assertFalse(request.contains("input_image"))
+        assertEquals("resp_polish", viewModel.state.value.conversationResponseId)
+    }
+
+    @Test
+    fun `a polish whose conversation OpenAI no longer has runs again with the photos`() = runTest(testDispatcher) {
+        val requests = mutableListOf<String>()
+        val (_, viewModel) = polishHarness(
+            sameItem = true,
+            title = "A perfectly fine test title",
+            listing = chainedListing,
+            openAiRequests = requests,
+            refuseChainedTurn = true,
+        )
+        advanceUntilIdle()
+        viewModel.onEvent(PreviewAdEvent.PolishInstructionChanged("make it shorter"))
+
+        viewModel.onEvent(PreviewAdEvent.PolishDescription)
+        advanceUntilIdle()
+
+        assertEquals(2, requests.size)
+        assertFalse(requests[1].contains("previous_response_id"))
+        assertTrue(requests[1].contains("input_image"))
+        assertEquals(150f, viewModel.state.value.price)
+        assertEquals("resp_polish", viewModel.state.value.conversationResponseId)
+    }
+
+    private val chainedListing = testListing.copy(
+        advertisement = testListing.advertisement.copy(images = listOf("https://example.com/photo1.jpg")),
+        conversationResponseId = "resp_listing",
+    )
+
+    private fun polishResponseJson(sameItem: Boolean, title: String, description: String, price: Int): String {
+        val listing = """{"sameItem":$sameItem,"title":"$title","description":"$description",""" +
+            """"suggestedPrice":$price,"minPrice":${price - 50},"maxPrice":${price + 50}}"""
+        return """{"id":"resp_polish","status":"completed","output":[{"id":"msg_1","type":"message","role":"assistant",""" +
+            """"content":[{"type":"output_text","text":${Json.encodeToString(String.serializer(), listing)}}]}]}"""
+    }
+
+    private suspend fun polishHarness(
+        sameItem: Boolean,
+        title: String,
+        listing: AdvertisementWithAttributes = testListing,
+        openAiRequests: MutableList<String> = mutableListOf(),
+        refuseChainedTurn: Boolean = false,
+    ): Pair<TestHarness, PreviewAdViewModel> {
+        val accountStore = OlxAccountStore(InMemoryOlxKeyValueStore(), testJson)
+        accountStore.write(
+            OlxAccountsRecord(
+                accounts = listOf(account(localIndex = 1, olxUserId = 100L, accessToken = "token-a")),
+                activeByCountry = mapOf("ua" to 1),
+                nextLocalIndex = 2,
+            ),
+        )
+        val engine = buildEngine {
+            addHandler { request ->
+                if (request.url.encodedPath.endsWith("responses")) {
+                    val body = request.body.toByteArray().decodeToString()
+                    openAiRequests += body
+                    if (refuseChainedTurn && body.contains("previous_response_id")) {
+                        return@addHandler respond(
+                            """{"error":{"message":"Previous response not found.","type":"invalid_request_error"}}""",
+                            status = HttpStatusCode.NotFound,
+                            headers = jsonHeaders(),
+                        )
+                    }
+                    respond(
+                        polishResponseJson(
+                            sameItem = sameItem,
+                            title = title,
+                            description = "A polished test description that is long enough to publish.",
+                            price = 150,
+                        ),
+                        status = HttpStatusCode.OK,
+                        headers = jsonHeaders(),
+                    )
+                } else {
+                    respond("{}", status = HttpStatusCode.OK, headers = jsonHeaders())
+                }
+            }
+        }
+        val harness = harness(engine, accountStore)
+        return harness to buildViewModel(harness, listing = listing, openAiEngine = engine)
+    }
+
     private fun buildEngine(block: MockEngineConfig.() -> Unit): MockEngine {
         val config = MockEngineConfig().apply(block)
         config.dispatcher = testDispatcher
@@ -1263,6 +1740,7 @@ class PreviewAdViewModelTest {
         harness: TestHarness,
         savedStateHandle: SavedStateHandle = SavedStateHandle(),
         listing: AdvertisementWithAttributes = testListing,
+        openAiEngine: MockEngine? = null,
     ): PreviewAdViewModel {
         return PreviewAdViewModel(
             filledAdvertisement = listing,
@@ -1279,7 +1757,9 @@ class PreviewAdViewModelTest {
             json = testJson,
             analytics = harness.analytics,
             openAiClient = OpenAIClient(
-                openAI = OpenAI(config = OpenAIConfig(token = "test-token")),
+                openAI = OpenAI(
+                    config = OpenAIConfig(token = "test-token", engine = openAiEngine, retry = RetryStrategy(maxRetries = 0)),
+                ),
                 json = testJson,
                 compactJson = testJson,
             ),
@@ -1323,11 +1803,10 @@ class PreviewAdViewModelTest {
             applicationScope = CoroutineScope(Dispatchers.Default),
         )
         val locationRepository = LocationRepository(
-            locationProvider = object : LocationProvider {
-                override suspend fun getCurrentLocation(): DeviceLocation? = null
-            },
+            locationProvider = FakeLocationProvider(),
             olxApiClient = olxApiClient,
             locationStore = LocationStore(InMemoryOlxKeyValueStore(), testJson),
+            countryStore = countryStore,
         )
         val draftsRepository = InMemoryDraftsRepository().apply {
             upsert(
@@ -1412,12 +1891,15 @@ class PreviewAdViewModelTest {
 
     private class FakeAnalytics : Analytics {
         val events = mutableListOf<Pair<String, Map<String, Any>>>()
+        val exceptions = mutableListOf<Throwable>()
         override fun logEvent(name: String, params: Map<String, Any>) {
             events += name to params
         }
         override fun setUserId(userId: String?) {}
         override fun setUserProperty(name: String, value: String?) {}
-        override fun recordException(throwable: Throwable, message: String?) {}
+        override fun recordException(throwable: Throwable, message: String?) {
+            exceptions += throwable
+        }
         override fun log(message: String) {}
         override fun setAnalyticsCollectionEnabled(enabled: Boolean) {}
         override fun setCrashlyticsCollectionEnabled(enabled: Boolean) {}

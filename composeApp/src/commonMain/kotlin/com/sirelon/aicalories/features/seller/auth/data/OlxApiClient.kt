@@ -21,8 +21,14 @@ import com.sirelon.sellsnap.features.seller.categories.data.response.OlxCategory
 import com.sirelon.sellsnap.features.seller.currency.data.response.OlxCurrenciesRootResponse
 import com.sirelon.sellsnap.features.seller.currency.data.response.OlxCurrencyResponse
 import com.sirelon.sellsnap.features.seller.currency.domain.OlxCurrency
+import com.sirelon.sellsnap.features.seller.location.data.response.OlxDistrictResponse
+import com.sirelon.sellsnap.features.seller.location.data.response.OlxDistrictsRootResponse
 import com.sirelon.sellsnap.features.seller.location.data.response.OlxLocationResponse
 import com.sirelon.sellsnap.features.seller.location.data.response.OlxLocationsRootResponse
+import com.sirelon.sellsnap.features.seller.messages.data.response.OlxMessagesRootResponse
+import com.sirelon.sellsnap.features.seller.messages.data.response.OlxThreadsRootResponse
+import com.sirelon.sellsnap.features.seller.messages.domain.OlxMessage
+import com.sirelon.sellsnap.features.seller.messages.domain.OlxThread
 import io.ktor.client.HttpClient
 import io.ktor.client.request.bearerAuth
 import io.ktor.client.request.delete
@@ -110,6 +116,38 @@ class OlxApiClient(
     }
 
     /**
+     * `GET threads` - the account's conversations, `{data: [...]}` (developer.olx.ua swagger v2,
+     * `/threads`; the yaml declares a bare array but the live API wraps it, SIR-88).
+     */
+    internal suspend fun getThreads(accessToken: String, offset: Int, limit: Int): List<OlxThread> {
+        val response = httpClient.get("threads") {
+            bearerAuth(accessToken)
+            parameter("offset", offset)
+            parameter("limit", limit)
+        }
+        response.ensureSuccess()
+
+        return response.decodeBody<OlxThreadsRootResponse>("threads")
+            .data
+            .orEmpty()
+            .mapNotNull { it.toDomain() }
+    }
+
+    /**
+     * `GET threads/{id}/messages`, oldest first. The endpoint takes no `offset`/`limit` and returns
+     * the whole conversation (developer.olx.ua swagger v2, `/threads/{threadId}/messages`; SIR-88).
+     */
+    internal suspend fun getThreadMessages(accessToken: String, threadId: Long): List<OlxMessage> {
+        val response = httpClient.get("threads/$threadId/messages") { bearerAuth(accessToken) }
+        response.ensureSuccess()
+
+        return response.decodeBody<OlxMessagesRootResponse>("thread messages")
+            .data
+            .orEmpty()
+            .mapNotNull { it.toDomain() }
+    }
+
+    /**
      * `GET adverts/{id}` (SIR-98). Returns the typed view plus the raw `data` object, which the
      * edit path reshapes into a `PUT` body - the two schemas are not the same shape, so the raw
      * response is kept whole here and mapped there. See [AdvertEditSnapshot].
@@ -118,6 +156,23 @@ class OlxApiClient(
         val response = httpClient.get("adverts/$advertId") { bearerAuth(accessToken) }
         response.ensureSuccess()
 
+        return readAdvert(response)
+    }
+
+    /**
+     * [getAdvert], except that a 404 - the advert no longer exists - is `null` rather than an
+     * error. Matches on the status code, never on the error title: the title arrives in the
+     * market's language.
+     */
+    internal suspend fun getAdvertOrNull(accessToken: String, advertId: Long): AdvertEditSnapshot? {
+        val response = httpClient.get("adverts/$advertId") { bearerAuth(accessToken) }
+        if (response.status == HttpStatusCode.NotFound) return null
+        response.ensureSuccess()
+
+        return readAdvert(response)
+    }
+
+    private suspend fun readAdvert(response: HttpResponse): AdvertEditSnapshot {
         val raw = response.decodeBody<OlxAdvertDetailRootResponse>("advert").data
             ?: throw missingResponseData("advert", "data")
         val detail = json.decodeFromJsonElement<OlxAdvertDetailResponse>(raw).toDomain()
@@ -183,12 +238,42 @@ class OlxApiClient(
     }
 
     /**
+     * `POST threads/{id}/commands` with `{"command":"mark-as-read"}`. Success is 204 with no body,
+     * so the status code is the whole result.
+     *
+     * developer.olx.ua, swagger v2 `/threads/{threadId}/commands`, `post` "Take action on thread"
+     * (security `access_token`: `v2`, `write`):
+     * ```
+     * requestBody: application/json: type: object, required: [command]
+     *   command: string, enum [mark-as-read, set-favourite]
+     *     "Commands `mark-as-read` - to mark thread as read, `set-favourite` - to set thread as
+     *      favourite or not"
+     *   is_favourite: boolean, "Required for `set-favourite` command"
+     * responses: 204 "Status 204"
+     * ```
+     * Reading a thread's messages does not clear its `unread_count`; only this command does
+     * (SIR-88 findings, olx.ua, 2026-11-02).
+     */
+    internal suspend fun sendThreadCommand(accessToken: String, threadId: Long, command: ThreadCommand) {
+        val response = httpClient.post("threads/$threadId/commands") {
+            bearerAuth(accessToken)
+            contentType(ContentType.Application.Json)
+            setBody(ThreadCommandRequest(command = command.wireValue))
+        }
+        response.ensureSuccess()
+    }
+
+    /**
      * `DELETE adverts/{id}` (SIR-98). 204 on success. OLX rejects this while the advert is still
      * active, with `field: "ad", title: "Invalid status"` - the caller is responsible for
      * deactivating first, and for telling the seller when only that half succeeded.
+     *
+     * A 404 means the advert is already gone, which is what the seller asked for. It happens when
+     * OLX's list still shows a just-deleted advert and the seller deletes it again.
      */
     internal suspend fun deleteAdvert(accessToken: String, advertId: Long) {
         val response = httpClient.delete("adverts/$advertId") { bearerAuth(accessToken) }
+        if (response.status == HttpStatusCode.NotFound) return
         response.ensureSuccess()
     }
 
@@ -308,6 +393,14 @@ class OlxApiClient(
         response.ensureSuccess()
 
         return response.decodeBody<OlxLocationsRootResponse>("locations").data.orEmpty()
+    }
+
+    /** `GET cities/{cityId}/districts`. Empty for a city that has no districts. */
+    internal suspend fun getCityDistricts(cityId: Int): List<OlxDistrictResponse> {
+        val response = httpClient.get("cities/$cityId/districts")
+        response.ensureSuccess()
+
+        return response.decodeBody<OlxDistrictsRootResponse>("city districts").data.orEmpty()
     }
 
     /**

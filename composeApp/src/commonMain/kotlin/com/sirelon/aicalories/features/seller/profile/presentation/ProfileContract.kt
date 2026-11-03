@@ -24,7 +24,6 @@ interface ProfileContract {
     data class ProfileState(
         val isLoading: Boolean = true,
         val isAuthenticating: Boolean = false,
-        val isLocationLoading: Boolean = false,
         val user: OlxUser? = null,
         val location: OlxLocation? = null,
         val errorMessage: String? = null,
@@ -50,7 +49,7 @@ interface ProfileContract {
     sealed interface ProfileEvent {
         data object LoginClicked : ProfileEvent
         data object LogoutClicked : ProfileEvent
-        data object ChangeLocationClicked : ProfileEvent
+        data class LocationSelected(val location: OlxLocation) : ProfileEvent
         data object RefreshClicked : ProfileEvent
 
         // SIR-83
@@ -58,6 +57,9 @@ interface ProfileContract {
         data class NeedsReconnectRowClicked(val localIndex: Int) : ProfileEvent
         data class ReconnectClicked(val localIndex: Int) : ProfileEvent
         data class CountrySelected(val country: OlxCountry) : ProfileEvent
+
+        /** The seller confirmed in a sheet over this screen: start a forced-fresh-login authorization. */
+        data object AddAccountConfirmed : ProfileEvent
     }
 
     sealed interface ProfileEffect {

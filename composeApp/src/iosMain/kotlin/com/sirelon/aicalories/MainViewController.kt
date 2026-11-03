@@ -22,10 +22,13 @@ fun MainViewController(): UIViewController {
 
 // Route uncaught Kotlin exceptions to Crashlytics with their Kotlin stack trace; the native
 // signal handler alone would only capture an opaque abort. recordException respects the runtime
-// collection flag, so nothing is sent until analytics consent is granted.
+// collection flag, so nothing is sent until analytics consent is granted. The NSError that
+// recordException builds drops the cause chain, so the full trace goes into the crash logs first:
+// wrappers like CompletionHandlerException are useless without the exception they carry.
 @OptIn(ExperimentalNativeApi::class)
 private fun installKotlinCrashHandler() {
     setUnhandledExceptionHook { throwable ->
+        runCatching { Firebase.crashlytics.log(throwable.stackTraceToString()) }
         runCatching { Firebase.crashlytics.recordException(throwable) }
         // Keep normal crash behaviour: still terminate as the process otherwise would.
         terminateWithUnhandledException(throwable)

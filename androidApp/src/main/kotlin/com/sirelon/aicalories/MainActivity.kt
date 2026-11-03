@@ -28,6 +28,7 @@ import com.sirelon.sellsnap.features.seller.auth.data.OlxAuthCallbackBridge
 import com.sirelon.sellsnap.features.seller.auth.presentation.SellerAuthContract
 import com.sirelon.sellsnap.features.seller.auth.presentation.SellerLandingScreen
 import com.sirelon.sellsnap.features.seller.drafts.data.initAndroidDatabase
+import com.sirelon.sellsnap.network.prefetchAndroidAppCheckToken
 import com.sirelon.sellsnap.generated.resources.Res
 import com.sirelon.sellsnap.generated.resources.notification_channel_updates
 import com.sirelon.sellsnap.platform.initAndroidUrlOpener
@@ -42,6 +43,7 @@ class MainActivity : ComponentActivity() {
         }
         super.onCreate(savedInstanceState)
         installAppCheckProviderFactory()
+        prefetchAndroidAppCheckToken()
         initAndroidKeyValueStore(filesDir.absolutePath)
         initAndroidDatabase(applicationContext)
         initAndroidDraftMediaFileStore(filesDir.absolutePath)

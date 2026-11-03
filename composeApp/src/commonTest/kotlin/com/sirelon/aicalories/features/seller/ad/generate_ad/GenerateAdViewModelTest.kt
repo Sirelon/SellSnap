@@ -349,6 +349,25 @@ class GenerateAdViewModelTest {
             assertFalse(harness.viewModel.state.value.isLoading)
         }
 
+    @Test
+    fun `one failed photo upload shows one error and records one non-fatal`() =
+        runTest(testDispatcher) {
+            val harness = buildHarness(uploader = FailingPhotoUploader(), initialUpload = UploadingItem())
+
+            harness.viewModel.onEvent(GenerateAdContract.GenerateAdEvent.Submit)
+            advanceUntilIdle()
+
+            val shown = harness.analytics.events.filter { it.first == AnalyticsEvents.ERROR_SHOWN }
+            assertEquals(1, shown.size, "the upload failure is shown once, not again by the generation catch")
+            assertEquals("photo_upload_failed", shown.single().second["reason"])
+            assertEquals(1, harness.analytics.exceptions.size)
+            assertEquals("upload boom", harness.analytics.exceptions.single().message)
+
+            val failed = harness.analytics.events.single { it.first == AnalyticsEvents.AD_GENERATION_FAILED }
+            assertEquals("photo_upload", failed.second["reason"])
+            assertFalse(harness.viewModel.state.value.isLoading)
+        }
+
     private fun io.ktor.client.engine.mock.MockRequestHandleScope.respondWithListing(listing: String) = respond(
         content = """{"id":"resp_1","status":"completed","output":[{"id":"msg_1","type":"message","role":"assistant","content":[{"type":"output_text","text":${Json.encodeToString(String.serializer(), listing)}}]}]}""",
         headers = headersOf(HttpHeaders.ContentType, "application/json"),
@@ -497,12 +516,15 @@ class GenerateAdViewModelTest {
 
     private class FakeAnalytics : Analytics {
         val events = mutableListOf<Pair<String, Map<String, Any>>>()
+        val exceptions = mutableListOf<Throwable>()
         override fun logEvent(name: String, params: Map<String, Any>) {
             events += name to params
         }
         override fun setUserId(userId: String?) {}
         override fun setUserProperty(name: String, value: String?) {}
-        override fun recordException(throwable: Throwable, message: String?) {}
+        override fun recordException(throwable: Throwable, message: String?) {
+            exceptions += throwable
+        }
         override fun log(message: String) {}
         override fun setAnalyticsCollectionEnabled(enabled: Boolean) {}
         override fun setCrashlyticsCollectionEnabled(enabled: Boolean) {}
@@ -527,5 +549,12 @@ class GenerateAdViewModelTest {
         override suspend fun publicUrl(path: String): String = "https://example.test/$path"
         override fun uploadFile(path: String, byteArray: ByteArray): Flow<PhotoUploadStatus> =
             flow { awaitCancellation() }
+    }
+
+    /** An upload that fails, so a test can check what the seller is told about it. */
+    private class FailingPhotoUploader : PhotoUploader {
+        override suspend fun publicUrl(path: String): String = "https://example.test/$path"
+        override fun uploadFile(path: String, byteArray: ByteArray): Flow<PhotoUploadStatus> =
+            flow { throw IllegalStateException("upload boom") }
     }
 }

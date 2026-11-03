@@ -15,6 +15,7 @@ interface CategoryPickerContract {
     data class CategoryPickerState(
         val allCategories: List<OlxCategory> = emptyList(),
         val isLoading: Boolean = true,
+        val loadFailed: Boolean = false,
         val path: List<OlxCategory> = emptyList(),
         val searchQuery: String = "",
         val displayItems: List<CategoryDisplayItem> = emptyList(),
@@ -25,5 +26,6 @@ interface CategoryPickerContract {
         data class NavigateToIndex(val index: Int) : CategoryPickerEvent
         data object Reset : CategoryPickerEvent
         data class Search(val query: String) : CategoryPickerEvent
+        data object Retry : CategoryPickerEvent
     }
 }

@@ -1,65 +1,68 @@
 
 [versions]
-agp = "9.3.1"
+agp = "9.4.1"
 android-compileSdk = "37"
+android-compileSdkMinor = "1"
 android-minSdk = "24"
 android-targetSdk = "37"
 # https://developer.android.com/jetpack/androidx/releases/activity
 androidx-activity = "1.13.0"
-androidx-datastore = "1.3.0-alpha10"
+androidx-datastore = "1.3.0"
 androidx-appcompat = "1.8.0"
 # https://developer.android.com/jetpack/androidx/releases/core
-androidx-core = "1.19.0"
+androidx-core = "1.19.1"
 androidx-espresso = "3.7.0"
 # https://developer.android.com/jetpack/androidx/releases/exifinterface
 androidx-exifinterface = "1.4.2"
 # https://developer.android.com/jetpack/androidx/releases/lifecycle
 androidx-lifecycle = "2.11.0"
 androidx-testExt = "1.3.0"
-coil3 = "3.6.2"
+coil3 = "3.6.3"
 composeHotReload = "1.2.0"
 # https://github.com/JetBrains/compose-multiplatform/releases
-composeMultiplatform = "1.12.0"
+composeMultiplatform = "1.12.2"
 junit = "4.13.2"
 # https://github.com/InsertKoinIO/koin/releases
 koin = "4.2.2"
-kotlin = "2.4.20"
+kotlin = "2.4.21"
 # https://github.com/Kotlin/kotlinx.coroutines/releases
 kotlinx-coroutines = "1.11.0"
+# https://github.com/Kotlin/kotlinx-datetime/releases
+kotlinx-datetime = "0.8.0"
 # https://github.com/Kotlin/kotlinx.serialization/releases
-kotlinx-serialization = "1.11.0"
+kotlinx-serialization = "1.12.0"
 # https://github.com/ktorio/ktor/releases
 ktor = "3.6.0"
-logback = "1.6.3"
+logback = "1.6.5"
 # https://mvnrepository.com/artifact/org.jetbrains.compose.material3/material3
-material3 = "1.13.0-alpha01"
+material3 = "1.13.0-beta01"
 # https://mvnrepository.com/artifact/org.jetbrains.compose.material3.adaptive/adaptive
-material3-adaptive = "1.3.0-rc01"
+material3-adaptive = "1.4.0-alpha01"
 materialIconsExtended = "1.7.3"
 # https://developer.android.com/jetpack/androidx/releases/navigation3#1.1.2
-navigation3Runtime = "1.2.0-alpha07"
+navigation3Runtime = "1.3.0-alpha03"
 # https://developer.android.com/jetpack/androidx/releases/lifecycle
 lifecycleViewmodelNav3 = "2.11.0"
 # https://mvnrepository.com/artifact/org.jetbrains.androidx.navigation3/navigation3-ui
-navigation3Ui = "1.2.0-beta01"
+navigation3Ui = "1.2.0-rc01"
 # https://github.com/MohamedRejeb/Calf/releases
-calf = "0.13.0"
+calf = "0.14.0"
 # https://github.com/supabase-community/supabase-kt/releases
 supabase = "3.8.0"
 # https://github.com/yshrsmz/BuildKonfig/releases
-buildKonfig = "0.22.0"
+buildKonfig = "0.23.0"
 # https://github.com/sqldelight/sqldelight/releases
-sqldelight = "2.4.0"
+sqldelight = "2.4.1"
 
-compose = "1.13.0-alpha01"
+compose = "1.13.0-alpha02"
 playServicesLocation = "21.4.0"
 # https://developer.android.com/guide/playcore/in-app-review
 playReview = "2.0.2"
 # https://github.com/GitLiveApp/firebase-kotlin-sdk/releases
 gitliveFirebase = "2.7.0"
 googleServices = "4.5.0"
-crashlyticsPlugin = "3.0.7"
-firebaseBom = "34.17.0"
+crashlyticsPlugin = "3.0.8"
+firebaseBom = "35.1.0"
 # https://github.com/googleapis/java-cloud-bom/releases
 googleCloudBom = "26.90.0"
 
@@ -81,6 +84,7 @@ androidx-lifecycle-runtimeCompose = { module = "org.jetbrains.androidx.lifecycle
 androidx-lifecycle-viewmodel = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel", version.ref = "androidx-lifecycle" }
 androidx-lifecycle-viewmodelSavedState = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-savedstate", version.ref = "androidx-lifecycle" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
+kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinx-datetime" }
 kotlinx-serialization-core = { module = "org.jetbrains.kotlinx:kotlinx-serialization-core", version.ref = "kotlinx-serialization" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
 coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil3" }
@@ -99,6 +103,7 @@ ktor-serverTestHost = { module = "io.ktor:ktor-server-test-host-jvm", version.re
 material-icons-extended = { module = "org.jetbrains.compose.material:material-icons-extended", version.ref = "materialIconsExtended" }
 material3 = { module = "org.jetbrains.compose.material3:material3", version.ref = "material3" }
 material3-adaptive = { module = "org.jetbrains.compose.material3.adaptive:adaptive", version.ref = "material3-adaptive" }
+material3-adaptive-navigation3 = { module = "org.jetbrains.compose.material3.adaptive:adaptive-navigation3", version.ref = "material3-adaptive" }
 material3-adaptive-navigation-suite = { module = "org.jetbrains.compose.material3:material3-adaptive-navigation-suite", version.ref = "material3" }
 navigation3-ui = { module = "org.jetbrains.androidx.navigation3:navigation3-ui", version.ref = "navigation3Ui" }
 calf-filepicker = { module = "com.mohamedrejeb.calf:calf-file-picker", version.ref = "calf" }

@@ -22,8 +22,10 @@ Each one is checkable. Where you cannot show it was met, say so (rule 7).
    invisible in telemetry, and every restriction this app invented cost the seller something.
 5. A user-facing state, label, or paragraph exists only if the user does something different
    because of it. Two API values the user treats the same way are one state.
-6. User-facing copy is approved before it is translated: post the English `key → text` list,
-   wait, then run `localize` once. See Localization.
+6. Sentences, explanations, new states and legal text are approved before they are translated:
+   post the English `key → text` list, wait, then run `localize` once. A short label that names
+   its action ("Mark as read", "Retry") needs no approval: use it, translate it in the same pass,
+   and list it in the report. See Localization.
 7. Report what was skipped. "Completed" with a silent gap is wrong; name the gap.
 8. Name the cause before the second fix. If a symptom survives a fix, write the causal chain —
    what was observed, what produced it — before touching code again.
@@ -33,10 +35,36 @@ Each one is checkable. Where you cannot show it was met, say so (rule 7).
     the spec file, fetched and opened and searched. A tool that answers in prose has already
     dropped whatever you did not know to ask about. Three fixes in a row were refused by OLX
     because each came from a paraphrase rather than from the schema. See OLX partner API.
+11. **Every feature works on every window size and for every connected account.** SellSnap runs
+    on phones, foldables, tablets and desktop, and a seller can connect several OLX accounts per
+    country (SIR-83). A plan for a new screen says how it lays out on a wide window — a list
+    whose rows open a detail uses list-detail panes (Messages is the reference) — and how it
+    behaves with two or more accounts: one page per account like My Ads, and every OLX call
+    carries the `localIndex` it acts for instead of assuming the active account. A ticket that
+    says "active account only" or says nothing about tablets is not an exemption; raise it
+    before building.
+12. **Every feature ships with the analytics to judge it.** Before building, the plan lists the
+    questions the data must answer — is it used, does it work, where do sellers stop, which
+    option they pick — and the events that answer them. Events and their params go in
+    `AnalyticsEvents` with a KDoc per event (what fires it, every param and its values), codes
+    in snake_case, never user text or buyer data. Screen views are already automatic; count
+    the actions and outcomes inside the screen. See Analytics.
 
 Small fixes with obvious files: read the implementation and its immediate callers only,
 validate with the narrowest meaningful build or test command plus `git diff --check`, and skip
 anything above that does not apply.
+
+## Linear ticket status after merge
+Agents merge finished work straight to the default branch. The owner later installs the fresh
+build and checks every pending ticket in one pass.
+
+- **Human Check** — the change has behaviour a person must see on a device: UI, flows, copy,
+  notifications, store or ads behaviour, anything that only shows in a real install. Add a
+  comment with numbered check steps and the expected result for each.
+- **Done** — only when the build and tests fully prove the change: refactors, docs, tests,
+  build config.
+- Never move a ticket you implemented to Done when it needs a device check. The owner moves it
+  from Human Check to Done after checking.
 
 ## Subagent limits (append to every brief, after the global block)
 
@@ -196,7 +224,11 @@ Most features use some combination of:
 - `features/announcements`
   - Launch dialog fed by the Firestore `announcements` collection (one doc = content + rules,
     filtered on device; schema in `AnnouncementResponse`). Publish via Firestore REST as in the
-    `release-notes` skill. Host images in Firebase Storage: the Android emulator's DNS fails on
+    `release-notes` skill. `content.link` adds a button: `store` opens the platform store page,
+    an https URL opens the browser. A doc with `rules.dismissible: false` plus a link has no
+    other exit, so `maxVersion` + `showMode: everyLaunch` + `link: store` gates a version range
+    that no longer works (the 3.1-3.3 clients broke silently when the AI proxy went live on
+    2026-10-05; those builds predate this feature and cannot be reached). Host images in Firebase Storage: the Android emulator's DNS fails on
     some third-party hosts (`fastly.picsum.photos` → `UnknownHostException`) while Google hosts
     resolve, and the dialog silently drops an image that fails to load.
 
@@ -259,6 +291,12 @@ Rules: `.claude/rules/edge-to-edge.md` — loads when you open a `ui/`, `*Screen
 - Fallback defaults exist for local/dev builds; do not mistake them for production values.
 - The OpenAI key is not in any build. Android and iOS call the `openai` Cloud Function with a Firebase App Check token (`composeApp/.../network/OpenAIEndpoint.kt`, platform modules `OpenAIEndpointModule.*.kt`); the key lives in Secret Manager as `OPENAI_KEY`. Desktop calls OpenAI directly with `OPENAI_KEY` read from the environment at launch. Web has no App Check and cannot generate listings.
 - App Check providers: Play Integrity (Android release), App Attest (iOS release), debug providers in debug builds. A debug build's token must be registered in App Check or the proxy answers 401. Dev machines use fixed tokens: `APP_CHECK_DEBUG_TOKEN` in `local.properties` (Android) and `iosApp/Configuration/AppCheckDebugToken.local.xcconfig` (iOS), both gitignored; the `appcheck-debug-token` skill (`.claude/skills/`) registers them and handles the per-install fallback.
+
+## Analytics
+
+Firebase Analytics and Crashlytics behind `composeApp/.../analytics/Analytics.kt`; event names and their params live in `AnalyticsEvents`. Analytics events wait for the seller's consent, Crashlytics is always on.
+
+**Every error the seller is shown goes through `Analytics.reportShownError(screen, reason, throwable)`** — snackbar, inline error, failure sheet alike, next to the `postEffect`/`setState` that shows it. It logs `error_shown` (snake_case `screen` and `reason` codes, never user text) and records one Crashlytics non-fatal: the real throwable, or a `ShownErrorException("<screen>: <reason>")` when there is none. Do not call `recordException` beside it. `recordNonFatal = false` is only for input-validation nudges in normal use, such as a title that is still too short.
 
 ## Push notifications
 
@@ -469,7 +507,8 @@ the rest is how this app shipped two wrong status meanings.
 - **Read the yaml itself.** It is at `https://developer.olx.<tld>/swagger/v2/partner_api.yaml`,
   nested `$ref` files resolve against the same path, and plain `curl` gets a CloudFront 403.
   `curl https://r.jina.ai/<url>` returns the whole file - about 145 KB - and from there the schema
-  is `grep -n` and `sed -n` like any other file. WebFetch and context7 answer in prose: they
+  is `grep -n` and `sed -n` like any other file. When r.jina.ai refuses the yaml (422), the
+  Wayback raw copy works: `curl -sL "https://web.archive.org/web/2026id_/https://developer.olx.ua/swagger/v2/partner_api.yaml"`. WebFetch and context7 answer in prose: they
   summarize, and the summary is where `location`'s real position, the absence of `ad_delivery`
   from the update schema, and the `value`/`values` split all went missing. Each was five lines of
   yaml and each cost a release.
@@ -492,7 +531,7 @@ rejects violations, so read it before adding a class that maps a JSON response.
 - Every seller VM extends `BaseViewModel<State, Event, Effect>` from `features/common/presentation/BaseViewModel.kt`.
 - Contracts live in `*Contract.kt` files with sealed `Event` and sealed `Effect` interfaces.
 - State updates use `setState { it.copy(...) }`. One-shot side effects use `postEffect(...)`.
-- Repositories return `Flow<T>`; VMs subscribe via `.launchIn(viewModelScope)` and use `.catch { ... }` to keep the stream alive across transient errors. `PreviewAdViewModel` is the canonical reference.
+- Streaming repositories return `Flow<T>`; VMs subscribe via `.launchIn(viewModelScope)` and use `.catch { ... }` to keep the stream alive across transient errors. `PreviewAdViewModel` is the canonical reference. One-shot OLX reads (`MyAdvertsRepository`, `MessagesRepository`) are `suspend` calls wrapped in `withAccountToken`; the VM owns retries and polling.
 - `CategoriesRepository` caches the (filtered) category tree via `shareIn(GlobalScope, Lazily, 1)` — see `BUGS.md` for why this is on the cleanup list.
 - **Assert an effect with `viewModel.effects.awaitEffect<T>()`** (`commonTest`,
   `features/common/presentation/AwaitEffect.kt`); never drain-then-assert. Anything resolved
@@ -500,6 +539,14 @@ rejects violations, so read it before adding a class that maps a JSON response.
   `advanceUntilIdle()` and `runCurrent()` cannot see it, and `withTimeout` inside `runTest` fires
   on the virtual clock. For state rather than an effect, await the state:
   `viewModel.state.first { ... }`.
+- **A test that starts a polling loop must stop it.** `MessagesViewModel` and
+  `ConversationViewModel` poll in `while (true) { delay(PollInterval) }` after `Event.Shown`.
+  If the test ends with that loop alive, `runTest` keeps draining virtual time forever, the test
+  JVM runs out of memory and Gradle hangs with no failure. End every such test with `Event.Hidden`.
+- **A ViewModel restored after process death starts before the account store is hydrated.**
+  `accountsRecordFlow` first emits the empty default record, so a screen that closes itself when
+  "its" account is missing closed on every restore. Treat the account as gone only after the
+  store has loaded (`ConversationViewModel` is the pattern); never on the first emission.
 
 ### Ad lifecycle (post-publish actions)
 

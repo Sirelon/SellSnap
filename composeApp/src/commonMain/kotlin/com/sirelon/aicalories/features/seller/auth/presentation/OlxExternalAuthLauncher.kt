@@ -13,6 +13,13 @@ enum class OlxAuthDismissReason(val analyticsValue: String) {
      * login was open, reported on the next start.
      */
     SystemCancelled("system_cancelled"),
+
+    /**
+     * iOS only: `ASWebAuthenticationSession.start()` returned false, so the login page never
+     * appeared and the completion handler will never run. Without this the tap did nothing
+     * visible and nothing was logged.
+     */
+    LaunchFailed("launch_failed"),
 }
 
 /**

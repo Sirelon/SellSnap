@@ -56,3 +56,41 @@ internal fun Map<String, Any>.normalizedForFirebase(): Map<String, Any> =
 fun Analytics.logScreenView(screenName: String) {
     logEvent("screen_view", mapOf("screen_name" to screenName, "screen_class" to screenName))
 }
+
+/** Firebase drops an event parameter whose string value is longer than this. */
+private const val FirebaseParamValueMaxLength = 100
+
+/**
+ * Stands in for the throwable a shown error does not have: a refusal decided in app code, or a
+ * failure whose cause was dropped further down. Crashlytics groups non-fatals by type and stack,
+ * so these can share an issue; the message - `"<screen>: <reason>"` - tells them apart.
+ */
+class ShownErrorException(message: String) : Exception(message)
+
+/**
+ * The one way to report a problem the seller was shown - a snackbar, an inline error, a failure
+ * sheet. Every user-visible error goes through here, so a seller who cannot publish is never
+ * found out by accident.
+ *
+ * Logs [AnalyticsEvents.ERROR_SHOWN] and a Crashlytics breadcrumb, then records a Crashlytics
+ * non-fatal: [throwable] when there is one, otherwise a [ShownErrorException]. Crashlytics is the
+ * channel that always arrives - Analytics events wait for consent.
+ *
+ * [screen] and [reason] are stable snake_case codes (`preview_ad`, `validation:district_id`),
+ * never user text or anything identifying. [recordNonFatal] is false only for input-validation
+ * nudges that are part of normal use, such as a title that is still too short.
+ */
+fun Analytics.reportShownError(
+    screen: String,
+    reason: String,
+    throwable: Throwable? = null,
+    recordNonFatal: Boolean = true,
+) {
+    val screenCode = screen.take(FirebaseParamValueMaxLength)
+    val reasonCode = reason.take(FirebaseParamValueMaxLength)
+    logEvent(AnalyticsEvents.ERROR_SHOWN, mapOf("screen" to screenCode, "reason" to reasonCode))
+    log("${AnalyticsEvents.ERROR_SHOWN} $screenCode: $reasonCode")
+    if (recordNonFatal) {
+        recordException(throwable ?: ShownErrorException("$screenCode: $reasonCode"))
+    }
+}

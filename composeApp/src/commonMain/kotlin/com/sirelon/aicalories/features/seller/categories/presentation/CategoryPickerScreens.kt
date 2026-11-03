@@ -28,6 +28,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sirelon.sellsnap.designsystem.AppDimens
 import com.sirelon.sellsnap.designsystem.AppTheme
@@ -42,6 +43,7 @@ import com.sirelon.sellsnap.features.seller.categories.domain.OlxCategory
 import com.sirelon.sellsnap.features.seller.categories.presentation.CategoryPickerContract.CategoryPickerEvent.NavigateTo
 import com.sirelon.sellsnap.features.seller.categories.presentation.CategoryPickerContract.CategoryPickerEvent.NavigateToIndex
 import com.sirelon.sellsnap.features.seller.categories.presentation.CategoryPickerContract.CategoryPickerEvent.Reset
+import com.sirelon.sellsnap.features.seller.categories.presentation.CategoryPickerContract.CategoryPickerEvent.Retry
 import com.sirelon.sellsnap.features.seller.categories.presentation.CategoryPickerContract.CategoryPickerEvent.Search
 import com.sirelon.sellsnap.generated.resources.Res
 import com.sirelon.sellsnap.generated.resources.category_picker_all
@@ -51,8 +53,10 @@ import com.sirelon.sellsnap.generated.resources.category_picker_select
 import com.sirelon.sellsnap.generated.resources.category_picker_select_label
 import com.sirelon.sellsnap.generated.resources.category_picker_select_with_name
 import com.sirelon.sellsnap.generated.resources.category_picker_selected_label
+import com.sirelon.sellsnap.generated.resources.generic_error_retry
 import com.sirelon.sellsnap.generated.resources.ic_chevron_right
 import com.sirelon.sellsnap.generated.resources.ic_circle_check_big
+import com.sirelon.sellsnap.generated.resources.retry
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
@@ -132,6 +136,26 @@ fun CategoryPickerSheet(
             if (state.isLoading) {
                 item {
                     LoadingOverlay(isLoading = true) {}
+                }
+            } else if (state.loadFailed) {
+                item {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(AppDimens.Spacing.xl5),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.m),
+                    ) {
+                        Text(
+                            text = stringResource(Res.string.generic_error_retry),
+                            style = t.body,
+                            color = c.onSurfaceMuted,
+                            textAlign = TextAlign.Center,
+                        )
+                        TextButton(onClick = { viewModel.onEvent(Retry) }) {
+                            Text(stringResource(Res.string.retry))
+                        }
+                    }
                 }
             } else {
                 val isSearchMode = state.searchQuery.isNotBlank()

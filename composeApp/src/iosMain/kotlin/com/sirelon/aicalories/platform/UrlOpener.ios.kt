@@ -15,3 +15,5 @@ actual fun openUrl(url: String) {
         UIApplication.sharedApplication.openURL(nsUrl, emptyMap<Any?, Any?>(), null)
     }
 }
+
+actual fun storePageUrl(): String = "https://apps.apple.com/app/id6776001373"

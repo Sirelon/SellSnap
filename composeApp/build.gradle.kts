@@ -53,7 +53,11 @@ if (providers.gradleProperty("composeReports").orNull == "true") {
 kotlin {
     android {
         namespace = "com.sirelon.sellsnap.composeapp"
-        compileSdk = libs.versions.android.compileSdk.get().toInt()
+        compileSdk {
+            version = release(libs.versions.android.compileSdk.get().toInt()) {
+                minorApiLevel = libs.versions.android.compileSdkMinor.get().toInt()
+            }
+        }
         minSdk = libs.versions.android.minSdk.get().toInt()
         androidResources.enable = true
         compilerOptions {
@@ -168,6 +172,7 @@ kotlin {
             implementation(libs.compose.preview)
             implementation(libs.material3)
             implementation(libs.material3.adaptive)
+            implementation(libs.material3.adaptive.navigation3)
             implementation(libs.material3.adaptive.navigation.suite)
             implementation(libs.material.icons.extended)
 
@@ -183,6 +188,7 @@ kotlin {
             implementation(libs.coil.compose)
             implementation(libs.coil.network.ktor)
             implementation(libs.kotlinx.coroutines.core)
+            implementation(libs.kotlinx.datetime)
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.sqldelight.runtime)
             implementation(libs.sqldelight.coroutines)

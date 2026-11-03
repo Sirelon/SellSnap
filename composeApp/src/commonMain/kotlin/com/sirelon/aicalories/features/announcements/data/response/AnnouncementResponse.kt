@@ -23,6 +23,10 @@ internal class AnnouncementContentResponse(
     @SerialName("title") val title: Map<String, String>? = null,
     @SerialName("body") val body: Map<String, String>? = null,
     @SerialName("imageUrl") val imageUrl: String? = null,
+    // "store" for this platform's store page, or an https URL. Adds a button to the dialog; with
+    // `rules.dismissible = false` that button is the only way out, which is how a broken version
+    // range is gated (see AnnouncementDialog).
+    @SerialName("link") val link: String? = null,
 )
 
 // `minVersion` and `maxVersion` are typed String on purpose: "3.10" typed as a number in the

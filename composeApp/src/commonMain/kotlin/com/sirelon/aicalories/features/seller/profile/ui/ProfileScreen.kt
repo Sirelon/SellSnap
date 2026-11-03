@@ -41,8 +41,6 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.mohamedrejeb.calf.permissions.CoarseLocation
-import com.mohamedrejeb.calf.permissions.Permission
 import com.sirelon.sellsnap.designsystem.AppAsyncImage
 import com.sirelon.sellsnap.designsystem.AppAvatar
 import com.sirelon.sellsnap.designsystem.AppCard
@@ -57,9 +55,6 @@ import com.sirelon.sellsnap.designsystem.buttons.AppButton
 import com.sirelon.sellsnap.designsystem.buttons.AppButtonDefaults
 import com.sirelon.sellsnap.designsystem.buttons.AppButtonStyle
 import com.sirelon.sellsnap.designsystem.screens.LoadingOverlay
-import com.sirelon.sellsnap.features.media.PermissionDialogContent
-import com.sirelon.sellsnap.features.media.PermissionDialogs
-import com.sirelon.sellsnap.features.media.rememberPermissionController
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAuthCallbackBridge
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxUser
 import com.sirelon.sellsnap.features.seller.location.OlxLocation
@@ -76,15 +71,7 @@ import com.sirelon.sellsnap.generated.resources.ic_arrow_left
 import com.sirelon.sellsnap.generated.resources.ic_check
 import com.sirelon.sellsnap.generated.resources.ic_refresh_cw
 import com.sirelon.sellsnap.generated.resources.ic_user
-import com.sirelon.sellsnap.generated.resources.location_detecting
 import com.sirelon.sellsnap.generated.resources.location_not_available
-import com.sirelon.sellsnap.generated.resources.location_rationale_message
-import com.sirelon.sellsnap.generated.resources.location_rationale_title
-import com.sirelon.sellsnap.generated.resources.location_settings_message_android
-import com.sirelon.sellsnap.generated.resources.location_settings_message_ios
-import com.sirelon.sellsnap.generated.resources.location_settings_title
-import com.sirelon.sellsnap.generated.resources.not_now
-import com.sirelon.sellsnap.generated.resources.open_settings
 import com.sirelon.sellsnap.generated.resources.profile_field_business
 import com.sirelon.sellsnap.generated.resources.profile_field_created_at
 import com.sirelon.sellsnap.generated.resources.profile_field_email
@@ -150,12 +137,34 @@ fun ProfileScreenRoute(
     onAddAccountRequested: () -> Unit,
     onDisconnectRequested: (Int) -> Unit,
     onAddAccountFailed: () -> Unit,
+    onChangeLocationClick: () -> Unit,
+    pendingLocation: OlxLocation?,
+    onLocationConsumed: () -> Unit,
+    // Set by the add-account/reconnect confirm sheets over this screen; see ProfileEvent.AddAccountConfirmed.
+    addOrReconnectRequested: Boolean,
+    onAddOrReconnectConsumed: () -> Unit,
     reason: String? = null,
+    // Analytics only - where the seller came from, see AppKey.Profile.source.
+    source: String? = null,
 ) {
     val viewModel: ProfileViewModel = koinViewModel()
+    LaunchedEffect(source) { viewModel.setEntrySource(source) }
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
-    val locationPermissionController = rememberPermissionController(permission = Permission.CoarseLocation)
+
+    LaunchedEffect(pendingLocation) {
+        if (pendingLocation != null) {
+            viewModel.onEvent(ProfileEvent.LocationSelected(pendingLocation))
+            onLocationConsumed()
+        }
+    }
+
+    LaunchedEffect(addOrReconnectRequested) {
+        if (addOrReconnectRequested) {
+            viewModel.onEvent(ProfileEvent.AddAccountConfirmed)
+            onAddOrReconnectConsumed()
+        }
+    }
 
     LaunchedEffect(viewModel) {
         OlxAuthCallbackBridge.callbacks.collect { callbackUrl ->
@@ -187,38 +196,12 @@ fun ProfileScreenRoute(
             snackbarHostState = snackbarHostState,
             onBack = onBack,
             onEvent = viewModel::onEvent,
-            onChangeLocation = {
-                locationPermissionController.requestPermission {
-                    viewModel.onEvent(ProfileEvent.ChangeLocationClicked)
-                }
-            },
+            onChangeLocation = onChangeLocationClick,
             onAddAccountRequested = onAddAccountRequested,
             onDisconnectRequested = onDisconnectRequested,
             reason = reason,
         )
     }
-
-    PermissionDialogs(
-        controller = locationPermissionController,
-        rationaleContent = PermissionDialogContent(
-            title = Res.string.location_rationale_title,
-            message = Res.string.location_rationale_message,
-            confirmText = Res.string.retry,
-            dismissText = Res.string.not_now,
-        ),
-        settingsContentProvider = { isIos ->
-            PermissionDialogContent(
-                title = Res.string.location_settings_title,
-                message = if (isIos) {
-                    Res.string.location_settings_message_ios
-                } else {
-                    Res.string.location_settings_message_android
-                },
-                confirmText = Res.string.open_settings,
-                dismissText = Res.string.not_now,
-            )
-        },
-    )
 }
 
 @Composable
@@ -304,7 +287,6 @@ private fun ProfileScreen(
 
             LocationCard(
                 location = state.location,
-                isLoading = state.isLocationLoading,
                 onChangeLocation = onChangeLocation,
             )
 
@@ -661,6 +643,7 @@ fun DeleteAccountDataConfirmSheet(
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
     isDeleting: Boolean,
+    errorMessage: String? = null,
 ) {
     Column(
         modifier = Modifier
@@ -689,6 +672,13 @@ fun DeleteAccountDataConfirmSheet(
                     color = AppTheme.colors.primary,
                 )
             }
+        }
+        if (errorMessage != null) {
+            Text(
+                text = errorMessage,
+                style = AppTheme.typography.body,
+                color = AppTheme.colors.error,
+            )
         }
         AppButton(
             modifier = Modifier.fillMaxWidth(),
@@ -866,6 +856,7 @@ fun DisconnectOlxAccountConfirmSheet(
     onConfirm: () -> Unit,
     onOpenOlxSettings: () -> Unit,
     onDismiss: () -> Unit,
+    errorMessage: String? = null,
 ) {
     val displayName = accountName?.takeIf { it.isNotBlank() } ?: stringResource(Res.string.profile_olx_account)
     Column(
@@ -899,6 +890,13 @@ fun DisconnectOlxAccountConfirmSheet(
                 )
             }
         }
+        if (errorMessage != null) {
+            Text(
+                text = errorMessage,
+                style = AppTheme.typography.body,
+                color = AppTheme.colors.error,
+            )
+        }
         AppButton(
             modifier = Modifier.fillMaxWidth(),
             text = stringResource(Res.string.profile_disconnect_confirm_action),
@@ -926,7 +924,6 @@ fun DisconnectOlxAccountConfirmSheet(
 @Composable
 private fun LocationCard(
     location: OlxLocation?,
-    isLoading: Boolean,
     onChangeLocation: () -> Unit,
 ) {
     AppCard(modifier = Modifier.fillMaxWidth()) {
@@ -965,11 +962,7 @@ private fun LocationCard(
             }
 
             Text(
-                text = when {
-                    isLoading -> stringResource(Res.string.location_detecting)
-                    location != null -> location.displayName
-                    else -> stringResource(Res.string.location_not_available)
-                },
+                text = location?.displayName ?: stringResource(Res.string.location_not_available),
                 style = AppTheme.typography.body,
                 color = if (location == null) AppTheme.colors.onSurfaceMuted else AppTheme.colors.onSurface,
             )
@@ -977,7 +970,6 @@ private fun LocationCard(
             AppButton(
                 text = stringResource(Res.string.change_button),
                 onClick = onChangeLocation,
-                enabled = !isLoading,
                 modifier = Modifier.fillMaxWidth(),
                 style = AppButtonDefaults.outline(),
             )

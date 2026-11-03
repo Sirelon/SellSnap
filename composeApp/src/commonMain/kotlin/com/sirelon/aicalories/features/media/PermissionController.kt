@@ -22,7 +22,12 @@ data class PermissionUiState(
 @Stable
 interface PermissionController {
     val uiState: State<PermissionUiState>
-    fun requestPermission(onGranted: () -> Unit)
+    /**
+     * Runs [onGranted] once the permission is granted, asking the system first if needed.
+     * A denial opens the rationale or settings dialog unless [quiet] is true; use [quiet] for
+     * requests the app makes on its own, so only a user tap leads to a dialog.
+     */
+    fun requestPermission(quiet: Boolean = false, onGranted: () -> Unit)
     fun retry()
     fun dismissRationale()
     fun dismissSettings()
@@ -38,6 +43,7 @@ fun rememberPermissionController(
     val pendingAction = remember { mutableStateOf<(() -> Unit)?>(null) }
     val lastAction = remember { mutableStateOf<(() -> Unit)?>(null) }
     val lastHandledDenial = remember { mutableStateOf(0) }
+    val quietRequest = remember { mutableStateOf(false) }
 
     val permissionState = rememberPermissionState(permission) { granted ->
         if (granted) {
@@ -56,7 +62,9 @@ fun rememberPermissionController(
         }
     }
 
-    LaunchedEffect(permissionState.status) {
+    // Keyed on denialCount too: a repeat denial (iOS after the first "Don't Allow", Android after
+    // "Don't ask again") returns at once without changing the status, and must still show a dialog.
+    LaunchedEffect(permissionState.status, uiState.value.denialCount) {
         val status = permissionState.status
         if (status.isGranted) {
             uiState.value = uiState.value.copy(
@@ -64,6 +72,7 @@ fun rememberPermissionController(
                 showRationale = false,
                 showSettings = false,
             )
+            lastHandledDenial.value = 0
             pendingAction.value?.let { action ->
                 pendingAction.value = null
                 action.invoke()
@@ -73,6 +82,8 @@ fun rememberPermissionController(
 
             val denialCount = uiState.value.denialCount
             if (denialCount == 0 || denialCount == lastHandledDenial.value) return@LaunchedEffect
+            lastHandledDenial.value = denialCount
+            if (quietRequest.value) return@LaunchedEffect
 
             val requiresSettings =
                 isIosDevice || (status as? PermissionStatus.Denied)?.shouldShowRationale != true
@@ -80,7 +91,6 @@ fun rememberPermissionController(
                 showSettings = requiresSettings,
                 showRationale = !requiresSettings,
             )
-            lastHandledDenial.value = denialCount
         }
     }
 
@@ -88,8 +98,9 @@ fun rememberPermissionController(
         object : PermissionController {
             override val uiState: State<PermissionUiState> = uiState
 
-            override fun requestPermission(onGranted: () -> Unit) {
+            override fun requestPermission(quiet: Boolean, onGranted: () -> Unit) {
                 lastAction.value = onGranted
+                quietRequest.value = quiet
                 if (permissionState.status.isGranted) {
                     uiState.value = uiState.value.copy(
                         hasPermission = true,
@@ -113,6 +124,7 @@ fun rememberPermissionController(
                     showRationale = false,
                     showSettings = false,
                 )
+                quietRequest.value = false
                 pendingAction.value = action
                 permissionState.launchPermissionRequest()
             }
@@ -132,6 +144,8 @@ fun rememberPermissionController(
                     denialCount = 0,
                 )
                 lastHandledDenial.value = 0
+                // Runs when the status turns Granted on return from Settings.
+                pendingAction.value = lastAction.value
                 permissionState.openAppSettings()
             }
         }

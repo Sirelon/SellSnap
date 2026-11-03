@@ -19,6 +19,10 @@
     <string name="guest_mode_banner_message">Quer publicar? Precisará de uma conta OLX. Por agora, copie o título, a descrição e o preço abaixo e cole-os no OLX.</string>
     <string name="guest_connect_olx_cta">Ligar o OLX para publicar num toque</string>
     <string name="guest_copy_hint">Toque nos botões de copiar ao lado do título, descrição e preço — e depois cole-os no OLX quando estiver pronto.</string>
+    <string name="guest_open_olx">Abrir o OLX</string>
+    <string name="guest_connect_prompt_title">Publique num toque</string>
+    <string name="guest_connect_prompt_body">Copiou 3 anúncios. Ligue a sua conta OLX e o SellSnap pode publicá-los por si.</string>
+    <string name="guest_connect_prompt_connect">Ligar o OLX</string>
     <string name="generate_ad_guest_connect_hint">Está agora no modo convidado — ligue o OLX a qualquer momento em Perfil para publicar num toque.</string>
     <string name="continue_with_olx">Continuar com o OLX</string>
     <string name="terms_privacy_prefix">Ao continuar, aceita os nossos </string>
@@ -129,6 +133,8 @@
     <!-- Announcements -->
     <string name="announcement_ok">OK</string>
     <string name="announcement_close">Fechar</string>
+    <string name="announcement_open_store">Abrir a loja</string>
+    <string name="announcement_open_link">Abrir a ligação</string>
 
     <!-- Notifications -->
     <string name="notifications_prompt_title">Receba avisos importantes do SellSnap</string>
@@ -255,12 +261,23 @@
     <string name="ad_category_label">Categoria</string>
     <string name="ad_location_label">Localização</string>
     <string name="location_detecting">A localizar…</string>
-    <string name="location_not_available">Não foi possível encontrar a sua localização</string>
+    <string name="location_not_available">Toque para escolher a sua cidade</string>
     <string name="location_rationale_title">Precisamos da sua localização</string>
     <string name="location_rationale_message">Para sugerir a cidade mais próxima para o seu anúncio, precisamos de aceder à sua localização.</string>
     <string name="location_settings_title">Ative a localização nas definições</string>
     <string name="location_settings_message_android">A localização está bloqueada. Abra as definições da app e ative-a para o SellSnap.</string>
-    <string name="location_settings_message_ios">A localização está bloqueada. Vá a Definições → Privacidade → Serviços de Localização e ative o SellSnap.</string>
+    <string name="location_settings_message_ios">A localização está bloqueada. Toque em Abrir definições e depois em Localização → Ao Usar a App.</string>
+    <string name="location_services_off_title">A localização está desativada no seu telemóvel</string>
+    <string name="location_services_off_message_android">Ative a localização nas definições do telemóvel ou pesquise a sua cidade.</string>
+    <string name="location_services_off_message_ios">Ative os Serviços de Localização em Definições → Privacidade e Segurança ou pesquise a sua cidade.</string>
+    <string name="location_picker_title">Onde está a vender?</string>
+    <string name="location_picker_use_current">Usar a minha localização atual</string>
+    <string name="location_picker_search_placeholder">Pesquisar uma cidade</string>
+    <string name="location_picker_no_results">Nenhuma cidade corresponde a “%1$s”</string>
+    <string name="location_picker_search_failed">Não foi possível pesquisar agora.</string>
+    <string name="location_picker_geocoder_unavailable">A pesquisa de cidades não está disponível neste dispositivo. Use antes a sua localização atual.</string>
+    <string name="location_picker_district_title">Escolha a zona: %1$s</string>
+    <string name="got_it">Entendi</string>
 
     <!-- Error Messages -->
     <string name="error_location_fetch_failed">Não foi possível encontrar a sua localização.</string>
@@ -277,10 +294,21 @@
     <string name="error_upload_file_failed">Não foi possível carregar uma das fotos.</string>
     <string name="error_publish_failed">A publicação não foi concluída. Tente novamente.</string>
     <string name="error_generate_ad_failed">Não foi possível gerar o anúncio. Tentar novamente?</string>
+    <string name="error_app_check_failed">Não foi possível verificar esta instalação. Atualize os serviços do Google Play ou instale o SellSnap a partir do Google Play e tente novamente.</string>
     <string name="error_photo_unreadable">Não conseguimos reconhecer o artigo nas suas fotos. Tente tirá-las de novo.</string>
     <string name="error_photo_different_items">Parecem ser artigos diferentes. Remova os que não está a vender.</string>
     <string name="error_regenerate_description_failed">Não foi possível gerar a descrição novamente. Tentar de novo?</string>
     <string name="regenerate_pill_default">Gerar novamente</string>
+    <string name="dictate_pill">Ditar</string>
+    <string name="dictate_pill_listening">A ouvir… toque para parar</string>
+    <string name="error_dictation_permission">Permita o acesso ao microfone para ditar.</string>
+    <string name="error_dictation_failed">Não percebi. Tentar de novo?</string>
+    <string name="polish_pill">Melhorar</string>
+    <string name="polish_sheet_title">O que deve mudar?</string>
+    <string name="polish_sheet_placeholder">ex.: mais curto, mencione a entrega gratuita</string>
+    <string name="polish_sheet_action">Melhorar descrição</string>
+    <string name="error_polish_failed">Não foi possível melhorar a descrição. Tentar de novo?</string>
+    <string name="publish_updating_listing">A atualizar o anúncio…</string>
     <string name="vote_up_label">Útil</string>
     <string name="vote_down_label">Não útil</string>
 
@@ -442,4 +470,34 @@
     <string name="advert_edit_price_label">Preço</string>
     <string name="advert_edit_save">Enviar para o OLX</string>
     <string name="advert_edit_load_failed">Não foi possível carregar este anúncio do OLX.</string>
+
+    <!-- Buyer messages -->
+    <string name="messages_screen_title">Mensagens</string>
+    <string name="messages_buyer_label">Comprador</string>
+    <string name="messages_empty_title">Ainda sem mensagens</string>
+    <string name="messages_empty_description">Ninguém escreveu sobre os seus anúncios ainda. As mensagens dos compradores vão aparecer aqui.</string>
+    <string name="messages_connect_title">Ligue o OLX para ver as suas mensagens</string>
+    <string name="messages_connect_description">As mensagens dos compradores sobre os seus anúncios no OLX vão aparecer aqui depois de ligar uma conta.</string>
+    <string name="messages_load_failed">Não foi possível carregar as mensagens.</string>
+    <string name="messages_listing_fallback">O seu anúncio</string>
+    <string name="messages_listing_deleted">Anúncio eliminado</string>
+    <string name="messages_thread_started">Iniciada %1$s</string>
+    <string name="messages_mark_as_read">Marcar como lida</string>
+    <string name="messages_select_conversation">Escolha uma conversa para a ler aqui</string>
+    <string name="time_just_now">agora mesmo</string>
+    <plurals name="time_minutes_ago">
+        <item quantity="one">há %1$d min</item>
+        <item quantity="other">há %1$d min</item>
+    </plurals>
+    <plurals name="time_hours_ago">
+        <item quantity="one">há %1$d h</item>
+        <item quantity="other">há %1$d h</item>
+    </plurals>
+    <string name="time_yesterday">ontem</string>
+    <plurals name="time_days_ago">
+        <item quantity="one">há %1$d dia</item>
+        <item quantity="other">há %1$d dias</item>
+    </plurals>
+    <string name="conversation_load_failed">Não foi possível carregar esta conversa.</string>
+    <string name="conversation_reply_on_olx">Responder no OLX</string>
 </resources>

@@ -9,12 +9,26 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
+import androidx.compose.material3.adaptive.layout.calculatePaneScaffoldDirective
+import androidx.compose.material3.adaptive.navigation.BackNavigationBehavior
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.material3.LocalMinimumInteractiveComponentSize
+import androidx.compose.material3.VerticalDragHandle
+import androidx.compose.material3.adaptive.layout.PaneExpansionAnchor
+import androidx.compose.material3.adaptive.layout.rememberPaneExpansionState
+import androidx.compose.material3.adaptive.layout.PaneExpansionState
+import androidx.compose.material3.adaptive.layout.ThreePaneScaffoldScope
+import androidx.compose.material3.adaptive.navigation3.ListDetailSceneStrategy
+import androidx.compose.material3.adaptive.navigation3.rememberListDetailSceneStrategy
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffoldDefaults
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
@@ -26,10 +40,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavMetadataKey
 import androidx.navigation3.runtime.entryProvider
@@ -48,6 +66,7 @@ import com.mohamedrejeb.calf.picker.coil.KmpFileFetcher
 import com.sirelon.sellsnap.analytics.Analytics
 import com.sirelon.sellsnap.analytics.AnalyticsEvents
 import com.sirelon.sellsnap.analytics.TrackScreenViews
+import com.sirelon.sellsnap.analytics.reportShownError
 import com.sirelon.sellsnap.designsystem.AppTheme
 import com.sirelon.sellsnap.designsystem.ObserveAsEvents
 import com.sirelon.sellsnap.designsystem.screens.ImagesPreview
@@ -73,13 +92,20 @@ import com.sirelon.sellsnap.features.seller.ad.preview_ad.ui.PublishingScreen
 import com.sirelon.sellsnap.features.seller.ad.publish_success.PublishSuccessScreen
 import com.sirelon.sellsnap.features.seller.ad.screenshotMode
 import com.sirelon.sellsnap.features.seller.auth.data._currentOlxCountry
+import com.sirelon.sellsnap.features.seller.auth.domain.shownErrorCause
 import com.sirelon.sellsnap.features.seller.auth.presentation.OlxAuthDismissReason
 import com.sirelon.sellsnap.features.seller.auth.presentation.OlxCountryPickerScreenRoute
 import com.sirelon.sellsnap.features.seller.auth.presentation.SellerLandingScreenRoute
 import com.sirelon.sellsnap.features.seller.auth.presentation.rememberOlxAuthLauncher
 import com.sirelon.sellsnap.features.seller.categories.domain.OlxCategory
 import com.sirelon.sellsnap.features.seller.categories.presentation.CategoryPickerSheet
+import com.sirelon.sellsnap.features.seller.location.OlxLocation
+import com.sirelon.sellsnap.features.seller.location.presentation.LocationPickerSheet
 import com.sirelon.sellsnap.features.seller.drafts.ui.DraftsScreenRoute
+import com.sirelon.sellsnap.features.seller.messages.presentation.MessagesBadgeViewModel
+import com.sirelon.sellsnap.features.seller.messages.ui.ConversationPlaceholder
+import com.sirelon.sellsnap.features.seller.messages.ui.ConversationScreenRoute
+import com.sirelon.sellsnap.features.seller.messages.ui.MessagesScreenRoute
 import com.sirelon.sellsnap.features.seller.my_ads.ui.MyAdvertsScreenRoute
 import com.sirelon.sellsnap.features.seller.onboarding.OnboardingScreen
 import com.sirelon.sellsnap.features.seller.profile.data.SellerAccountRepository
@@ -95,10 +121,13 @@ import com.sirelon.sellsnap.features.whatsnew.presentation.WhatsNewViewModel
 import com.sirelon.sellsnap.features.whatsnew.ui.AllReleasesScreenRoute
 import com.sirelon.sellsnap.features.whatsnew.ui.WhatsNewPromptSheet
 import com.sirelon.sellsnap.generated.resources.Res
+import com.sirelon.sellsnap.generated.resources.generic_error_retry
 import com.sirelon.sellsnap.generated.resources.guest_connect_olx_cta
 import com.sirelon.sellsnap.generated.resources.ic_camera
+import com.sirelon.sellsnap.generated.resources.ic_message_circle
 import com.sirelon.sellsnap.generated.resources.ic_tag
 import com.sirelon.sellsnap.generated.resources.ic_user
+import com.sirelon.sellsnap.generated.resources.messages_screen_title
 import com.sirelon.sellsnap.generated.resources.nav_my_ads
 import com.sirelon.sellsnap.generated.resources.new_listing
 import com.sirelon.sellsnap.generated.resources.profile_screen_title
@@ -112,6 +141,7 @@ import com.sirelon.sellsnap.navigation.rememberSharedViewModelStoreNavEntryDecor
 import com.sirelon.sellsnap.platform.openUrl
 import com.sirelon.sellsnap.startup.AppNavigationViewModel
 import com.sirelon.sellsnap.startup.AppThemeRepository
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.StringResource
@@ -159,20 +189,17 @@ fun App() {
             }
             var isDeletingAccountData by remember { mutableStateOf(false) }
             var isDisconnectingAccount by remember { mutableStateOf(false) }
+            var deleteAccountDataError by remember { mutableStateOf<String?>(null) }
+            var disconnectAccountError by remember { mutableStateOf<String?>(null) }
+            val genericError = stringResource(Res.string.generic_error_retry)
             val uriHandler = LocalUriHandler.current
-            // SIR-83: add-account/reconnect must force a fresh OLX login (D5). This sheet-level
-            // launcher is independent of the one the Profile entry threads into ProfileScreenRoute
-            // for its own inline Reconnect action - both are stateless wrappers around the same
-            // platform mechanism, so having two instances is harmless (see OlxExternalAuthLauncher).
-            val addAccountAuthLauncher = rememberOlxAuthLauncher(
-                forceReauth = true,
-                onDismissed = logAuthAbandoned,
-            )
+            val focusManager = LocalFocusManager.current
+            // SIR-83: add-account/reconnect must force a fresh OLX login (D5). The Profile entry
+            // under the sheets starts it (ProfileViewModel owns the request, the launcher and the
+            // error message), this flag only hands the request over once a sheet has closed.
+            var addOrReconnectRequested by remember { mutableStateOf(false) }
             fun startAddOrReconnectAuthorization() {
-                coroutineScope.launch {
-                    runCatching { accountRepository.createAuthorizationRequest(forceReauth = true) }
-                        .onSuccess { request -> addAccountAuthLauncher(request.url) }
-                }
+                addOrReconnectRequested = true
             }
 
             // Seller-flow state, scoped for as long as the App composable is alive (it's never
@@ -183,7 +210,11 @@ fun App() {
             val announcementViewModel: AnnouncementViewModel = koinViewModel()
             val notificationsPromptViewModel: NotificationsPromptViewModel = koinViewModel()
             val reviewPromptCoordinator: ReviewPromptCoordinator = koinInject()
+            val messagesBadgeViewModel: MessagesBadgeViewModel = koinViewModel()
+            val unreadMessages by messagesBadgeViewModel.unreadCount.collectAsStateWithLifecycle()
+            LifecycleEventEffect(Lifecycle.Event.ON_START) { messagesBadgeViewModel.refresh() }
             var pendingCategory by remember { mutableStateOf<OlxCategory?>(null) }
+            var pendingLocation by remember { mutableStateOf<OlxLocation?>(null) }
             var isGeneratingAd by remember { mutableStateOf(false) }
             var isPreviewPublishing by remember { mutableStateOf(false) }
             val authLauncher = rememberOlxAuthLauncher(
@@ -200,6 +231,7 @@ fun App() {
 
             fun leaveSellerFlowToLanding() {
                 pendingCategory = null
+                pendingLocation = null
                 navVm.replaceWith(AppKey.SellerLanding)
             }
 
@@ -211,7 +243,15 @@ fun App() {
             // but still correctly disappears under a genuinely pushed full-screen destination
             // (PreviewAd, ImagesPreview, AllReleases, Drafts, SellerPublishSuccess, ...), where tapping a
             // tab would silently discard whatever's in progress there without its own confirm step.
-            val selectedRootTab = navVm.backStack.lastOrNull { !it.isOverlayEntry() }.toSellerRootTab()
+            // Messages shows its conversation beside the list when the window has room for two
+            // panes; the bar stays then, because the Messages tab is still what is on screen.
+            val windowAdaptiveInfo = currentWindowAdaptiveInfoV2()
+            val paneDirective = remember(windowAdaptiveInfo) {
+                // No gap between the panes, as in the Nav3 Material list-detail recipe (b/418201867).
+                calculatePaneScaffoldDirective(windowAdaptiveInfo).copy(horizontalPartitionSpacerSize = 0.dp)
+            }
+            val isTwoPane = paneDirective.maxHorizontalPartitions > 1
+            val selectedRootTab = navVm.backStack.lastOrNull { !it.isOverlayEntry() }.toSellerRootTab(isTwoPane)
 
             // Keyed on whether we're in the seller flow at all (not on the top entry, and not on
             // the specific tab) so a sheet like WhatsNewPrompt pushing/popping on top - which
@@ -237,6 +277,7 @@ fun App() {
                 AnnouncementDialog(
                     announcement = announcement,
                     onDismiss = announcementViewModel::dismiss,
+                    onLinkClick = announcementViewModel::openLink,
                 )
             }
             fun switchRootTab(tab: SellerRootTab) {
@@ -262,10 +303,44 @@ fun App() {
                 NavigationSuiteType.None
             }
 
-            val sceneStrategies = remember {
+            // PopLatest: back from an open conversation closes it. The default pops until the
+            // panes change, and the list with a placeholder shows the same two panes, so back
+            // would leave the app instead.
+            // The stock Material drag handle lets the seller resize the two panes.
+            val paneDragHandle: @Composable ThreePaneScaffoldScope.(PaneExpansionState) -> Unit =
+                remember {
+                    { state ->
+                        val interactionSource = remember { MutableInteractionSource() }
+                        VerticalDragHandle(
+                            modifier = Modifier.paneExpansionDraggable(
+                                state = state,
+                                minTouchTargetSize = LocalMinimumInteractiveComponentSize.current,
+                                interactionSource = interactionSource,
+                            ),
+                            interactionSource = interactionSource,
+                        )
+                    }
+                }
+            // A drag snaps to one of these on release, so neither pane stays too narrow to read:
+            // the list keeps room for its thumbnail and title, the conversation for its header.
+            val paneExpansionState = rememberPaneExpansionState(
+                anchors = listOf(
+                    PaneExpansionAnchor.Offset.fromStart(320.dp),
+                    PaneExpansionAnchor.Proportion(0.5f),
+                    PaneExpansionAnchor.Offset.fromEnd(360.dp),
+                ),
+            )
+            val listDetailStrategy = rememberListDetailSceneStrategy<AppKey>(
+                backNavigationBehavior = BackNavigationBehavior.PopLatest,
+                directive = paneDirective,
+                paneExpansionDragHandle = paneDragHandle,
+                paneExpansionState = paneExpansionState,
+            )
+            val sceneStrategies = remember(listDetailStrategy) {
                 listOf(
                     BottomSheetSceneStrategy<AppKey>(),
                     DialogSceneStrategy<AppKey>(),
+                    listDetailStrategy,
                     SinglePaneSceneStrategy<AppKey>(),
                 )
             }
@@ -278,18 +353,29 @@ fun App() {
                         item(
                             selected = selectedRootTab == tab,
                             onClick = { switchRootTab(tab) },
+                            modifier = if (tab == SellerRootTab.Messages) Modifier.testTag("messages_tab") else Modifier,
                             icon = {
-                                val icon = tab.icon
-                                if (icon != null) {
-                                    Icon(
-                                        painter = painterResource(icon),
-                                        contentDescription = null,
-                                    )
-                                } else {
-                                    Icon(
-                                        imageVector = Icons.Default.Settings,
-                                        contentDescription = null,
-                                    )
+                                BadgedBox(
+                                    badge = {
+                                        if (tab == SellerRootTab.Messages && unreadMessages > 0) {
+                                            Badge(modifier = Modifier.testTag("messages_tab_badge")) {
+                                                Text(if (unreadMessages > 99) "99+" else unreadMessages.toString())
+                                            }
+                                        }
+                                    },
+                                ) {
+                                    val icon = tab.icon
+                                    if (icon != null) {
+                                        Icon(
+                                            painter = painterResource(icon),
+                                            contentDescription = null,
+                                        )
+                                    } else {
+                                        Icon(
+                                            imageVector = Icons.Default.Settings,
+                                            contentDescription = null,
+                                        )
+                                    }
                                 }
                             },
                             label = {
@@ -313,11 +399,23 @@ fun App() {
                             isDeletingAccountData -> Unit
                             isPreviewPublishing -> Unit
                             top is AppKey.PreviewAd -> {
+                                // Same Compose iOS text-field crash as PreviewAdContentRoute's dismissKeyboard.
+                                focusManager.clearFocus(force = true)
                                 if (screenshotMode) {
                                     navVm.popDestination()
                                 } else {
                                     navVm.backStack.add(AppKey.PreviewBackInfo)
                                 }
+                            }
+
+                            top is AppKey.PreviewBackInfo -> {
+                                // Swiped away or system back: neither button was pressed. Both
+                                // arrive here - the sheet's onDismissRequest is this onBack.
+                                analytics.logEvent(
+                                    AnalyticsEvents.AD_DRAFT_EXIT_CHOICE,
+                                    mapOf("choice" to "dismissed"),
+                                )
+                                navVm.popDestination()
                             }
 
                             else -> navVm.popDestination()
@@ -404,6 +502,58 @@ fun App() {
                                     // Reuses Profile's existing reconnect route rather than a
                                     // second OAuth entry point - same pattern as
                                     // PublishNeedsReconnect below.
+                                    navVm.backStack.add(AppKey.Profile(reason = connectOlxReason, source = "my_ads_reconnect"))
+                                },
+                            )
+                        }
+
+                        entry<AppKey.Messages>(
+                            metadata = topLevelMetadata +
+                                ListDetailSceneStrategy.listPane(detailPlaceholder = { ConversationPlaceholder() }),
+                        ) {
+                            MessagesScreenRoute(
+                                onOpenThread = { thread ->
+                                    val conversation = AppKey.Conversation(
+                                        threadId = thread.threadId,
+                                        advertId = thread.advertId,
+                                        title = thread.title,
+                                        imageUrl = thread.imageUrl,
+                                        status = thread.status,
+                                        isListingDeleted = thread.isListingDeleted,
+                                        localIndex = thread.localIndex,
+                                        hadUnread = thread.hadUnread,
+                                    )
+                                    // One conversation at a time: another thread replaces the open
+                                    // one (beside the list), and a double tap does not stack two.
+                                    when (navVm.backStack.lastOrNull()) {
+                                        conversation -> Unit
+                                        is AppKey.Conversation -> navVm.backStack[navVm.backStack.lastIndex] = conversation
+                                        else -> navVm.backStack.add(conversation)
+                                    }
+                                },
+                                selectedThreadId = (navVm.backStack.lastOrNull() as? AppKey.Conversation)?.threadId,
+                                onConnectOlxClick = {
+                                    pendingCategory = null
+                                    navVm.exitGuestModeToLanding()
+                                },
+                                onReconnectClick = {
+                                    navVm.backStack.add(AppKey.Profile(reason = connectOlxReason))
+                                },
+                            )
+                        }
+
+                        entry<AppKey.Conversation>(metadata = ListDetailSceneStrategy.detailPane()) { key ->
+                            ConversationScreenRoute(
+                                localIndex = key.localIndex,
+                                threadId = key.threadId,
+                                advertId = key.advertId,
+                                title = key.title,
+                                imageUrl = key.imageUrl,
+                                status = key.status,
+                                isListingDeleted = key.isListingDeleted,
+                                hadUnread = key.hadUnread,
+                                onBack = { navVm.popDestination() },
+                                onReconnectClick = {
                                     navVm.backStack.add(AppKey.Profile(reason = connectOlxReason))
                                 },
                             )
@@ -447,7 +597,10 @@ fun App() {
                                         snackbarHostState.showSnackbar(effect.message)
 
                                     is PreviewAdContract.PreviewAdEffect.NavigateToProfile ->
-                                        navVm.backStack.add(AppKey.Profile(effect.reason))
+                                        navVm.backStack.add(AppKey.Profile(reason = effect.reason, source = "publish_contact"))
+
+                                    is PreviewAdContract.PreviewAdEffect.PickDistrict ->
+                                        navVm.backStack.add(AppKey.SelectLocation(districtsOf = effect.city))
 
                                     PreviewAdContract.PreviewAdEffect.RequestStoreReview ->
                                         requestReview()
@@ -465,7 +618,7 @@ fun App() {
                                             duration = SnackbarDuration.Long,
                                         )
                                         if (result == SnackbarResult.ActionPerformed) {
-                                            navVm.backStack.add(AppKey.Profile(effect.message))
+                                            navVm.backStack.add(AppKey.Profile(reason = effect.message, source = "publish_reconnect"))
                                         }
                                     }
                                 }
@@ -485,8 +638,11 @@ fun App() {
                                     onChangeCategoryClick = { navVm.backStack.add(AppKey.SelectCategory) },
                                     pendingCategory = pendingCategory,
                                     onCategoryConsumed = { pendingCategory = null },
-                                    onConnectOlxClick = {
-                                        navVm.backStack.add(AppKey.Profile(reason = connectOlxReason))
+                                    onChangeLocationClick = { navVm.backStack.add(AppKey.SelectLocation()) },
+                                    pendingLocation = pendingLocation,
+                                    onLocationConsumed = { pendingLocation = null },
+                                    onConnectOlxClick = { source ->
+                                        navVm.backStack.add(AppKey.Profile(reason = connectOlxReason, source = source))
                                     },
                                     onPublishConfirmationRequested = {
                                         if (navVm.backStack.lastOrNull() !is AppKey.PreviewPublishConfirm) {
@@ -627,6 +783,18 @@ fun App() {
                             )
                         }
 
+                        entry<AppKey.SelectLocation>(
+                            metadata = BottomSheetSceneStrategy.bottomSheet(),
+                        ) { key ->
+                            LocationPickerSheet(
+                                districtsOf = key.districtsOf,
+                                onLocationSelected = { location ->
+                                    navVm.popDestination()
+                                    pendingLocation = location
+                                },
+                            )
+                        }
+
                         entry<AppKey.Profile>(metadata = topLevelMetadata) { destination ->
                             ProfileScreenRoute(
                                 onBack = if (destination.reason == null) {
@@ -643,6 +811,12 @@ fun App() {
                                     // instead.
                                     val countryCode = _currentOlxCountry.code
                                     if (accountRepository.remainingCooldownSeconds(null, countryCode) > 0) {
+                                        // The failure that started the cooldown already recorded its non-fatal.
+                                        analytics.reportShownError(
+                                            screen = "profile",
+                                            reason = "auth_cooldown",
+                                            recordNonFatal = false,
+                                        )
                                         navVm.navigateTo(AppKey.OlxAccountAuthFailed)
                                     } else {
                                         navVm.navigateTo(AppKey.AddOlxAccountConfirm)
@@ -654,7 +828,13 @@ fun App() {
                                 onDisconnectRequested = { localIndex ->
                                     navVm.navigateTo(AppKey.DisconnectOlxAccountConfirm(localIndex))
                                 },
+                                onChangeLocationClick = { navVm.backStack.add(AppKey.SelectLocation()) },
+                                pendingLocation = pendingLocation,
+                                onLocationConsumed = { pendingLocation = null },
+                                addOrReconnectRequested = addOrReconnectRequested,
+                                onAddOrReconnectConsumed = { addOrReconnectRequested = false },
                                 reason = destination.reason,
+                                source = destination.source,
                             )
                         }
 
@@ -734,17 +914,24 @@ fun App() {
                                     if (!isDeletingAccountData) {
                                         coroutineScope.launch {
                                             isDeletingAccountData = true
-                                            runCatching {
+                                            deleteAccountDataError = null
+                                            try {
                                                 accountRepository.deleteSellSnapAccountData()
-                                            }.onSuccess {
                                                 // Drop cached copies of the user's listing photos too.
                                                 SingletonImageLoader.get(platformContext).apply {
                                                     memoryCache?.clear()
                                                     diskCache?.clear()
                                                 }
                                                 leaveSellerFlowToLanding()
-                                            }.onFailure { error ->
-                                                error.printStackTrace()
+                                            } catch (e: CancellationException) {
+                                                throw e
+                                            } catch (e: Exception) {
+                                                analytics.reportShownError(
+                                                    screen = "delete_account_data",
+                                                    reason = "delete_failed:${e.shownErrorCause}",
+                                                    throwable = e,
+                                                )
+                                                deleteAccountDataError = genericError
                                             }
                                             isDeletingAccountData = false
                                         }
@@ -752,10 +939,12 @@ fun App() {
                                 },
                                 onDismiss = {
                                     if (!isDeletingAccountData) {
+                                        deleteAccountDataError = null
                                         navVm.popDestination()
                                     }
                                 },
                                 isDeleting = isDeletingAccountData,
+                                errorMessage = deleteAccountDataError,
                             )
                         }
 
@@ -810,18 +999,29 @@ fun App() {
                             DisconnectOlxAccountConfirmSheet(
                                 accountName = account?.profile?.name,
                                 isDisconnecting = isDisconnectingAccount,
+                                errorMessage = disconnectAccountError,
                                 onConfirm = {
                                     if (!isDisconnectingAccount) {
                                         coroutineScope.launch {
                                             isDisconnectingAccount = true
-                                            runCatching {
+                                            disconnectAccountError = null
+                                            try {
                                                 accountRepository.disconnectAccount(
                                                     countryCode = account?.countryCode ?: _currentOlxCountry.code,
                                                     localIndex = destination.localIndex,
                                                 )
+                                                navVm.popDestination()
+                                            } catch (e: CancellationException) {
+                                                throw e
+                                            } catch (e: Exception) {
+                                                analytics.reportShownError(
+                                                    screen = "disconnect_account",
+                                                    reason = "disconnect_failed:${e.shownErrorCause}",
+                                                    throwable = e,
+                                                )
+                                                disconnectAccountError = genericError
                                             }
                                             isDisconnectingAccount = false
-                                            navVm.popDestination()
                                         }
                                     }
                                 },
@@ -835,6 +1035,7 @@ fun App() {
                                 },
                                 onDismiss = {
                                     if (!isDisconnectingAccount) {
+                                        disconnectAccountError = null
                                         navVm.popDestination()
                                     }
                                 },
@@ -857,11 +1058,12 @@ private val AdvertisementWithAttributes.previewViewModelKey: String
 private object TopLevelTransitionKey : NavMetadataKey<Boolean>
 private val topLevelMetadata = metadata { put(TopLevelTransitionKey, true) }
 
+// The first entry, so that Messages with a conversation beside it counts as its tab.
 private fun isTopLevelTransition(
     initial: Scene<AppKey>,
     target: Scene<AppKey>,
-): Boolean = initial.metadata[TopLevelTransitionKey] == true &&
-    target.metadata[TopLevelTransitionKey] == true
+): Boolean = initial.entries.first().metadata[TopLevelTransitionKey] == true &&
+    target.entries.first().metadata[TopLevelTransitionKey] == true
 
 private enum class SellerRootTab(
     val destination: AppKey,
@@ -870,13 +1072,17 @@ private enum class SellerRootTab(
 ) {
     GenerateAd(AppKey.GenerateAd, Res.drawable.ic_camera, Res.string.new_listing),
     MyAdverts(AppKey.MyAdverts, Res.drawable.ic_tag, Res.string.nav_my_ads),
+    Messages(AppKey.Messages, Res.drawable.ic_message_circle, Res.string.messages_screen_title),
     Profile(AppKey.Profile(), Res.drawable.ic_user, Res.string.profile_screen_title),
     Settings(AppKey.Settings, icon = null, Res.string.settings_screen_title),
 }
 
-private fun AppKey?.toSellerRootTab(): SellerRootTab? = when (this) {
+/** [isTwoPane]: a conversation is shown beside the Messages list rather than over it. */
+private fun AppKey?.toSellerRootTab(isTwoPane: Boolean): SellerRootTab? = when (this) {
     AppKey.GenerateAd -> SellerRootTab.GenerateAd
     AppKey.MyAdverts -> SellerRootTab.MyAdverts
+    AppKey.Messages -> SellerRootTab.Messages
+    is AppKey.Conversation -> if (isTwoPane) SellerRootTab.Messages else null
     is AppKey.Profile -> if (reason == null) SellerRootTab.Profile else null
     AppKey.Settings -> SellerRootTab.Settings
     else -> null
@@ -892,6 +1098,7 @@ private fun AppKey.isOverlayEntry(): Boolean = when (this) {
     AppKey.OlxAccountAuthFailed,
     is AppKey.DisconnectOlxAccountConfirm,
     AppKey.SelectCategory,
+    is AppKey.SelectLocation,
     AppKey.WhatsNewPrompt,
     AppKey.NotificationsPrompt,
     AppKey.PreviewPublishConfirm,

@@ -153,3 +153,15 @@ val OlxApiError.analyticsReason: String
         is OlxApiError.ValidationError -> "validation_error"
         is OlxApiError.Unknown -> "unknown"
     }
+
+/**
+ * The cause part of an `error_shown` reason for a call that may have reached OLX: the field OLX
+ * rejected for a validation refusal (`validation:district_id`), [analyticsReason] for any other
+ * OLX answer, and the exception class when OLX never answered at all.
+ */
+val Throwable.shownErrorCause: String
+    get() = when (val olxError = (this as? OlxApiException)?.error) {
+        is OlxApiError.ValidationError -> "validation:${olxError.field}"
+        null -> this::class.simpleName ?: "unknown"
+        else -> olxError.analyticsReason
+    }

@@ -2,12 +2,20 @@ package com.sirelon.sellsnap.features.seller.ad.generate_ad
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
+import com.aallam.openai.api.exception.OpenAIAPIException
+import com.aallam.openai.api.exception.OpenAIHttpException
 import com.aallam.openai.api.exception.OpenAITimeoutException
 import com.mohamedrejeb.calf.io.KmpFile
 import com.mohamedrejeb.calf.io.getName
 import com.mohamedrejeb.calf.io.readByteArray
 import com.sirelon.sellsnap.analytics.Analytics
 import com.sirelon.sellsnap.analytics.AnalyticsEvents
+import com.sirelon.sellsnap.features.media.SpeechToTextError
+import com.sirelon.sellsnap.features.media.analyticsCode
+import com.sirelon.sellsnap.features.media.appendDictatedText
+import com.sirelon.sellsnap.features.media.isDefect
+import com.sirelon.sellsnap.features.media.messageRes
+import com.sirelon.sellsnap.analytics.reportShownError
 import com.sirelon.sellsnap.features.common.presentation.BaseViewModel
 import com.sirelon.sellsnap.features.media.SharedImagesBridge
 import com.sirelon.sellsnap.features.media.ui.MAX_PHOTOS
@@ -40,6 +48,7 @@ import com.sirelon.sellsnap.features.seller.openai.OpenAIClient
 import com.sirelon.sellsnap.features.seller.openai.UnusablePhotoReason
 import com.sirelon.sellsnap.generated.resources.Res
 import com.sirelon.sellsnap.generated.resources.error_category_not_supported
+import com.sirelon.sellsnap.generated.resources.error_app_check_failed
 import com.sirelon.sellsnap.generated.resources.error_generate_ad_failed
 import com.sirelon.sellsnap.generated.resources.error_photo_different_items
 import com.sirelon.sellsnap.generated.resources.error_photo_unreadable
@@ -71,11 +80,13 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.getString
+import com.sirelon.sellsnap.platform.PlatformTargets
 
 private const val GuestProcessingStepCount = 3
 private const val AuthenticatedProcessingStepCount = 5
 private const val GenerateAdSavedStateKey = "generate_ad_saved_state"
 private const val OpenAIRequestFailedPrefix = "OpenAI request failed:"
+private const val AnalyticsScreenCode = "generate_ad"
 
 /**
  * How long the model gets to answer before the generation is called off.
@@ -91,6 +102,10 @@ private val AdGenerationTimeout = 2.minutes
  * which [kotlinx.coroutines.flow.catch] would pass straight through as a cancellation rather than
  * a failure the seller can be told about and retry. */
 internal class AdGenerationTimeoutException : Exception("Ad generation exceeded $AdGenerationTimeout")
+
+/** A photo upload failed during generation. [GenerateAdViewModel.handleUploadUpdate] has already shown
+ * and reported it, so the generation failure path only ends the run and adds nothing for the seller. */
+internal class PhotoUploadFailedException(message: String) : Exception(message)
 
 class GenerateAdViewModel(
     private val mediaUploadHelper: MediaUploadHelper,
@@ -178,6 +193,25 @@ class GenerateAdViewModel(
                 }
             }
 
+            is GenerateAdContract.GenerateAdEvent.PromptDictated -> {
+                setState {
+                    it.copy(
+                        prompt = appendDictatedText(it.prompt, event.text).take(MAX_PROMPT_CHARS),
+                        errorMessage = null,
+                    )
+                }
+                analytics.logEvent(AnalyticsEvents.AD_TEXT_DICTATED, mapOf("field" to "ai_hint"))
+            }
+
+            is GenerateAdContract.GenerateAdEvent.DictationFailed -> {
+                val error = event.error
+                reportShownError(reason = "dictation_${error.analyticsCode}", recordNonFatal = error.isDefect)
+                // An unsupported language hides the mic instead, which says enough.
+                if (error != SpeechToTextError.LanguageUnsupported) {
+                    viewModelScope.launch { showError(getString(error.messageRes)) }
+                }
+            }
+
             is GenerateAdContract.GenerateAdEvent.Submit -> {
                 // Synchronous, ahead of submit()'s first suspension point (currentSession()):
                 // a double-tap that lands before isLoading would otherwise flip true starts a
@@ -259,7 +293,7 @@ class GenerateAdViewModel(
                 photoCount = currentState().uploads.size
                 analytics.logEvent(
                     AnalyticsEvents.AD_GENERATION_STARTED,
-                    mapOf("is_guest" to isGuest),
+                    mapOf("is_guest" to isGuest, "generation_id" to generationSessionId),
                 )
                 setState {
                     it.copy(
@@ -332,6 +366,7 @@ class GenerateAdViewModel(
                             sellerPrompt = state.value.prompt,
                             generationSessionId = generationSessionId,
                             lastAttemptId = generationAttemptId,
+                            conversationResponseId = analysis.responseId.id,
                         )
                     ).onEach {
                         setState { it.copy(completedSteps = GuestProcessingStepCount) }
@@ -362,6 +397,7 @@ class GenerateAdViewModel(
                                 sellerPrompt = state.value.prompt,
                                 generationSessionId = generationSessionId,
                                 lastAttemptId = generationAttemptId,
+                                conversationResponseId = analysis.responseId.id,
                             )
                         }
                 }
@@ -373,7 +409,7 @@ class GenerateAdViewModel(
                 analytics.logEvent(
                     AnalyticsEvents.AD_GENERATION_SUCCEEDED,
                     buildGenerationStageParams(startedAt.elapsedNow().inWholeMilliseconds, photoCount, uploadMs, uploadBytes, modelMs, attributesMs) +
-                        mapOf("retry_count" to retryCount),
+                        mapOf("retry_count" to retryCount, "is_guest" to isGuest, "generation_id" to generationSessionId),
                 )
                 val nowEpochSeconds = Clock.System.now().toEpochMilliseconds() / 1000
                 draftsRepository.upsert(
@@ -389,22 +425,31 @@ class GenerateAdViewModel(
                 postEffect(GenerateAdContract.GenerateAdEffect.OpenAdPreview(ad = ad))
             }
             .catch { error ->
-                val message = if (error is UnsupportedOlxCategoryException) {
-                    getString(Res.string.error_category_not_supported)
-                } else {
-                    error.toGenerateAdErrorMessage(
+                // 401 after the client already retried once with a fresh App Check token: the
+                // device cannot be verified. Android only - the copy names Google Play services,
+                // and iOS App Check has no remedy a seller can apply.
+                val appCheckRejected = error is OpenAIAPIException && error.statusCode == 401 &&
+                    PlatformTargets.isAndroid()
+                val message = when {
+                    error is PhotoUploadFailedException -> null
+                    error is UnsupportedOlxCategoryException -> getString(Res.string.error_category_not_supported)
+                    appCheckRejected -> getString(Res.string.error_app_check_failed)
+                    else -> error.toGenerateAdErrorMessage(
                         defaultMessage = getString(Res.string.error_generate_ad_failed),
                     )
                 }
                 outcomeLogged = true
-                analytics.recordException(error, AnalyticsEvents.AD_GENERATION_FAILED)
+                val failureReason = error.toFailureReason()
                 analytics.logEvent(
                     AnalyticsEvents.AD_GENERATION_FAILED,
                     buildGenerationStageParams(startedAt.elapsedNow().inWholeMilliseconds, photoCount, uploadMs, uploadBytes, modelMs, attributesMs) +
-                        mapOf("reason" to error.toFailureReason(), "retry_count" to retryCount),
+                        mapOf("reason" to failureReason, "retry_count" to retryCount, "is_guest" to isGuest, "generation_id" to generationSessionId),
                 )
                 setState { it.copy(isLoading = false) }
-                showError(message)
+                if (message != null) {
+                    reportShownError(reason = "generation_failed:$failureReason", throwable = error)
+                    showError(message)
+                }
             }
             .onCompletion {
                 if (!outcomeLogged) {
@@ -417,6 +462,7 @@ class GenerateAdViewModel(
                             mapOf(
                                 "completed_steps" to currentState().completedSteps,
                                 "trigger" to (cancelTrigger ?: "left"),
+                                "generation_id" to generationSessionId,
                             ),
                     )
                 }
@@ -470,8 +516,8 @@ class GenerateAdViewModel(
                 .mapNotNull { update ->
                     when (update) {
                         is MediaUploadUpdate.Success -> update.file to update.uploadedFile
-                        is MediaUploadUpdate.Failure -> throw IllegalStateException(update.message)
-                        is MediaUploadUpdate.Error -> throw IllegalStateException(update.message)
+                        is MediaUploadUpdate.Failure -> throw PhotoUploadFailedException(update.message)
+                        is MediaUploadUpdate.Error -> throw PhotoUploadFailedException(update.message)
                         else -> null
                     }
                 }
@@ -518,6 +564,7 @@ class GenerateAdViewModel(
                     }
                     if (dropped.isNotEmpty()) {
                         draftMediaFileStore.delete(dropped.map { it.photo })
+                        reportShownError(reason = "photo_limit_reached", recordNonFatal = false)
                         postEffect(
                             GenerateAdContract.GenerateAdEffect.ShowMessage(
                                 getString(Res.string.photos_limit_kept_message, MAX_PHOTOS)
@@ -526,6 +573,7 @@ class GenerateAdViewModel(
                     }
                 }
                 .onFailure { error ->
+                    reportShownError(reason = "photos_process_failed", throwable = error)
                     showError(getString(Res.string.error_selected_files_process_failed))
                 }
         }
@@ -564,11 +612,12 @@ class GenerateAdViewModel(
             }
 
             is MediaUploadUpdate.Failure -> {
-                analytics.recordException(update.cause, AnalyticsEvents.PHOTO_UPLOAD_FAILED)
+                reportShownError(reason = "photo_upload_failed", throwable = update.cause)
                 handleUploadFailure(file = update.file, message = getString(Res.string.error_upload_file_failed))
             }
 
             is MediaUploadUpdate.Error -> {
+                reportShownError(reason = "photo_upload_error")
                 showError(getString(Res.string.error_upload_file_failed))
             }
         }
@@ -636,9 +685,19 @@ class GenerateAdViewModel(
         )
         analytics.logEvent(
             AnalyticsEvents.AD_GENERATION_PHOTOS_UNUSABLE,
-            mapOf("reason" to reason.code, "duration_ms" to durationMs),
+            mapOf("reason" to reason.code, "duration_ms" to durationMs, "generation_id" to generationSessionId),
         )
+        reportShownError(reason = "photos_unusable:${reason.code}")
         showError(getString(reason.messageRes))
+    }
+
+    private fun reportShownError(reason: String, throwable: Throwable? = null, recordNonFatal: Boolean = true) {
+        analytics.reportShownError(
+            screen = AnalyticsScreenCode,
+            reason = reason,
+            throwable = throwable,
+            recordNonFatal = recordNonFatal,
+        )
     }
 
     private fun showError(message: String) {
@@ -657,10 +716,14 @@ class GenerateAdViewModel(
 
     private fun Throwable.toFailureReason(): String = when {
         this is UnsupportedOlxCategoryException -> "unsupported_category"
+        this is PhotoUploadFailedException -> "photo_upload"
         this is IncompleteGeneratedAdException -> if (isEmptyOutput) "empty_output" else "incomplete_ad"
         this is AdGenerationTimeoutException || this is OpenAITimeoutException -> "timeout"
         message?.startsWith(OpenAIRequestFailedPrefix) == true -> "openai_error"
-        else -> "other"
+        // 401 from the proxy is a missing or rejected App Check token.
+        this is OpenAIAPIException -> "http_$statusCode"
+        isRetryableModelFailure() || this is OpenAIHttpException -> "network"
+        else -> "other:${this::class.simpleName}"
     }
 
     private fun updateUpload(

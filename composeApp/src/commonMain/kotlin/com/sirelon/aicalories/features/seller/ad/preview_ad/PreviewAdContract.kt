@@ -1,6 +1,7 @@
 package com.sirelon.sellsnap.features.seller.ad.preview_ad
 
 import androidx.compose.runtime.Immutable
+import com.sirelon.sellsnap.features.media.SpeechToTextError
 import com.sirelon.sellsnap.features.seller.ad.publish_success.PublishSuccessData
 import com.sirelon.sellsnap.features.seller.categories.domain.OlxAttribute
 import com.sirelon.sellsnap.features.seller.categories.domain.OlxAttributeValue
@@ -16,6 +17,12 @@ data class OlxAttributeState(
     val selectedValues: List<OlxAttributeValue> = emptyList(),
     val error: ValidationError? = null,
 )
+
+/** The text fields on the preview screen that take dictation (SIR-85). */
+enum class DictationField { Description, PolishInstruction }
+
+/** The parts of the listing a regeneration or a polish can rewrite (SIR-86). */
+enum class ListingField { Title, Description, Price, Category }
 
 /** Display-only projection of the active OLX account for the "Publish to" row (SIR-83 U6/D2).
  * Deliberately not the internal [com.sirelon.sellsnap.features.seller.auth.data.OlxAccountRecord]
@@ -72,6 +79,13 @@ interface PreviewAdContract {
         val attributeItems: List<OlxAttributeState> = emptyList(),
         val attributesLoadState: AttributesLoadState = AttributesLoadState.Loading,
         val isGuest: Boolean = false,
+        // Random id minted per generation (also the draft's key); on the copy events so they join
+        // the generation's own events in BigQuery.
+        val generationId: String = "",
+        // Guest-only extras on the preview: the market's website for pasting by hand, and the
+        // one-time "connect OLX" sheet after the third copied listing.
+        val openOlxUrl: String = "",
+        val showGuestConnectPrompt: Boolean = false,
         // SIR-83: the account new listings will publish to. Shown only when there is a real
         // decision to make - i.e. screenshotMode (placeholder identity) or 2+ connected accounts
         // for the active country - so a single-account seller sees no new UI at all (PRD Q20).
@@ -79,13 +93,29 @@ interface PreviewAdContract {
         val showTargetAccountRow: Boolean = false,
         val accountPickerItems: List<PublishAccountPickerItem> = emptyList(),
         val isRegeneratingDescription: Boolean = false,
+        // SIR-86: what the seller asks the polish to change, and whether a polish is in flight.
+        // The instruction is cleared once a polish lands.
+        val polishInstruction: String = "",
+        val isPolishingDescription: Boolean = false,
+        // Bumped when the ViewModel sets the price itself (a polish), so the price field, which
+        // otherwise keeps its own text, shows the new one.
+        val priceRevision: Int = 0,
+        // SIR-86: the latest stored OpenAI turn for this listing; Polish and Regenerate chain onto it.
+        val conversationResponseId: String? = null,
+        // SIR-86: the fields the latest regeneration or polish actually changed, for the screen to
+        // highlight. The revision moves on with every result, so equal sets still highlight again.
+        val changedFields: Set<ListingField> = emptySet(),
+        val changedFieldsRevision: Int = 0,
         val regenerationCount: Int = 0,
         val selectedVote: GeneratedContentVote? = null,
         val currentAttemptId: String? = null,
         // SIR-122: whether a removed photo can still be put back at its original position -
         // see PreviewAdEvent.UndoRemoveImage.
         val canUndoRemoveImage: Boolean = false,
-    )
+    ) {
+        /** A regeneration or a polish is rewriting the listing: it is locked and cannot be published. */
+        val isUpdatingListing: Boolean get() = isRegeneratingDescription || isPolishingDescription
+    }
 
     sealed interface PreviewAdEvent {
         data class CategorySelected(val category: OlxCategory) : PreviewAdEvent
@@ -97,8 +127,19 @@ interface PreviewAdContract {
         value class OnPriceChanged(val price: Float) : PreviewAdEvent
 
         data object FetchLocation : PreviewAdEvent
-        data object RefreshLocationClicked : PreviewAdEvent
+        data class LocationSelected(val location: OlxLocation) : PreviewAdEvent
         data object RegenerateDescription : PreviewAdEvent
+
+        data class PolishInstructionChanged(val text: String) : PreviewAdEvent
+
+        /** SIR-86: rewrite the description the way [PreviewAdState.polishInstruction] asks. */
+        data object PolishDescription : PreviewAdEvent
+
+        /** SIR-85: the recognizer heard [text] while dictating into [field]. */
+        data class TextDictated(val field: DictationField, val text: String) : PreviewAdEvent
+
+        /** SIR-85: dictating into [field] failed. */
+        data class DictationFailed(val field: DictationField, val error: SpeechToTextError) : PreviewAdEvent
 
         data class AttributeValueChanged(
             val attributeCode: String,
@@ -152,6 +193,12 @@ interface PreviewAdContract {
          * until the screen has settled. A seller who leaves within that window is not asked.
          */
         data object CopyFeedbackFinished : PreviewAdEvent
+
+        /** A guest tapped "Open OLX" under the copy hint. */
+        data object OpenOlxClicked : PreviewAdEvent
+
+        /** The one-time "connect OLX" sheet closed; [choice] is `connect`, `not_now` or `dismissed`. */
+        data class GuestConnectPromptAnswered(val choice: String) : PreviewAdEvent
     }
 
     sealed interface PreviewAdEffect {
@@ -160,6 +207,9 @@ interface PreviewAdContract {
         data class PublishSuccess(val data: PublishSuccessData) : PreviewAdEffect
         data class PublishFailure(val message: String) : PreviewAdEffect
         data class NavigateToProfile(val reason: String) : PreviewAdEffect
+
+        /** OLX needs a district for [city]: the screen opens the location picker on its district step. */
+        data class PickDistrict(val city: OlxLocation) : PreviewAdEffect
 
         /** The review gate granted a request: the screen calls the platform requester. */
         data object RequestStoreReview : PreviewAdEffect

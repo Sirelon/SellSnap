@@ -20,16 +20,19 @@ object AnalyticsEvents {
      *
      * `reason` is `user_cancelled` (iOS: `ASWebAuthenticationSession` reports
      * `ASWebAuthenticationSessionErrorCodeCanceledLogin`; Android: the app resumed after the login
-     * tab with no OLX callback, see OlxAuthReturnTracker) or `system_cancelled` (iOS: any other
+     * tab with no OLX callback, see OlxAuthReturnTracker), `system_cancelled` (iOS: any other
      * `ASWebAuthenticationSession` error; either platform: the process was killed with the login
-     * open, reported on the next start). `country` is the OLX market the seller chose.
-     * `duration_ms` is present in the first-connect flow (time since `auth_started`) and for a
-     * login reported on the next start (wall-clock from the authorization request, whole seconds).
+     * open, reported on the next start with `interrupted` = "true" and no duration) or
+     * `launch_failed` (iOS: the session never presented). `country` is the OLX market the seller
+     * chose. `duration_ms` is present only in the first-connect flow (time since `auth_started`).
      */
     const val AUTH_ABANDONED = "auth_abandoned"
 
     const val ONBOARDING_COMPLETED = "onboarding_completed"
 
+    // `generation_id` - a random UUID minted per generation, also the draft's key (SIR-133) - is
+    // on every generation, copy, vote, regenerate, polish and publish event, so the listing's
+    // whole life joins in BigQuery. It identifies nothing about the seller or the item.
     const val AD_GENERATION_STARTED = "ad_generation_started"
 
     /**
@@ -47,8 +50,10 @@ object AnalyticsEvents {
 
     /** Same stage params as [AD_GENERATION_SUCCEEDED] (including `retry_count`), plus `reason`.
      * Only the stages that finished before the failure are present. `reason` is one of
-     * `unsupported_category`, `empty_output` (no title or price, after the retry), `incomplete_ad`
-     * (no description), `timeout`, `openai_error` or `other`. */
+     * `unsupported_category`, `photo_upload`, `empty_output` (no title or price, after the retry), `incomplete_ad`
+     * (no description), `timeout`, `openai_error`, `http_<status>` (the proxy or OpenAI answered
+     * an error; `http_401` is a missing or rejected App Check token), `network` (connection lost
+     * or refused) or `other:<ExceptionClass>`. */
     const val AD_GENERATION_FAILED = "ad_generation_failed"
 
     // The model read the photos and declined to write a listing. Deliberately not
@@ -106,7 +111,10 @@ object AnalyticsEvents {
     // only localIndex/counts, per PRD §11. First-connect lands through the same addAccount path as
     // add-account/reconnect, so a seller's first login fires account_add_started/completed/failed
     // (with existing_account_count = 0) alongside auth_started/completed/failed. Count a login
-    // funnel in one family; summing both double-counts first-connect.
+    // funnel in one family; summing both double-counts first-connect. `source` on the add
+    // events says where the attempt began: `landing` (first connect), `profile` (the tab),
+    // `preview_cta`, `preview_prompt` (the guest nudge sheet), `publish_contact`,
+    // `publish_reconnect`, `my_ads_reconnect` - see AppKey.Profile.
     const val ACCOUNT_SWITCHED = "account_switched"
     const val ACCOUNT_ADD_STARTED = "account_add_started"
     const val ACCOUNT_ADD_COMPLETED = "account_add_completed"
@@ -122,6 +130,21 @@ object AnalyticsEvents {
     const val AD_DESCRIPTION_REGENERATE_STARTED = "ad_description_regenerate_started"
     const val AD_DESCRIPTION_REGENERATE_SUCCEEDED = "ad_description_regenerate_succeeded"
     const val AD_DESCRIPTION_REGENERATE_FAILED = "ad_description_regenerate_failed"
+
+    // SIR-86. Carries no instruction text. SUCCEEDED carries `same_item`, `price_was_hand_set`
+    // (the price the polish replaced differed from the AI's) and `price_change_pct`.
+    const val AD_DESCRIPTION_POLISH_STARTED = "ad_description_polish_started"
+    const val AD_DESCRIPTION_POLISH_SUCCEEDED = "ad_description_polish_succeeded"
+    const val AD_DESCRIPTION_POLISH_FAILED = "ad_description_polish_failed"
+
+    // SIR-86: the seller changed the price a polish set, once per polish. Carries
+    // `price_was_hand_set_before_polish` and `change_pct`. Many of these with the flag "true" mean
+    // sellers want a price they set by hand kept through a polish.
+    const val AD_PRICE_EDITED_AFTER_POLISH = "ad_price_edited_after_polish"
+
+    // SIR-85: one event per recognized phrase. Carries `field` (description | polish_instruction | ai_hint),
+    // never the text.
+    const val AD_TEXT_DICTATED = "ad_text_dictated"
 
     const val AD_GENERATED_CONTENT_VOTED = "ad_generated_content_voted"
 
@@ -142,8 +165,29 @@ object AnalyticsEvents {
     /** A draft was removed on the Drafts screen. No params. */
     const val DRAFT_REMOVED = "draft_removed"
 
+    /**
+     * A guest who had copied three generated listings out by hand, in a returning session, was
+     * shown the one-time "connect OLX" sheet on the preview (ReviewPromptCoordinator
+     * .shouldNudgeGuestToConnect). Once per install. Carries `generation_id`.
+     */
+    const val GUEST_CONNECT_PROMPT_SHOWN = "guest_connect_prompt_shown"
+
+    /** `choice` is `connect` | `not_now` | `dismissed` (swiped away). Carries `generation_id`. */
+    const val GUEST_CONNECT_PROMPT_ANSWERED = "guest_connect_prompt_answered"
+
+    /** A guest tapped "Open OLX" under the copy hint on the preview. Carries `generation_id`. */
+    const val GUEST_OPEN_OLX_TAPPED = "guest_open_olx_tapped"
+
+    /**
+     * User property: OLX accounts connected on this device, "0" for a guest. Set whenever the
+     * account list changes and when guest mode is entered, so guests are segmentable from the
+     * first session rather than only after a connect.
+     */
+    const val USER_PROPERTY_CONNECTED_ACCOUNT_COUNT = "connected_account_count"
+
     // Which button the seller pressed on the "close this listing?" sheet, as `choice`
-    // (stay | leave). Leaving keeps the draft in Drafts. The sheet's own screen_view only says it
+    // (stay | leave | dismissed - swiped away or system back, which keeps editing like stay).
+    // Leaving keeps the draft in Drafts. The sheet's own screen_view only says it
     // was shown; without this, a seller who backs out and keeps editing is indistinguishable from
     // one who closes the listing.
     const val AD_DRAFT_EXIT_CHOICE = "ad_draft_exit_choice"
@@ -199,4 +243,76 @@ object AnalyticsEvents {
      * reported.
      */
     const val NOTIFICATION_PROMPT_ANSWERED = "notification_prompt_answered"
+
+    /**
+     * The seller was shown an error. Logged only through `reportShownError`, which also records the
+     * Crashlytics non-fatal. `screen` is a snake_case screen code (`preview_ad`, `generate_ad`,
+     * `my_adverts`, ...) and `reason` a stable code, optionally `kind:detail` - an OLX validation
+     * refusal carries the rejected field, `validation:district_id`. Both are capped at 100
+     * characters. Logged in addition to any feature event such as `ad_publish_failed`.
+     */
+    const val ERROR_SHOWN = "error_shown"
+
+    // Messages (SIR-92, read-only buyer conversations). Counts are banded by
+    // `MessagesAnalyticsBuckets.count` (0, 1, 2_5, 6_10, 11_25, 26_50, gt_50). No event carries
+    // message text, a thread id, a buyer id, an advert id or a title. Failed loads are not here:
+    // they are `error_shown` with `screen` `messages` or `conversation`. Screen views of both
+    // screens are automatic.
+
+    /**
+     * The Messages tab was opened: once per tab visit, on the first time its screen is in the
+     * foreground (coming back from a conversation or from the background does not log it again).
+     * `badge_unread_bucket` is the unread total the tab badge showed at that moment, so it answers
+     * whether the badge pulls sellers in. It is "0" when the badge had not loaded yet.
+     */
+    const val MESSAGES_OPENED = "messages_opened"
+
+    /**
+     * An account's list loaded for the first time in a visit and its listing lookups settled:
+     * once per account page, never on a poll, a refresh or a later page. This is the success
+     * outcome of the list; a failure is `error_shown`. Params: `account_index` (localIndex),
+     * `account_count` (accounts connected in the country), `thread_count_bucket` (seller-side
+     * threads on the first page), `unread_count_bucket` (their unread messages),
+     * `buyer_side_count_bucket` (threads hidden because the account is the buyer on them),
+     * `inactive_listing_count_bucket` (threads whose advert is known and not `active`) and
+     * `deleted_listing_count_bucket` (threads whose advert OLX answered 404 for).
+     */
+    const val MESSAGES_LIST_LOADED = "messages_list_loaded"
+
+    /**
+     * A "Load more" tap on the list, logged when its request ends. `page` is the page asked for
+     * (Int, 1 is the second page) and `result` is `threads` (at least one new thread was added),
+     * `empty` (OLX answered, nothing new for the seller) or `failed`. A tap whose request is
+     * cancelled by leaving the screen logs nothing.
+     */
+    const val MESSAGES_LOAD_MORE = "messages_load_more"
+
+    /**
+     * The seller tapped a thread row. `layout` is `single_pane` (the conversation covers the
+     * list) or `two_pane` (beside it). `account_count` is the accounts connected in the country,
+     * `is_active_account` (Boolean) whether the thread's account is the active one, `had_unread`
+     * (Boolean) whether the row had unread messages and `listing_state` the advert's state:
+     * `deleted`, `unknown` or an OLX status code (`active`, `removed_by_user`, ...). It is the
+     * denominator for `messages_conversation_action`.
+     */
+    const val MESSAGES_CONVERSATION_OPENED = "messages_conversation_opened"
+
+    /**
+     * A conversation's messages loaded for the first time: once per opened conversation, never
+     * on a poll. The success outcome; a failure is `error_shown`. `message_count_bucket` and
+     * `has_sent_message` (Boolean: the seller has already written in this thread).
+     */
+    const val MESSAGES_CONVERSATION_LOADED = "messages_conversation_loaded"
+
+    /**
+     * The seller tapped an action in a conversation. `action` is `reply_on_olx` (the writing
+     * session is not in the app, so this is the demand for it), `open_listing` (the header) or
+     * `mark_as_read` (the top bar action, offered while the thread has unread messages). Also
+     * `listing_state` (as for `messages_conversation_opened`), `had_unread` (Boolean, the row had
+     * unread messages when it was opened) and `seconds_since_open_bucket` (0_5, 6_30, 31_120,
+     * gt_120) from opening the conversation to the tap. `mark_as_read` also carries `result`:
+     * `success` (OLX accepted the command) or `failed` (the seller saw an error, also logged as
+     * `error_shown`); the other actions have no `result`.
+     */
+    const val MESSAGES_CONVERSATION_ACTION = "messages_conversation_action"
 }

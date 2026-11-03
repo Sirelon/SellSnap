@@ -19,6 +19,10 @@
     <string name="guest_mode_banner_message">Vrei să publici? Ai nevoie de un cont OLX. Deocamdată, copiază titlul, descrierea și prețul de mai jos și lipește-le în OLX.</string>
     <string name="guest_connect_olx_cta">Conectează OLX pentru a posta dintr-o atingere</string>
     <string name="guest_copy_hint">Atinge butoanele de copiere de lângă titlu, descriere și preț — apoi lipește-le în OLX când ești gata.</string>
+    <string name="guest_open_olx">Deschide OLX</string>
+    <string name="guest_connect_prompt_title">Postează dintr-o atingere</string>
+    <string name="guest_connect_prompt_body">Ai copiat 3 anunțuri. Conectează-ți contul OLX și SellSnap le poate posta pentru tine.</string>
+    <string name="guest_connect_prompt_connect">Conectează OLX</string>
     <string name="generate_ad_guest_connect_hint">Acum ești în modul oaspete — conectează OLX oricând din Profil, ca să publici dintr-o atingere.</string>
     <string name="continue_with_olx">Continuă cu OLX</string>
     <string name="terms_privacy_prefix">Continuând, ești de acord cu </string>
@@ -129,6 +133,8 @@
     <!-- Announcements -->
     <string name="announcement_ok">OK</string>
     <string name="announcement_close">Închide</string>
+    <string name="announcement_open_store">Deschide magazinul</string>
+    <string name="announcement_open_link">Deschide linkul</string>
 
     <!-- Notifications -->
     <string name="notifications_prompt_title">Primește vești importante de la SellSnap</string>
@@ -255,12 +261,23 @@
     <string name="ad_category_label">Categorie</string>
     <string name="ad_location_label">Locație</string>
     <string name="location_detecting">Te localizăm…</string>
-    <string name="location_not_available">Nu îți găsim locația</string>
+    <string name="location_not_available">Atinge pentru a-ți alege orașul</string>
     <string name="location_rationale_title">Avem nevoie de locația ta</string>
     <string name="location_rationale_message">Pentru a sugera cel mai apropiat oraș pentru anunțul tău, avem nevoie să îți accesăm locația.</string>
     <string name="location_settings_title">Activează locația în setări</string>
     <string name="location_settings_message_android">Locația este blocată. Deschide setările aplicației și activează-o pentru SellSnap.</string>
-    <string name="location_settings_message_ios">Locația este blocată. Mergi la Setări → Confidențialitate → Servicii de localizare și activează SellSnap.</string>
+    <string name="location_settings_message_ios">Locația este blocată. Atinge Deschide setările, apoi Locație → În timpul utilizării aplicației.</string>
+    <string name="location_services_off_title">Locația este dezactivată pe telefonul tău</string>
+    <string name="location_services_off_message_android">Activează locația în setările telefonului sau caută-ți orașul.</string>
+    <string name="location_services_off_message_ios">Activează Servicii de localizare în Setări → Confidențialitate și securitate sau caută-ți orașul.</string>
+    <string name="location_picker_title">Unde vinzi?</string>
+    <string name="location_picker_use_current">Folosește locația mea curentă</string>
+    <string name="location_picker_search_placeholder">Caută un oraș</string>
+    <string name="location_picker_no_results">Niciun oraș nu se potrivește cu „%1$s”</string>
+    <string name="location_picker_search_failed">Nu putem căuta acum.</string>
+    <string name="location_picker_geocoder_unavailable">Căutarea orașelor nu este disponibilă pe acest dispozitiv. Folosește în schimb locația ta curentă.</string>
+    <string name="location_picker_district_title">Alege zona: %1$s</string>
+    <string name="got_it">Am înțeles</string>
 
     <!-- Error Messages -->
     <string name="error_location_fetch_failed">Nu am putut găsi locația ta.</string>
@@ -277,10 +294,21 @@
     <string name="error_upload_file_failed">Nu s-a putut încărca una dintre fotografii.</string>
     <string name="error_publish_failed">Publicarea nu a reușit. Mai încearcă o dată.</string>
     <string name="error_generate_ad_failed">Nu s-a putut genera anunțul. Încerci din nou?</string>
+    <string name="error_app_check_failed">Nu am putut verifica această instalare. Actualizează serviciile Google Play sau instalează SellSnap din Google Play, apoi încearcă din nou.</string>
     <string name="error_photo_unreadable">Nu am putut recunoaște articolul din fotografiile tale. Încearcă să le refaci.</string>
     <string name="error_photo_different_items">Par a fi articole diferite. Elimină-le pe cele pe care nu le vinzi.</string>
     <string name="error_regenerate_description_failed">Nu s-a putut regenera descrierea. Încerci din nou?</string>
     <string name="regenerate_pill_default">Regenerează</string>
+    <string name="dictate_pill">Dictează</string>
+    <string name="dictate_pill_listening">Ascult… atinge pentru stop</string>
+    <string name="error_dictation_permission">Permite accesul la microfon ca să dictezi.</string>
+    <string name="error_dictation_failed">Nu am înțeles. Încerci din nou?</string>
+    <string name="polish_pill">Îmbunătățește</string>
+    <string name="polish_sheet_title">Ce să se schimbe?</string>
+    <string name="polish_sheet_placeholder">de ex. fă-l mai scurt, menționează livrarea gratuită</string>
+    <string name="polish_sheet_action">Îmbunătățește descrierea</string>
+    <string name="error_polish_failed">Nu s-a putut îmbunătăți descrierea. Încerci din nou?</string>
+    <string name="publish_updating_listing">Se actualizează anunțul…</string>
     <string name="vote_up_label">Util</string>
     <string name="vote_down_label">Neutil</string>
 
@@ -443,4 +471,37 @@
     <string name="advert_edit_price_label">Preț</string>
     <string name="advert_edit_save">Trimite la OLX</string>
     <string name="advert_edit_load_failed">Nu am putut încărca acest anunț de pe OLX.</string>
+
+    <!-- Buyer messages -->
+    <string name="messages_screen_title">Mesaje</string>
+    <string name="messages_buyer_label">Cumpărător</string>
+    <string name="messages_empty_title">Încă nu ai mesaje</string>
+    <string name="messages_empty_description">Nimeni nu a scris încă despre anunțurile tale. Mesajele de la cumpărători vor apărea aici.</string>
+    <string name="messages_connect_title">Conectează OLX ca să-ți vezi mesajele</string>
+    <string name="messages_connect_description">Mesajele de la cumpărători pentru anunțurile tale de pe OLX vor apărea aici după ce conectezi un cont.</string>
+    <string name="messages_load_failed">Nu am putut încărca mesajele.</string>
+    <string name="messages_listing_fallback">Anunțul tău</string>
+    <string name="messages_listing_deleted">Anunț șters</string>
+    <string name="messages_thread_started">Început %1$s</string>
+    <string name="messages_mark_as_read">Marchează ca citit</string>
+    <string name="messages_select_conversation">Alege o conversație ca s-o citești aici</string>
+    <string name="time_just_now">chiar acum</string>
+    <plurals name="time_minutes_ago">
+        <item quantity="one">acum %1$d minut</item>
+        <item quantity="few">acum %1$d minute</item>
+        <item quantity="other">acum %1$d de minute</item>
+    </plurals>
+    <plurals name="time_hours_ago">
+        <item quantity="one">acum %1$d oră</item>
+        <item quantity="few">acum %1$d ore</item>
+        <item quantity="other">acum %1$d de ore</item>
+    </plurals>
+    <string name="time_yesterday">ieri</string>
+    <plurals name="time_days_ago">
+        <item quantity="one">acum %1$d zi</item>
+        <item quantity="few">acum %1$d zile</item>
+        <item quantity="other">acum %1$d de zile</item>
+    </plurals>
+    <string name="conversation_load_failed">Nu am putut încărca această conversație.</string>
+    <string name="conversation_reply_on_olx">Răspunde pe OLX</string>
 </resources>

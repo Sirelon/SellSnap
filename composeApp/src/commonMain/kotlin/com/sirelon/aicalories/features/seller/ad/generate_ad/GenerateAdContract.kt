@@ -2,10 +2,14 @@ package com.sirelon.sellsnap.features.seller.ad.generate_ad
 
 import androidx.compose.runtime.Immutable
 import com.mohamedrejeb.calf.io.KmpFile
+import com.sirelon.sellsnap.features.media.SpeechToTextError
 import com.sirelon.sellsnap.features.media.upload.UploadingItem
 import com.sirelon.sellsnap.features.seller.ad.AdvertisementWithAttributes
 import com.sirelon.sellsnap.features.seller.currency.domain.OlxCurrency
 import com.sirelon.sellsnap.features.seller.drafts.Draft
+
+/** Longest hint the seller can give the AI, typed or dictated. */
+internal const val MAX_PROMPT_CHARS = 120
 
 interface GenerateAdContract {
 
@@ -27,6 +31,12 @@ interface GenerateAdContract {
 
     sealed interface GenerateAdEvent {
         data class PromptChanged(val value: String) : GenerateAdEvent
+
+        /** SIR-85: the recognizer heard [text] while dictating the hint. */
+        data class PromptDictated(val text: String) : GenerateAdEvent
+
+        /** SIR-85: dictating the hint failed. */
+        data class DictationFailed(val error: SpeechToTextError) : GenerateAdEvent
 
         data class UploadFilesResult(val result: Result<List<KmpFile>>) : GenerateAdEvent
 

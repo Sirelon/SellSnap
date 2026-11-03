@@ -6,9 +6,11 @@ import com.sirelon.sellsnap.features.seller.auth.di.olxUnauthenticatedApiClientQ
 import com.sirelon.sellsnap.features.seller.location.createLocationProvider
 import com.sirelon.sellsnap.features.seller.location.data.LocationStore
 import com.sirelon.sellsnap.features.seller.location.data.LocationRepository
+import com.sirelon.sellsnap.features.seller.location.presentation.LocationPickerViewModel
 import com.sirelon.sellsnap.features.seller.profile.data.SellerAccountRepository
 import com.sirelon.sellsnap.features.seller.profile.presentation.ProfileViewModel
 import org.koin.core.module.dsl.singleOf
+import org.koin.core.module.dsl.viewModel
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
 
@@ -16,6 +18,8 @@ val profileModule = module {
     single { createLocationProvider() }
     single { LocationStore(get()) }
     singleOf(::LocationRepository)
+    // Spelled out rather than viewModelOf: the district city is an optional parameter.
+    viewModel { params -> LocationPickerViewModel(locationRepository = get(), analytics = get(), districtsOf = params.getOrNull()) }
     single {
         SellerAccountRepository(
             authRepository = get(),
