@@ -130,6 +130,13 @@ this step needs better judgment than the extraction step):
   usually just skip publishing a Firestore doc for a release with zero user-facing
   changes rather than showing an empty card).
 - Drop everything `invisible`.
+- **Keep only what a seller gains.** Test each item: would a seller reading the card
+  learn something they can now do, or a problem that is now gone? Drop it if not. Drop
+  growth and conversion mechanics even when they add UI: prompts or sheets that push
+  guests to connect OLX, rate the app, or upgrade; review-prompt timing; announcement
+  plumbing; analytics. Also drop items that only a small slice sees once (for example
+  a one-time sheet after the third copy). A small useful control inside such an item
+  (an "Open OLX" button) can join a related card; it does not earn its own.
 - Merge `related_to`-linked findings into one item.
 - Assign an `icon` from the vocabulary in step 0.
 - Write final English copy: `title` short (a few words), `summary` one sentence, `detail`
