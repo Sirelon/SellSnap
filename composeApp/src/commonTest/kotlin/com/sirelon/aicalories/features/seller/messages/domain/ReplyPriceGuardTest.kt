@@ -59,4 +59,50 @@ class ReplyPriceGuardTest {
         assertEquals(replies, result.kept)
         assertEquals(0, result.dropped)
     }
+
+    @Test
+    fun `accepting the buyer's number below the floor is dropped, even far below half of it`() {
+        val replies = listOf(
+            reply("Okay, 150 is fine."),
+            reply("Can't do 150, 400 is my price."),
+        )
+
+        val result = ReplyPriceGuard.apply(replies, floor = 400, buyerText = "150?")
+
+        assertEquals(replies.drop(1), result.kept)
+        assertEquals(1, result.dropped)
+    }
+
+    @Test
+    fun `a small number the buyer did not write is left alone below half the floor`() {
+        val replies = listOf(reply("Okay, 150 is fine."))
+
+        val result = ReplyPriceGuard.apply(replies, floor = 400, buyerText = "Is it still available?")
+
+        assertEquals(replies, result.kept)
+    }
+
+    @Test
+    fun `without a floor the asking price is the floor`() {
+        val replies = listOf(
+            reply("Ok, 300 works.", price = 300),
+            reply("Ok, 300 works."),
+            reply("I can do 450."),
+            reply("It is 500, bought in 2019."),
+        )
+
+        val result = ReplyPriceGuard.apply(replies, floor = null, buyerText = "300?", asking = 500)
+
+        assertEquals(listOf(replies.last()), result.kept)
+        assertEquals(3, result.dropped)
+    }
+
+    @Test
+    fun `the floor wins over the asking price`() {
+        val replies = listOf(reply("I can do 450.", price = 450))
+
+        val result = ReplyPriceGuard.apply(replies, floor = 400, asking = 500)
+
+        assertEquals(replies, result.kept)
+    }
 }

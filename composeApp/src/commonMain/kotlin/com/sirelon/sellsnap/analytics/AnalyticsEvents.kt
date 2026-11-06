@@ -361,13 +361,14 @@ object AnalyticsEvents {
      * The seller tapped "Suggest replies" and a model call starts; a tap that shows the
      * suggestions already kept for the same buyer message calls nothing and logs nothing. Each
      * one ends in `suggestions_shown` or `suggestions_failed`, except when a newer message
-     * arrives before the answer: that answer is dropped unlogged. `layout` is `single_pane` or
+     * arrives, or the seller sends a reply, before the answer: that answer is dropped unlogged. `layout` is `single_pane` or
      * `two_pane`; `has_listing_text` (Boolean) is true when the advert's description or
      * attributes reached the prompt (false for a deleted advert or a failed read: the title and
      * the conversation only); `has_price_floor` (Boolean) is true when a usable floor was
      * available: the seller's private lowest price exists and is below the asking price, so it
      * went into the prompt and the price guard. False when none was kept, or when it is at or
-     * above the asking price (then the prompt holds the asking price and nothing is dropped).
+     * above the asking price (then the prompt holds the asking price and the price guard
+     * drops any reply below it).
      */
     const val SUGGESTIONS_REQUESTED = "suggestions_requested"
 

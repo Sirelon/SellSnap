@@ -17,7 +17,8 @@ data class ReplySuggestion(
 
 /**
  * The code half of the price-floor rule the prompt also states: no suggestion may offer less than
- * the seller's private lowest price. The model is told the floor; this drops what slips through.
+ * the seller's private lowest price, or the asking price when there is none. The model is told
+ * the floor; this drops what slips through.
  */
 internal object ReplyPriceGuard {
 
@@ -31,24 +32,35 @@ internal object ReplyPriceGuard {
     data class Result(val kept: List<ReplySuggestion>, val dropped: Int)
 
     /**
-     * Drops a suggestion whose [ReplySuggestion.price] is below [floor], or whose text holds a
-     * whole number in `[floor / 2, floor)` - a price under the floor the model did not report.
-     * Smaller numbers are left alone: a size, a year or a count is not a price. Without a floor
-     * nothing is dropped.
+     * Drops a suggestion that offers less than the effective floor: [floor], the seller's private
+     * lowest price, else [asking], the advert's price (the prompt says "never below the asking
+     * price" when there is no floor). With neither known nothing is dropped.
      *
-     * A number the buyer wrote ([buyerText]) may be quoted when the reply also names a price at or
-     * above the floor: "I can't do 200, 400 is my price" refuses the offer and counters. A reply
-     * that repeats the buyer's number and names nothing higher may be accepting it, so it is still
+     * A suggestion goes when its [ReplySuggestion.price] is below the floor, or its text holds a
+     * whole number below the floor that is either in `[floor / 2, floor)` - a price the model did
+     * not report - or one the buyer wrote ([buyerText]): "Okay, 150 is fine" accepts a very low
+     * offer. Other smaller numbers are left alone: a size, a year or a count is not a price.
+     *
+     * A number the buyer wrote may be quoted when the reply also names a price at or above the
+     * floor: "I can't do 200, 400 is my price" refuses the offer and counters. A reply that
+     * repeats the buyer's number and names nothing higher may be accepting it, so it is still
      * dropped. The SIR-96 bench showed most lowball answers quote the offer this way.
      */
-    fun apply(suggestions: List<ReplySuggestion>, floor: Long?, buyerText: String = ""): Result {
-        if (floor == null || floor <= 0) return Result(suggestions, dropped = 0)
+    fun apply(
+        suggestions: List<ReplySuggestion>,
+        floor: Long?,
+        buyerText: String = "",
+        asking: Long? = null,
+    ): Result {
+        val effectiveFloor = floor ?: asking
+        if (effectiveFloor == null || effectiveFloor <= 0) return Result(suggestions, dropped = 0)
         val buyerNumbers = numbersIn(buyerText).toSet()
         val kept = suggestions.filter { suggestion ->
-            val pricedBelow = suggestion.price != null && suggestion.price < floor
+            val pricedBelow = suggestion.price != null && suggestion.price < effectiveFloor
             val numbers = numbersIn(suggestion.text)
-            val counters = numbers.any { it >= floor }
-            val below = numbers.filter { it in (floor / 2) until floor }
+            val counters = numbers.any { it >= effectiveFloor }
+            val below = numbers
+                .filter { it < effectiveFloor && (it >= effectiveFloor / 2 || it in buyerNumbers) }
                 .filterNot { counters && it in buyerNumbers }
             !pricedBelow && below.isEmpty()
         }

@@ -6,6 +6,7 @@ import com.sirelon.sellsnap.features.seller.ad.publish_success.AdvertStatus
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountRecord
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountState
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountsRecord
+import com.sirelon.sellsnap.features.seller.auth.domain.OlxCountry
 import com.sirelon.sellsnap.features.seller.messages.presentation.ConversationContract.Effect
 import com.sirelon.sellsnap.features.seller.messages.presentation.ConversationContract.Event
 import io.ktor.client.engine.mock.MockEngine
@@ -239,6 +240,25 @@ class ConversationViewModelTest {
             assertEquals(1, viewModel.state.value.messages.size)
             viewModel.onEvent(Event.Hidden)
         }
+
+    @Test
+    fun `the state carries the thread account's market, not the active account's`() = runTest(testDispatcher) {
+        val engine = mockEngine(testDispatcher) {
+            addHandler { respond(messagesJson(messageJson(1, "received", "Placeholder question")), HttpStatusCode.OK, jsonHeaders()) }
+        }
+        val (viewModel, _) = viewModel(
+            engine,
+            accounts = listOf(testAccount(1), testAccount(2, olxUserId = 2).copy(countryCode = "pl")),
+            localIndex = 2,
+        )
+        assertNull(viewModel.state.value.olxCountry)
+
+        viewModel.onEvent(Event.Shown)
+        runCurrent()
+
+        assertEquals(OlxCountry.PL, viewModel.state.value.olxCountry)
+        viewModel.onEvent(Event.Hidden)
+    }
 
     @Test
     fun `a key saved without an account reads with the active one`() = runTest(testDispatcher) {

@@ -2,6 +2,7 @@ package com.sirelon.sellsnap.features.seller.messages.presentation
 
 import androidx.compose.runtime.Immutable
 import com.sirelon.sellsnap.features.seller.ad.publish_success.AdvertStatus
+import com.sirelon.sellsnap.features.seller.auth.domain.OlxCountry
 import com.sirelon.sellsnap.features.seller.messages.domain.MessageSource
 import com.sirelon.sellsnap.features.seller.messages.domain.OlxMessage
 import com.sirelon.sellsnap.features.seller.messages.domain.ReplySuggestion
@@ -28,6 +29,8 @@ interface ConversationContract {
         /** The thread's account needs a reconnect: nothing loads until it has one. */
         val needsReconnect: Boolean = false,
         val accountName: String? = null,
+        /** The thread's account's market: its domain and time zone. Null until the account is known. */
+        val olxCountry: OlxCountry? = null,
         /**
          * The thread had unread messages when it was opened and has not been marked read yet:
          * "Mark as read" is on offer, and an accepted reply marks it. It is never set by opening,
@@ -72,8 +75,12 @@ interface ConversationContract {
                     !isSuggesting && suggestions.isEmpty() && buyerMessage.id !in flaggedMessageIds
             }
 
-        /** The suggestions are on screen: they step aside while the seller has text in the field. */
-        val showsSuggestions: Boolean get() = suggestions.isNotEmpty() && draft.isBlank() && !needsReconnect
+        /**
+         * The suggestions are on screen: they step aside while the seller has text in the field,
+         * and while a reply of the seller's is on its way, sent or failed.
+         */
+        val showsSuggestions: Boolean
+            get() = suggestions.isNotEmpty() && draft.isBlank() && !needsReconnect && pendingMessages.isEmpty()
     }
 
     /**

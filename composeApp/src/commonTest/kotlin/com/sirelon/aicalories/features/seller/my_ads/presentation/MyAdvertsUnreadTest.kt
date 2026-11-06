@@ -18,8 +18,10 @@ import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
 import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
@@ -30,6 +32,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.seconds
 
 class MyAdvertsUnreadTest {
 
@@ -144,6 +147,35 @@ class MyAdvertsUnreadTest {
         viewModel.onEvent(Event.RefreshClicked(1))
         runCurrent()
 
+        assertTrue(viewModel.state.value.pages.single().unreadByAdvert.isEmpty())
+    }
+
+    @Test
+    fun `a slow older threads answer cannot overwrite a newer one`() = runTest(testDispatcher) {
+        var threadCalls = 0
+        val engine = mockEngine(testDispatcher) {
+            addHandler { request ->
+                if (request.url.encodedPath.contains("threads")) {
+                    // The first read is slow and still shows 4 unread; the second shows none.
+                    val isFirst = ++threadCalls == 1
+                    if (isFirst) delay(5.seconds)
+                    respond(threadsJson(threadJson(1, 10, unread = if (isFirst) 4 else 0)), HttpStatusCode.OK, jsonHeaders())
+                } else {
+                    respond(advertsJson(10), HttpStatusCode.OK, jsonHeaders())
+                }
+            }
+        }
+        val viewModel = newViewModel(engine, accounts = listOf(1))
+        runCurrent()
+
+        viewModel.onEvent(Event.RefreshClicked(1))
+        runCurrent()
+        assertTrue(viewModel.state.value.pages.single().unreadByAdvert.isEmpty())
+
+        advanceTimeBy(6.seconds)
+        runCurrent()
+
+        assertEquals(2, threadCalls)
         assertTrue(viewModel.state.value.pages.single().unreadByAdvert.isEmpty())
     }
 

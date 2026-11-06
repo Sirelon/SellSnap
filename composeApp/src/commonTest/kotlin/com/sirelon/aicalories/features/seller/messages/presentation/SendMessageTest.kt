@@ -431,6 +431,29 @@ class SendMessageTest {
         }
 
     @Test
+    fun `a reply sent before the first load is not matched to an older message with the same text`() =
+        runTest(testDispatcher) {
+            val thread = FakeThread()
+            thread.messages = listOf(
+                messageJson(1, "received", "Placeholder question"),
+                messageJson(2, "sent", "Placeholder reply"),
+                messageJson(3, "received", "Placeholder follow-up"),
+            )
+            thread.postStatus = HttpStatusCode.InternalServerError
+            val (viewModel, _) = conversation(thread)
+            viewModel.onEvent(Event.Shown)
+            viewModel.onEvent(Event.DraftChanged("Placeholder reply"))
+            viewModel.onEvent(Event.SendClicked(isTwoPane = false))
+            runCurrent()
+
+            assertEquals(3, viewModel.state.value.messages.size)
+            val pending = viewModel.state.value.pendingMessages.single()
+            assertEquals("Placeholder reply", pending.text)
+            assertEquals(PendingStatus.Failed, pending.status)
+            viewModel.onEvent(Event.Hidden)
+        }
+
+    @Test
     fun `an account that needs a reconnect sends nothing`() = runTest(testDispatcher) {
         val thread = FakeThread()
         val (viewModel, harness) = conversation(

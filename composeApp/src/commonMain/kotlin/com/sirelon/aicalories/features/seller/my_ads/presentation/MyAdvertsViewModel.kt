@@ -53,6 +53,8 @@ import com.sirelon.sellsnap.generated.resources.advert_edit_load_failed
 import com.sirelon.sellsnap.generated.resources.my_ads_account_fallback_name
 import com.sirelon.sellsnap.generated.resources.my_ads_load_failed
 import com.sirelon.sellsnap.generated.resources.my_ads_load_failed_account
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -99,6 +101,9 @@ class MyAdvertsViewModel internal constructor(
     private class PendingStatus(val actedFrom: AdvertStatus, val expected: AdvertStatus)
 
     private val pendingStatuses = mutableMapOf<Long, PendingStatus>()
+
+    /** The unread-markers read in flight, by account page; a new one cancels the old. */
+    private val unreadJobs = mutableMapOf<Int, Job>()
 
     init {
         // Every emission (initial + every add/reconnect/disconnect/switch) resyncs pages by
@@ -260,11 +265,17 @@ class MyAdvertsViewModel internal constructor(
      * its marker: leaving the tab recreates this screen.
      */
     private fun loadUnread(localIndex: Int) {
-        viewModelScope.launch {
-            runCatching { messagesRepository.loadThreads(localIndex).threads.unreadByAdvert() }
-                .onSuccess { unread ->
-                    setState { it.updatePage(localIndex) { page -> page.copy(unreadByAdvert = unread) } }
-                }
+        // One read per page: a slow older answer must not overwrite a newer one.
+        unreadJobs[localIndex]?.cancel()
+        unreadJobs[localIndex] = viewModelScope.launch {
+            val unread = try {
+                messagesRepository.loadThreads(localIndex).threads.unreadByAdvert()
+            } catch (error: CancellationException) {
+                throw error
+            } catch (_: Exception) {
+                return@launch
+            }
+            setState { it.updatePage(localIndex) { page -> page.copy(unreadByAdvert = unread) } }
         }
     }
 

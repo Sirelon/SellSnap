@@ -100,11 +100,13 @@ private val SuggestionsBudget = 15.seconds
  * "Suggest replies" (SIR-96) asks [openAIClient] for up to three replies to the last buyer
  * message, on a tap only, never on its own. The prompt carries the listing from the same advert
  * read the header uses ([listingSnapshot]), the newest messages, the account's market language
- * and the price floor; [ReplyPriceGuard] drops what offers less than the floor. Each suggestion is
- * shown in full: one the model did not mark for review is sent at once; a marked one goes into the
- * field for the seller to read first. The answer is kept for its buyer message, so
- * tapping again shows it without a new call, until a newer message arrives. A failure shows
- * nothing: the button comes back. Nothing about the suggestions is stored on the device.
+ * and the price floor; [ReplyPriceGuard] drops what offers less than the floor, or than the
+ * asking price when there is no floor. Any send clears the suggestions and cancels a request in
+ * flight. Each suggestion is shown in full: one the model did not mark for review is sent at
+ * once; a marked one goes into the field for the seller to read first. The answer is kept for its
+ * buyer message, so tapping again shows it without a new call, until a newer message arrives. A
+ * failure shows nothing: the button comes back. Nothing about the suggestions is stored on the
+ * device.
  */
 class ConversationViewModel internal constructor(
     keyLocalIndex: Int?,
@@ -149,6 +151,9 @@ class ConversationViewModel internal constructor(
     /** The last suggestions shown, for the buyer message they answer. */
     private var keptSuggestions: KeptSuggestions? = null
 
+    /** The suggestion request in flight; a send cancels it, its answer would be stale. */
+    private var suggestionJob: Job? = null
+
     /** The suggestion the seller put into the field, until the field is cleared or sent. */
     private var insertedSuggestion: InsertedSuggestion? = null
 
@@ -158,6 +163,7 @@ class ConversationViewModel internal constructor(
 
     /** Every message id a load has returned, so each load can tell which sent messages are new. */
     private val seenMessageIds = mutableSetOf<Long>()
+    private var firstLoadDone = false
 
     init {
         viewModelScope.launch {
@@ -241,7 +247,18 @@ class ConversationViewModel internal constructor(
             suggestionIndex = suggestionIndex,
             suggestionEdited = suggestionEdited,
         )
-        setState { it.copy(draft = "", pendingMessages = it.pendingMessages + pending) }
+        // A reply is on its way: suggestions, shown, kept or still being fetched, answer a message
+        // the seller has just answered.
+        suggestionJob?.cancel()
+        keptSuggestions = null
+        setState {
+            it.copy(
+                draft = "",
+                pendingMessages = it.pendingMessages + pending,
+                isSuggesting = false,
+                suggestions = emptyList(),
+            )
+        }
         deliver(index, pending, isRetry = false, isTwoPane = isTwoPane)
         return true
     }
@@ -256,7 +273,7 @@ class ConversationViewModel internal constructor(
         }
         setState { it.copy(isSuggesting = true) }
         val tappedAt = timeSource.markNow()
-        viewModelScope.launch {
+        suggestionJob = viewModelScope.launch {
             // Read in parallel with the messages at open, so this is normally done already.
             val listing = withTimeoutOrNull(SuggestionsBudget) { listingSnapshot.await() }
             val prices = priceContext(listing?.item)
@@ -284,7 +301,12 @@ class ConversationViewModel internal constructor(
                 failSuggestions(error.suggestionFailureReason(), error, latency)
                 return@launch
             }
-            val guarded = ReplyPriceGuard.apply(suggestions, prices.floor, buyerText = buyerMessage.text)
+            val guarded = ReplyPriceGuard.apply(
+                suggestions,
+                floor = prices.floor,
+                buyerText = buyerMessage.text,
+                asking = prices.asking,
+            )
             val shown = guarded.kept.take(MAX_REPLY_SUGGESTIONS)
             if (shown.isEmpty()) {
                 failSuggestions(
@@ -399,17 +421,13 @@ class ConversationViewModel internal constructor(
         if (!state.showsSuggestions) return
         val suggestion = state.suggestions.getOrNull(index) ?: return
         if (!suggestion.needsReview) {
-            val queued = enqueue(
+            enqueue(
                 text = suggestion.text,
                 source = MessageSource.Suggestion,
                 suggestionIndex = index,
                 suggestionEdited = null,
                 isTwoPane = isTwoPane,
             )
-            if (queued) {
-                keptSuggestions = null
-                setState { it.copy(suggestions = emptyList()) }
-            }
             return
         }
         insertedSuggestion = InsertedSuggestion(index, suggestion.text)
@@ -490,15 +508,23 @@ class ConversationViewModel internal constructor(
      * Inferred: OLX stores the text as sent; no live reply was checked (SIR-95). If it does not, a
      * new sent message left unmatched takes the oldest bubble OLX accepted, so an accepted reply
      * is never drawn twice.
+     *
+     * The first load has no earlier load to tell new messages from old ones, so there only a
+     * bubble OLX already accepted ([PendingStatus.Sent]) may match: a reply still in flight or
+     * refused must not vanish behind an older message with the same text.
      */
     private fun withoutDelivered(pending: List<PendingMessage>, messages: List<OlxMessage>): List<PendingMessage> {
+        val isFirstLoad = !firstLoadDone
+        firstLoadDone = true
         val newSent = messages.filter { it.isSent && it.id !in seenMessageIds }
         messages.forEach { seenMessageIds += it.id }
         if (pending.isEmpty() || newSent.isEmpty()) return pending
 
         val remaining = pending.toMutableList()
         val unmatched = newSent.filter { message ->
-            val match = remaining.indexOfFirst { it.text == message.text.trim() }
+            val match = remaining.indexOfFirst {
+                it.text == message.text.trim() && (!isFirstLoad || it.status == PendingStatus.Sent)
+            }
             if (match >= 0) remaining.removeAt(match)
             match < 0
         }
@@ -596,10 +622,17 @@ class ConversationViewModel internal constructor(
         }
         accountSeen = true
         localIndex = index
-        country = OlxCountry.fromCode(account.countryCode) ?: country
+        val knownCountry = OlxCountry.fromCode(account.countryCode)
+        country = knownCountry ?: country
         val needsReconnect = account.state == OlxAccountState.NeedsReconnect
         val changed = needsReconnect != currentState().needsReconnect
-        setState { it.copy(needsReconnect = needsReconnect, accountName = account.profile?.name) }
+        setState {
+            it.copy(
+                needsReconnect = needsReconnect,
+                accountName = account.profile?.name,
+                olxCountry = knownCountry ?: it.olxCountry,
+            )
+        }
         if (needsReconnect) pollJob?.cancel() else if (changed || pollJob == null) startPolling()
     }
 

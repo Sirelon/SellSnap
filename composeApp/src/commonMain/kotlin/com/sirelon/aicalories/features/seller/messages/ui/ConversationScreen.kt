@@ -174,6 +174,9 @@ private fun ConversationScreen(
 ) {
     // Beside the list on a wide window the list is the way back, so there is no back arrow.
     val isBesideList = LocalListDetailSceneScope.current != null
+    // The thread's own account decides the OLX domain and the time zone; the active account's
+    // market stands in only until that account is known.
+    val country = state.olxCountry ?: _currentOlxCountry
     val listState = rememberLazyListState()
     ScrollToNewestEffect(
         listState = listState,
@@ -215,7 +218,7 @@ private fun ConversationScreen(
                     IconButton(
                         onClick = {
                             onEvent(Event.ReplyOnOlxClicked)
-                            openUrl("https://www.${_currentOlxCountry.domain}/myaccount/answers/")
+                            openUrl("https://www.${country.domain}/myaccount/answers/")
                         },
                         modifier = Modifier.testTag("conversation_reply_on_olx"),
                     ) {
@@ -314,6 +317,7 @@ private fun ConversationScreen(
                             MessageBubble(
                                 message = message,
                                 isFlagged = message.id in state.flaggedMessageIds,
+                                marketZone = country.timeZone,
                             )
                         }
                     }
@@ -432,7 +436,7 @@ private fun ScrollToNewestEffect(
 }
 
 @Composable
-private fun MessageBubble(message: OlxMessage, isFlagged: Boolean) {
+private fun MessageBubble(message: OlxMessage, isFlagged: Boolean, marketZone: TimeZone) {
     val alignment = if (message.isSent) Alignment.End else Alignment.Start
     val textColor = if (message.isSent) AppTheme.colors.onPrimary else AppTheme.colors.onSurface
     Column(
@@ -468,7 +472,7 @@ private fun MessageBubble(message: OlxMessage, isFlagged: Boolean) {
                 Text(
                     text = messageTime(
                         raw = message.createdAt,
-                        marketZone = _currentOlxCountry.timeZone,
+                        marketZone = marketZone,
                         now = Clock.System.now(),
                         zone = TimeZone.currentSystemDefault(),
                     ),

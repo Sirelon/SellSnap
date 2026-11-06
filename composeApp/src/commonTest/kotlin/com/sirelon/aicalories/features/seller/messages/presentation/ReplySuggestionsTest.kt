@@ -4,6 +4,7 @@ import com.sirelon.sellsnap.features.seller.openai.REPLY_SUGGESTIONS_MODEL_ID
 import com.sirelon.sellsnap.analytics.AnalyticsEvents
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountRecord
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountState
+import com.sirelon.sellsnap.features.seller.messages.domain.ReplySuggestion
 import com.sirelon.sellsnap.features.seller.messages.presentation.ConversationContract.Event
 import com.sirelon.sellsnap.features.seller.messages.presentation.ConversationContract.PendingStatus
 import io.ktor.client.engine.mock.MockEngine
@@ -451,9 +452,12 @@ class ReplySuggestionsTest {
     }
 
     @Test
-    fun `without a floor the prompt holds the asking price and nothing is dropped`() = runTest(testDispatcher) {
+    fun `without a floor the prompt holds the asking price and the guard drops what is below it`() =
+        runTest(testDispatcher) {
         val fakes = Fakes()
-        fakes.modelOutput = """{"replies":[{"text":"I can do 1500.","needs_review":false,"price":1500}]}"""
+        fakes.modelOutput = """{"replies":[""" +
+            """{"text":"I can do 1500.","needs_review":false,"price":1500},""" +
+            """{"text":"It is 2500.","needs_review":false,"price":2500}]}"""
         val (viewModel, harness) = conversation(fakes, withFloor = false)
         viewModel.open()
         runCurrent()
@@ -461,18 +465,21 @@ class ReplySuggestionsTest {
         runCurrent()
 
         assertTrue(fakes.openAIBodies.single().contains("below the asking price"))
-        assertEquals(1, viewModel.state.value.suggestions.size)
+        assertEquals(listOf("It is 2500."), viewModel.state.value.suggestions.map { it.text })
+        assertEquals(1, harness.eventsOf(AnalyticsEvents.SUGGESTIONS_SHOWN).single()["dropped_below_floor"])
         assertEquals(false, harness.eventsOf(AnalyticsEvents.SUGGESTIONS_REQUESTED).single()["has_price_floor"])
         viewModel.onEvent(Event.Hidden)
     }
 
     @Test
-    fun `a floor at or above the asking price is left out of the request, the guard and the event`() =
+    fun `a floor at or above the asking price is left out of the request and the event, and the asking price guards`() =
         runTest(testDispatcher) {
             // The advert asks 2500 now; the AI's floor at publish time was higher.
             for (floor in listOf(2500L, 2600L)) {
                 val fakes = Fakes()
-                fakes.modelOutput = """{"replies":[{"text":"I can do 1500.","needs_review":false,"price":1500}]}"""
+                fakes.modelOutput = """{"replies":[""" +
+                    """{"text":"I can do 1500.","needs_review":false,"price":1500},""" +
+                    """{"text":"It is 2500.","needs_review":false,"price":2500}]}"""
                 val (viewModel, harness) = conversation(fakes, floor = floor)
                 viewModel.open()
                 runCurrent()
@@ -483,9 +490,9 @@ class ReplySuggestionsTest {
                 assertFalse(body.contains("lowest acceptable price"), body)
                 assertTrue(body.contains("below the asking price"), body)
                 assertTrue(body.contains("asking price is 2500 UAH"), body)
-                // No floor, so the code guard drops nothing.
-                assertEquals(1, viewModel.state.value.suggestions.size)
-                assertEquals(0, harness.eventsOf(AnalyticsEvents.SUGGESTIONS_SHOWN).single()["dropped_below_floor"])
+                // No floor, so the asking price is the guard's floor.
+                assertEquals(listOf("It is 2500."), viewModel.state.value.suggestions.map { it.text })
+                assertEquals(1, harness.eventsOf(AnalyticsEvents.SUGGESTIONS_SHOWN).single()["dropped_below_floor"])
                 assertEquals(false, harness.eventsOf(AnalyticsEvents.SUGGESTIONS_REQUESTED).single()["has_price_floor"])
                 viewModel.onEvent(Event.Hidden)
             }
@@ -505,6 +512,108 @@ class ReplySuggestionsTest {
         assertEquals(true, harness.eventsOf(AnalyticsEvents.SUGGESTIONS_REQUESTED).single()["has_price_floor"])
         viewModel.onEvent(Event.Hidden)
     }
+
+    @Test
+    fun `accepting a very low offer is dropped`() = runTest(testDispatcher) {
+        val fakes = Fakes()
+        fakes.messages = listOf(messageJson(1, "received", "Would you take 150?"))
+        fakes.modelOutput = """{"replies":[""" +
+            """{"text":"Okay, 150 is fine.","needs_review":false,"price":null},""" +
+            """{"text":"I can't do 150, 2200 is my price.","needs_review":false,"price":2200}]}"""
+        val (viewModel, _) = conversation(fakes)
+        viewModel.open()
+        runCurrent()
+        viewModel.onEvent(Event.SuggestRepliesClicked(isTwoPane = false))
+        runCurrent()
+
+        assertEquals(listOf("I can't do 150, 2200 is my price."), viewModel.state.value.suggestions.map { it.text })
+        viewModel.onEvent(Event.Hidden)
+    }
+
+    // A send makes the suggestions stale.
+
+    @Test
+    fun `a reply typed while suggestions are shown clears them, and they do not come back`() =
+        runTest(testDispatcher) {
+            val fakes = Fakes()
+            val (viewModel, _) = conversation(fakes)
+            viewModel.open()
+            runCurrent()
+            viewModel.onEvent(Event.SuggestRepliesClicked(isTwoPane = false))
+            runCurrent()
+            assertEquals(3, viewModel.state.value.suggestions.size)
+
+            viewModel.onEvent(Event.DraftChanged("Placeholder typed reply"))
+            assertFalse(viewModel.state.value.showsSuggestions)
+            viewModel.onEvent(Event.SendClicked(isTwoPane = false))
+            runCurrent()
+
+            val state = viewModel.state.value
+            assertEquals("", state.draft)
+            assertTrue(state.suggestions.isEmpty())
+            assertFalse(state.showsSuggestions)
+            assertEquals(1, fakes.posts.size)
+
+            // Suggest replies on the same buyer message must call the model again, not replay old ones.
+            assertFalse(state.canSuggestReplies)
+            viewModel.onEvent(Event.Hidden)
+        }
+
+    @Test
+    fun `a reply sent from an inserted suggestion clears the suggestions too`() = runTest(testDispatcher) {
+        val fakes = Fakes()
+        val (viewModel, _) = conversation(fakes)
+        viewModel.open()
+        runCurrent()
+        viewModel.onEvent(Event.SuggestRepliesClicked(isTwoPane = false))
+        runCurrent()
+
+        viewModel.onEvent(Event.SuggestionClicked(index = 2, isTwoPane = false))
+        viewModel.onEvent(Event.SendClicked(isTwoPane = false))
+        runCurrent()
+
+        assertTrue(viewModel.state.value.suggestions.isEmpty())
+        assertFalse(viewModel.state.value.showsSuggestions)
+        assertEquals(1, fakes.posts.size)
+        viewModel.onEvent(Event.Hidden)
+    }
+
+    @Test
+    fun `suggestions are not shown or tapped while a reply of the seller is pending`() {
+        val suggestion = ReplySuggestion(text = "Placeholder", needsReview = false, price = null)
+        val pending = ConversationContract.PendingMessage(localId = 0, text = "Placeholder", status = PendingStatus.Sending)
+        val state = ConversationContract.State(suggestions = listOf(suggestion))
+
+        assertTrue(state.showsSuggestions)
+        assertFalse(state.copy(pendingMessages = listOf(pending)).showsSuggestions)
+        assertFalse(state.copy(pendingMessages = listOf(pending.copy(status = PendingStatus.Failed))).showsSuggestions)
+    }
+
+    @Test
+    fun `an answer that lands after the seller replied is discarded and not logged as shown`() =
+        runTest(testDispatcher) {
+            val fakes = Fakes()
+            fakes.openAIDelaySeconds = 2
+            val (viewModel, harness) = conversation(fakes)
+            viewModel.open()
+            runCurrent()
+            viewModel.onEvent(Event.SuggestRepliesClicked(isTwoPane = false))
+            runCurrent()
+            assertTrue(viewModel.state.value.isSuggesting)
+
+            viewModel.onEvent(Event.DraftChanged("Placeholder typed reply"))
+            viewModel.onEvent(Event.SendClicked(isTwoPane = false))
+            advanceTimeBy(3.seconds)
+            runCurrent()
+
+            val state = viewModel.state.value
+            assertFalse(state.isSuggesting)
+            assertTrue(state.suggestions.isEmpty())
+            assertEquals(1, fakes.posts.size)
+            assertTrue(harness.eventsOf(AnalyticsEvents.SUGGESTIONS_SHOWN).isEmpty())
+            assertTrue(harness.eventsOf(AnalyticsEvents.SUGGESTIONS_FAILED).isEmpty())
+            viewModel.onEvent(Event.Hidden)
+        }
 
     // Failures.
 

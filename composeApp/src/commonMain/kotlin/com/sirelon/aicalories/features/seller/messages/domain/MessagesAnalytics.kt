@@ -82,7 +82,7 @@ internal object MessagesAnalyticsBuckets {
         if (asking == null || floor <= 0) return null
         val percent = ((asking - floor) * 100) / floor
         return when {
-            percent <= 0 -> "0"
+            asking <= floor -> "0"
             percent <= 10 -> "1_10"
             percent <= 25 -> "11_25"
             percent <= 50 -> "26_50"
