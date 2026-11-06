@@ -310,13 +310,18 @@ object AnalyticsEvents {
 
     /**
      * The seller tapped an action in a conversation. `action` is `reply_on_olx` (the top-bar
-     * link to OLX's own messages page, beside the in-app reply), `open_listing` (the header) or
-     * `mark_as_read` (the top bar action, offered while the thread has unread messages). Also
+     * link to OLX's own messages page, beside the in-app reply), `open_listing` (the header),
+     * `copy_message` (Copy on a message bubble's long-press menu; no text is logged) or
+     * `mark_as_read` (the top bar action, offered while the thread has unread messages, and sent
+     * by itself once a reply is accepted on a thread that is still unread). Also
      * `listing_state` (as for `messages_conversation_opened`), `had_unread` (Boolean, the row had
      * unread messages when it was opened) and `seconds_since_open_bucket` (0_5, 6_30, 31_120,
      * gt_120) from opening the conversation to the tap. `mark_as_read` also carries `result`:
-     * `success` (OLX accepted the command) or `failed` (the seller saw an error, also logged as
-     * `error_shown`); the other actions have no `result`.
+     * `success` (OLX accepted the command) or `failed`, and `trigger`: `tap` (the seller's button;
+     * a failure is shown as a snackbar and also logged as `error_shown`) or `send` (the reply
+     * that was just accepted; a failure is shown to nobody and only recorded as a non-fatal).
+     * Count taps with `trigger = tap`; `send` events are not taps. The other actions have no
+     * `result` or `trigger`.
      */
     const val MESSAGES_CONVERSATION_ACTION = "messages_conversation_action"
 
@@ -324,7 +329,7 @@ object AnalyticsEvents {
      * A reply the seller sent from a conversation (SIR-95), logged when OLX answers. `source` is
      * where the text came from: `typed`, `suggestion` (an AI suggestion sent with one tap, SIR-96)
      * or `edited_suggestion` (a suggestion put into the field, then sent from it). With either
-     * suggestion source, `suggestion_index` is the chip's position (0 = first); with
+     * suggestion source, `suggestion_index` is the row's position (0 = first); with
      * `edited_suggestion`, `suggestion_edited` (Boolean) says whether the seller changed the text
      * before sending. A Retry keeps the source of the reply it sends again. `result` is `success` (OLX accepted it) or `failed` (the bubble shows Retry; also
      * `error_shown` with reason `send_failed:<cause>`, except for an account that needs a
@@ -360,8 +365,10 @@ object AnalyticsEvents {
      * arrives before the answer: that answer is dropped unlogged. `layout` is `single_pane` or
      * `two_pane`; `has_listing_text` (Boolean) is true when the advert's description or
      * attributes reached the prompt (false for a deleted advert or a failed read: the title and
-     * the conversation only); `has_price_floor` (Boolean) is true when the seller's private
-     * lowest price bounded the suggestions.
+     * the conversation only); `has_price_floor` (Boolean) is true when a usable floor was
+     * available: the seller's private lowest price exists and is below the asking price, so it
+     * went into the prompt and the price guard. False when none was kept, or when it is at or
+     * above the asking price (then the prompt holds the asking price and nothing is dropped).
      */
     const val SUGGESTIONS_REQUESTED = "suggestions_requested"
 
@@ -386,9 +393,9 @@ object AnalyticsEvents {
 
     /**
      * The seller tapped a suggestion that was not sent but put into the reply field to review.
-     * `suggestion_index` is the chip's position (0 = first); `reason` is `needs_review` (the
-     * model marked it: delivery, payment, a meeting or contact details) or `truncated` (the chip
-     * could not show the whole text).
+     * `suggestion_index` is the row's position (0 = first); `reason` is always `needs_review`
+     * (the model marked it: delivery, payment, a meeting or contact details). Every other
+     * suggestion is shown in full and sent by the tap.
      */
     const val SUGGESTION_INSERTED = "suggestion_inserted"
 

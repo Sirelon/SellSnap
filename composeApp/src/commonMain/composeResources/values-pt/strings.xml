@@ -503,8 +503,6 @@
         <item quantity="other">há %1$d dias</item>
     </plurals>
     <string name="conversation_load_failed">Não foi possível carregar esta conversa.</string>
-    <string name="conversation_price_floor">Visível só para si · o mínimo que aceita: %1$s · pedido: %2$s</string>
-    <string name="conversation_price_floor_no_ask">Visível só para si · o mínimo que aceita: %1$s</string>
     <string name="conversation_reply_on_olx">Responder no OLX</string>
     <string name="conversation_reply_hint">Escreva uma resposta</string>
     <string name="conversation_send">Enviar</string>

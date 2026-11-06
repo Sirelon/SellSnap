@@ -45,12 +45,19 @@ fun Input(
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     keyboardActions: KeyboardActions = KeyboardActions.Default,
     visualTransformation: VisualTransformation = VisualTransformation.None,
+    /**
+     * iOS: the "Done" bar above the keyboard. Off for a field that has its own way to close the
+     * keyboard (a reply field in a list that dismisses on drag); it also leaves the field on the
+     * platform's default text input.
+     */
+    showKeyboardDoneBar: Boolean = true,
 ) {
     val dismissKeyboard = rememberKeyboardDismissAction()
-    val platformImeOptions = rememberPlatformImeOptions(
+    val doneBarOptions = rememberPlatformImeOptions(
         doneLabel = stringResource(Res.string.keyboard_done_action),
         onDone = dismissKeyboard,
     )
+    val platformImeOptions = if (showKeyboardDoneBar) doneBarOptions else null
     val resolvedKeyboardOptions = keyboardOptions.withKeyboardDismissDefaults(platformImeOptions)
     val resolvedKeyboardActions = if (keyboardActions == KeyboardActions.Default) {
         KeyboardActions(

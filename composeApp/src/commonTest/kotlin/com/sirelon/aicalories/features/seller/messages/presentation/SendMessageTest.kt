@@ -58,6 +58,10 @@ class SendMessageTest {
         /** Applied when a POST is accepted, as OLX storing the reply. */
         var onAccepted: () -> Unit = {}
         val posts = mutableListOf<Pair<String?, String>>()
+
+        /** Thread commands (mark-as-read): the Authorization header and the body. */
+        val commands = mutableListOf<Pair<String?, String>>()
+        var commandStatus = HttpStatusCode.NoContent
         var messageReads = 0
     }
 
@@ -70,6 +74,10 @@ class SendMessageTest {
                     thread.postGate?.await()
                     if (thread.postStatus.value in 200..299) thread.onAccepted()
                     respond(thread.postBody, thread.postStatus, jsonHeaders())
+                }
+                request.method == HttpMethod.Post && path.endsWith("/commands") -> {
+                    thread.commands += request.headers["Authorization"] to (request.body as TextContent).text
+                    respond("", thread.commandStatus, jsonHeaders())
                 }
                 path.endsWith("/messages") -> {
                     thread.messageReads++
@@ -85,6 +93,7 @@ class SendMessageTest {
         accounts: List<OlxAccountRecord> = listOf(testAccount(1)),
         localIndex: Int = 1,
         isListingDeleted: Boolean = false,
+        hadUnread: Boolean = true,
     ): Pair<ConversationViewModel, MessagesHarness> {
         val harness = messagesHarness(engine(thread), accounts, activeIndex = 1)
         val viewModel = ConversationViewModel(
@@ -95,7 +104,7 @@ class SendMessageTest {
             imageUrl = null,
             status = null,
             isListingDeleted = isListingDeleted,
-            hadUnread = true,
+            hadUnread = hadUnread,
             repository = harness.messagesRepository,
             myAdvertsRepository = harness.myAdvertsRepository,
             outcomeStore = harness.outcomeStore,
@@ -135,8 +144,8 @@ class SendMessageTest {
             assertEquals("""{"text":"Placeholder reply"}""", thread.posts.single().second)
             assertEquals(emptyList(), viewModel.state.value.pendingMessages)
             assertEquals(listOf(1L, 2L), viewModel.state.value.messages.map { it.id })
-            // Sending does not mark the thread read.
-            assertTrue(viewModel.state.value.canMarkAsRead)
+            // The accepted reply marked the thread read.
+            assertFalse(viewModel.state.value.canMarkAsRead)
             assertEquals(
                 mapOf<String, Any>(
                     "source" to "typed",
@@ -148,6 +157,117 @@ class SendMessageTest {
                 ),
                 sentEvents(harness).single(),
             )
+            viewModel.onEvent(Event.Hidden)
+        }
+
+    @Test
+    fun `an accepted reply on an unread thread marks it read with the conversation's account and clears the badge`() =
+        runTest(testDispatcher) {
+            val thread = FakeThread()
+            val harness = messagesHarness(
+                engine(thread),
+                listOf(testAccount(1), testAccount(2, olxUserId = 2)),
+                activeIndex = 1,
+            )
+            harness.messagesRepository.publishUnread(1, mapOf(5L to 7))
+            harness.messagesRepository.publishUnread(2, mapOf(5L to 2))
+            val viewModel = ConversationViewModel(
+                keyLocalIndex = 2,
+                threadId = 5,
+                advertId = 10,
+                title = null,
+                imageUrl = null,
+                status = null,
+                isListingDeleted = false,
+                hadUnread = true,
+                repository = harness.messagesRepository,
+                myAdvertsRepository = harness.myAdvertsRepository,
+                outcomeStore = harness.outcomeStore,
+                accountRepository = harness.accountRepository,
+                analytics = harness.analytics,
+                openAIClient = harness.openAIClient,
+            )
+            viewModel.onEvent(Event.Shown)
+            runCurrent()
+            // Opening and polling send nothing.
+            assertEquals(emptyList(), thread.commands)
+            assertTrue(viewModel.state.value.canMarkAsRead)
+
+            viewModel.onEvent(Event.DraftChanged("Placeholder reply"))
+            viewModel.onEvent(Event.SendClicked(isTwoPane = false))
+            runCurrent()
+
+            assertEquals(listOf<Pair<String?, String>>("Bearer token-2" to """{"command":"mark-as-read"}"""), thread.commands)
+            assertFalse(viewModel.state.value.canMarkAsRead)
+            assertFalse(viewModel.state.value.isMarkingAsRead)
+            // Account 2's thread is zero; account 1's thread 5 is a different thread and keeps its seven.
+            assertEquals(7, harness.messagesRepository.unreadCount.value)
+            val action = harness.analytics.events
+                .filter { it.first == AnalyticsEvents.MESSAGES_CONVERSATION_ACTION }.map { it.second }.single()
+            assertEquals("mark_as_read", action["action"])
+            assertEquals("success", action["result"])
+            assertEquals("send", action["trigger"])
+            viewModel.onEvent(Event.Hidden)
+        }
+
+    @Test
+    fun `an accepted reply on a thread with nothing unread sends no command`() = runTest(testDispatcher) {
+        val thread = FakeThread()
+        val (viewModel, harness) = conversation(thread, hadUnread = false)
+        viewModel.onEvent(Event.Shown)
+        runCurrent()
+
+        viewModel.onEvent(Event.DraftChanged("Placeholder reply"))
+        viewModel.onEvent(Event.SendClicked(isTwoPane = false))
+        runCurrent()
+
+        assertEquals(1, thread.posts.size)
+        assertEquals(emptyList(), thread.commands)
+        assertTrue(harness.analytics.events.none { it.first == AnalyticsEvents.MESSAGES_CONVERSATION_ACTION })
+        viewModel.onEvent(Event.Hidden)
+    }
+
+    @Test
+    fun `a refused reply sends no mark-as-read`() = runTest(testDispatcher) {
+        val thread = FakeThread()
+        thread.postStatus = HttpStatusCode.InternalServerError
+        val (viewModel, _) = conversation(thread)
+        viewModel.onEvent(Event.Shown)
+        runCurrent()
+
+        viewModel.onEvent(Event.DraftChanged("Placeholder reply"))
+        viewModel.onEvent(Event.SendClicked(isTwoPane = false))
+        runCurrent()
+
+        assertEquals(emptyList(), thread.commands)
+        assertTrue(viewModel.state.value.canMarkAsRead)
+        viewModel.onEvent(Event.Hidden)
+    }
+
+    @Test
+    fun `a failed mark-as-read after a reply is silent, keeps the action and is recorded without error_shown`() =
+        runTest(testDispatcher) {
+            val thread = FakeThread()
+            thread.commandStatus = HttpStatusCode.InternalServerError
+            val (viewModel, harness) = conversation(thread)
+            viewModel.onEvent(Event.Shown)
+            runCurrent()
+
+            viewModel.onEvent(Event.DraftChanged("Placeholder reply"))
+            viewModel.onEvent(Event.SendClicked(isTwoPane = false))
+            runCurrent()
+
+            assertEquals(1, thread.commands.size)
+            assertTrue(viewModel.state.value.canMarkAsRead)
+            assertFalse(viewModel.state.value.isMarkingAsRead)
+            assertTrue(harness.analytics.events.none { it.first == AnalyticsEvents.ERROR_SHOWN })
+            assertEquals(1, harness.analytics.exceptions.size)
+            val action = harness.analytics.events
+                .filter { it.first == AnalyticsEvents.MESSAGES_CONVERSATION_ACTION }.map { it.second }.single()
+            assertEquals("failed", action["result"])
+            assertEquals("send", action["trigger"])
+            // The reply itself went through.
+            assertEquals(1, sentEvents(harness).count { it["result"] == "success" })
             viewModel.onEvent(Event.Hidden)
         }
 

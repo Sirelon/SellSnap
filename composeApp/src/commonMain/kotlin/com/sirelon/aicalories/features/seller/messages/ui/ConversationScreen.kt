@@ -11,22 +11,27 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.SnackbarHost
@@ -37,12 +42,19 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.adaptive.navigation3.LocalListDetailSceneScope
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -50,7 +62,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -65,6 +79,8 @@ import com.sirelon.sellsnap.designsystem.ObserveAsEvents
 import com.sirelon.sellsnap.designsystem.buttons.AppIconButton
 import com.sirelon.sellsnap.designsystem.screens.EmptyScreen
 import com.sirelon.sellsnap.designsystem.screens.LoadingOverlay
+import com.sirelon.sellsnap.designsystem.rememberDismissKeyboardOnDragConnection
+import com.sirelon.sellsnap.designsystem.rememberKeyboardDismissAction
 import com.sirelon.sellsnap.designsystem.shimmer
 import com.sirelon.sellsnap.features.seller.ad.publish_success.AdvertStatus
 import com.sirelon.sellsnap.features.seller.auth.data._currentOlxCountry
@@ -74,16 +90,14 @@ import com.sirelon.sellsnap.features.seller.messages.domain.messageTime
 import com.sirelon.sellsnap.features.seller.messages.presentation.ConversationContract
 import com.sirelon.sellsnap.features.seller.messages.presentation.ConversationContract.Event
 import com.sirelon.sellsnap.features.seller.messages.presentation.ConversationViewModel
-import com.sirelon.sellsnap.features.seller.my_ads.data.MyAdvertItemMapper
 import com.sirelon.sellsnap.features.seller.my_ads.model.MyAdvertItem
 import com.sirelon.sellsnap.features.seller.my_ads.ui.StatusChip
 import com.sirelon.sellsnap.generated.resources.Res
 import com.sirelon.sellsnap.generated.resources.advert_action_failed
 import com.sirelon.sellsnap.generated.resources.back
+import com.sirelon.sellsnap.generated.resources.copy_pill_default
 import com.sirelon.sellsnap.generated.resources.conversation_message_not_sent
 import com.sirelon.sellsnap.generated.resources.conversation_message_sending
-import com.sirelon.sellsnap.generated.resources.conversation_price_floor
-import com.sirelon.sellsnap.generated.resources.conversation_price_floor_no_ask
 import com.sirelon.sellsnap.generated.resources.conversation_reply_hint
 import com.sirelon.sellsnap.generated.resources.conversation_reply_on_olx
 import com.sirelon.sellsnap.generated.resources.conversation_scam_warning
@@ -92,6 +106,7 @@ import com.sirelon.sellsnap.generated.resources.conversation_suggest_replies
 import com.sirelon.sellsnap.generated.resources.conversation_suggestions_dismiss
 import com.sirelon.sellsnap.generated.resources.ic_arrow_right
 import com.sirelon.sellsnap.generated.resources.ic_circle_alert
+import com.sirelon.sellsnap.generated.resources.ic_pen_line
 import com.sirelon.sellsnap.generated.resources.ic_sparkles
 import com.sirelon.sellsnap.generated.resources.ic_triangle_alert
 import com.sirelon.sellsnap.generated.resources.ic_x
@@ -165,6 +180,14 @@ private fun ConversationScreen(
 ) {
     // Beside the list on a wide window the list is the way back, so there is no back arrow.
     val isBesideList = LocalListDetailSceneScope.current != null
+    val listState = rememberLazyListState()
+    ScrollToNewestEffect(
+        listState = listState,
+        pendingCount = state.pendingMessages.size,
+        newestMessageId = state.messages.lastOrNull()?.id,
+        suggestionsOnScreen = state.isSuggesting || state.showsSuggestions,
+    )
+    val dismissKeyboardOnDrag = rememberDismissKeyboardOnDragConnection(rememberKeyboardDismissAction())
     AppScaffold(
         modifier = modifier.fillMaxSize(),
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -218,17 +241,16 @@ private fun ConversationScreen(
                 Column(modifier = Modifier.fillMaxWidth().imePadding().navigationBarsPadding()) {
                     when {
                         state.isSuggesting -> SuggestionsLoading()
-                        state.showsSuggestions -> SuggestionsRow(
+                        state.showsSuggestions -> SuggestionsStack(
                             suggestions = state.suggestions,
-                            onClick = { index, isTruncated ->
-                                onEvent(Event.SuggestionClicked(index, isTruncated, isTwoPane = isBesideList))
-                            },
+                            onClick = { index -> onEvent(Event.SuggestionClicked(index, isTwoPane = isBesideList)) },
                             onDismiss = { onEvent(Event.SuggestionsDismissed) },
                         )
                         state.canSuggestReplies -> SuggestRepliesButton(
                             onClick = { onEvent(Event.SuggestRepliesClicked(isTwoPane = isBesideList)) },
                         )
                     }
+                    HorizontalDivider(color = AppTheme.colors.outlineVariant.copy(alpha = 0.13f))
                     ReplyInput(
                         draft = state.draft,
                         canSend = state.canSend,
@@ -252,7 +274,6 @@ private fun ConversationScreen(
                     openUrl(url)
                 },
             )
-            state.priceFloor?.let { PriceFloorLine(it) }
 
             Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
                 if (state.needsReconnect) {
@@ -280,7 +301,9 @@ private fun ConversationScreen(
                 } else {
                     // Newest at the bottom: the list is reversed so it stays anchored there.
                     LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
+                        state = listState,
+                        // Dragging the list closes the keyboard, so the reply field has no Done bar.
+                        modifier = Modifier.fillMaxSize().nestedScroll(dismissKeyboardOnDrag),
                         reverseLayout = true,
                         contentPadding = PaddingValues(AppDimens.Spacing.xl3),
                         verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.m),
@@ -289,10 +312,15 @@ private fun ConversationScreen(
                             PendingMessageBubble(
                                 message = pending,
                                 onRetry = { onEvent(Event.RetrySendClicked(pending.localId, isTwoPane = isBesideList)) },
+                                onCopied = { onEvent(Event.MessageCopied) },
                             )
                         }
                         items(items = state.messages.asReversed(), key = { it.id }) { message ->
-                            MessageBubble(message = message, isFlagged = message.id in state.flaggedMessageIds)
+                            MessageBubble(
+                                message = message,
+                                isFlagged = message.id in state.flaggedMessageIds,
+                                onCopied = { onEvent(Event.MessageCopied) },
+                            )
                         }
                     }
                     if (state.isLoading && !state.hasLoaded) {
@@ -301,33 +329,6 @@ private fun ConversationScreen(
                 }
             }
         }
-    }
-}
-
-/** Private to the seller: muted and plain, never a message bubble. */
-@Composable
-private fun PriceFloorLine(priceFloor: ConversationContract.PriceFloor) {
-    val floor = MyAdvertItemMapper.formatAdvertPrice(priceFloor.floor, priceFloor.currencyCode)
-    val text = priceFloor.asking
-        ?.let { MyAdvertItemMapper.formatAdvertPrice(it, priceFloor.currencyCode) }
-        ?.let { stringResource(Res.string.conversation_price_floor, floor, it) }
-        ?: stringResource(Res.string.conversation_price_floor_no_ask, floor)
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = AppDimens.Spacing.xl3)
-            .padding(bottom = AppDimens.Spacing.m)
-            .testTag("conversation_price_floor"),
-        horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing.m),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Icon(
-            imageVector = Icons.Filled.Lock,
-            contentDescription = null,
-            tint = AppTheme.colors.onSurfaceMuted,
-            modifier = Modifier.size(AppDimens.Size.xl4),
-        )
-        Text(text = text, style = AppTheme.typography.caption, color = AppTheme.colors.onSurfaceMuted)
     }
 }
 
@@ -405,48 +406,111 @@ private fun ListingHeader(
     }
 }
 
+/**
+ * Keeps the newest message in view where the seller expects it: after they send, and when the
+ * suggestions open and shrink the list. A poll that brings a message follows it only when the seller
+ * is already at the bottom (the list is reversed, so index 0 is the newest; one more can sit above
+ * it while the new row is placed). A poll with nothing new, or one that replaces a sent bubble with
+ * its stored copy, never moves a seller who scrolled up to read.
+ */
 @Composable
-private fun MessageBubble(message: OlxMessage, isFlagged: Boolean) {
+private fun ScrollToNewestEffect(
+    listState: LazyListState,
+    pendingCount: Int,
+    newestMessageId: Long?,
+    suggestionsOnScreen: Boolean,
+) {
+    var lastPendingCount by remember { mutableIntStateOf(pendingCount) }
+    LaunchedEffect(pendingCount) {
+        if (pendingCount > lastPendingCount) listState.animateScrollToItem(0)
+        lastPendingCount = pendingCount
+    }
+    var lastNewestId by remember { mutableStateOf(newestMessageId) }
+    LaunchedEffect(newestMessageId) {
+        if (lastNewestId != null && newestMessageId != lastNewestId && listState.firstVisibleItemIndex <= 1) {
+            listState.animateScrollToItem(0)
+        }
+        lastNewestId = newestMessageId
+    }
+    LaunchedEffect(suggestionsOnScreen) {
+        if (suggestionsOnScreen) listState.scrollToItem(0)
+    }
+}
+
+/**
+ * Long-press on a message copies its whole text: a one-item menu with the existing "Copy" label.
+ * Chosen over a `SelectionContainer` because that selects a word at a time, per item, inside a lazy
+ * list whose items are recycled, and needs the platform's selection handles; this works the same
+ * on Android and iOS.
+ */
+@Composable
+private fun CopyOnLongPress(text: String, onCopied: () -> Unit, content: @Composable () -> Unit) {
+    val clipboard = LocalClipboardManager.current
+    var menuOpen by remember { mutableStateOf(false) }
+    Box(
+        modifier = Modifier.pointerInput(text) {
+            detectTapGestures(onLongPress = { if (text.isNotBlank()) menuOpen = true })
+        },
+    ) {
+        content()
+        DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+            DropdownMenuItem(
+                text = { Text(stringResource(Res.string.copy_pill_default)) },
+                onClick = {
+                    clipboard.setText(AnnotatedString(text))
+                    menuOpen = false
+                    onCopied()
+                },
+                modifier = Modifier.testTag("conversation_message_copy"),
+            )
+        }
+    }
+}
+
+@Composable
+private fun MessageBubble(message: OlxMessage, isFlagged: Boolean, onCopied: () -> Unit) {
     val alignment = if (message.isSent) Alignment.End else Alignment.Start
     val textColor = if (message.isSent) AppTheme.colors.onPrimary else AppTheme.colors.onSurface
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = alignment,
     ) {
-        Column(
-            modifier = Modifier
-                .widthIn(max = AppDimens.Size.xl24)
-                .clip(RoundedCornerShape(AppDimens.BorderRadius.xl3))
-                .background(
-                    if (message.isSent) AppTheme.colors.primary else AppTheme.colors.surfaceLowest,
+        CopyOnLongPress(text = message.text, onCopied = onCopied) {
+            Column(
+                modifier = Modifier
+                    .widthIn(max = AppDimens.Size.xl24)
+                    .clip(RoundedCornerShape(AppDimens.BorderRadius.xl3))
+                    .background(
+                        if (message.isSent) AppTheme.colors.primary else AppTheme.colors.surfaceLowest,
+                    )
+                    .padding(AppDimens.Spacing.xl)
+                    .testTag(if (message.isSent) "conversation_message_sent" else "conversation_message_received"),
+                verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.s),
+            ) {
+                if (message.text.isNotBlank()) {
+                    Text(text = message.text, style = AppTheme.typography.body, color = textColor)
+                }
+                message.attachmentUrls.forEach { url ->
+                    AppAsyncImage(
+                        model = url,
+                        modifier = Modifier
+                            .size(AppDimens.Size.xl22)
+                            .clip(RoundedCornerShape(AppDimens.BorderRadius.xl2))
+                            .clickable { openUrl(url) },
+                    )
+                }
+                if (isFlagged) ScamWarning()
+                Text(
+                    text = messageTime(
+                        raw = message.createdAt,
+                        marketZone = _currentOlxCountry.timeZone,
+                        now = Clock.System.now(),
+                        zone = TimeZone.currentSystemDefault(),
+                    ),
+                    style = AppTheme.typography.caption,
+                    color = textColor.copy(alpha = 0.7f),
                 )
-                .padding(AppDimens.Spacing.xl)
-                .testTag(if (message.isSent) "conversation_message_sent" else "conversation_message_received"),
-            verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.s),
-        ) {
-            if (message.text.isNotBlank()) {
-                Text(text = message.text, style = AppTheme.typography.body, color = textColor)
             }
-            message.attachmentUrls.forEach { url ->
-                AppAsyncImage(
-                    model = url,
-                    modifier = Modifier
-                        .size(AppDimens.Size.xl22)
-                        .clip(RoundedCornerShape(AppDimens.BorderRadius.xl2))
-                        .clickable { openUrl(url) },
-                )
-            }
-            if (isFlagged) ScamWarning()
-            Text(
-                text = messageTime(
-                    raw = message.createdAt,
-                    marketZone = _currentOlxCountry.timeZone,
-                    now = Clock.System.now(),
-                    zone = TimeZone.currentSystemDefault(),
-                ),
-                style = AppTheme.typography.caption,
-                color = textColor.copy(alpha = 0.7f),
-            )
         }
     }
 }
@@ -480,29 +544,35 @@ private fun ScamWarning() {
  * the text stays, with OLX's refusal when it gave one, and Retry.
  */
 @Composable
-private fun PendingMessageBubble(message: ConversationContract.PendingMessage, onRetry: () -> Unit) {
+private fun PendingMessageBubble(
+    message: ConversationContract.PendingMessage,
+    onRetry: () -> Unit,
+    onCopied: () -> Unit,
+) {
     val textColor = AppTheme.colors.onPrimary
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.End,
     ) {
-        Column(
-            modifier = Modifier
-                .widthIn(max = AppDimens.Size.xl24)
-                .alpha(if (message.status == ConversationContract.PendingStatus.Sending) 0.6f else 1f)
-                .clip(RoundedCornerShape(AppDimens.BorderRadius.xl3))
-                .background(AppTheme.colors.primary)
-                .padding(AppDimens.Spacing.xl)
-                .testTag("conversation_message_pending"),
-            verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.s),
-        ) {
-            Text(text = message.text, style = AppTheme.typography.body, color = textColor)
-            if (message.status == ConversationContract.PendingStatus.Sending) {
-                Text(
-                    text = stringResource(Res.string.conversation_message_sending),
-                    style = AppTheme.typography.caption,
-                    color = textColor.copy(alpha = 0.7f),
-                )
+        CopyOnLongPress(text = message.text, onCopied = onCopied) {
+            Column(
+                modifier = Modifier
+                    .widthIn(max = AppDimens.Size.xl24)
+                    .alpha(if (message.status == ConversationContract.PendingStatus.Sending) 0.6f else 1f)
+                    .clip(RoundedCornerShape(AppDimens.BorderRadius.xl3))
+                    .background(AppTheme.colors.primary)
+                    .padding(AppDimens.Spacing.xl)
+                    .testTag("conversation_message_pending"),
+                verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.s),
+            ) {
+                Text(text = message.text, style = AppTheme.typography.body, color = textColor)
+                if (message.status == ConversationContract.PendingStatus.Sending) {
+                    Text(
+                        text = stringResource(Res.string.conversation_message_sending),
+                        style = AppTheme.typography.caption,
+                        color = textColor.copy(alpha = 0.7f),
+                    )
+                }
             }
         }
         if (message.status == ConversationContract.PendingStatus.Failed) {
@@ -581,29 +651,32 @@ private fun SuggestionsLoading() {
 }
 
 /**
- * The suggestions in one row that scrolls sideways, with a close icon that stays in reach.
- * [onClick] gets the chip's index and whether its text did not fit.
+ * The suggestions as full-width rows, each with its whole text, above the reply field, with a close
+ * icon that stays in reach. The stack is capped at a fifth of the window's height and scrolls past
+ * that, so on a small phone with the keyboard up the field is never pushed off screen.
+ * [onClick] gets the row's index.
  */
 @Composable
-private fun SuggestionsRow(
+private fun SuggestionsStack(
     suggestions: List<ReplySuggestion>,
-    onClick: (index: Int, isTruncated: Boolean) -> Unit,
+    onClick: (index: Int) -> Unit,
     onDismiss: () -> Unit,
 ) {
+    val windowHeight = with(LocalDensity.current) { LocalWindowInfo.current.containerSize.height.toDp() }
     Row(
         modifier = Modifier.fillMaxWidth().testTag("conversation_suggestions"),
-        verticalAlignment = Alignment.CenterVertically,
+        verticalAlignment = Alignment.Top,
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .weight(1f)
-                .horizontalScroll(rememberScrollState())
+                .heightIn(max = windowHeight * SuggestionsMaxHeightFraction)
+                .verticalScroll(rememberScrollState())
                 .padding(start = AppDimens.Spacing.xl3, top = AppDimens.Spacing.xs, bottom = AppDimens.Spacing.xs),
-            horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing.m),
-            verticalAlignment = Alignment.CenterVertically,
+            verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.m),
         ) {
             suggestions.forEachIndexed { index, suggestion ->
-                SuggestionChip(text = suggestion.text, onClick = { isTruncated -> onClick(index, isTruncated) })
+                SuggestionRow(suggestion = suggestion, onClick = { onClick(index) })
             }
         }
         IconButton(onClick = onDismiss, modifier = Modifier.testTag("conversation_suggestions_dismiss")) {
@@ -617,28 +690,40 @@ private fun SuggestionsRow(
     }
 }
 
+private const val SuggestionsMaxHeightFraction = 0.2f
+
 /**
- * One suggestion, up to two lines. It reports whether its text was cut, which decides between
- * sending it and putting it into the field; until it has been laid out it counts as cut.
+ * One suggestion, whole. A tap sends it; the pencil marks one the model flagged for review (delivery,
+ * payment, meetings, contact details), which a tap puts into the field to check and edit instead.
  */
 @Composable
-private fun SuggestionChip(text: String, onClick: (isTruncated: Boolean) -> Unit) {
-    var isTruncated by remember(text) { mutableStateOf(true) }
+private fun SuggestionRow(suggestion: ReplySuggestion, onClick: () -> Unit) {
     Surface(
-        onClick = { onClick(isTruncated) },
-        modifier = Modifier.widthIn(max = AppDimens.Size.xl23).testTag("conversation_suggestion"),
-        shape = RoundedCornerShape(AppDimens.BorderRadius.pill),
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth().testTag("conversation_suggestion"),
+        shape = RoundedCornerShape(AppDimens.BorderRadius.xl3),
         color = AppTheme.colors.surfaceVariant,
         contentColor = AppTheme.colors.onSurface,
     ) {
-        Text(
-            text = text,
-            style = AppTheme.typography.caption,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-            onTextLayout = { isTruncated = it.hasVisualOverflow },
+        Row(
             modifier = Modifier.padding(horizontal = AppDimens.Spacing.xl, vertical = AppDimens.Spacing.m),
-        )
+            horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing.m),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = suggestion.text,
+                style = AppTheme.typography.body,
+                modifier = Modifier.weight(1f),
+            )
+            if (suggestion.needsReview) {
+                Icon(
+                    painter = painterResource(Res.drawable.ic_pen_line),
+                    contentDescription = null,
+                    tint = AppTheme.colors.onSurfaceMuted,
+                    modifier = Modifier.size(AppDimens.Size.xl4).testTag("conversation_suggestion_review"),
+                )
+            }
+        }
     }
 }
 
@@ -667,6 +752,8 @@ private fun ReplyInput(
             placeholder = stringResource(Res.string.conversation_reply_hint),
             singleLine = false,
             maxLines = 5,
+            // The list above closes the keyboard on drag, so no Done bar.
+            showKeyboardDoneBar = false,
             // Return inserts a line break; Send is the button.
             keyboardOptions = KeyboardOptions(
                 capitalization = KeyboardCapitalization.Sentences,

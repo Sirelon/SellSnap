@@ -505,8 +505,6 @@
         <item quantity="other">%1$d days ago</item>
     </plurals>
     <string name="conversation_load_failed">Couldn't load this conversation.</string>
-    <string name="conversation_price_floor">Only you see this · lowest you'd take %1$s · asked %2$s</string>
-    <string name="conversation_price_floor_no_ask">Only you see this · lowest you'd take %1$s</string>
     <string name="conversation_reply_on_olx">Reply on OLX</string>
     <string name="conversation_reply_hint">Write a reply</string>
     <string name="conversation_send">Send</string>

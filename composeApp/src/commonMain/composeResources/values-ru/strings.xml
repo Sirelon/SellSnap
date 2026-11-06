@@ -516,8 +516,6 @@
         <item quantity="other">%1$d дня тому</item>
     </plurals>
     <string name="conversation_load_failed">Не вдалося завантажити цю розмову.</string>
-    <string name="conversation_price_floor">Це бачите лише ви · найнижча ціна, на яку ви погодитесь: %1$s · у оголошенні: %2$s</string>
-    <string name="conversation_price_floor_no_ask">Це бачите лише ви · найнижча ціна, на яку ви погодитесь: %1$s</string>
     <string name="conversation_reply_on_olx">Відповісти на OLX</string>
     <string name="conversation_reply_hint">Напишіть відповідь</string>
     <string name="conversation_send">Надіслати</string>

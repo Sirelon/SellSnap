@@ -513,8 +513,6 @@
         <item quantity="other">%1$d dnia temu</item>
     </plurals>
     <string name="conversation_load_failed">Nie udało się wczytać tej rozmowy.</string>
-    <string name="conversation_price_floor">Widzisz to tylko Ty · najniższa cena, jaką przyjmiesz: %1$s · cena w ogłoszeniu: %2$s</string>
-    <string name="conversation_price_floor_no_ask">Widzisz to tylko Ty · najniższa cena, jaką przyjmiesz: %1$s</string>
     <string name="conversation_reply_on_olx">Odpowiedz na OLX</string>
     <string name="conversation_reply_hint">Napisz odpowiedź</string>
     <string name="conversation_send">Wyślij</string>

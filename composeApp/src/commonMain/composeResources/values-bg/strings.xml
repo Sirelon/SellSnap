@@ -503,8 +503,6 @@
         <item quantity="other">преди %1$d дни</item>
     </plurals>
     <string name="conversation_load_failed">Не успяхме да заредим този разговор.</string>
-    <string name="conversation_price_floor">Само ти виждаш това · най-ниската цена, която ще приемеш: %1$s · обявена: %2$s</string>
-    <string name="conversation_price_floor_no_ask">Само ти виждаш това · най-ниската цена, която ще приемеш: %1$s</string>
     <string name="conversation_reply_on_olx">Отговори в OLX</string>
     <string name="conversation_reply_hint">Напиши отговор</string>
     <string name="conversation_send">Изпрати</string>

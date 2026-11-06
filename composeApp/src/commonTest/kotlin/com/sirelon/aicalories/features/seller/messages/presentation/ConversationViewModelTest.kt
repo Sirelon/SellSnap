@@ -470,66 +470,26 @@ class ConversationViewModelTest {
     }
 
     @Test
-    fun `a kept floor shows with the advert's own asking price`() = runTest(testDispatcher) {
+    fun `copying a message logs the action without any text`() = runTest(testDispatcher) {
         val engine = mockEngine(testDispatcher) {
             addHandler { request ->
                 if (request.url.encodedPath.endsWith("/threads/5/messages")) {
                     respond(messagesJson(), HttpStatusCode.OK, jsonHeaders())
                 } else {
-                    respond(advertJson(10, price = 1200), HttpStatusCode.OK, jsonHeaders())
+                    respond(advertJson(10), HttpStatusCode.OK, jsonHeaders())
                 }
             }
         }
         val (viewModel, harness) = viewModel(engine)
-        harness.outcomeStore.recordPublished(10, 1000, 800, 1100, publishedPrice = 1000, currency = "UAH")
-
         viewModel.onEvent(Event.Shown)
         runCurrent()
 
-        assertEquals(ConversationContract.PriceFloor(floor = 800, asking = 1200, currencyCode = "UAH"), viewModel.state.value.priceFloor)
-        viewModel.onEvent(Event.Hidden)
-    }
+        viewModel.onEvent(Event.MessageCopied)
 
-    @Test
-    fun `the floor falls back to the published price while the advert is unknown`() = runTest(testDispatcher) {
-        val engine = mockEngine(testDispatcher) {
-            addHandler { request ->
-                if (request.url.encodedPath.endsWith("/threads/5/messages")) {
-                    respond(messagesJson(), HttpStatusCode.OK, jsonHeaders())
-                } else {
-                    respond(AdvertNotFoundJson, HttpStatusCode.InternalServerError, jsonHeaders())
-                }
-            }
-        }
-        val (viewModel, harness) = viewModel(engine)
-        harness.outcomeStore.recordPublished(10, 1000, 800, 1100, publishedPrice = 1000, currency = "UAH")
-
-        viewModel.onEvent(Event.Shown)
-        runCurrent()
-
-        assertEquals(ConversationContract.PriceFloor(floor = 800, asking = 1000, currencyCode = "UAH"), viewModel.state.value.priceFloor)
-        viewModel.onEvent(Event.Hidden)
-    }
-
-    @Test
-    fun `no kept floor means no floor in the state`() = runTest(testDispatcher) {
-        val engine = mockEngine(testDispatcher) {
-            addHandler { request ->
-                if (request.url.encodedPath.endsWith("/threads/5/messages")) {
-                    respond(messagesJson(), HttpStatusCode.OK, jsonHeaders())
-                } else {
-                    respond(advertJson(10, price = 1200), HttpStatusCode.OK, jsonHeaders())
-                }
-            }
-        }
-        val (viewModel, harness) = viewModel(engine)
-        // A record with no minPrice (closed outcome only) is no floor either.
-        harness.outcomeStore.recordClosed(10, isSold = true, achievedPrice = 900)
-
-        viewModel.onEvent(Event.Shown)
-        runCurrent()
-
-        assertNull(viewModel.state.value.priceFloor)
+        val logged = harness.analytics.messageEvents(AnalyticsEvents.MESSAGES_CONVERSATION_ACTION).single()
+        assertEquals("copy_message", logged["action"])
+        assertFalse(logged.containsKey("result"))
+        assertFalse(logged.containsKey("trigger"))
         viewModel.onEvent(Event.Hidden)
     }
 

@@ -29,8 +29,9 @@ interface ConversationContract {
         val needsReconnect: Boolean = false,
         val accountName: String? = null,
         /**
-         * "Mark as read" is on offer: the thread had unread messages when it was opened and the
-         * seller has not marked it yet. It is never set by opening, reading or polling.
+         * The thread had unread messages when it was opened and has not been marked read yet:
+         * "Mark as read" is on offer, and an accepted reply marks it. It is never set by opening,
+         * reading or polling.
          */
         val canMarkAsRead: Boolean = false,
         /** The mark-as-read command is in flight; the action is disabled meanwhile. */
@@ -42,8 +43,6 @@ interface ConversationContract {
          * drawn after [messages]; a poll replaces [messages] and leaves these alone.
          */
         val pendingMessages: List<PendingMessage> = emptyList(),
-        /** The seller's private lowest price for this advert; null when none was kept, and then nothing is shown. */
-        val priceFloor: PriceFloor? = null,
         /**
          * Ids of the received [messages] that match a scam rule (SIR-176, see `ScamSignals`). Each
          * one's bubble carries a warning. Never holds a sent message.
@@ -78,18 +77,6 @@ interface ConversationContract {
     }
 
     /**
-     * What the seller said they would accept, kept on this device when the listing was published
-     * here. For the seller's eyes only; whole units of [currencyCode]. [asking] is the advert's
-     * current price, else the price it was published at; null when neither is known.
-     */
-    @Immutable
-    data class PriceFloor(
-        val floor: Long,
-        val asking: Long?,
-        val currencyCode: String,
-    )
-
-    /**
      * A reply on its way to OLX, sent, or refused. [localId] is this screen's own, not OLX's.
      * [source], [suggestionIndex] and [suggestionEdited] are for `message_sent` only, so a Retry
      * reports the reply as it was first sent.
@@ -100,7 +87,7 @@ interface ConversationContract {
         val text: String,
         val status: PendingStatus,
         val source: MessageSource = MessageSource.Typed,
-        /** The suggestion chip's position, for either suggestion source. */
+        /** The suggestion row's position, for either suggestion source. */
         val suggestionIndex: Int? = null,
         /** For [MessageSource.EditedSuggestion]: the seller changed the text before sending. */
         val suggestionEdited: Boolean? = null,
@@ -131,8 +118,14 @@ interface ConversationContract {
         /** "Reply on OLX" in the top bar: the screen opens OLX's answers page; this only reports the tap. */
         data object ReplyOnOlxClicked : Event
 
-        /** The seller tapped "Mark as read" - the only thing that sends the command. */
+        /**
+         * The seller tapped "Mark as read". The command is also sent once a reply is accepted
+         * while the thread is still unread, never on open, read or poll.
+         */
         data object MarkAsReadClicked : Event
+
+        /** "Copy" on a message's long-press menu: the screen has put the text on the clipboard; this only reports it. */
+        data object MessageCopied : Event
 
         /** The listing header: the screen opens the advert; this only reports the tap. */
         data object ListingClicked : Event
@@ -149,11 +142,10 @@ interface ConversationContract {
         data class SuggestRepliesClicked(val isTwoPane: Boolean) : Event
 
         /**
-         * A suggestion chip. [isTruncated]: the chip could not show the whole text (and is
-         * treated as truncated until it has been laid out). A whole text the model did not mark
-         * for review is sent; any other goes into the field.
+         * A suggestion row, shown in full. One the model did not mark for review is sent; one it
+         * marked goes into the field to be read and edited first.
          */
-        data class SuggestionClicked(val index: Int, val isTruncated: Boolean, val isTwoPane: Boolean) : Event
+        data class SuggestionClicked(val index: Int, val isTwoPane: Boolean) : Event
 
         /** The suggestions' close icon. */
         data object SuggestionsDismissed : Event

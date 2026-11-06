@@ -32,7 +32,7 @@ import kotlin.time.Duration.Companion.seconds
 
 /**
  * "Suggest replies" in a conversation (SIR-96): when the button is offered, what the model is
- * sent, which chip sends and which goes into the field, the price-floor guard, and how a failed
+ * sent, which suggestion sends and which goes into the field, the price-floor guard, and how a failed
  * request leaves the screen. OpenAI is a mock on the same engine as OLX.
  */
 class ReplySuggestionsTest {
@@ -94,10 +94,11 @@ class ReplySuggestionsTest {
         accounts: List<OlxAccountRecord> = listOf(testAccount(1)),
         suggestionsSupported: Boolean = true,
         withFloor: Boolean = true,
+        floor: Long = 2000,
     ): Pair<ConversationViewModel, MessagesHarness> {
         val harness = messagesHarness(engine(fakes), accounts, activeIndex = 1)
         if (withFloor) {
-            harness.outcomeStore.recordPublished(10, 2500, 2000, 3000, publishedPrice = 2500, currency = "UAH")
+            harness.outcomeStore.recordPublished(10, 2500, floor, 3000, publishedPrice = 2500, currency = "UAH")
         }
         val viewModel = ConversationViewModel(
             keyLocalIndex = 1,
@@ -302,7 +303,7 @@ class ReplySuggestionsTest {
     // Tapping a chip.
 
     @Test
-    fun `a chip that fits and needs no review is sent as a suggestion`() = runTest(testDispatcher) {
+    fun `a suggestion the model did not flag is sent with one tap`() = runTest(testDispatcher) {
         val fakes = Fakes()
         val (viewModel, harness) = conversation(fakes)
         viewModel.open()
@@ -310,7 +311,7 @@ class ReplySuggestionsTest {
         viewModel.onEvent(Event.SuggestRepliesClicked(isTwoPane = false))
         runCurrent()
 
-        viewModel.onEvent(Event.SuggestionClicked(index = 1, isTruncated = false, isTwoPane = false))
+        viewModel.onEvent(Event.SuggestionClicked(index = 1, isTwoPane = false))
         assertTrue(viewModel.state.value.suggestions.isEmpty())
         runCurrent()
 
@@ -324,7 +325,7 @@ class ReplySuggestionsTest {
     }
 
     @Test
-    fun `a truncated chip goes into the field, and Send reports an unedited suggestion`() = runTest(testDispatcher) {
+    fun `a needs-review suggestion goes into the field, and Send reports it unedited`() = runTest(testDispatcher) {
         val fakes = Fakes()
         val (viewModel, harness) = conversation(fakes)
         viewModel.open()
@@ -332,14 +333,14 @@ class ReplySuggestionsTest {
         viewModel.onEvent(Event.SuggestRepliesClicked(isTwoPane = false))
         runCurrent()
 
-        viewModel.onEvent(Event.SuggestionClicked(index = 0, isTruncated = true, isTwoPane = false))
+        viewModel.onEvent(Event.SuggestionClicked(index = 2, isTwoPane = false))
         runCurrent()
 
         assertTrue(fakes.posts.isEmpty())
-        assertEquals("Yes, it is still available.", viewModel.state.value.draft)
+        assertEquals("Yes. I can send it by post.", viewModel.state.value.draft)
         assertFalse(viewModel.state.value.showsSuggestions)
         assertEquals(
-            mapOf<String, Any>("suggestion_index" to 0, "reason" to "truncated"),
+            mapOf<String, Any>("suggestion_index" to 2, "reason" to "needs_review"),
             harness.eventsOf(AnalyticsEvents.SUGGESTION_INSERTED).single(),
         )
 
@@ -349,13 +350,13 @@ class ReplySuggestionsTest {
         assertEquals(1, fakes.posts.size)
         val sent = harness.eventsOf(AnalyticsEvents.MESSAGE_SENT).single()
         assertEquals("edited_suggestion", sent["source"])
-        assertEquals(0, sent["suggestion_index"])
+        assertEquals(2, sent["suggestion_index"])
         assertEquals(false, sent["suggestion_edited"])
         viewModel.onEvent(Event.Hidden)
     }
 
     @Test
-    fun `a needs-review chip goes into the field even when it fits, and an edit is reported`() =
+    fun `an edit of a needs-review suggestion is reported`() =
         runTest(testDispatcher) {
             val fakes = Fakes()
             val (viewModel, harness) = conversation(fakes)
@@ -364,7 +365,7 @@ class ReplySuggestionsTest {
             viewModel.onEvent(Event.SuggestRepliesClicked(isTwoPane = false))
             runCurrent()
 
-            viewModel.onEvent(Event.SuggestionClicked(index = 2, isTruncated = false, isTwoPane = false))
+            viewModel.onEvent(Event.SuggestionClicked(index = 2, isTwoPane = false))
             runCurrent()
             assertTrue(fakes.posts.isEmpty())
             assertEquals("needs_review", harness.eventsOf(AnalyticsEvents.SUGGESTION_INSERTED).single()["reason"])
@@ -389,7 +390,7 @@ class ReplySuggestionsTest {
         viewModel.onEvent(Event.SuggestRepliesClicked(isTwoPane = false))
         runCurrent()
 
-        viewModel.onEvent(Event.SuggestionClicked(index = 0, isTruncated = true, isTwoPane = false))
+        viewModel.onEvent(Event.SuggestionClicked(index = 2, isTwoPane = false))
         viewModel.onEvent(Event.DraftChanged(""))
         assertTrue(viewModel.state.value.showsSuggestions)
         viewModel.onEvent(Event.DraftChanged("Placeholder typed reply"))
@@ -412,7 +413,7 @@ class ReplySuggestionsTest {
         viewModel.onEvent(Event.SuggestRepliesClicked(isTwoPane = false))
         runCurrent()
 
-        viewModel.onEvent(Event.SuggestionClicked(index = 0, isTruncated = false, isTwoPane = false))
+        viewModel.onEvent(Event.SuggestionClicked(index = 0, isTwoPane = false))
         runCurrent()
         val failed = viewModel.state.value.pendingMessages.single()
         assertEquals(PendingStatus.Failed, failed.status)
@@ -462,6 +463,46 @@ class ReplySuggestionsTest {
         assertTrue(fakes.openAIBodies.single().contains("below the asking price"))
         assertEquals(1, viewModel.state.value.suggestions.size)
         assertEquals(false, harness.eventsOf(AnalyticsEvents.SUGGESTIONS_REQUESTED).single()["has_price_floor"])
+        viewModel.onEvent(Event.Hidden)
+    }
+
+    @Test
+    fun `a floor at or above the asking price is left out of the request, the guard and the event`() =
+        runTest(testDispatcher) {
+            // The advert asks 2500 now; the AI's floor at publish time was higher.
+            for (floor in listOf(2500L, 2600L)) {
+                val fakes = Fakes()
+                fakes.modelOutput = """{"replies":[{"text":"I can do 1500.","needs_review":false,"price":1500}]}"""
+                val (viewModel, harness) = conversation(fakes, floor = floor)
+                viewModel.open()
+                runCurrent()
+                viewModel.onEvent(Event.SuggestRepliesClicked(isTwoPane = false))
+                runCurrent()
+
+                val body = fakes.openAIBodies.single()
+                assertFalse(body.contains("lowest acceptable price"), body)
+                assertTrue(body.contains("below the asking price"), body)
+                assertTrue(body.contains("asking price is 2500 UAH"), body)
+                // No floor, so the code guard drops nothing.
+                assertEquals(1, viewModel.state.value.suggestions.size)
+                assertEquals(0, harness.eventsOf(AnalyticsEvents.SUGGESTIONS_SHOWN).single()["dropped_below_floor"])
+                assertEquals(false, harness.eventsOf(AnalyticsEvents.SUGGESTIONS_REQUESTED).single()["has_price_floor"])
+                viewModel.onEvent(Event.Hidden)
+            }
+        }
+
+    @Test
+    fun `a floor below the asking price is in the request and the event`() = runTest(testDispatcher) {
+        val fakes = Fakes()
+        val (viewModel, harness) = conversation(fakes, floor = 2499)
+        viewModel.open()
+        runCurrent()
+        viewModel.onEvent(Event.SuggestRepliesClicked(isTwoPane = false))
+        runCurrent()
+
+        val body = fakes.openAIBodies.single()
+        assertTrue(body.contains("lowest acceptable price is 2499 UAH"), body)
+        assertEquals(true, harness.eventsOf(AnalyticsEvents.SUGGESTIONS_REQUESTED).single()["has_price_floor"])
         viewModel.onEvent(Event.Hidden)
     }
 

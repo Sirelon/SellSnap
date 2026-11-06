@@ -36,6 +36,7 @@ import com.sirelon.sellsnap.features.seller.my_ads.data.AdvertOutcomeRecord
 import com.sirelon.sellsnap.features.seller.my_ads.data.AdvertOutcomeStore
 import com.sirelon.sellsnap.features.seller.my_ads.data.MyAdvertsRepository
 import com.sirelon.sellsnap.features.seller.my_ads.model.AdvertListingSnapshot
+import com.sirelon.sellsnap.features.seller.my_ads.model.MyAdvertItem
 import com.sirelon.sellsnap.features.seller.openai.MAX_REPLY_SUGGESTIONS
 import com.sirelon.sellsnap.features.seller.openai.OpenAIClient
 import com.sirelon.sellsnap.features.seller.openai.REPLY_SUGGESTIONS_MODEL_ID
@@ -75,19 +76,22 @@ private val SuggestionsBudget = 15.seconds
  *
  * [hadUnread] is whether the list row had unread messages when it was tapped: it is what offers
  * "Mark as read", which is the only thing that clears a thread's unread count (OLX does not clear
- * it when the messages are read) and runs only when the seller taps it, never on open or poll. A
- * failed command is shown as a snackbar and leaves the action to try again. [timeSource] times the
- * actions for analytics and changes nothing on screen.
+ * it when the messages are read). It runs when the seller taps it, or when OLX accepts a reply of
+ * theirs while the thread is still unread (a reply says it was read); never on open or poll. A
+ * failed tap is shown as a snackbar and leaves the action to try again; a failure after a reply is
+ * recorded, shown to nobody, and leaves the action on offer. [timeSource] times the actions for
+ * analytics and changes nothing on screen.
  *
  * A reply is sent with the same account, never the active one. Send clears the draft and adds a
  * pending bubble at once; OLX's answer carries no message, so a success re-reads the thread, and
  * the bubble stays until a load shows the reply (see [withoutDelivered]). A failure keeps the
  * bubble and its text with Retry. Nothing is withheld on the listing's state: OLX's refusal, if
- * any, is what the seller sees. Sending does not mark the thread read.
+ * any, is what the seller sees. An accepted reply on a thread that is still unread also marks it
+ * read, with the same account.
  *
- * [State.priceFloor] is the seller's private lowest price, read once from [outcomeStore] by advert
- * id, so it shows for every account and is absent when none was kept. The asking price beside it
- * is the advert's own once loaded, else the price it was published at.
+ * The seller's private lowest price is read once from [outcomeStore] by advert id, so it applies
+ * for every account. It is never shown; it only goes to the suggestions' prompt, and only while it
+ * is below the asking price (see [priceContext]).
  *
  * A received message that matches a scam rule is flagged in [State.flaggedMessageIds] and its
  * bubble shows a warning (SIR-176). The first load with a flagged message logs
@@ -96,9 +100,9 @@ private val SuggestionsBudget = 15.seconds
  * "Suggest replies" (SIR-96) asks [openAIClient] for up to three replies to the last buyer
  * message, on a tap only, never on its own. The prompt carries the listing from the same advert
  * read the header uses ([listingSnapshot]), the newest messages, the account's market language
- * and the price floor; [ReplyPriceGuard] drops what offers less than the floor. A chip whose
- * whole text is on screen and that the model did not mark for review is sent at once; any other
- * goes into the field for the seller to read first. The answer is kept for its buyer message, so
+ * and the price floor; [ReplyPriceGuard] drops what offers less than the floor. Each suggestion is
+ * shown in full: one the model did not mark for review is sent at once; a marked one goes into the
+ * field for the seller to read first. The answer is kept for its buyer message, so
  * tapping again shows it without a new call, until a newer message arrives. A failure shows
  * nothing: the button comes back. Nothing about the suggestions is stored on the device.
  */
@@ -158,7 +162,6 @@ class ConversationViewModel internal constructor(
     init {
         viewModelScope.launch {
             outcome = runCatching { outcomeStore.outcomeFor(advertId) }.getOrNull()
-            updatePriceFloor()
         }
         accountRepository
             .accountsRecordFlow
@@ -191,7 +194,8 @@ class ConversationViewModel internal constructor(
             Event.ReconnectClicked -> postEffect(Effect.Reconnect)
             Event.ReplyOnOlxClicked -> logAction("reply_on_olx")
             Event.ListingClicked -> logAction("open_listing")
-            Event.MarkAsReadClicked -> markAsRead()
+            Event.MessageCopied -> logAction("copy_message")
+            Event.MarkAsReadClicked -> markAsRead(trigger = "tap")
             is Event.DraftChanged -> {
                 // An emptied field is no longer the suggestion that was put into it.
                 if (event.text.isBlank()) insertedSuggestion = null
@@ -200,7 +204,7 @@ class ConversationViewModel internal constructor(
             is Event.SendClicked -> send(event.isTwoPane)
             is Event.RetrySendClicked -> retrySend(event.localId, event.isTwoPane)
             is Event.SuggestRepliesClicked -> suggestReplies(event.isTwoPane)
-            is Event.SuggestionClicked -> onSuggestionClicked(event.index, event.isTruncated, event.isTwoPane)
+            is Event.SuggestionClicked -> onSuggestionClicked(event.index, event.isTwoPane)
             Event.SuggestionsDismissed -> dismissSuggestions()
         }
     }
@@ -256,17 +260,17 @@ class ConversationViewModel internal constructor(
         viewModelScope.launch {
             // Read in parallel with the messages at open, so this is normally done already.
             val listing = withTimeoutOrNull(SuggestionsBudget) { listingSnapshot.await() }
-            val floor = currentState().priceFloor
+            val prices = priceContext(listing?.item)
             analytics.logEvent(
                 AnalyticsEvents.SUGGESTIONS_REQUESTED,
                 mapOf(
                     "layout" to layoutCode(isTwoPane),
                     "has_listing_text" to
                         (listing != null && (listing.description.isNotBlank() || listing.attributes.isNotEmpty())),
-                    "has_price_floor" to (floor != null),
+                    "has_price_floor" to (prices.floor != null),
                 ),
             )
-            val result = requestSuggestions(listing, floor, budget = SuggestionsBudget - tappedAt.elapsedNow())
+            val result = requestSuggestions(listing, prices, budget = SuggestionsBudget - tappedAt.elapsedNow())
             val latency = MessagesAnalyticsBuckets.latencyMs(tappedAt.elapsedNow().inWholeMilliseconds)
             // A newer message arrived meanwhile: these replies answer one the seller no longer sees last.
             if (currentState().lastBuyerMessage?.id != buyerMessage.id) {
@@ -281,7 +285,7 @@ class ConversationViewModel internal constructor(
                 failSuggestions(error.suggestionFailureReason(), error, latency)
                 return@launch
             }
-            val guarded = ReplyPriceGuard.apply(suggestions, floor?.floor, buyerText = buyerMessage.text)
+            val guarded = ReplyPriceGuard.apply(suggestions, prices.floor, buyerText = buyerMessage.text)
             val shown = guarded.kept.take(MAX_REPLY_SUGGESTIONS)
             if (shown.isEmpty()) {
                 failSuggestions(
@@ -309,23 +313,42 @@ class ConversationViewModel internal constructor(
     }
 
     /**
+     * The prices the prompt gets. [asking] is the advert's current price when loaded, else the
+     * price it was published at. [floor] is the seller's private lowest price, set only when it is
+     * below [asking]: a floor at or above the asking price (the AI suggested a floor, the seller
+     * then lowered the price) would forbid every reply at the current price, so it is dropped and
+     * the prompt's "never below the asking price" rule applies, with no floor guard in code.
+     */
+    private class PriceContext(val asking: Long?, val floor: Long?, val currencyCode: String?)
+
+    private fun priceContext(item: MyAdvertItem?): PriceContext {
+        val record = outcome
+        val listingPrice = item
+            ?.takeIf { record == null || record.currency.isBlank() || it.currencyCode.equals(record.currency, ignoreCase = true) }
+            ?.priceValue
+        val asking = listingPrice ?: record?.publishedPrice
+        val floor = record?.minPrice?.takeIf { asking != null && it in 1 until asking }
+        val currencyCode = listOfNotNull(if (listingPrice != null) item?.currencyCode else record?.currency)
+            .firstOrNull { it.isNotBlank() }
+            ?: listOfNotNull(record?.currency, item?.currencyCode).firstOrNull { it.isNotBlank() }
+        return PriceContext(asking = asking, floor = floor, currencyCode = currencyCode)
+    }
+
+    /**
      * One model call within [budget]: null when it ran out, else the replies or the failure.
      * Without the listing ([listing] null) the row title and the conversation are all it gets.
      */
     private suspend fun requestSuggestions(
         listing: AdvertListingSnapshot?,
-        floor: ConversationContract.PriceFloor?,
+        prices: PriceContext,
         budget: Duration,
     ): Result<List<ReplySuggestion>>? {
         val item = listing?.item
-        val currencyCode = listOfNotNull(floor?.currencyCode, item?.currencyCode, outcome?.currency)
-            .firstOrNull { it.isNotBlank() }
-            ?: country.currencyCode
         val instructions = replySuggestionsInstructions(
             country = country,
-            currencyCode = currencyCode,
-            askingPrice = floor?.asking ?: item?.priceValue ?: outcome?.publishedPrice,
-            priceFloor = floor?.floor,
+            currencyCode = prices.currencyCode ?: country.currencyCode,
+            askingPrice = prices.asking,
+            priceFloor = prices.floor,
         )
         val input = replySuggestionsInput(
             title = item?.title?.takeIf { it.isNotBlank() } ?: title.orEmpty(),
@@ -369,14 +392,14 @@ class ConversationViewModel internal constructor(
     }
 
     /**
-     * A chip whose whole text is on screen and that the model did not mark for review is sent;
-     * any other goes into the field, so the seller never sends what they have not read in full.
+     * Each suggestion is on screen in full, so one the model did not mark for review is sent; a
+     * marked one (delivery, payment, meetings, contact details) goes into the field to be checked.
      */
-    private fun onSuggestionClicked(index: Int, isTruncated: Boolean, isTwoPane: Boolean) {
+    private fun onSuggestionClicked(index: Int, isTwoPane: Boolean) {
         val state = currentState()
         if (!state.showsSuggestions) return
         val suggestion = state.suggestions.getOrNull(index) ?: return
-        if (!isTruncated && !suggestion.needsReview) {
+        if (!suggestion.needsReview) {
             val queued = enqueue(
                 text = suggestion.text,
                 source = MessageSource.Suggestion,
@@ -396,7 +419,7 @@ class ConversationViewModel internal constructor(
             AnalyticsEvents.SUGGESTION_INSERTED,
             mapOf(
                 "suggestion_index" to index,
-                "reason" to if (suggestion.needsReview) "needs_review" else "truncated",
+                "reason" to "needs_review",
             ),
         )
     }
@@ -444,6 +467,8 @@ class ConversationViewModel internal constructor(
             }
             updatePending(pending.localId) { it.copy(status = PendingStatus.Sent) }
             logMessageSent(pending, result = "success", isRetry = isRetry, isTwoPane = isTwoPane)
+            // A reply says the thread was read; OLX does not clear the unread count by itself.
+            markAsRead(trigger = "send")
             // Re-read now. Restarting the poll also cancels a read that started before OLX had the
             // reply, so that read cannot land after this one and hide the reply until the next poll.
             startPolling()
@@ -503,7 +528,12 @@ class ConversationViewModel internal constructor(
 
     private fun layoutCode(isTwoPane: Boolean) = if (isTwoPane) "two_pane" else "single_pane"
 
-    private fun markAsRead() {
+    /**
+     * Sends mark-as-read with this conversation's account. [trigger] is `tap` (the seller's button;
+     * a failure is shown as a snackbar) or `send` (an accepted reply; a failure is shown to nobody
+     * and only recorded, so no `error_shown`).
+     */
+    private fun markAsRead(trigger: String) {
         val index = localIndex ?: return
         val state = currentState()
         if (!state.canMarkAsRead || state.isMarkingAsRead) return
@@ -514,29 +544,33 @@ class ConversationViewModel internal constructor(
             } catch (error: CancellationException) {
                 throw error
             } catch (error: Exception) {
-                logAction("mark_as_read", result = "failed")
-                analytics.reportShownError(
-                    screen = "conversation",
-                    reason = "mark_read_failed:${error.shownErrorCause}",
-                    throwable = error,
-                )
-                val message = getString(Res.string.generic_error_retry)
+                logAction("mark_as_read", result = "failed", trigger = trigger)
                 setState { it.copy(isMarkingAsRead = false) }
-                postEffect(Effect.ShowMessage(message))
+                if (trigger == "tap") {
+                    analytics.reportShownError(
+                        screen = "conversation",
+                        reason = "mark_read_failed:${error.shownErrorCause}",
+                        throwable = error,
+                    )
+                    postEffect(Effect.ShowMessage(getString(Res.string.generic_error_retry)))
+                } else {
+                    analytics.recordException(throwable = error, message = "mark_read_after_send_failed")
+                }
                 return@launch
             }
             setState { it.copy(isMarkingAsRead = false, canMarkAsRead = false) }
-            logAction("mark_as_read", result = "success")
+            logAction("mark_as_read", result = "success", trigger = trigger)
         }
     }
 
-    private fun logAction(action: String, result: String? = null) {
+    private fun logAction(action: String, result: String? = null, trigger: String? = null) {
         val state = currentState()
         analytics.logEvent(
             AnalyticsEvents.MESSAGES_CONVERSATION_ACTION,
             listOfNotNull(
                 "action" to action,
                 result?.let { "result" to it },
+                trigger?.let { "trigger" to it },
                 "listing_state" to MessagesAnalyticsBuckets.listingState(
                     status = state.listing?.status ?: state.status,
                     isDeleted = state.isListingDeleted,
@@ -609,19 +643,6 @@ class ConversationViewModel internal constructor(
             listingSnapshot.complete(snapshot)
             val listing = snapshot?.item
             setState { it.copy(listing = listing, isListingDeleted = listing == null) }
-            updatePriceFloor()
-        }
-    }
-
-    private fun updatePriceFloor() {
-        val record = outcome ?: return
-        val floor = record.minPrice?.takeIf { it > 0 } ?: return
-        val listing = currentState().listing
-        val sameCurrency = listing != null &&
-            (record.currency.isBlank() || listing.currencyCode.equals(record.currency, ignoreCase = true))
-        val asking = (if (sameCurrency) listing?.priceValue else null) ?: record.publishedPrice
-        setState {
-            it.copy(priceFloor = ConversationContract.PriceFloor(floor, asking, record.currency))
         }
     }
 
