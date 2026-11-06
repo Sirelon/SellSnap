@@ -25,6 +25,8 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.foundation.text.selection.LocalTextSelectionColors
+import androidx.compose.foundation.text.selection.TextSelectionColors
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.automirrored.filled.Send
@@ -58,6 +60,7 @@ import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -435,6 +438,21 @@ private fun ScrollToNewestEffect(
     }
 }
 
+/**
+ * Text selection inside a bubble. The default handles and highlight use the primary colour, which
+ * is the seller's own bubble colour, so on those bubbles ([onPrimary]) they use onPrimary instead.
+ */
+@Composable
+private fun BubbleSelection(onPrimary: Boolean, content: @Composable () -> Unit) {
+    val accent = if (onPrimary) AppTheme.colors.onPrimary else AppTheme.colors.primary
+    val colors = remember(accent) {
+        TextSelectionColors(handleColor = accent, backgroundColor = accent.copy(alpha = 0.35f))
+    }
+    CompositionLocalProvider(LocalTextSelectionColors provides colors) {
+        SelectionContainer { content() }
+    }
+}
+
 @Composable
 private fun MessageBubble(message: OlxMessage, isFlagged: Boolean, marketZone: TimeZone) {
     val alignment = if (message.isSent) Alignment.End else Alignment.Start
@@ -444,7 +462,7 @@ private fun MessageBubble(message: OlxMessage, isFlagged: Boolean, marketZone: T
         horizontalAlignment = alignment,
     ) {
         // Long-press selects text with the platform's own handles and Copy menu.
-        SelectionContainer {
+        BubbleSelection(onPrimary = message.isSent) {
             Column(
                 modifier = Modifier
                     .widthIn(max = AppDimens.Size.xl24)
@@ -523,7 +541,7 @@ private fun PendingMessageBubble(
         horizontalAlignment = Alignment.End,
     ) {
         // Long-press selects text with the platform's own handles and Copy menu.
-        SelectionContainer {
+        BubbleSelection(onPrimary = true) {
             Column(
                 modifier = Modifier
                     .widthIn(max = AppDimens.Size.xl24)
