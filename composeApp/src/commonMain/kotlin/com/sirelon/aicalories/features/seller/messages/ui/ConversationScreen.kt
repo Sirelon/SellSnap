@@ -239,6 +239,8 @@ private fun ConversationScreen(
             if (!state.needsReconnect) {
                 // One padded container, so the keyboard never covers the suggestions either.
                 Column(modifier = Modifier.fillMaxWidth().imePadding().navigationBarsPadding()) {
+                    // Separates the reply area from the conversation above it.
+                    HorizontalDivider(color = AppTheme.colors.outlineVariant.copy(alpha = 0.13f))
                     when {
                         state.isSuggesting -> SuggestionsLoading()
                         state.showsSuggestions -> SuggestionsStack(
@@ -676,6 +678,7 @@ private fun SuggestionsStack(
             verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.m),
         ) {
             suggestions.forEachIndexed { index, suggestion ->
+                if (index > 0) HorizontalDivider(color = AppTheme.colors.outlineVariant.copy(alpha = 0.13f))
                 SuggestionRow(suggestion = suggestion, onClick = { onClick(index) })
             }
         }
