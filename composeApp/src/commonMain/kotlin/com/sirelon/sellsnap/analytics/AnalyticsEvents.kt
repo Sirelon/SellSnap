@@ -310,8 +310,7 @@ object AnalyticsEvents {
 
     /**
      * The seller tapped an action in a conversation. `action` is `reply_on_olx` (the top-bar
-     * link to OLX's own messages page, beside the in-app reply), `open_listing` (the header),
-     * `copy_message` (Copy on a message bubble's long-press menu; no text is logged) or
+     * link to OLX's own messages page, beside the in-app reply), `open_listing` (the header) or
      * `mark_as_read` (the top bar action, offered while the thread has unread messages, and sent
      * by itself once a reply is accepted on a thread that is still unread). Also
      * `listing_state` (as for `messages_conversation_opened`), `had_unread` (Boolean, the row had

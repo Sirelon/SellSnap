@@ -194,7 +194,6 @@ class ConversationViewModel internal constructor(
             Event.ReconnectClicked -> postEffect(Effect.Reconnect)
             Event.ReplyOnOlxClicked -> logAction("reply_on_olx")
             Event.ListingClicked -> logAction("open_listing")
-            Event.MessageCopied -> logAction("copy_message")
             Event.MarkAsReadClicked -> markAsRead(trigger = "tap")
             is Event.DraftChanged -> {
                 // An emptied field is no longer the suggestion that was put into it.

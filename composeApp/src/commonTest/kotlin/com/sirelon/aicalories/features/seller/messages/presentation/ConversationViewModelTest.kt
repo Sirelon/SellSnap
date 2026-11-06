@@ -469,29 +469,6 @@ class ConversationViewModelTest {
         assertEquals("0_5", logged["seconds_since_open_bucket"])
     }
 
-    @Test
-    fun `copying a message logs the action without any text`() = runTest(testDispatcher) {
-        val engine = mockEngine(testDispatcher) {
-            addHandler { request ->
-                if (request.url.encodedPath.endsWith("/threads/5/messages")) {
-                    respond(messagesJson(), HttpStatusCode.OK, jsonHeaders())
-                } else {
-                    respond(advertJson(10), HttpStatusCode.OK, jsonHeaders())
-                }
-            }
-        }
-        val (viewModel, harness) = viewModel(engine)
-        viewModel.onEvent(Event.Shown)
-        runCurrent()
-
-        viewModel.onEvent(Event.MessageCopied)
-
-        val logged = harness.analytics.messageEvents(AnalyticsEvents.MESSAGES_CONVERSATION_ACTION).single()
-        assertEquals("copy_message", logged["action"])
-        assertFalse(logged.containsKey("result"))
-        assertFalse(logged.containsKey("trigger"))
-        viewModel.onEvent(Event.Hidden)
-    }
 
     private suspend fun viewModel(
         engine: MockEngine,

@@ -124,9 +124,6 @@ interface ConversationContract {
          */
         data object MarkAsReadClicked : Event
 
-        /** "Copy" on a message's long-press menu: the screen has put the text on the clipboard; this only reports it. */
-        data object MessageCopied : Event
-
         /** The listing header: the screen opens the advert; this only reports the tap. */
         data object ListingClicked : Event
 

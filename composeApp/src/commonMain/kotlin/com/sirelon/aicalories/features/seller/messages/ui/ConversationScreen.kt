@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -25,12 +24,11 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -49,12 +47,9 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -95,7 +90,6 @@ import com.sirelon.sellsnap.features.seller.my_ads.ui.StatusChip
 import com.sirelon.sellsnap.generated.resources.Res
 import com.sirelon.sellsnap.generated.resources.advert_action_failed
 import com.sirelon.sellsnap.generated.resources.back
-import com.sirelon.sellsnap.generated.resources.copy_pill_default
 import com.sirelon.sellsnap.generated.resources.conversation_message_not_sent
 import com.sirelon.sellsnap.generated.resources.conversation_message_sending
 import com.sirelon.sellsnap.generated.resources.conversation_reply_hint
@@ -314,14 +308,12 @@ private fun ConversationScreen(
                             PendingMessageBubble(
                                 message = pending,
                                 onRetry = { onEvent(Event.RetrySendClicked(pending.localId, isTwoPane = isBesideList)) },
-                                onCopied = { onEvent(Event.MessageCopied) },
                             )
                         }
                         items(items = state.messages.asReversed(), key = { it.id }) { message ->
                             MessageBubble(
                                 message = message,
                                 isFlagged = message.id in state.flaggedMessageIds,
-                                onCopied = { onEvent(Event.MessageCopied) },
                             )
                         }
                     }
@@ -439,45 +431,16 @@ private fun ScrollToNewestEffect(
     }
 }
 
-/**
- * Long-press on a message copies its whole text: a one-item menu with the existing "Copy" label.
- * Chosen over a `SelectionContainer` because that selects a word at a time, per item, inside a lazy
- * list whose items are recycled, and needs the platform's selection handles; this works the same
- * on Android and iOS.
- */
 @Composable
-private fun CopyOnLongPress(text: String, onCopied: () -> Unit, content: @Composable () -> Unit) {
-    val clipboard = LocalClipboardManager.current
-    var menuOpen by remember { mutableStateOf(false) }
-    Box(
-        modifier = Modifier.pointerInput(text) {
-            detectTapGestures(onLongPress = { if (text.isNotBlank()) menuOpen = true })
-        },
-    ) {
-        content()
-        DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-            DropdownMenuItem(
-                text = { Text(stringResource(Res.string.copy_pill_default)) },
-                onClick = {
-                    clipboard.setText(AnnotatedString(text))
-                    menuOpen = false
-                    onCopied()
-                },
-                modifier = Modifier.testTag("conversation_message_copy"),
-            )
-        }
-    }
-}
-
-@Composable
-private fun MessageBubble(message: OlxMessage, isFlagged: Boolean, onCopied: () -> Unit) {
+private fun MessageBubble(message: OlxMessage, isFlagged: Boolean) {
     val alignment = if (message.isSent) Alignment.End else Alignment.Start
     val textColor = if (message.isSent) AppTheme.colors.onPrimary else AppTheme.colors.onSurface
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = alignment,
     ) {
-        CopyOnLongPress(text = message.text, onCopied = onCopied) {
+        // Long-press selects text with the platform's own handles and Copy menu.
+        SelectionContainer {
             Column(
                 modifier = Modifier
                     .widthIn(max = AppDimens.Size.xl24)
@@ -549,14 +512,14 @@ private fun ScamWarning() {
 private fun PendingMessageBubble(
     message: ConversationContract.PendingMessage,
     onRetry: () -> Unit,
-    onCopied: () -> Unit,
 ) {
     val textColor = AppTheme.colors.onPrimary
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.End,
     ) {
-        CopyOnLongPress(text = message.text, onCopied = onCopied) {
+        // Long-press selects text with the platform's own handles and Copy menu.
+        SelectionContainer {
             Column(
                 modifier = Modifier
                     .widthIn(max = AppDimens.Size.xl24)
