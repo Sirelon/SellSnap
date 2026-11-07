@@ -450,6 +450,10 @@
         <item quantity="one">Falta %1$d dia</item>
         <item quantity="other">Faltam %1$d dias</item>
     </plurals>
+    <plurals name="my_ads_unread_messages">
+        <item quantity="one">%1$d mensagem não lida</item>
+        <item quantity="other">%1$d mensagens não lidas</item>
+    </plurals>
     <string name="advert_extend_unavailable">Só pode prolongar isto no OLX, não aqui.</string>
 
     <!-- Ad lifecycle — statistics -->
@@ -500,4 +504,11 @@
     </plurals>
     <string name="conversation_load_failed">Não foi possível carregar esta conversa.</string>
     <string name="conversation_reply_on_olx">Responder no OLX</string>
+    <string name="conversation_reply_hint">Escreva uma resposta</string>
+    <string name="conversation_send">Enviar</string>
+    <string name="conversation_message_sending">A enviar…</string>
+    <string name="conversation_message_not_sent">Não enviada</string>
+    <string name="conversation_suggest_replies">Sugerir respostas</string>
+    <string name="conversation_suggestions_dismiss">Ocultar sugestões</string>
+    <string name="conversation_scam_warning">Possível burla. O OLX nunca pede para confirmar uma venda através de um link ou de um bot de mensagens. Não partilhe os dados do cartão.</string>
 </resources>

@@ -20,6 +20,7 @@ val messagesModule = module {
         MessagesViewModel(
             repository = get(),
             myAdvertsRepository = get(),
+            outcomeStore = get(),
             accountRepository = get(),
             analytics = get(),
         )
@@ -38,8 +39,10 @@ val messagesModule = module {
             hadUnread = params.get(7),
             repository = get(),
             myAdvertsRepository = get(),
+            outcomeStore = get(),
             accountRepository = get(),
             analytics = get(),
+            openAIClient = get(),
         )
     }
     viewModel { MessagesBadgeViewModel(repository = get(), accountRepository = get()) }

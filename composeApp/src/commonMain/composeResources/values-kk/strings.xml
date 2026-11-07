@@ -450,6 +450,10 @@
         <item quantity="one">%1$d күн қалды</item>
         <item quantity="other">%1$d күн қалды</item>
     </plurals>
+    <plurals name="my_ads_unread_messages">
+        <item quantity="one">%1$d оқылмаған хабарлама</item>
+        <item quantity="other">%1$d оқылмаған хабарлама</item>
+    </plurals>
     <string name="advert_extend_unavailable">Мұны тек OLX-те ұзарта аласың, осы жерден емес.</string>
 
     <!-- Ad lifecycle — statistics -->
@@ -500,4 +504,11 @@
     </plurals>
     <string name="conversation_load_failed">Бұл әңгімені жүктей алмадық.</string>
     <string name="conversation_reply_on_olx">OLX-те жауап беру</string>
+    <string name="conversation_reply_hint">Жауап жаз</string>
+    <string name="conversation_send">Жіберу</string>
+    <string name="conversation_message_sending">Жіберілуде…</string>
+    <string name="conversation_message_not_sent">Жіберілмеді</string>
+    <string name="conversation_suggest_replies">Жауап ұсын</string>
+    <string name="conversation_suggestions_dismiss">Ұсыныстарды жасыр</string>
+    <string name="conversation_scam_warning">Алаяқтық болуы мүмкін. OLX сатылымды сілтеме немесе мессенджердегі бот арқылы растауды ешқашан сұрамайды. Карта деректерін бөліспе.</string>
 </resources>

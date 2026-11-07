@@ -34,8 +34,8 @@ internal fun OlxAccountsRecord.countryAccounts(): List<OlxAccountRecord> {
 internal class ThreadMarkedRead(val localIndex: Int, val threadId: Long)
 
 /**
- * Buyer messages: read, and marked as read on the seller's explicit request - nothing here sends a
- * command on its own. Registered as a singleton because it also holds the unread counts the
+ * Buyer messages: read, replied to and marked as read on the seller's explicit action (a tap, or a
+ * reply that OLX accepted) - nothing here writes to OLX on its own. Registered as a singleton because it also holds the unread counts the
  * Messages tab badge shows, which the list screen and the badge both write.
  */
 class MessagesRepository internal constructor(
@@ -95,7 +95,8 @@ class MessagesRepository internal constructor(
      * `POST threads/{id}/commands` `mark-as-read` with the token of the account at [localIndex].
      * On success that thread counts as zero unread (the tab badge drops now) and [markedRead]
      * emits. Reading a thread does not clear OLX's `unread_count` (SIR-88), so this is the only
-     * way a thread stops being unread; call it only from an explicit seller action.
+     * way a thread stops being unread; call it only from a seller tap or after OLX accepted the
+     * seller's reply.
      */
     suspend fun markAsRead(localIndex: Int, threadId: Long) {
         accountRepository.withAccountToken(localIndex) { accessToken ->
@@ -105,6 +106,18 @@ class MessagesRepository internal constructor(
             publishUnread(localIndex, threads + (threadId to 0))
         }
         _markedRead.tryEmit(ThreadMarkedRead(localIndex, threadId))
+    }
+
+    /**
+     * `POST threads/{id}/messages` with the token of the account at [localIndex]: the seller's
+     * reply. OLX answers without the message, so the caller re-reads the thread to show it. Call
+     * it only from an explicit seller action. It does not mark the thread read; the conversation
+     * does that with [markAsRead] once this succeeds.
+     */
+    suspend fun sendMessage(localIndex: Int, threadId: Long, text: String) {
+        accountRepository.withAccountToken(localIndex) { accessToken ->
+            unauthenticatedOlxApiClient.postThreadMessage(accessToken, threadId, text)
+        }
     }
 
     /** Replaces the account's unread counts with [unreadByThread], the unread count of each thread loaded. */

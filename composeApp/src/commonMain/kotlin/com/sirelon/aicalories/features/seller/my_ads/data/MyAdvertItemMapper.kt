@@ -33,7 +33,10 @@ internal object MyAdvertItemMapper {
         validTo = advert.validTo,
     )
 
-    private fun OlxAdvertPrice.format(): String {
+    private fun OlxAdvertPrice.format(): String = formatAdvertPrice(value, currency)
+
+    /** An OLX price as the seller reads it: UAH as `₴ 1 800`, any other currency as `1 800 PLN`. */
+    private fun formatAdvertPrice(value: Long, currency: String): String {
         val amount = value
             .coerceAtLeast(0L)
             .toString()

@@ -147,6 +147,7 @@ class MarkAsReadTest {
             val logged = eventsOf(harness, AnalyticsEvents.MESSAGES_CONVERSATION_ACTION).single()
             assertEquals("mark_as_read", logged["action"])
             assertEquals("success", logged["result"])
+            assertEquals("tap", logged["trigger"])
             assertEquals(true, logged["had_unread"])
             viewModel.onEvent(ConversationContract.Event.Hidden)
         }
@@ -177,6 +178,7 @@ class MarkAsReadTest {
             assertTrue((shown["reason"] as String).startsWith("mark_read_failed:"))
             val logged = eventsOf(harness, AnalyticsEvents.MESSAGES_CONVERSATION_ACTION).single()
             assertEquals("failed", logged["result"])
+            assertEquals("tap", logged["trigger"])
 
             // The seller can try again.
             viewModel.onEvent(ConversationContract.Event.MarkAsReadClicked)
@@ -236,13 +238,16 @@ class MarkAsReadTest {
         hadUnread = hadUnread,
         repository = harness.messagesRepository,
         myAdvertsRepository = harness.myAdvertsRepository,
+        outcomeStore = harness.outcomeStore,
         accountRepository = harness.accountRepository,
         analytics = harness.analytics,
+        openAIClient = harness.openAIClient,
     )
 
     private fun list(harness: MessagesHarness) = MessagesViewModel(
         repository = harness.messagesRepository,
         myAdvertsRepository = harness.myAdvertsRepository,
+        outcomeStore = harness.outcomeStore,
         accountRepository = harness.accountRepository,
         analytics = harness.analytics,
     )

@@ -451,6 +451,11 @@
         <item quantity="few">Mai sunt %1$d zile</item>
         <item quantity="other">Mai sunt %1$d de zile</item>
     </plurals>
+    <plurals name="my_ads_unread_messages">
+        <item quantity="one">%1$d mesaj necitit</item>
+        <item quantity="few">%1$d mesaje necitite</item>
+        <item quantity="other">%1$d de mesaje necitite</item>
+    </plurals>
     <string name="advert_extend_unavailable">Poți prelungi asta doar pe OLX, nu de aici.</string>
 
     <!-- Ad lifecycle — statistics -->
@@ -504,4 +509,11 @@
     </plurals>
     <string name="conversation_load_failed">Nu am putut încărca această conversație.</string>
     <string name="conversation_reply_on_olx">Răspunde pe OLX</string>
+    <string name="conversation_reply_hint">Scrie un răspuns</string>
+    <string name="conversation_send">Trimite</string>
+    <string name="conversation_message_sending">Se trimite…</string>
+    <string name="conversation_message_not_sent">Netrimis</string>
+    <string name="conversation_suggest_replies">Sugerează răspunsuri</string>
+    <string name="conversation_suggestions_dismiss">Ascunde sugestiile</string>
+    <string name="conversation_scam_warning">Posibilă înșelătorie. OLX nu îți cere niciodată să confirmi o vânzare printr-un link sau un bot de mesagerie. Nu da datele cardului.</string>
 </resources>

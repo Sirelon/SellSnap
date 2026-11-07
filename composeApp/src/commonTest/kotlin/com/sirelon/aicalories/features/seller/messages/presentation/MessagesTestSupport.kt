@@ -30,7 +30,11 @@ import com.sirelon.sellsnap.features.seller.location.data.LocationStore
 import com.sirelon.sellsnap.features.seller.messages.data.MessagesRepository
 import com.sirelon.sellsnap.features.seller.my_ads.data.AdvertOutcomeStore
 import com.sirelon.sellsnap.features.seller.my_ads.data.MyAdvertsRepository
+import com.sirelon.sellsnap.features.seller.openai.OpenAIClient
 import com.sirelon.sellsnap.features.seller.profile.data.SellerAccountRepository
+import com.sirelon.sellsnap.network.OPENAI_DIRECT_BASE_URL
+import com.sirelon.sellsnap.network.OpenAIEndpoint
+import com.sirelon.sellsnap.network.createOpenAI
 import com.sirelon.sellsnap.startup.AnalyticsConsentRepository
 import com.sirelon.sellsnap.startup.AnalyticsConsentStore
 import io.ktor.client.engine.mock.MockEngine
@@ -73,10 +77,12 @@ internal fun advertsJson(vararg ids: Long) = """{"data":[${ids.joinToString(",")
 internal fun advertsJsonWithStatus(vararg adverts: Pair<Long, String>) =
     """{"data":[${adverts.joinToString(",") { (id, status) -> advertJsonBody(id, status) }}]}"""
 
-internal fun advertJson(id: Long, status: String = "active") = """{"data":${advertJsonBody(id, status)}}"""
+internal fun advertJson(id: Long, status: String = "active", price: Long? = null) =
+    """{"data":${advertJsonBody(id, status, price)}}"""
 
-private fun advertJsonBody(id: Long, status: String = "active") =
+private fun advertJsonBody(id: Long, status: String = "active", price: Long? = null) =
     """{"id":$id,"status":"$status","title":"Placeholder advert $id","url":"https://www.olx.ua/d/$id",""" +
+        price?.let { """"price":{"value":$it,"currency":"UAH"},""" }.orEmpty() +
         """"images":[{"url":"https://example.invalid/$id.jpg"}]}"""
 
 internal const val AdvertNotFoundJson = """{"error":{"status":404,"title":"Not Found"}}"""
@@ -116,7 +122,11 @@ internal class MessagesHarness(
     val accountStore: OlxAccountStore,
     val messagesRepository: MessagesRepository,
     val myAdvertsRepository: MyAdvertsRepository,
+    val outcomeStore: AdvertOutcomeStore,
     val analytics: FakeAnalytics,
+    val unauthenticatedOlxApiClient: OlxApiClient,
+    /** Calls OpenAI through the same [MockEngine], at `api.openai.com/v1/responses`. */
+    val openAIClient: OpenAIClient,
 )
 
 internal suspend fun messagesHarness(
@@ -133,6 +143,7 @@ internal suspend fun messagesHarness(
         ),
     )
     val analytics = FakeAnalytics()
+    val outcomeStore = AdvertOutcomeStore(InMemoryOlxKeyValueStore(), messagesTestJson)
     val countryStore = OlxCountryStore(InMemoryOlxKeyValueStore(), analytics).apply { save(OlxCountry.UA) }
     val errorParser = OlxRemoteErrorParser(messagesTestJson)
     val unauthenticatedHttpClient = createOlxHttpClient(engine)
@@ -178,7 +189,7 @@ internal suspend fun messagesHarness(
         locationRepository = locationRepository,
         olxCountryStore = countryStore,
         draftMediaFileStore = FakeDraftMediaFileStore,
-        advertOutcomeStore = AdvertOutcomeStore(InMemoryOlxKeyValueStore(), messagesTestJson),
+        advertOutcomeStore = outcomeStore,
         draftsRepository = InMemoryDraftsRepository(),
         analyticsConsentRepository = analyticsConsentRepository,
         errorParser = errorParser,
@@ -189,12 +200,23 @@ internal suspend fun messagesHarness(
         accountStore = accountStore,
         messagesRepository = MessagesRepository(accountRepository, unauthenticatedOlxApiClient),
         myAdvertsRepository = MyAdvertsRepository(accountRepository, unauthenticatedOlxApiClient),
+        outcomeStore = outcomeStore,
         analytics = analytics,
+        unauthenticatedOlxApiClient = unauthenticatedOlxApiClient,
+        openAIClient = OpenAIClient(
+            openAI = createOpenAI(
+                endpoint = OpenAIEndpoint(baseUrl = OPENAI_DIRECT_BASE_URL, bearerToken = "sk-test", appCheck = null),
+                engine = engine,
+            ),
+            json = messagesTestJson,
+            compactJson = messagesTestJson,
+        ),
     )
 }
 
 internal class FakeAnalytics : Analytics {
     val events = mutableListOf<Pair<String, Map<String, Any>>>()
+    val exceptions = mutableListOf<Throwable>()
 
     override fun logEvent(name: String, params: Map<String, Any>) {
         events += name to params
@@ -202,7 +224,9 @@ internal class FakeAnalytics : Analytics {
 
     override fun setUserId(userId: String?) {}
     override fun setUserProperty(name: String, value: String?) {}
-    override fun recordException(throwable: Throwable, message: String?) {}
+    override fun recordException(throwable: Throwable, message: String?) {
+        exceptions += throwable
+    }
     override fun log(message: String) {}
     override fun setAnalyticsCollectionEnabled(enabled: Boolean) {}
     override fun setCrashlyticsCollectionEnabled(enabled: Boolean) {}

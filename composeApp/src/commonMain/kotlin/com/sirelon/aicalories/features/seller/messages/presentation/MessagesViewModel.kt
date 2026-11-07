@@ -21,6 +21,7 @@ import com.sirelon.sellsnap.features.seller.messages.presentation.MessagesContra
 import com.sirelon.sellsnap.features.seller.messages.presentation.MessagesContract.State
 import com.sirelon.sellsnap.features.seller.messages.presentation.MessagesContract.ThreadRow
 import com.sirelon.sellsnap.features.seller.my_ads.data.AccountNeedsReconnect
+import com.sirelon.sellsnap.features.seller.my_ads.data.AdvertOutcomeStore
 import com.sirelon.sellsnap.features.seller.my_ads.data.MyAdvertsRepository
 import com.sirelon.sellsnap.features.seller.my_ads.model.MyAdvertItem
 import com.sirelon.sellsnap.features.seller.profile.data.SellerAccountRepository
@@ -59,6 +60,7 @@ private const val AdvertsPageSize = 50
 class MessagesViewModel internal constructor(
     private val repository: MessagesRepository,
     private val myAdvertsRepository: MyAdvertsRepository,
+    private val outcomeStore: AdvertOutcomeStore,
     private val accountRepository: SellerAccountRepository,
     private val analytics: Analytics,
 ) : BaseViewModel<State, Event, Effect>() {
@@ -158,7 +160,6 @@ class MessagesViewModel internal constructor(
             is Event.PageSelected -> selectPage(event.localIndex)
 
             is Event.ThreadClicked -> {
-                logConversationOpened(event)
                 postEffect(
                     Effect.OpenThread(
                         localIndex = event.localIndex,
@@ -171,23 +172,31 @@ class MessagesViewModel internal constructor(
                         hadUnread = event.row.unreadCount > 0,
                     ),
                 )
+                // The conversation opens at once; the log follows the store read for the floor.
+                viewModelScope.launch { logConversationOpened(event) }
             }
             Event.ConnectOlxClicked -> postEffect(Effect.ConnectOlx)
             Event.ReconnectClicked -> postEffect(Effect.Reconnect)
         }
     }
 
-    private fun logConversationOpened(event: Event.ThreadClicked) {
+    private suspend fun logConversationOpened(event: Event.ThreadClicked) {
+        val outcome = runCatching { outcomeStore.outcomeFor(event.row.advertId) }.getOrNull()
+        val floor = outcome?.minPrice?.takeIf { it > 0 }
+        // The row carries no price, so the gap is against the price the listing was published at.
+        val gap = floor?.let { MessagesAnalyticsBuckets.floorGap(it, outcome.publishedPrice) }
         val activeIndex = accountRepository.accountsRecordFlow.value.activeAccount()?.localIndex
         analytics.logEvent(
             AnalyticsEvents.MESSAGES_CONVERSATION_OPENED,
-            mapOf(
+            listOfNotNull(
                 "layout" to if (event.isTwoPane) "two_pane" else "single_pane",
                 "account_count" to currentState().pages.size,
                 "is_active_account" to (event.localIndex == activeIndex),
                 "had_unread" to (event.row.unreadCount > 0),
                 "listing_state" to MessagesAnalyticsBuckets.listingState(event.row.status, event.row.isListingDeleted),
-            ),
+                "has_price_floor" to (floor != null),
+                gap?.let { "floor_gap_bucket" to it },
+            ).toMap(),
         )
     }
 

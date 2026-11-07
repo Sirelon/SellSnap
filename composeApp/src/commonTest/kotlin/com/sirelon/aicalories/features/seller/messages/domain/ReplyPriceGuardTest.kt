@@ -1,0 +1,108 @@
+package com.sirelon.sellsnap.features.seller.messages.domain
+
+import kotlin.test.Test
+import kotlin.test.assertEquals
+
+class ReplyPriceGuardTest {
+
+    private fun reply(text: String, price: Long? = null) = ReplySuggestion(text = text, needsReview = false, price = price)
+
+    @Test
+    fun `a price field below the floor is dropped`() {
+        val result = ReplyPriceGuard.apply(listOf(reply("Deal.", price = 1999), reply("Deal.", price = 2000)), floor = 2000)
+
+        assertEquals(listOf(2000L), result.kept.map { it.price })
+        assertEquals(1, result.dropped)
+    }
+
+    @Test
+    fun `numbers in the text between half the floor and the floor are dropped, whatever the separator`() {
+        val texts = listOf("I can do 1 500.", "I can do 1.500.", "I can do 1,500.", "I can do 1500.", "I can do 1 500.")
+
+        val result = ReplyPriceGuard.apply(texts.map { reply(it) }, floor = 2000)
+
+        assertEquals(emptyList(), result.kept)
+        assertEquals(5, result.dropped)
+    }
+
+    @Test
+    fun `small numbers, years and prices at or above the floor are kept`() {
+        val texts = listOf("Size 42, bought in 2019.", "It fits 3 people.", "I can do 2 000.", "Asking 2500.")
+
+        val result = ReplyPriceGuard.apply(texts.map { reply(it) }, floor = 2000)
+
+        assertEquals(texts, result.kept.map { it.text })
+        assertEquals(0, result.dropped)
+    }
+
+    @Test
+    fun `quoting the buyer's offer is kept only next to a counter at or above the floor`() {
+        val replies = listOf(
+            reply("I can't do 1 500, I can do 2 200."),
+            reply("Sorry, not for 1500. The price is 2500."),
+            reply("OK, 1500 works."),
+            reply("I can't do 1 500, but 1 800 is fine."),
+        )
+
+        val result = ReplyPriceGuard.apply(replies, floor = 2000, buyerText = "Will you take 1500?")
+
+        assertEquals(replies.take(2), result.kept)
+        assertEquals(2, result.dropped)
+    }
+
+    @Test
+    fun `without a floor nothing is dropped`() {
+        val replies = listOf(reply("I can do 1 500.", price = 1500), reply("Fine, 10."))
+
+        val result = ReplyPriceGuard.apply(replies, floor = null)
+
+        assertEquals(replies, result.kept)
+        assertEquals(0, result.dropped)
+    }
+
+    @Test
+    fun `accepting the buyer's number below the floor is dropped, even far below half of it`() {
+        val replies = listOf(
+            reply("Okay, 150 is fine."),
+            reply("Can't do 150, 400 is my price."),
+        )
+
+        val result = ReplyPriceGuard.apply(replies, floor = 400, buyerText = "150?")
+
+        assertEquals(replies.drop(1), result.kept)
+        assertEquals(1, result.dropped)
+    }
+
+    @Test
+    fun `a small number the buyer did not write is left alone below half the floor`() {
+        val replies = listOf(reply("Okay, 150 is fine."))
+
+        val result = ReplyPriceGuard.apply(replies, floor = 400, buyerText = "Is it still available?")
+
+        assertEquals(replies, result.kept)
+    }
+
+    @Test
+    fun `without a floor the asking price is the floor`() {
+        val replies = listOf(
+            reply("Ok, 300 works.", price = 300),
+            reply("Ok, 300 works."),
+            reply("I can do 450."),
+            reply("It is 500, bought in 2019."),
+        )
+
+        val result = ReplyPriceGuard.apply(replies, floor = null, buyerText = "300?", asking = 500)
+
+        assertEquals(listOf(replies.last()), result.kept)
+        assertEquals(3, result.dropped)
+    }
+
+    @Test
+    fun `the floor wins over the asking price`() {
+        val replies = listOf(reply("I can do 450.", price = 450))
+
+        val result = ReplyPriceGuard.apply(replies, floor = 400, asking = 500)
+
+        assertEquals(replies, result.kept)
+    }
+}

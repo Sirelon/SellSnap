@@ -16,6 +16,8 @@ fun AppIconButton(
     icon: Painter,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    contentDescription: String? = null,
 ) {
     val hapticFeedback = LocalHapticFeedback.current
 
@@ -25,11 +27,12 @@ fun AppIconButton(
             onClick()
         },
         modifier = modifier.size(AppDimens.Size.xl8 + AppDimens.Size.xl7),
+        enabled = enabled,
         shape = RoundedCornerShape(AppDimens.BorderRadius.pill),
     ) {
         Icon(
             painter = icon,
-            contentDescription = null,
+            contentDescription = contentDescription,
             modifier = Modifier.size(AppDimens.Size.xl6),
         )
     }
