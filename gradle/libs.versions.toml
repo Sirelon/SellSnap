@@ -32,7 +32,7 @@ kotlinx-datetime = "0.8.0"
 # https://github.com/Kotlin/kotlinx.serialization/releases
 kotlinx-serialization = "1.12.0"
 # https://github.com/ktorio/ktor/releases
-ktor = "3.6.0"
+ktor = "3.6.1"
 logback = "1.6.5"
 # https://mvnrepository.com/artifact/org.jetbrains.compose.material3/material3
 material3 = "1.13.0-beta01"
