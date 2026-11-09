@@ -214,7 +214,8 @@ interface PreviewAdContract {
         data class ShowMessage(val message: String) : PreviewAdEffect
         data object GoToGategoryPicker : PreviewAdEffect
         data class PublishSuccess(val data: PublishSuccessData) : PreviewAdEffect
-        data class PublishFailure(val message: String) : PreviewAdEffect
+        /** [untilDismissed] keeps a message the seller has to act on visible until they close it. */
+        data class PublishFailure(val message: String, val untilDismissed: Boolean = false) : PreviewAdEffect
         data class NavigateToProfile(val reason: String) : PreviewAdEffect
 
         /** OLX needs a district for [city]: the screen opens the location picker on its district step. */

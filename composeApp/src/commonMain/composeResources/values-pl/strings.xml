@@ -293,6 +293,7 @@
     <string name="photos_limit_kept_message">Zachowaliśmy pierwszych %1$d zdjęć — to maksimum w tym kroku.</string>
     <string name="error_upload_file_failed">Nie udało się przesłać jednego ze zdjęć.</string>
     <string name="error_publish_failed">Publikacja nie powiodła się. Spróbuj jeszcze raz.</string>
+    <string name="error_publish_rejected_by_olx">OLX nie przyjął ogłoszenia: %1$s</string>
     <string name="error_generate_ad_failed">Nie udało się wygenerować ogłoszenia. Spróbować ponownie?</string>
     <string name="error_app_check_failed">Nie udało się zweryfikować tej instalacji. Zaktualizuj Usługi Google Play albo zainstaluj SellSnap z Google Play i spróbuj ponownie.</string>
     <string name="error_photo_unreadable">Nie rozpoznaliśmy przedmiotu na Twoich zdjęciach. Spróbuj zrobić je jeszcze raz.</string>

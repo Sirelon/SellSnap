@@ -293,6 +293,7 @@
     <string name="photos_limit_kept_message">Запазихме първите %1$d снимки — това е максимумът за тази стъпка.</string>
     <string name="error_upload_file_failed">Не можах да кача една от снимките.</string>
     <string name="error_publish_failed">Публикуването не се получи. Опитай пак.</string>
+    <string name="error_publish_rejected_by_olx">OLX не прие обявата: %1$s</string>
     <string name="error_generate_ad_failed">Не можах да генерирам обявата. Опитай отново?</string>
     <string name="error_app_check_failed">Не успяхме да проверим тази инсталация. Обнови Google Play Services или инсталирай SellSnap от Google Play и опитай отново.</string>
     <string name="error_photo_unreadable">Не можах да разпозная артикула на снимките. Опитай пак.</string>

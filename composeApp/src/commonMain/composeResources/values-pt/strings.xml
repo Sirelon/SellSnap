@@ -293,6 +293,7 @@
     <string name="photos_limit_kept_message">Mantivemos as primeiras %1$d fotos — esse é o máximo para esta etapa.</string>
     <string name="error_upload_file_failed">Não foi possível carregar uma das fotos.</string>
     <string name="error_publish_failed">A publicação não foi concluída. Tente novamente.</string>
+    <string name="error_publish_rejected_by_olx">A OLX não aceitou o anúncio: %1$s</string>
     <string name="error_generate_ad_failed">Não foi possível gerar o anúncio. Tentar novamente?</string>
     <string name="error_app_check_failed">Não foi possível verificar esta instalação. Atualize os serviços do Google Play ou instale o SellSnap a partir do Google Play e tente novamente.</string>
     <string name="error_photo_unreadable">Não conseguimos reconhecer o artigo nas suas fotos. Tente tirá-las de novo.</string>

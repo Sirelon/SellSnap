@@ -67,6 +67,7 @@ import com.sirelon.sellsnap.generated.resources.error_category_suggestion_failed
 import com.sirelon.sellsnap.generated.resources.error_location_fetch_failed
 import com.sirelon.sellsnap.generated.resources.error_publish_account_mismatch
 import com.sirelon.sellsnap.generated.resources.error_publish_failed
+import com.sirelon.sellsnap.generated.resources.error_publish_rejected_by_olx
 import com.sirelon.sellsnap.generated.resources.error_publish_missing_category_or_location
 import com.sirelon.sellsnap.generated.resources.error_publish_missing_contact_name
 import com.sirelon.sellsnap.generated.resources.error_publish_needs_reconnect
@@ -835,6 +836,14 @@ class PreviewAdViewModel internal constructor(
                         )
                     )
                 }
+
+                // OLX's own words tell the seller what to change; the generic message does not.
+                olxError is OlxApiError.ValidationError -> postEffect(
+                    PreviewAdEffect.PublishFailure(
+                        message = getString(Res.string.error_publish_rejected_by_olx, olxError.fieldDetail),
+                        untilDismissed = true,
+                    )
+                )
 
                 else -> postEffect(PreviewAdEffect.PublishFailure(getString(Res.string.error_publish_failed)))
             }

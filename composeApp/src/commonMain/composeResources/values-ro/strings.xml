@@ -293,6 +293,7 @@
     <string name="photos_limit_kept_message">Am păstrat primele %1$d fotografii — acesta e maximul pentru acest pas.</string>
     <string name="error_upload_file_failed">Nu s-a putut încărca una dintre fotografii.</string>
     <string name="error_publish_failed">Publicarea nu a reușit. Mai încearcă o dată.</string>
+    <string name="error_publish_rejected_by_olx">OLX nu a acceptat anunțul: %1$s</string>
     <string name="error_generate_ad_failed">Nu s-a putut genera anunțul. Încerci din nou?</string>
     <string name="error_app_check_failed">Nu am putut verifica această instalare. Actualizează serviciile Google Play sau instalează SellSnap din Google Play, apoi încearcă din nou.</string>
     <string name="error_photo_unreadable">Nu am putut recunoaște articolul din fotografiile tale. Încearcă să le refaci.</string>

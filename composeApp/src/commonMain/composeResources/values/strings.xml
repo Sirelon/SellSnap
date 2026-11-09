@@ -295,6 +295,7 @@
     <string name="photos_limit_kept_message">Kept the first %1$d photos — that's the max for this step.</string>
     <string name="error_upload_file_failed">Couldn't upload one of the photos.</string>
     <string name="error_publish_failed">Publishing didn't go through. Give it another shot.</string>
+    <string name="error_publish_rejected_by_olx">OLX didn't accept the listing: %1$s</string>
     <string name="error_generate_ad_failed">Couldn't generate the ad. Try again?</string>
     <string name="error_app_check_failed">Couldn't verify this installation. Update Google Play services, or install SellSnap from Google Play, then try again.</string>
     <string name="error_photo_unreadable">Couldn't recognise the item in your photos. Try retaking them.</string>

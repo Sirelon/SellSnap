@@ -595,7 +595,11 @@ fun App() {
                                     }
 
                                     is PreviewAdContract.PreviewAdEffect.PublishFailure ->
-                                        snackbarHostState.showSnackbar(effect.message)
+                                        snackbarHostState.showSnackbar(
+                                            message = effect.message,
+                                            withDismissAction = effect.untilDismissed,
+                                            duration = if (effect.untilDismissed) SnackbarDuration.Indefinite else SnackbarDuration.Short,
+                                        )
 
                                     is PreviewAdContract.PreviewAdEffect.NavigateToProfile ->
                                         navVm.backStack.add(AppKey.Profile(reason = effect.reason, source = "publish_contact"))
