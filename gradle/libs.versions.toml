@@ -35,7 +35,7 @@ kotlinx-serialization = "1.12.0"
 ktor = "3.6.0"
 logback = "1.6.5"
 # https://mvnrepository.com/artifact/org.jetbrains.compose.material3/material3
-material3 = "1.13.0-beta01"
+material3 = "1.13.0-beta02"
 # https://mvnrepository.com/artifact/org.jetbrains.compose.material3.adaptive/adaptive
 material3-adaptive = "1.4.0-alpha01"
 materialIconsExtended = "1.7.3"
