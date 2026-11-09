@@ -62,7 +62,7 @@
     <string name="validation_all_valid">Виглядає чудово — усе на місці ✨</string>
     <string name="validation_fields_remaining">%1$d залишилось заповнити</string>
     <string name="validation_error_title_too_short">У назві треба 10+ символів</string>
-    <string name="validation_error_desc_too_short">В описі треба 30+ символів</string>
+    <string name="validation_error_desc_too_short">В описі треба 40+ символів</string>
     <string name="validation_error_no_category">Оберіть категорію</string>
     <string name="validation_error_no_location">Додайте місцезнаходження</string>
     <string name="validation_errors_more">…і ще %1$d</string>

@@ -61,7 +61,7 @@
     <string name="validation_all_valid">Изглежда страхотно — готов си ✨</string>
     <string name="validation_fields_remaining">%1$d за попълване</string>
     <string name="validation_error_title_too_short">Заглавието трябва да е поне 10 знака</string>
-    <string name="validation_error_desc_too_short">Описанието трябва да е поне 30 знака</string>
+    <string name="validation_error_desc_too_short">Описанието трябва да е поне 40 знака</string>
     <string name="validation_error_no_category">Избери категория</string>
     <string name="validation_error_no_location">Добави местоположение</string>
     <string name="validation_errors_more">…и още %1$d</string>

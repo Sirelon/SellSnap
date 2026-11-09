@@ -61,7 +61,7 @@
     <string name="validation_all_valid">Arată grozav — ești pregătit ✨</string>
     <string name="validation_fields_remaining">%1$d de completat</string>
     <string name="validation_error_title_too_short">Titlul trebuie să aibă cel puțin 10 caractere</string>
-    <string name="validation_error_desc_too_short">Descrierea trebuie să aibă cel puțin 30 de caractere</string>
+    <string name="validation_error_desc_too_short">Descrierea trebuie să aibă cel puțin 40 de caractere</string>
     <string name="validation_error_no_category">Alege o categorie</string>
     <string name="validation_error_no_location">Adaugă o locație</string>
     <string name="validation_errors_more">…și %1$d altele</string>

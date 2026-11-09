@@ -61,7 +61,7 @@
     <string name="validation_all_valid">Está ótimo — tudo pronto ✨</string>
     <string name="validation_fields_remaining">%1$d por preencher</string>
     <string name="validation_error_title_too_short">O título precisa de 10+ caracteres</string>
-    <string name="validation_error_desc_too_short">A descrição precisa de 30+ caracteres</string>
+    <string name="validation_error_desc_too_short">A descrição precisa de 40+ caracteres</string>
     <string name="validation_error_no_category">Escolha uma categoria</string>
     <string name="validation_error_no_location">Adicione uma localização</string>
     <string name="validation_errors_more">…e mais %1$d</string>

@@ -108,8 +108,6 @@ import com.sirelon.sellsnap.features.media.isDefect
 import com.sirelon.sellsnap.features.media.messageRes
 import com.sirelon.sellsnap.generated.resources.error_polish_failed
 
-private const val TitleMinLength = 10
-private const val DescriptionMinLength = 30
 private const val PreviewAdSavedStateKey = "preview_ad_saved_state"
 private const val AnalyticsScreenCode = "preview_ad"
 

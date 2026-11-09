@@ -197,8 +197,6 @@ import kotlin.math.roundToInt
 import kotlin.math.roundToLong
 import kotlin.time.Duration.Companion.milliseconds
 
-private const val TitleMinLength = 10
-private const val DescriptionMinLength = 30
 
 @Composable
 @OptIn(ExperimentalFoundationApi::class)

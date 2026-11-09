@@ -61,7 +61,7 @@
     <string name="validation_all_valid">Świetnie — wszystko gotowe ✨</string>
     <string name="validation_fields_remaining">%1$d do uzupełnienia</string>
     <string name="validation_error_title_too_short">Tytuł musi mieć co najmniej 10 znaków</string>
-    <string name="validation_error_desc_too_short">Opis musi mieć co najmniej 30 znaków</string>
+    <string name="validation_error_desc_too_short">Opis musi mieć co najmniej 40 znaków</string>
     <string name="validation_error_no_category">Wybierz kategorię</string>
     <string name="validation_error_no_location">Dodaj lokalizację</string>
     <string name="validation_errors_more">…i %1$d więcej</string>

@@ -11,6 +11,15 @@ import com.sirelon.sellsnap.features.seller.currency.domain.OlxCurrency
 import com.sirelon.sellsnap.features.seller.location.OlxLocation
 import kotlin.jvm.JvmInline
 
+internal const val TitleMinLength = 10
+
+/**
+ * OLX rejects shorter descriptions with "This value is too short. It should have 40 characters or more."
+ * (live POST adverts response, olx.ua, 2026-11-09). The partner_api.yaml "Create advert" section
+ * says 80; the live server is what publishing has to pass.
+ */
+internal const val DescriptionMinLength = 40
+
 @Immutable
 data class OlxAttributeState(
     val attribute: OlxAttribute,

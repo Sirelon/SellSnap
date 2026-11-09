@@ -61,7 +61,7 @@
     <string name="validation_all_valid">Тамаша — бәрі дайын ✨</string>
     <string name="validation_fields_remaining">%1$d толтыру керек</string>
     <string name="validation_error_title_too_short">Тақырып 10+ таңбадан тұруы керек</string>
-    <string name="validation_error_desc_too_short">Сипаттама 30+ таңбадан тұруы керек</string>
+    <string name="validation_error_desc_too_short">Сипаттама 40+ таңбадан тұруы керек</string>
     <string name="validation_error_no_category">Санатты таңда</string>
     <string name="validation_error_no_location">Орынды қос</string>
     <string name="validation_errors_more">…және тағы %1$d</string>
