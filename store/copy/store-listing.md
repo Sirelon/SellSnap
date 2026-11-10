@@ -56,6 +56,7 @@ WHY SELLSNAP
 • Post straight to OLX — no copy-paste
 • Automatic category suggestions and detail fields
 • All your OLX ads in one tidy spot
+• Read and answer buyer messages in the app, with AI reply suggestions and scam warnings
 • Add an optional hint (brand, size, condition) for even sharper results
 • Light and dark themes
 
@@ -113,6 +114,7 @@ SellSnap перетворює фото на готове оголошення д
 • Публікація прямо на OLX — без копіювання
 • Автоматичний підбір категорії та полів з деталями
 • Усі ваші оголошення OLX в одному місці
+• Читайте й відповідайте на повідомлення покупців просто в застосунку — з підказками відповідей від AI та попередженнями про шахрайство
 • Додайте підказку для AI (бренд, розмір, стан) — і результат буде ще точнішим
 • Світла та темна теми
 
@@ -170,6 +172,7 @@ DLACZEGO SELLSNAP
 • Publikacja prosto na OLX — bez kopiowania
 • Automatyczne podpowiedzi kategorii i pól ze szczegółami
 • Wszystkie Twoje ogłoszenia OLX w jednym miejscu
+• Czytaj wiadomości od kupujących i odpowiadaj na nie w aplikacji — z podpowiedziami odpowiedzi od AI i ostrzeżeniami przed oszustwami
 • Dodaj wskazówkę dla AI (marka, rozmiar, stan) — wynik będzie jeszcze trafniejszy
 • Jasny i ciemny motyw
 
@@ -227,6 +230,7 @@ DE CE SELLSNAP
 • Publicare direct pe OLX — fără copy-paste
 • Sugestii automate de categorie și câmpuri cu detalii
 • Toate anunțurile tale OLX într-un singur loc
+• Citește și răspunde la mesajele cumpărătorilor direct în aplicație, cu sugestii de răspuns de la AI și avertismente despre înșelătorii
 • Adaugă un indiciu pentru AI (marcă, mărime, stare) — rezultatul va fi și mai precis
 • Temă luminoasă și întunecată
 
@@ -284,6 +288,7 @@ SellSnap превръща снимката в готова обява за OLX. 
 • Публикуване директно в OLX — без копиране
 • Автоматични предложения за категория и полета с детайли
 • Всичките ви обяви в OLX на едно място
+• Четете и отговаряйте на съобщенията от купувачи в приложението — с предложения за отговор от AI и предупреждения за измами
 • Добавете подсказка за AI (марка, размер, състояние) — резултатът ще е още по-точен
 • Светла и тъмна тема
 
@@ -341,6 +346,7 @@ PORQUÊ O SELLSNAP
 • Publicação direta no OLX — sem copy-paste
 • Sugestões automáticas de categoria e campos de detalhes
 • Todos os seus anúncios do OLX num só lugar
+• Leia e responda às mensagens dos compradores na app, com sugestões de resposta da IA e avisos de burla
 • Adicione uma dica para a IA (marca, tamanho, estado) — o resultado fica ainda melhor
 • Tema claro e escuro
 
@@ -396,6 +402,7 @@ SellSnap фотоны OLX-ке жариялауға дайын хабарлан�
 • Тікелей OLX-ке жариялау — көшірудің қажеті жоқ
 • Санат пен толық мәліметтер өрістерін автоматты ұсыну
 • Барлық OLX хабарландыруларыңыз бір жерде
+• Сатып алушылардың хабарламаларын қолданбада оқып, жауап беріңіз — AI жауап ұсынады және алаяқтық туралы ескертеді
 • AI-ға қосымша дерек беріңіз (бренд, өлшем, күйі) — нәтиже одан да дәл болады
 • Ашық және қараңғы тақырып
 
