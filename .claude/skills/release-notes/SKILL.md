@@ -144,9 +144,8 @@ this step needs better judgment than the extraction step):
 - **Order by importance, not date**: new top-level capability first, then a new capability
   the user couldn't do at all, then restored/fixed access, then visible improvements,
   then fixes.
-- Consider merging thin consecutive releases into one card (propose to the user, don't
-  do it silently) — but don't do this for the currently-running backfill without asking,
-  since it changes which version a change is attributed to.
+- Each version keeps its own card, so every change stays attributed to the version that
+  shipped it.
 
 ## 5. Translate
 
@@ -164,8 +163,7 @@ English `changes` array and ask it to return the same array with `title`/`summar
 ## 6. Write `scripts/release-notes.json`
 
 Merge the new version(s) into the array, newest first, `active: true`. This file is
-tracked — commit it (or leave it for the user to commit, matching how `sellsnap-release`
-leaves its own file changes uncommitted; ask which they want if unclear).
+tracked — commit and push it to `main` with the rest of the release.
 
 ## 7. Publish to Firestore
 
@@ -191,4 +189,4 @@ Firestore REST `:commit` call —
 
 Show the user the English copy for every version just published (short enough to read in
 full). Confirm the publish call succeeded and how many documents were written. Note that
-`scripts/release-notes.json` changed and isn't committed unless they said to commit it.
+that `scripts/release-notes.json` was committed and pushed.

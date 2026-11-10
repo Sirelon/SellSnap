@@ -1,28 +1,25 @@
 ---
 name: sellsnap-release
 description: >-
-  Bump SellSnap's version, write the "What's New" release notes for every supported
-  language on both stores, and ship a new internal/beta build. Use when the user says
-  "release a new version", "ship version X.Y", "cut a release", "publish an update",
-  "bump the version and publish", or asks what's new in the current build. Covers Play
-  Store internal testing + TestFlight beta only — promoting to production (Play) or
-  submitting to the App Store is a separate manual step, never run by this skill. After
-  a real ship, hand off to the `release-notes` skill to publish the in-app What's New
-  content — this skill writes store-listing changelogs only, it doesn't touch Firestore.
+  Release SellSnap end to end in one run: bump the version, write store release notes in
+  every language, build and upload to Play internal + TestFlight, prepare the App Store
+  draft, publish the in-app What's New to Firestore, and update the website and store
+  descriptions when a capability is complete. Use when the user says "release", "ship
+  version X.Y", "cut a release", "publish the app", or asks what's new in the current
+  build. Submitting to App Store review and promoting to Play production stay manual.
 ---
 
 # SellSnap release
 
-Merge `origin/main`, bump `version.properties`, translate the release notes into all
-supported languages, write them where each store's fastlane action actually reads them
-from, then run `scripts/ship.sh` to build and upload. Fully autonomous once started — no pause before
-upload, per standing preference — but everything it's about to publish gets generated
-as files first, so it's all visible in the diff.
+One request runs the whole release, steps 1 to 11, in one go. The owner has pre-approved
+every decision inside it: version number, store notes, translations, in-app What's New,
+website cards, store descriptions. Decide each one yourself, publish it, and report once
+at the end. Stop to ask only when a step fails in a way you cannot fix.
 
-**Scope is beta/internal only.** This skill runs `fastlane android beta` (Play internal
-track) and `fastlane ios beta` (TestFlight). It never runs `fastlane android release`
-(promote to production) or `fastlane ios release` (App Store submission) — those stay
-manual, separate actions the user triggers themselves when ready.
+**Scope ends before production.** The run uploads to Play internal testing and
+TestFlight, and prepares the App Store version draft (`fastlane ios release`, which
+never submits). Submitting for App Store review and promoting on Play
+(`fastlane android release`) stay the owner's two manual steps.
 
 ## 1. Pull the latest first
 
@@ -278,10 +275,11 @@ skipped because a version was in review, run the script again once that version 
 released, passing its version string. Making or replacing a banner belongs to the
 `store-banners` skill.
 
-## 10. Hand off for in-app What's New
+## 10. Publish the in-app What's New
 
 After a real version bump ships — skip this for a build-only/hotfix bump where
 `VERSION_NAME` didn't change, same rule as step 4 — run the `release-notes` skill
+through to its Firestore publish, in this same run
 (`.claude/skills/release-notes/`). It mines this range's git history, drafts the in-app
 "What's New" copy in all 8 app languages (russian included — the store-listing exclusion
 in step 2 does not apply here), and publishes it to the `release-notes` Firestore
@@ -296,31 +294,41 @@ before. Examples: dictation, AI polish, or buyer messages once replies and notif
 ship. Skip it for improvements, fixes, and partial slices of a feature. A partial feature
 on the website promises what the app cannot do yet; wait for the slice that completes it.
 
-Draft the updates, show them to the owner, and wait for his OK before you publish
-anything. These surfaces list SellSnap's features:
+Write the updates and publish them in this run. These surfaces list SellSnap's
+features:
 
 1. Website features grid: `docs/index.html` (`.features-grid`, `feature_*` i18n keys).
-   Add or replace a card; keep the grid focused on the strongest capabilities.
+   Add or replace a card; keep the grid focused on the strongest capabilities. The
+   grid is 3×2, so a new card replaces the weakest one. Translate into all 7 site
+   languages in `docs/assets/landing.js`, then commit and push: GitHub Pages serves
+   `docs/` from `main`.
 2. Store descriptions: the Description block per language in
-   `store/copy/store-listing.md`. To push them, write the approved text into the
-   metadata folders from step 3 (`ios/<locale>/description.txt`,
-   `android/<locale>/full_description.txt`); the next `ship.sh` run uploads every file
-   it finds there. Nothing writes these files by default, so the stores keep their
-   current descriptions until you add them.
+   `store/copy/store-listing.md`. Write each block into the metadata folders from
+   step 3 (`ios/<locale>/description.txt`, `android/<locale>/full_description.txt`),
+   then upload at once:
+   ```bash
+   bundle exec fastlane run upload_to_play_store package_name:com.sirelon.sellsnap \
+     json_key:fastlane/google-play-key.json metadata_path:.claude/tmp/release-metadata/android \
+     skip_upload_aab:true skip_upload_apk:true skip_upload_changelogs:true \
+     skip_upload_images:true skip_upload_screenshots:true
+   bundle exec fastlane ios release
+   ```
+   Play shows the new text immediately. Apple accepts a description only on the
+   unreleased version draft, so iOS users see it when that version goes live.
 3. Store screenshots, if the capability has its own screen: the `sellsnap-screenshots`
    skill.
 4. Onboarding (`features/seller/onboarding/OnboardingScreen.kt`, same three steps as the
    website hero): change it only if the capability changes the core snap, write, publish
    loop.
 
-## 11. Report back
+## 11. Commit, push, report
 
-Show the user, per language, the What's New text that just shipped (it's short — showing
-all of it is fine and lets them catch a bad translation before it's live to internal
-testers). Confirm the Play and TestFlight uploads succeeded. Remind them that
-`version.properties` and `store/copy/store-listing.md` are modified but not committed —
-committing is their call, not automatic (the release-metadata files themselves are
-gitignored, so they never show up in `git status` at all). Tell them the App Store draft
-is prepared and populated, banners included, but NOT submitted — submitting for review, and promoting on
-Play, are the two steps that stay theirs — and that step 10 (in-app What's New) is a
-separate hand-off, not automatic.
+Commit and push to `main` everything the run changed in tracked files:
+`version.properties`, `iosApp/iosApp.xcodeproj/project.pbxproj`,
+`store/copy/store-listing.md`, `scripts/release-notes.json`, and `docs/` when step 10a
+ran. The release-metadata files are gitignored and never appear in `git status`.
+
+Then report once: the version shipped, the English store notes (the other languages
+live in `store/copy/store-listing.md`), which surfaces were updated, and what was
+verified live. End with the two steps that stay the owner's: submit the App Store draft
+for review, and promote on Play.
