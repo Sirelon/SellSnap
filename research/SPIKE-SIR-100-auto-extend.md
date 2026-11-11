@@ -1,5 +1,8 @@
 # SIR-100 spike — does `auto_extend_enabled` work on OLX Ukraine
 
+> Method note: this spike read the OLX spec through WebFetch and context7, which summarize. Read
+> the yaml itself for any new fact: `.claude/rules/olx-api.md`.
+
 Date: 2026-09-03. Source of truth: `https://developer.olx.pl/swagger/v2/partner_api.yaml`
 (fetched via WebFetch) cross-checked against the docs mirror (context7 MCP,
 `/websites/developer_olx_pl_api_doc`), plus **live, unauthenticated-account

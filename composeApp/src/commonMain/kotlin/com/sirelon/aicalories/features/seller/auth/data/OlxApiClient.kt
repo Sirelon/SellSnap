@@ -197,7 +197,7 @@ class OlxApiClient(
      * PUT applies the same validation rules as create, so an edit can plausibly be rejected for
      * reasons the original publish passed (a category's attribute requirements having changed
      * since). Whether OLX also re-runs moderation on an edit is unverified - see
-     * `SPIKE-SIR-99-advert-edit-round-trip.md` risks (d) and (e).
+     * `research/SPIKE-SIR-99-advert-edit-round-trip.md` risks (d) and (e).
      *
      * The response body is deliberately not parsed. The status code is the whole result, and the
      * caller re-reads the row with [getAdvert] anyway - so parsing here would add a way for an

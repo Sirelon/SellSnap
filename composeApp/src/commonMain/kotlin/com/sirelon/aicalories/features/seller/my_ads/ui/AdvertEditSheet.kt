@@ -53,7 +53,7 @@ import org.jetbrains.compose.resources.stringResource
  * these three fields replaced - nothing the seller did not touch can be lost. Whether OLX accepts
  * its own image URLs back, and whether single-select attributes come back as a scalar or an array,
  * are unverified against a real advert; until they are, offering photo and attribute editing
- * risks a silently lossy save. See `SPIKE-SIR-99-advert-edit-round-trip.md`.
+ * risks a silently lossy save. See `research/SPIKE-SIR-99-advert-edit-round-trip.md`.
  *
  * There is deliberately no explanation of any of that in the UI. A seller changing their price
  * does not need to be told how this app talks to OLX.

@@ -1,5 +1,8 @@
 # SIR-99 Spike: GET → PUT round-trip fidelity for advert edit
 
+> Method note: this spike read the OLX spec through WebFetch, which summarizes. Read the yaml
+> itself for any new fact: `.claude/rules/olx-api.md`.
+
 **Question.** `PUT /adverts/{id}` takes the full create payload (no patch semantics). Can we
 reconstruct that payload from `GET /adverts/{id}` well enough that editing one field (e.g. price)
 never silently wipes another (e.g. trade/budget flags, phone, attributes)?

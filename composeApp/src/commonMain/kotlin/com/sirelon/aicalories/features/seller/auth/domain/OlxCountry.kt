@@ -24,7 +24,7 @@ data class OlxCountry(
      * Whether `POST adverts/{id}/commands` accepts the `extend` command here. OLX documents the
      * command as unavailable in Ukraine and Portugal, so offering a renew action there would put
      * a button in front of the seller that can only return an error - see SIR-100 and
-     * `SPIKE-SIR-100-auto-extend.md`.
+     * `research/SPIKE-SIR-100-auto-extend.md`.
      */
     val supportsExtendCommand: Boolean get() = code != "ua" && code != "pt"
 
