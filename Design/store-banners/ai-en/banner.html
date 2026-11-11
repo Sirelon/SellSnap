@@ -1,0 +1,86 @@
+<!doctype html>
+<!--
+  SellSnap App Store banner, concept B ("Sell faster with AI"), English listing.
+  Imagery: SellSnap's own app screenshots (phone-home.png, phone-result.png; Android emulator, en locale, 2026-10-16), owned by the app's author.
+  render.sh loads this page once per size with #universal, #header or #search.
+-->
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  :root {
+    /* Brand tokens from ThemesFactory.kt (dark scheme). */
+    --bg: #0D1615;
+    --bg-rgb: 13,22,21;
+    --brand: #0F766E;
+    --accent: #5ED3C4;
+    --on-bg-soft: #93AAA6;
+    --text: #DDEDEA;
+  }
+  html, body { margin: 0; width: 100vw; height: 100vh; overflow: hidden; background: var(--bg); }
+  body { font-family: -apple-system, "SF Pro Display", "Helvetica Neue", sans-serif; color: var(--text); }
+
+  .glow { position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse 50% 80% at 74% 60%, rgba(15,118,110,.55) 0%, rgba(15,118,110,0) 70%),
+      radial-gradient(ellipse 40% 50% at 10% 10%, rgba(94,211,196,.10) 0%, rgba(94,211,196,0) 70%); }
+
+  .safe { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+    display: flex; align-items: center; justify-content: space-between; box-sizing: border-box; }
+  body.universal .safe { width: 84.4vw; height: 76.2vh; padding: 0 4vmin; }
+  body.header    .safe { width: 92vw;   height: 80vh;   padding: 0 4vmin; }
+  body.search    .safe { width: 90vw;   height: 82vh;   padding: 0 4vmin; }
+
+  .copy { display: flex; flex-direction: column; gap: 2.4vmin; flex: 0 1 52%; }
+  .eyebrow  { font-size: 3.4vmin; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); }
+  .headline { font-size: 11vmin; font-weight: 800; line-height: 1.02; letter-spacing: -.02em; margin: 0; color: #fff; text-wrap: balance; }
+  .subline  { font-size: 4.2vmin; font-weight: 500; line-height: 1.3; color: var(--on-bg-soft); margin: 0; max-width: 90%; text-wrap: balance; }
+
+  /* Phones sit in the right half and fade out above the Description card, so the screens'
+     lower parts (guest-mode card, OLX button, Android nav bar) never show.
+     --ph = phone height, --pt = top of the front phone, --px = right edge of the front phone. */
+  .phones { position: absolute; inset: 0; pointer-events: none; }
+  body.universal { --ph: 96vh; --pt: 14vh; --px: 9vw; }
+  body.header    { --ph: 116vh; --pt: 11vh; --px: 6vw; }
+  body.search    { --ph: 92vh; --pt: 12vh; --px: 7vw; }
+  .phone { position: absolute; height: var(--ph); aspect-ratio: 1080 / 2230; box-sizing: content-box;
+    border: calc(var(--ph) * .016) solid #22302E; border-radius: calc(var(--ph) * .07);
+    overflow: hidden; background: #000;
+    -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 56%, transparent 69%);
+            mask-image: linear-gradient(180deg, #000 0%, #000 56%, transparent 69%); }
+  .phone img { width: 100%; height: 100%; display: block; }
+  .phone.front { top: var(--pt); right: var(--px); }
+  .phone.back  { top: calc(var(--pt) + var(--ph) * .07); right: calc(var(--px) + var(--ph) * .3); opacity: .85;
+    /* Ends earlier than the front phone's fade, so it never shows through it. */
+    -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 42%, transparent 53%);
+            mask-image: linear-gradient(180deg, #000 0%, #000 42%, transparent 53%); }
+  .copy { flex-basis: 46%; }
+  /* Sized for the longest locale (Ukrainian); every locale shares it. */
+  .headline { font-size: 9.6vmin; }
+  .eyebrow  { font-size: 3vmin; letter-spacing: .08em; white-space: nowrap; }
+  body.search .headline { font-size: 8vmin; }
+  body.search .eyebrow  { font-size: 2.6vmin; }
+  body.search .copy { flex-basis: 44%; }
+</style>
+</head>
+<body>
+  <!-- CONTENT -->
+  <div class="glow"></div>
+  <div class="phones">
+    <div class="phone back"><img src="phone-home.png" alt=""></div>
+    <div class="phone front"><img src="phone-result.png" alt=""></div>
+  </div>
+  <div class="safe">
+    <div class="copy">
+      <div class="eyebrow">AI listing assistant</div>
+      <h1 class="headline">Sell faster with&nbsp;AI</h1>
+      <p class="subline">Snap it. We'll list&nbsp;it.</p>
+    </div>
+  </div>
+  <!-- /CONTENT -->
+
+<script>
+  document.body.classList.add(location.hash.slice(1) || "universal");
+</script>
+</body>
+</html>
