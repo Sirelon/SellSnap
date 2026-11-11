@@ -25,7 +25,7 @@ object OlxConfig {
     val apiBaseUrl: String
         get() = _currentOlxCountry.apiBaseUrl
 
-    // Changing redirect scheme? See BUGS.md #2 (App Links migration) and update policy pages above.
+    // Changing redirect scheme? See SIR-178 (App Links migration) and update policy pages above.
     val redirectUri: String
         get() = AppConfig.olxRedirectUri
 }

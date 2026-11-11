@@ -397,7 +397,7 @@ Flows live in `.maestro/`, runner scripts in `scripts/maestro-*.sh`. Three thing
   to run again before any flow that generates a listing.
 
 Prefer `testTag` ids over visible text in selectors — flows run in 4+ locales. Two exceptions bite: a `ModalBottomSheet` or dialog is its own window, where `testTagsAsResourceId` does not reach, so select its content by text; and `launchApp` grants every runtime permission by default (`POST_NOTIFICATIONS` included), so a flow that needs a permission undecided must pass `permissions: { all: unset }` or launch with `adb shell monkey`. Photos are never
-picked through the OS picker. Full workflow: the user-level `sellsnap-screenshots` skill (`~/.claude/skills/`).
+picked through the OS picker. Full workflow: the `sellsnap-screenshots` skill (`.claude/skills/`).
 
 ## Fast “Where Do I Edit?” Guide
 - Add app-level screen/navigation:
@@ -528,7 +528,7 @@ rejects violations, so read it before adding a class that maps a JSON response.
 - Contracts live in `*Contract.kt` files with sealed `Event` and sealed `Effect` interfaces.
 - State updates use `setState { it.copy(...) }`. One-shot side effects use `postEffect(...)`.
 - Streaming repositories return `Flow<T>`; VMs subscribe via `.launchIn(viewModelScope)` and use `.catch { ... }` to keep the stream alive across transient errors. `PreviewAdViewModel` is the canonical reference. One-shot OLX reads (`MyAdvertsRepository`, `MessagesRepository`) are `suspend` calls wrapped in `withAccountToken`; the VM owns retries and polling.
-- `CategoriesRepository` caches the (filtered) category tree via `shareIn(GlobalScope, Lazily, 1)` — see `BUGS.md` for why this is on the cleanup list.
+- `CategoriesRepository` caches the (filtered) category tree via `shareIn`.
 - **Assert an effect with `viewModel.effects.awaitEffect<T>()`** (`commonTest`,
   `features/common/presentation/AwaitEffect.kt`); never drain-then-assert. Anything resolved
   through compose-resources `getString` is posted after the virtual scheduler has gone idle, so
@@ -569,12 +569,11 @@ Update this list when adding or hiding categories.
 
 ### Currency / formatting
 
-- Currency is hardcoded to UAH (₴) in `PostAdvertRequestMapper` and the price card UI. SIR-15 deferred — see `BUGS.md`.
-- Thousand-separator handling uses `DigitOnlyInputTransformation` and `ThousandSeparatorOutputTransformation` from `designsystem/InputTransformations.kt`.
+- Currency is hardcoded to UAH (₴) in `PostAdvertRequestMapper` and the price card UI.- Thousand-separator handling uses `DigitOnlyInputTransformation` and `ThousandSeparatorOutputTransformation` from `designsystem/InputTransformations.kt`.
 
 ### OLX deep-link / callback wiring
 
 - Default redirect URI: `selolxai://olx-auth/callback` (configurable via `OLX_REDIRECT_URI` BuildKonfig key).
 - Android — `MainActivity.publishOlxCallback(intent)` reads `intent.data` and forwards the URL to `OlxAuthCallbackBridge.publishCallback(url)`. The intent filter must match the configured scheme; verify `androidApp/.../AndroidManifest.xml` whenever the scheme changes.
 - Web (Wasm) — `composeApp/src/wasmJsMain/.../main.kt` checks `window.location` for `code=` / `error=` query parameters before mounting Compose, then calls `OlxAuthCallbackBridge.publishCallback`.
-- The bridge is a global object (`OlxAuthCallbackBridge`); listeners are collected from both the seller landing and seller profile flows. Concurrency / replay caveats in `BUGS.md`.
+- The bridge is a global object (`OlxAuthCallbackBridge`); listeners are collected from both the seller landing and seller profile flows.
