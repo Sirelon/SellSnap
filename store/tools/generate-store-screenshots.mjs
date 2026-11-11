@@ -63,7 +63,7 @@ const COPY_BLOCKS = {
   review: "Screenshot_20260519_232545.png",      // "Review everything before posting" / "Edit text, price and details"
   publish_tap: "Screenshot_20260519_232644.png", // "Publish in one tap" / "A ready listing with zero extra work"
   final_check: "Screenshot_20260519_233853.png", // "Publish with confidence" / "Final check before OLX"
-  live: "Screenshot_20260519_233904.png",        // "Your listing is live" — INTENTIONALLY UNUSED, see PROGRESS.md §5
+  live: "Screenshot_20260519_233904.png",        // "Your listing is live" — INTENTIONALLY UNUSED, see .claude/skills/app-store-screenshots/reference.md
 };
 
 /** Resolve a scenes.json `copy` value ("review" or "fallback:0") to a copy block. */
@@ -208,7 +208,7 @@ for (const name of deviceNames) {
 }
 
 const allCopy = JSON.parse(readFileSync(copyPath, "utf-8"));
-/** scenes.json is keyed by device: the usable screens differ per device (see PROGRESS.md §4). */
+/** scenes.json is keyed by device: the usable screens differ per device (see .claude/skills/app-store-screenshots/reference.md). */
 const allScenes = JSON.parse(readFileSync(scenesPath, "utf-8"));
 
 /* -------------------------------------------------------------------------- */

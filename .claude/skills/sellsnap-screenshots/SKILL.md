@@ -1,258 +1,96 @@
-# Skill: SellSnap Screenshots
+---
+name: sellsnap-screenshots
+description: Capture raw, localized screenshots of SellSnap screens with Maestro on the iOS simulator, the iPad simulator and the Android emulator, per country, light and dark. The output is the input of the `app-store-screenshots` skill. Use for "take screenshots of <screen>", "capture the auth screen for all countries", "re-capture the iPad set", "screenshots for a new country".
+---
 
-Take localized screenshots of any SellSnap screen across all platforms and countries.
+# SellSnap screenshots
 
-## When to use
-User asks to take screenshots of a screen (e.g. "GenerateAd", "auth screen", "home") for all countries or specific platforms.
+Output: `store/captures/<device>/<country>/<screen>_<theme>.png`.
+Devices: `iphone`, `ipad` (landscape), `android-phone`, `android-tablet` (landscape).
+Countries: `ua pt pl ro bg`. Themes: `light dark`.
+The `app-store-screenshots` skill composites these files into store assets.
+Quirks, the login hand-off in detail and troubleshooting: [reference.md](reference.md).
 
-## Quick reference
+## Screens and scripts
 
-**Active countries:** `ua`, `pt`, `pl`, `ro`, `bg` — all 5 supported on every platform
+| Screen | Files per country and theme | Needs |
+| --- | --- | --- |
+| `auth` | `auth` | nothing: no login, no `screenshotMode` |
+| `generate_ad` | `generate_ad_top`, `generate_ad_bottom` | login, `screenshotMode` |
+| `result` | `analysing_start`, `analysing_progress` (iPhone light only), `result_top`, `result_bottom`, `result_publish_dialog` | login, `screenshotMode`, App Check token, two real OpenAI generations per country |
 
-**Credentials:** stored in `.maestro/.env` (OLX_EMAIL / OLX_PASSWORD)
+Scripts, run from the repo root:
 
-**Devices:**
-- iPhone portrait: UDID `C74C95D7-F29C-49D7-A281-E9D8DAAEDD59`
-- iPad landscape: UDID `1663ACA3-D833-471F-A56F-7095872F61A6` + `ORIENTATION=landscape`
-- Android phone + tablet: resizable emulator `emulator-5554` (scripts default to this)
-  — tablet mode: `wm size 1920x1200 / density 240` (handled automatically by the scripts)
+- `auth`: `maestro-auth-screenshots-ios.sh` (iPad: pass `UDID`, `PLATFORM=ipad`, `ORIENTATION=landscape`), `maestro-auth-screenshots-android.sh` (tablet: `PLATFORM=android-tablet`).
+- `generate_ad`: `maestro-generate-ad-screenshots-{ios,ipad,android}.sh`.
+- `result`: `maestro-generate-ad-result-screenshots-{ios,ipad,android}.sh`.
+- Every script takes `COUNTRIES="bg pl"` for a partial run. A screen with no script needs a new flow: see reference.md.
 
-## screenshotMode (do this first, revert it after)
+## Steps
 
-`composeApp/.../features/seller/ad/ScreenshotMode.kt` holds `internal var screenshotMode`,
-committed as `false`. **Every photo flow now requires `true`** (GenerateAd + result). It is a
-plain source constant, so each session is:
+### 1. Scope the run
 
-1. flip to `true`
-2. rebuild and reinstall the iOS app (`IOS_TARGET=<udid> run-ios`)
-3. run the flows
-4. **flip back to `false` before committing** — committing `true` ships the publish bypass
+Name the screens, the devices and the countries. List what exists: `ls store/captures/<device>/<country>`.
+Done when the request reads "screen × device × countries" and each cell maps to a script above.
 
-It enables two things: seeded test photos in GenerateAd (no picker) and the publish-confirm
-bypass + direct back-navigation in PreviewAdScreen. AI generation is **not** faked — every run
-makes real OpenAI calls (~1–2 min per generation, ×2 per country for light + dark).
+### 2. Boot one device per platform
 
-The runner scripts now fail fast if the source still says `false`, but they cannot detect
-"flipped but not rebuilt" — always reinstall after flipping.
+- **Boot only one iOS simulator.** Maestro starts one driver per device. The drivers contend for one port. Hierarchy and screenshot calls then silently return the other device's data.
+- Get the UDID from `xcrun simctl list devices` and pass `UDID=<udid>`. The default UDIDs inside the scripts do not exist on this machine.
+- iPhone captures are 1206x2622. iPad captures come from an iPad Pro 13-inch (M5). Check the pixel size with `xcrun simctl io <udid> screenshot`.
+- **Android runs need API 33+.** Per-country language uses `cmd locale set-app-locales`, which does not exist below 33. The scripts refuse to start. Pass `DEVICE=<serial>` when more than one device is attached.
 
-## iOS login protocol (critical)
+Done when `xcrun simctl list devices booted` lists at most one simulator, and an Android target answers `adb -s <serial> shell getprop ro.build.version.sdk` with 33 or more.
 
-iOS hides `type="password"` fields from the accessibility tree — automation cannot type
-passwords. The login flow fills the email, presses Tab, then waits up to 5 minutes for a
-manual entry.
+### 3. Prepare the app (`generate_ad` and `result` only)
 
-**In practice you usually will not need to type anything.** The OLX web session lives in the
-shared `ASWebAuthenticationSession` cookie store, which Maestro's `clearState` does *not*
-clear, so OLX normally auto-redirects and `home_root` appears on its own. Manual entry is only
-needed when that cookie store is empty.
+1. **`screenshotMode` is committed as `false`.** Set it to `true` in `composeApp/src/commonMain/kotlin/com/sirelon/aicalories/features/seller/ad/ScreenshotMode.kt`. It seeds the three bundled photos and bypasses the publish confirmation. `scripts/ship.sh` refuses to release while it is `true`.
+2. Rebuild and reinstall on the target: `IOS_TARGET=<udid> run-ios`, `ANDROID_SERIAL=<serial> run-android`. The scripts read the source file only, so they cannot detect "flipped but not rebuilt".
+3. `result` only: **a debug build without a registered App Check token cannot generate listings.** With the fixed per-machine tokens (`local.properties` and `iosApp/Configuration/AppCheckDebugToken.local.xcconfig`) this is a one-time setup. Without them every `clearState` mints a new token, and the `appcheck-debug-token` skill must run before the flow.
 
-**Your job when running iPhone scripts:**
-1. Before each country, tell the user the login form is opening and that if the form appears
-   they should click the Simulator window, type the password from `.maestro/.env`, and press
-   Enter. Do not paste the password into chat.
-2. The flow waits automatically. No need to poll or ask "did you log in?".
-3. Login happens once per country. Dark mode reuses the session (no second login).
+Done when `grep -n "screenshotMode = true"` matches the file and the install finished after that edit.
 
-### iPad login is different — two-phase manual process
+### 4. Brief the owner and hand off the login
 
-On iPad, `ASWebAuthenticationSession` shows a system-level auth-consent dialog rendered by
-**SpringBoard**, not the app process. Maestro's XCUITest runner is sandboxed to the app process
-and **cannot tap SpringBoard dialogs**. Sending `tapOn` at the Cancel/Continue buttons reports
-COMPLETED but does nothing — the dialog stays on screen until it times out.
+Every script that logs in costs the owner one OLX login per country. Dark mode reuses the session. The full matrix is 35 logins, so run only the cells from step 1.
 
-The iPad result-screenshot script therefore uses a two-phase approach:
+- **The owner types the OLX password** in the simulator or emulator. The agent never types it, never reads it into chat, and never retries a failed login. One failed login: stop and report. Repeated attempts got the RO account banned.
+- Scripts with `read -rp` (iPad `result`, every Android script) must run in the owner's own terminal, because a background task cannot answer the prompt. The iPhone scripts need no stdin: the flow waits up to 5 minutes for the home screen. Run those in the background and tell the owner when the form opens.
+- iPad `generate_ad` does not log in. It reuses the session on the iPad, so run iPad `result` first or log in by hand.
+- Before each country, tell the owner what he will see and what to do. Usually he types nothing, because the OLX web session survives `clearState`.
 
-**Phase 1 (`setup_for_country.yaml`):** Maestro clears state, navigates through onboarding and
-the country picker, and taps the OLX Continue button — which triggers the auth sheet — then
-**exits immediately**. The shell script then pauses.
+Done when the owner knows the script, the countries, and where he types the password.
 
-**Phase 2 (manual pause):** The script fires a macOS notification + voice alert and prints:
-> Tap 'Dalej' (or locale equivalent) in the grey dialog, then type the OLX password and press
-> Return in the Simulator. Then press Enter here to continue.
+### 5. Probe one country
 
-Once you press Enter, Maestro relaunches the app and takes screenshots from the logged-in
-home screen using `result_screenshots_dark_only.yaml` (which works for both light and dark).
+Run the script with `COUNTRIES=<one country>`. The scripts continue to the next country after a failure. A broken flow then burns every login before you can react.
+Done when every file of that country exists (step 7 lists them) and one opened screenshot shows that country's language.
 
-**This script MUST be run interactively in your own terminal** — background tasks cannot read
-`stdin`, so the `read` pause will hang silently.
+### 6. Run the remaining countries
 
-Localized Continue button text (auth sheet): pl=**Dalej** · pt=Continuar · ro=Continuați ·
-bg=Продължи · ua=Продовжити. These are also the Cancel button counterparts used by
-`olx_web_login.yaml` to detect the sheet: pl=Anuluj · pt=Cancelar · ro=Anulare · bg=Отказ ·
-ua=Скасувати.
+Run the script without `COUNTRIES`, or with the remaining ones. Read the final `Failed:` line. Re-run each failed country alone.
+Done when the script exits 0, or every failed country has been re-run once and reported.
 
-**NEVER retry a failed OLX login more than once** — the RO account was banned this way.
-Before treating a failure as a login failure, check the Maestro log for the step that actually
-failed: a scroll or assertion timeout further down the flow looks identical from the outside,
-and the result script used to mislabel every failure as a login timeout.
+### 7. Verify the output
 
-## iOS system dialogs — never guess localized strings
-
-Two separate outages came from guessed button text. When a flow must tap an iOS system dialog,
-read the real strings out of the runtime instead:
+A green exit does not prove a good capture. Flows use `optional: true`, so a bad capture can pass.
 
 ```bash
-RR="$(xcrun simctl getenv <udid> SIMULATOR_ROOT)"
-plutil -p "$RR/System/Library/Frameworks/AuthenticationServices.framework/pl.lproj/Localizable.strings" \
-  | grep -E '"(Continue|Cancel)" =>'
+cd store/captures/<device>
+ls <cc> | grep -cE 'analysing|result'                     # 9 on iphone, 8 elsewhere
+md5 -q <cc>/*.png | sort | uniq -d                        # no output: no two files identical
+md5 -q */result_top_light.png | sort | uniq -d            # no output: no two countries identical
+ls -l */result_top_*.png                                   # above 1 MB: photo loaded; about 300 KB: blank gradient
 ```
 
-Verified for the auth-consent sheet (key `Continue`): en=Continue · pt=Continuar ·
-ro=Continuați · pl=**Dalej** (not "Kontynuuj") · bg=Продължи · uk=Продовжити.
+Open one screenshot per country and read the language. A whole set once shipped in Polish with every step green.
+Done when the counts match, both `uniq -d` runs print nothing, and one screenshot per country is in the right language.
 
-Anchor selectors to exact words (`^dalej$`), never prefixes — `continu.*` also matches the
-app's own "Continue · olx.pt" button. Prefer bypassing the dialog entirely where possible, e.g.
-`xcrun simctl privacy <udid> grant location <bundle-id>` instead of tapping Allow.
+### 8. Restore and hand off
 
-## Script paths
+1. Set `screenshotMode` back to `false`. Done when `git diff --stat -- <ScreenshotMode.kt path>` prints nothing. Never commit `true`.
+2. `auth` on iPad: run `scripts/normalize-ipad-screenshots.sh`. The other iPad scripts run it themselves.
+3. `auth` feeds the store set as `auth.png`, without a theme. The flow writes `auth_light.png` and `auth_dark.png`. Copy the wanted one to `auth.png`.
+4. Name the changed folders to the owner. Commit only when he asks.
 
-```bash
-# iPhone — GenerateAd screens
-./scripts/maestro-generate-ad-screenshots-ios.sh
-
-# iPhone — Result / Analysing screens (needs screenshotMode = true)
-./scripts/maestro-generate-ad-result-screenshots-ios.sh
-
-# iPad (landscape, all 5 countries) — GenerateAd screens (no login, fully automated)
-./scripts/maestro-generate-ad-screenshots-ipad.sh
-
-# iPad (landscape, all 5 countries) — Result / Analysing screens
-# *** INTERACTIVE — run from your own terminal, NOT as a Claude background task ***
-# The script pauses once per country for manual auth-sheet tap + OLX login.
-./scripts/maestro-generate-ad-result-screenshots-ipad.sh
-
-# Single-country retry (works for all scripts above)
-COUNTRIES="bg" ./scripts/maestro-generate-ad-result-screenshots-ipad.sh
-
-# Android phone — GenerateAd screens (all 5 countries, fully automated)
-./scripts/maestro-generate-ad-screenshots-android.sh
-
-# Android tablet — GenerateAd screens (resizes emulator, resets after)
-PLATFORM=android-tablet ./scripts/maestro-generate-ad-screenshots-android.sh
-
-# Android phone — Result / Analysing screens (fully automated, ~2 min/country for OpenAI)
-./scripts/maestro-generate-ad-result-screenshots-android.sh
-
-# Android tablet — Result / Analysing screens
-PLATFORM=android-tablet ./scripts/maestro-generate-ad-result-screenshots-android.sh
-
-# Single-country retry
-COUNTRIES="ua" ./scripts/maestro-generate-ad-result-screenshots-android.sh
-COUNTRIES="bg" PLATFORM=android-tablet ./scripts/maestro-generate-ad-result-screenshots-android.sh
-```
-
-## Single-country retry
-
-```bash
-COUNTRIES="bg" ./scripts/maestro-generate-ad-screenshots-ios.sh
-COUNTRIES="pt" ./scripts/maestro-generate-ad-result-screenshots-ipad.sh
-```
-
-Validate on one country before spending all logins — the scripts continue to the next
-country on failure, so a broken flow will burn every login before you can react.
-
-## Verify the output, never trust the exit code
-
-Flows use `optional: true` in places, so a green exit can still hide a bad capture. Check:
-
-```bash
-cd screenshots/iphone
-for c in pt pl bg; do echo "$c: $(ls $c | grep -cE 'analysing|result')"; done   # expect 10
-# result_top with a loaded photo is ~1.9 MB; a blank gradient is ~300 KB
-for c in pt pl bg; do for t in light dark; do
-  echo "$c/$t $(stat -f%z $c/result_top_$t.png)"; done; done
-# top and bottom must differ, and the three countries must differ from each other
-for c in pt pl bg; do for t in light dark; do
-  [ "$(md5 -q $c/result_top_$t.png)" = "$(md5 -q $c/result_bottom_$t.png)" ] \
-    && echo "$c/$t SCROLL FAILED"; done; done
-```
-
-Then actually open one screenshot per country and confirm the language — a whole set once
-shipped in Polish across all three folders while every step reported success.
-
-## Photos are seeded, not picked (no manual step)
-
-`screenshotMode = true` makes `GenerateAdViewModel` seed the three bundled photos from
-`composeResources/files/` when the GenerateAd screen opens, pushing them through the normal
-prepare → persist → upload path. No picker is opened on any platform, so the device gallery no
-longer needs populating and iPad needs no manual clicking.
-
-Why the picker is not automated: on iPad, iOS 26 presents `PHPickerViewController` as a popover
-that exposes **nothing** to the accessibility tree — no `PXGGridLayout-Info`, no cells, only a
-`PopoverDismissRegion` (verified on iPad Pro 13-inch, iOS 26.5, on two separate builds). It is
-reachable by coordinate tap, but that silently selects the wrong photos whenever the popover
-reflows (e.g. on rotation), so it was rejected. On iPhone the picker is a full-screen sheet and
-*is* accessible, but seeding is used there too so all platforms share one path.
-
-`subflows/wait_for_photos.yaml` waits on `generate_ad_photo_remove` with `index: 2` — one such
-node exists per loaded photo, so it proves all three arrived, locale-independently.
-
-## Known traps
-
-- **Only ever boot ONE iOS simulator for a Maestro run.** Maestro starts one
-  `simulator-server ios --id <udid>` per device and they fight over the same driver port. The
-  loser is silently ignored: `maestro hierarchy`, the Maestro MCP tools and screenshots all
-  return the **other** device's data even with a correct `--udid`. This makes working testTags
-  look missing and sends you chasing phantom app bugs. Fix:
-  `pkill -9 -f "simulator-server ios"; pkill -9 -f maestro-driver-iosUITests-Runner` and drive
-  one device at a time. Sanity-check identity via `xcrun simctl io <udid> screenshot` (native
-  pixel size differs per model).
-
-- **A stale build looks exactly like a missing testTag.** An iPad build a few hours out of date
-  reported `generate_ad_gallery_button`, `generate_ad_photos_grid` and `generate_ad_prompt` as
-  absent while `home_root` resolved fine. Reinstalling from current source fixed all of them.
-  Rebuild before concluding a tag is broken.
-
-- **`scripts/maestro-add-media.sh` is no longer part of the screenshot path** (photos are
-  seeded in-app). It is kept for manually exercising the real picker → upload path, which the
-  screenshot flows deliberately no longer cover.
-
-- **`clearState` wipes Coil's disk cache** (`NSTemporaryDirectory()/coil3_disk_cache`), so
-  carousel images are always a cold fetch from Supabase. Never sync on
-  `waitForAnimationToEnd` — `ImageShimmer` runs an infinite transition while loading, so the
-  wait can never settle and just expires. Wait on the `async_image_loaded` tag instead.
-- **macOS ships bash 3.2.** No `${var^^}`, `${var,,}`, `declare -A`, or `mapfile` in these
-  scripts.
-- **A single OLX account is used for every country.** The account carries no market: UI
-  language comes from the device locale (`composeResources/values-<lang>`) and the AI text from
-  the picked country (`OpenAIClient` uses `country.language`). `OLX_EMAIL_PT/PL/BG` lookups in
-  the result script are dead code that always falls back to `OLX_EMAIL`.
-- **Location is a required field.** With a simulated location set, ads validate fully and the
-  CTA renders green ("Publish on OLX") instead of orange ("Publish · 1 to fix"). Drop the
-  `lat,lon` column in the script's country table to get the error state back.
-
-## Android login is manual (same reason as iOS)
-
-OLX bot-detection blocks automated Chrome Custom Tab login — the account gets banned.
-Both Android scripts use the same two-phase approach as iPad:
-
-**Phase 1:** Maestro clears state, walks through onboarding → country picker → taps
-"Continue with OLX" → Chrome Custom Tab opens. Script pauses.
-
-**Phase 2:** You type the OLX password in the emulator and press Return. When you land
-on the SellSnap home screen, press Enter in the terminal. Maestro takes screenshots.
-
-One login per country (5 total). Dark mode reuses the session — no second login.
-
-## Run order (to minimize total logins)
-
-1. iPhone (5 manual logins; **run interactively from your terminal**)
-2. iPad GenerateAd — `maestro-generate-ad-screenshots-ipad.sh` (no login, fully automated)
-3. iPad Result/Analysing — `maestro-generate-ad-result-screenshots-ipad.sh`
-   (5 manual logins; **run interactively from your terminal**)
-4. Android phone GenerateAd — `maestro-generate-ad-screenshots-android.sh`
-   (5 manual logins; **run interactively from your terminal**)
-5. Android phone Result/Analysing — `maestro-generate-ad-result-screenshots-android.sh`
-   (5 manual logins; **run interactively from your terminal**)
-6. Android tablet GenerateAd — `PLATFORM=android-tablet maestro-generate-ad-screenshots-android.sh`
-7. Android tablet Result/Analysing — `PLATFORM=android-tablet maestro-generate-ad-result-screenshots-android.sh`
-
-Steps 4–7 use the same resizable emulator (`emulator-5554`). The scripts handle wm size
-resize/reset automatically — no manual adb commands needed between runs.
-
-## What to do if login fails
-
-- Check the Maestro viewer at http://127.0.0.1:9999/ for the last screenshot
-- If the form shows the wrong tab (Register vs Login), the flow needs investigation
-- If `home_root` timed out: ask user what they saw and re-run that country only (`COUNTRIES="xx"`)
-- NEVER attempt a third login if two have already failed for the same country
+Done when the file is `false`, the iPad files are landscape, and the owner has the folder list.
