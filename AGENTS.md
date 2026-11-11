@@ -1,8 +1,9 @@
 # AGENTS
 
 Repo map and rules for agents working in SellSnap. They apply to every task unless the owner
-overrides them. A rule the owner sets in a session is written here, or in the matching
-`.claude/rules/` file, in that session; never only in one agent's private memory.
+overrides them. Long-lived knowledge - a rule the owner sets, a workflow, a gotcha, a limit of
+the tooling - is written here or in the matching `.claude/rules/` file in the session it is
+learned. Agent memory is private to one setup and short-lived; it may point here, never replace it.
 
 ## Rules
 
@@ -67,6 +68,20 @@ anything above that does not apply.
 - Compile once before pushing when Kotlin or Gradle files changed
   (`./gradlew :composeApp:compileAndroidMain`). Commits that touch only docs, skills or config
   need no compile.
+
+## Fan-out with several agents
+
+- Each item gets a Linear ticket first, so its branch and commits carry a `SIR-XX` key.
+- One agent per item, each in its own worktree and branch. The agent reviews its own diff and
+  compiles before it reports.
+- The lead reads the full diff, then lands the branch through a PR as in Git above. After the
+  merge, it runs the compile check and the unit tests on `main`.
+- At most two agents run Gradle at once, and each runs its Gradle tasks one after another. Six
+  building agents in parallel took the Mac's load average past 40 and killed every session.
+- A worktree's `local.properties` is a one-time copy and goes stale: copy it from the main
+  checkout before building, and never commit it.
+- The Wasm/JS compile does not fit a 600 s agent timeout; the lead runs it in the background.
+- The lead keeps a progress log in `.claude/tmp/orchestration-<date>.md`.
 
 ## Linear ticket status after merge
 Agents merge finished work into the default branch through its PR. The owner later installs the fresh
