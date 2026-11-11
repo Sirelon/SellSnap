@@ -27,13 +27,13 @@ fun createRealtimeHttpClient(): HttpClient =
  * of socket silence and 120 s for the whole request are each well above the measured medians.
  *
  * Retry. The production key is capped at 30,000 tokens/min for gpt-4.1 and a listing is ~7-10k
- * input tokens, so four phones generating in the same minute get HTTP 429. openai-kotlin 4.1.0
+ * input tokens, so four phones generating in the same minute get HTTP 429. openai-kotlin 4.2.0
  * `RetryStrategy` has three fields: `maxRetries` (default 3), `base` (default 2.0) and `maxDelay`
  * (default 60 s). Its HttpClient setup retries a 429 with `exponentialDelay`: `base^attempt`
  * seconds, capped at `maxDelay`, plus up to 1 s of jitter. The default 3 retries wait
  * 2 + 4 + 8 = 14 s and give up inside the 60 s window; 5 retries wait 2 + 4 + 8 + 16 + 32 = 62 s,
  * which outlasts it. The proxy forwards OpenAI's status untouched, so a 429 still reaches this
- * retry.
+ * retry. 4.2.0 also sets Ktor's bearer `refreshTokens`, so any 401 is sent a second time.
  *
  * Inferred: Ktor's retry plugin skips timeout exceptions, which is why the view model retries
  * those once itself.
