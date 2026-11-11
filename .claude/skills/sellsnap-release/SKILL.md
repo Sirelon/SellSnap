@@ -32,10 +32,20 @@ Done when: the merge is complete with no conflict, and compile and `jvmTest` pas
 
 ## 2. Decide the version
 
-`NEW_CODE = VERSION_CODE + 1` (from `version.properties`), every release. Decide `VERSION_NAME` from the request text:
+`NEW_CODE = VERSION_CODE + 1` (from `version.properties`), every release.
 
-- A named version ("release 2.2", "bump minor to 2.2"): that is `NEW_NAME`; pass it to `ship.sh` as `$1`.
-- "hotfix", "just bump the build", or no version: `VERSION_NAME` stays; run `ship.sh` without an argument.
+`VERSION_NAME` is `MAJOR.MINOR` or `MAJOR.MINOR.PATCH`. A version named in the request ("release 4.0") is `NEW_NAME`.
+Otherwise the range decides (`git log --oneline <last bump commit>..HEAD`, the range step 3 reads); the highest level
+in it wins:
+
+| The range ships | Bump | From 3.9 |
+| --- | --- | --- |
+| Fixes only | patch | 3.9.1 |
+| Small updates to features that already exist | minor | 3.10 |
+| A big new feature or a big update (the kind step 9 puts on the website) | major | 4.0 |
+
+Pass `NEW_NAME` to `ship.sh` as `$1`. Only "just bump the build" in the request keeps `VERSION_NAME`; then run
+`ship.sh` without an argument.
 
 Then read the live App Store state:
 
@@ -57,8 +67,8 @@ end
 '
 ```
 
-When the resulting `VERSION_NAME` equals `live:`, set it one minor step above `live:` whatever the request said, and
-pass it to `ship.sh`: Apple refuses builds for a released version (error 90186). After a forced bump, step 3's base is
+When the resulting `VERSION_NAME` equals `live:`, bump it by the table above (a patch at least) whatever the request
+said, and pass it to `ship.sh`: Apple refuses builds for a released version (error 90186). After a forced bump, step 3's base is
 the bump commit of the last public version (`live:`). Reference: "Apple's pre-release train rule".
 
 Done when: `NEW_CODE`, the `VERSION_NAME` to ship and the step 3 base are fixed, and that `VERSION_NAME` differs from `live:`.
