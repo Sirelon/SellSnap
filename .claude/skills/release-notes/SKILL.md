@@ -57,25 +57,26 @@ history screen (`composeApp/.../features/whatsnew/`) have real content.
   keeping history on). Array of release objects, newest first, same shape as the Firestore
   doc plus the `version` field doubling as its own key.
 
+The normal run publishes one version: the one `sellsnap-release` just shipped. Read
+[`backfill.md`](backfill.md) when more than one version is missing from
+`scripts/release-notes.json`.
+
 ## 1. Scope the run
 
 ```bash
 git log --reverse --format='%H|%ad|%s' --date=short -- version.properties
 ```
 
-Compare versions already present in `scripts/release-notes.json` against every
-`VERSION_NAME` that ever appeared in `version.properties` (and, if the file is younger
-than the repo, in whatever tracked the version before it — check
-`git log --follow -- androidApp/build.gradle.kts` for `versionName =` / `versionCode =`
-lines predating the switch to `version.properties`). Generate only the versions missing
-from the JSON — this is normally just the one version `sellsnap-release` most recently
-shipped, not a full backfill, unless the JSON file doesn't exist yet.
+Compare the `VERSION_NAME` values in that log against the versions in
+`scripts/release-notes.json`. The versions missing from the JSON are the run's scope.
 
-**Order by version-bump commit, not by version name string** — names don't sort reliably
-(`1.10` vs `1.9`). **Watch for version-code gaps** (e.g. code 3 → 5, or 7 → 10): a skipped
-code usually means a build was cut in Play Console / Xcode without a matching git commit —
-note it in a `VERSIONS.md` next to the JSON and move on; there's no diff to mine for a
-code that was never committed.
+**Watch for version-code gaps** (e.g. code 3 → 5, or 7 → 10): a skipped code usually means
+a build was cut in Play Console / Xcode without a matching git commit. Record the gap in
+`scripts/VERSIONS.md`, creating the file on the first gap, and move on; there's no diff to
+mine for a code that was never committed.
+
+Done when the missing versions are listed and each has a bump commit. More than one
+missing version: switch to `backfill.md`.
 
 ## 2. Range boundaries
 
@@ -83,19 +84,15 @@ Version *N*'s range is `<bump-commit-of-(N-1)>..<bump-commit-of-N>` — the comm
 changed `version.properties` to *N* is what **closes** *N*'s range (confirmed for this
 repo: version bumps land at/near ship time, not at the start of work on a release).
 
-**The first-ever version is a special case** — no prior release to diff against. Don't
-run a deep per-commit archaeology pass over the entire pre-history; either hand-author a
-short "initial release" entry from the file tree at that commit, or run one lighter-touch
-agent instructed to summarize the app's core capability set at that point rather than
-itemize every commit.
+Done when you have the two commit SHAs that bound the range.
 
-## 3. Per-range archaeology (fan out, one agent per range)
+## 3. Per-range archaeology
 
-Run agents in parallel (Agent tool, one per range), `sonnet` model, `high` effort — this
-is diff-reading and classification against fairly detailed rules, not creative writing,
-but the tag-tree-verification and relation logic (below) need real judgment.
+Spawn one agent (Agent tool), `sonnet` model, `high` effort — this is diff-reading and
+classification against fairly detailed rules, not creative writing, but the
+tag-tree-verification and relation logic (below) need real judgment.
 
-Give each agent:
+Give the agent:
 - The range (`git log <range>`, `git diff <range> -- <path>`, `git show <sha>`).
 - In-scope paths: `composeApp/`, `androidApp/`, `iosApp/`, `shared/`. Out-of-scope (never
   report as a release item): `fastlane/`, `scripts/`, `store/`, `docs/`, `.claude/`,
@@ -113,22 +110,42 @@ Give each agent:
   published entry (paste that entry into the prompt), diff the previous tag's actual file
   content — `git show <prev-version-tag-or-commit>:<path>` — not just
   `git merge-base --is-ancestor`, which can lie under this repo's branch topology.
-- Output: strict JSON matching the schema in `RELEASE_NOTES_CONTENT_PIPELINE.md`-style
-  (`features`/`improvements`/`fixes`/`internal`/`uncertain`, each finding with `title`,
-  `what` (plain description, no marketing tone — editorial pass writes final copy),
-  `evidence` (file/symbol, never a commit message), `user_impact`, `confidence`). Set
+- Output: strict JSON in this shape. `what` is a plain description, no marketing tone —
+  the editorial pass writes final copy. `evidence` is a file or symbol, never a commit
+  message. `related_to` is optional and names another finding's title. Set
   `maintenance_only: true` with empty arrays if nothing user-facing shipped — a correct,
   expected answer for a chunk of releases. Never invent an item.
+  ```json
+  {
+    "features": [
+      {
+        "title": "...",
+        "what": "...",
+        "evidence": "path/to/File.kt, SymbolName",
+        "user_impact": "major | minor | invisible",
+        "confidence": "high | medium | low",
+        "related_to": "title of another finding"
+      }
+    ],
+    "improvements": [],
+    "fixes": [],
+    "internal": [],
+    "uncertain": [],
+    "maintenance_only": false
+  }
+  ```
+
+Done when the agent returned valid JSON and every finding carries `evidence` that names a
+file or symbol.
 
 ## 4. Editorial pass
 
-One pass over all ranges' findings (do this yourself inline, or one strong-model agent —
-this step needs better judgment than the extraction step):
+One pass over the findings (do this yourself inline, or one strong-model agent — this step
+needs better judgment than the extraction step):
 
-- Drop `maintenance_only` releases' arrays (they stay in the output as `active: true` with
-  `changes: []` only if you want them to appear as a version-history entry at all —
-  usually just skip publishing a Firestore doc for a release with zero user-facing
-  changes rather than showing an empty card).
+- A `maintenance_only` release has no user-facing changes: skip publishing a Firestore doc
+  for it rather than showing an empty card. (An `active: true` entry with `changes: []`
+  appears as an empty version-history card; use it only if that is wanted.)
 - Drop everything `invisible`.
 - **Keep only what a seller gains.** Test each item: would a seller reading the card
   learn something they can now do, or a problem that is now gone? Drop it if not. Drop
@@ -147,6 +164,9 @@ this step needs better judgment than the extraction step):
 - Each version keeps its own card, so every change stays attributed to the version that
   shipped it.
 
+Done when every remaining item passes the seller-gain test and has an icon from the
+vocabulary, English `title` and `summary`, and its place in the importance order.
+
 ## 5. Translate
 
 The English copy is done — translate `title`/`summary`/`detail` into `uk`, `bg`, `kk`,
@@ -160,10 +180,15 @@ in Latin script) and the `ru`-copies-`uk` rule applies identically. Give it the 
 English `changes` array and ask it to return the same array with `title`/`summary`/
 `detail` each expanded from a bare string into the `{en, uk, ru, bg, kk, pl, pt, ro}` map.
 
+Done when every `title` and `summary` (and every present `detail`) holds all 8 language
+keys and `ru` equals `uk`.
+
 ## 6. Write `scripts/release-notes.json`
 
-Merge the new version(s) into the array, newest first, `active: true`. This file is
+Merge the new version into the array, newest first, `active: true`. This file is
 tracked — commit and push it to `main` with the rest of the release.
+
+Done when the file parses as JSON and the new version is its first entry.
 
 ## 7. Publish to Firestore
 
@@ -178,15 +203,23 @@ node scripts/publish-release-notes.mjs --dry-run   # prints what would be writte
 node scripts/publish-release-notes.mjs             # real publish
 ```
 
-The script (create it if missing) should: read `scripts/release-notes.json`, get a bearer
-token via `gcloud auth print-access-token`, and batch every release into **one** atomic
-Firestore REST `:commit` call —
-`POST https://firestore.googleapis.com/v1/projects/sellsnap-6e85c/databases/(default)/documents:commit`
-— so a partial publish is never a state the app can observe. Warn (don't fail) on any
-`icon` value not in `WhatsNewIcons.kt`'s vocabulary. Always dry-run first.
+`scripts/publish-release-notes.mjs` reads `scripts/release-notes.json` and writes every
+release in it to `release-notes/<version>`, overwriting existing documents. It gets a bearer
+token from `gcloud auth print-access-token` and sends all releases in **one** atomic
+Firestore REST `:commit` call, so a partial publish is never a state the app can observe.
+`--dry-run` prints each release and its warnings, then exits without a network call. The
+script warns (does not fail) on an `icon` outside `WhatsNewIcons.kt`'s vocabulary, a missing
+language key in `title`/`summary`, or a release without changes. A non-2xx response exits
+with code 1. Always dry-run first.
+
+Done when the dry run lists the new version with no warnings and the real run prints
+`Published N release(s)`.
 
 ## 8. Report back
 
 Show the user the English copy for every version just published (short enough to read in
 full). Confirm the publish call succeeded and how many documents were written. Note that
-that `scripts/release-notes.json` was committed and pushed.
+`scripts/release-notes.json` was committed and pushed.
+
+Done when the report holds the English copy, the document count, and the commit and push
+status.
