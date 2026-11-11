@@ -223,6 +223,7 @@ class PreviewAdViewModel internal constructor(
     private var skipRestoredTitleSuggestion = initialCategoryId != null
     private var attributesLoadedLogged = false
     private var attributesRetryPending = false
+    private var unresolvedCategoryId: Int? = null
 
     // SIR-122: a small undo stack for RemoveImage, most-recent removal last. Not part of the
     // saved state - dropped along with the rest of the ViewModel once the flow moves on, which is
@@ -272,9 +273,7 @@ class PreviewAdViewModel internal constructor(
             .launchIn(viewModelScope)
 
         viewModelScope.launch {
-            initialCategoryId?.let { id ->
-                categoriesRepository.getCategoryById(id)?.let { updateSelectedCategory(it) }
-            }
+            initialCategoryId?.let { restoreCategory(it) }
 
             val savedLocation = restoredSavedState.location ?: locationRepository.getSavedLocation()
             if (savedLocation != null) {
@@ -459,9 +458,19 @@ class PreviewAdViewModel internal constructor(
             // The attribute pipeline re-runs on every emission of the same id: a SharedFlow does
             // not drop a repeated value the way a StateFlow would.
             PreviewAdEvent.RetryAttributes -> viewModelScope.launch {
-                val categoryId = currentState().selectedCategory?.id ?: return@launch
                 attributesRetryPending = true
                 setState { it.copy(attributesLoadState = AttributesLoadState.Loading) }
+                val unresolved = unresolvedCategoryId
+                if (unresolved != null) {
+                    // A resolved category starts the attribute load, and its outcome logs the retry.
+                    if (!restoreCategory(unresolved)) {
+                        logAttributesRetryOutcome(result = "failed")
+                    } else if (currentState().selectedCategory == null) {
+                        attributesRetryPending = false
+                    }
+                    return@launch
+                }
+                val categoryId = currentState().selectedCategory?.id ?: return@launch
                 selectedCategoryId.emit(categoryId)
             }
 
@@ -1318,7 +1327,30 @@ class PreviewAdViewModel internal constructor(
         setState { it.copy(changedFields = changed, changedFieldsRevision = it.changedFieldsRevision + 1) }
     }
 
+    /**
+     * A draft keeps only the category id; its name and path come from OLX's category list. With
+     * no network and no list loaded yet in this session, the lookup fails: the id is kept, and the
+     * details card shows its Retry, which looks the category up again before loading its details.
+     * Returns false when the lookup failed.
+     */
+    private suspend fun restoreCategory(id: Int): Boolean {
+        val category = try {
+            categoriesRepository.getCategoryById(id)
+        } catch (error: CancellationException) {
+            throw error
+        } catch (error: Exception) {
+            unresolvedCategoryId = id
+            reportShownError(reason = "category_restore_failed", throwable = error)
+            setState { it.copy(attributesLoadState = AttributesLoadState.Failed) }
+            return false
+        }
+        unresolvedCategoryId = null
+        category?.let { updateSelectedCategory(it) }
+        return true
+    }
+
     private suspend fun updateSelectedCategory(category: OlxCategory) {
+        unresolvedCategoryId = null
         // The category on screen with its attributes loaded: nothing to change, and reloading would
         // drop the values the seller has already picked.
         val current = currentState()
@@ -1412,7 +1444,7 @@ class PreviewAdViewModel internal constructor(
             title = title,
             description = description,
             price = state.price,
-            selectedCategoryId = state.selectedCategory?.id,
+            selectedCategoryId = state.selectedCategory?.id ?: unresolvedCategoryId,
             attributeValues = attributeValues,
             location = state.location,
             publishSuccessData = successData,

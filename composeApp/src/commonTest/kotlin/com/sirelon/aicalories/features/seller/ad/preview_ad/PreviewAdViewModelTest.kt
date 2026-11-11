@@ -94,6 +94,7 @@ import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlinx.io.IOException
 
 private const val TestSessionId = "test-session"
 
@@ -1059,6 +1060,48 @@ class PreviewAdViewModelTest {
             assertEquals(2, attributeRequests)
             val retryEvent = harness.analytics.events.single { it.first == AnalyticsEvents.AD_PREVIEW_ATTRIBUTES_RETRY }
             assertEquals("success", retryEvent.second["result"])
+        }
+
+    @Test
+    fun `a draft opened offline keeps its category and Retry resolves it and loads its details`() =
+        runTest(testDispatcher) {
+            // Id 1 is UA's real-estate root, which the app leaves out of the tree.
+            val draftCategory = OlxCategory(id = 37, label = "Electronics", parentId = null, isLeaf = true)
+            var offline = true
+            val engine = buildEngine {
+                addHandler { request ->
+                    val path = request.url.encodedPath
+                    when {
+                        offline && (path.endsWith("/categories") || path.contains("attributes")) ->
+                            throw IOException("offline")
+
+                        path.endsWith("/categories") -> respond(
+                            """{"data":[{"id":${draftCategory.id},"name":"${draftCategory.label}","parent_id":0,"is_leaf":true}]}""",
+                            status = HttpStatusCode.OK,
+                            headers = jsonHeaders(),
+                        )
+
+                        path.contains("attributes") ->
+                            respond(STATE_ATTRIBUTE_JSON, status = HttpStatusCode.OK, headers = jsonHeaders())
+
+                        else -> respond("{}", status = HttpStatusCode.OK, headers = jsonHeaders())
+                    }
+                }
+            }
+            val harness = harness(engine, loggedInAccountStore())
+            val viewModel = buildViewModel(harness, listing = testListing.copy(selectedCategoryId = draftCategory.id))
+            advanceUntilIdle()
+
+            assertEquals(AttributesLoadState.Failed, viewModel.state.value.attributesLoadState)
+            assertTrue(viewModel.state.value.isSessionResolved, "the failed lookup must not stop the rest of the setup")
+
+            offline = false
+            viewModel.onEvent(PreviewAdEvent.RetryAttributes)
+            advanceUntilIdle()
+
+            assertEquals(draftCategory.id, viewModel.state.value.selectedCategory?.id)
+            assertEquals(AttributesLoadState.Loaded, viewModel.state.value.attributesLoadState)
+            assertEquals(listOf("state"), viewModel.state.value.attributeItems.map { it.attribute.code })
         }
 
     @Test
