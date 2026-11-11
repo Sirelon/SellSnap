@@ -2,6 +2,7 @@ package com.sirelon.sellsnap.features.seller.categories.data
 
 import com.sirelon.sellsnap.features.seller.auth.data.OlxApiClient
 import com.sirelon.sellsnap.features.seller.auth.data.OlxCountryStore
+import com.sirelon.sellsnap.features.seller.auth.domain.OlxCountry
 import com.sirelon.sellsnap.features.seller.categories.domain.CategoriesMapper
 import com.sirelon.sellsnap.features.seller.categories.domain.OlxAttribute
 import com.sirelon.sellsnap.features.seller.categories.domain.OlxCategory
@@ -33,21 +34,29 @@ class CategoriesRepository(
 
     // Errors are wrapped as Result so the sharing coroutine is never cancelled by a network failure.
     // Callers unwrap with getOrThrow(), propagating the exception to their own collector/caller.
-    private fun newCategoriesCache(): SharedFlow<Result<List<OlxCategory>>> = flow {
-        emit(runCatching { loadSupportedCategories() })
+    private fun newCategoriesCache(country: OlxCountry): SharedFlow<Result<List<OlxCategory>>> = flow {
+        emit(runCatching { loadSupportedCategories(country) })
     }.shareIn(
         scope = scope,
         started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000),
         replay = 1,
     )
 
-    private var categoriesCache = newCategoriesCache()
+    // The tree is per market: OlxConfig.apiBaseUrl follows the current country, and so do the
+    // excluded roots. A guest can change country mid-flow, and the saved country loads
+    // asynchronously at startup, so the cache is kept only for the country it was loaded for.
+    private var categoriesCache: Pair<OlxCountry, SharedFlow<Result<List<OlxCategory>>>>? = null
+
+    private fun cacheFor(country: OlxCountry): SharedFlow<Result<List<OlxCategory>>> =
+        categoriesCache?.takeIf { it.first == country }?.second
+            ?: newCategoriesCache(country).also { categoriesCache = country to it }
 
     // A failure is handed out once and then dropped, so the next call (a retry) loads again
     // instead of replaying the cached failure.
     fun loadCategories(): Flow<List<OlxCategory>> = flow {
-        val result = categoriesCache.first()
-        if (result.isFailure) categoriesCache = newCategoriesCache()
+        val cache = cacheFor(countryStore.current)
+        val result = cache.first()
+        if (result.isFailure && categoriesCache?.second === cache) categoriesCache = null
         emit(result.getOrThrow())
     }
 
@@ -72,15 +81,15 @@ class CategoriesRepository(
         emit(category)
     }
 
-    private suspend fun loadSupportedCategories(): List<OlxCategory> {
+    private suspend fun loadSupportedCategories(country: OlxCountry): List<OlxCategory> {
         val result = olxApiClient.loadCategories()
         val data = result.mapNotNull(mapper::mapCategory)
 
-        return normalize(data)
+        return normalize(data, country)
     }
 
-    private fun normalize(data: List<OlxCategory>): List<OlxCategory> {
-        val notSupportedRootIds = excludedRootCategoryIds(countryStore.current)
+    private fun normalize(data: List<OlxCategory>, country: OlxCountry): List<OlxCategory> {
+        val notSupportedRootIds = excludedRootCategoryIds(country)
         val grouppedData = data.groupBy { it.parentId }.toMutableMap()
 
         val rootCategories = grouppedData[null].orEmpty()

@@ -122,6 +122,7 @@ import com.sirelon.sellsnap.features.seller.location.OlxLocation
 import com.sirelon.sellsnap.generated.resources.Res
 import com.sirelon.sellsnap.generated.resources.ad_attributes_label
 import com.sirelon.sellsnap.generated.resources.error_attributes_load_failed
+import com.sirelon.sellsnap.generated.resources.retry
 import com.sirelon.sellsnap.generated.resources.ad_category_label
 import com.sirelon.sellsnap.generated.resources.ad_description_label
 import com.sirelon.sellsnap.generated.resources.ad_location_label
@@ -884,7 +885,7 @@ private fun PreviewAdContent(
                     autoOpenAttributeModifier = autoOpenAttributeModifier,
                 )
             } else if (state.attributesLoadState == AttributesLoadState.Failed) {
-                AdAttributesErrorCard()
+                AdAttributesErrorCard(onRetry = { onEvent(PreviewAdEvent.RetryAttributes) })
             }
 
             AdLocationCard(
@@ -1191,17 +1192,29 @@ private fun AdCategoryCard(
  * well have missed - the publish CTA reports the same error, and OLX would reject the advert.
  */
 @Composable
-private fun AdAttributesErrorCard(modifier: Modifier = Modifier) {
+private fun AdAttributesErrorCard(onRetry: () -> Unit, modifier: Modifier = Modifier) {
     PreviewSectionCard(
         label = stringResource(Res.string.ad_attributes_label),
         modifier = modifier,
     ) {
-        Text(
+        Column(
             modifier = Modifier.padding(horizontal = AppDimens.Spacing.xl3),
-            text = stringResource(Res.string.error_attributes_load_failed),
-            style = AppTheme.typography.caption,
-            color = AppTheme.colors.error,
-        )
+            verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.xl3),
+        ) {
+            Text(
+                text = stringResource(Res.string.error_attributes_load_failed),
+                style = AppTheme.typography.caption,
+                color = AppTheme.colors.error,
+            )
+            AppButton(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("preview_ad_attributes_retry"),
+                text = stringResource(Res.string.retry),
+                onClick = onRetry,
+                style = AppButtonDefaults.outline(),
+            )
+        }
     }
 }
 

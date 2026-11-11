@@ -107,6 +107,14 @@ object AnalyticsEvents {
      */
     const val AD_PREVIEW_ATTRIBUTES_LOADED = "ad_preview_attributes_loaded"
 
+    /**
+     * SIR-187: the seller tapped Retry on the preview's failed-details card, logged once the
+     * reload ends. `result` is `success` (the details loaded and publishing can go on) or `failed`
+     * (the card shows again). The count of events is the count of taps that finished; a high
+     * `failed` share means a retry does not help and the failure is not a weak connection.
+     */
+    const val AD_PREVIEW_ATTRIBUTES_RETRY = "ad_preview_attributes_retry"
+
     // Multi-account (SIR-83). No event may carry an email, OLX user id, account name, or token -
     // only localIndex/counts, per PRD §11. First-connect lands through the same addAccount path as
     // add-account/reconnect, so a seller's first login fires account_add_started/completed/failed

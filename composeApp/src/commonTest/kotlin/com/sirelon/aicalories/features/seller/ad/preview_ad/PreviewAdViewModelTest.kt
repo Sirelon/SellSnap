@@ -1023,6 +1023,45 @@ class PreviewAdViewModelTest {
     }
 
     @Test
+    fun `Retry after a failed attributes fetch loads the same category's details and logs the outcome`() =
+        runTest(testDispatcher) {
+            var attributeRequests = 0
+            val engine = buildEngine {
+                addHandler { request ->
+                    when {
+                        request.url.encodedPath.contains("attributes") -> {
+                            attributeRequests += 1
+                            if (attributeRequests == 1) {
+                                respond("{}", status = HttpStatusCode.InternalServerError, headers = jsonHeaders())
+                            } else {
+                                respond(STATE_ATTRIBUTE_JSON, status = HttpStatusCode.OK, headers = jsonHeaders())
+                            }
+                        }
+
+                        else -> respond("{}", status = HttpStatusCode.OK, headers = jsonHeaders())
+                    }
+                }
+            }
+            val harness = harness(engine, loggedInAccountStore())
+            val viewModel = buildViewModel(harness)
+            advanceUntilIdle()
+
+            viewModel.onEvent(PreviewAdEvent.CategorySelected(testCategory))
+            advanceUntilIdle()
+            assertEquals(AttributesLoadState.Failed, viewModel.state.value.attributesLoadState)
+
+            viewModel.onEvent(PreviewAdEvent.RetryAttributes)
+            advanceUntilIdle()
+
+            assertEquals(AttributesLoadState.Loaded, viewModel.state.value.attributesLoadState)
+            assertEquals(testCategory.id, viewModel.state.value.selectedCategory?.id)
+            assertEquals(listOf("state"), viewModel.state.value.attributeItems.map { it.attribute.code })
+            assertEquals(2, attributeRequests)
+            val retryEvent = harness.analytics.events.single { it.first == AnalyticsEvents.AD_PREVIEW_ATTRIBUTES_RETRY }
+            assertEquals("success", retryEvent.second["result"])
+        }
+
+    @Test
     fun `moving the cursor in the title does not ask OLX for a category again`() = runTest(testDispatcher) {
         var suggestionRequests = 0
         val engine = buildEngine {

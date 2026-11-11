@@ -130,6 +130,9 @@ interface PreviewAdContract {
         data class CategorySelected(val category: OlxCategory) : PreviewAdEvent
 
         data object OnChangeCategoryClick : PreviewAdEvent
+
+        /** SIR-187: loads the selected category's details again after [AttributesLoadState.Failed]. */
+        data object RetryAttributes : PreviewAdEvent
         data object Publish : PreviewAdEvent
 
         @JvmInline
