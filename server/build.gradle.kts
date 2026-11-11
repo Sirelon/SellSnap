@@ -15,6 +15,13 @@ application {
     applicationDefaultJvmArgs = listOf("-Dio.ktor.development=$isDevelopment")
 }
 
+// The Java target follows the Kotlin one; left alone it takes the running JDK (21) and the
+// build stops on "Inconsistent JVM Target Compatibility".
+java {
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
+}
+
 kotlin {
     compilerOptions {
         jvmTarget.set(JvmTarget.JVM_11)
