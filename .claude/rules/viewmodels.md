@@ -11,7 +11,10 @@ paths:
 - Contracts live in `*Contract.kt` files with sealed `Event` and sealed `Effect` interfaces.
 - State updates use `setState { it.copy(...) }`. One-shot side effects use `postEffect(...)`.
 - Streaming repositories return `Flow<T>`; VMs subscribe via `.launchIn(viewModelScope)` and use `.catch { ... }` to keep the stream alive across transient errors. `PreviewAdViewModel` is the canonical reference. One-shot OLX reads (`MyAdvertsRepository`, `MessagesRepository`) are `suspend` calls wrapped in `withAccountToken`; the VM owns retries and polling.
-- `CategoriesRepository` caches the (filtered) category tree via `shareIn`.
+- `CategoriesRepository` caches the filtered category tree per country, and only a tree that
+  loaded. A cached failure, or a failed refetch that replaces a loaded tree, throws from
+  `getCategoryById` inside a plain `viewModelScope.launch`, and iOS ends the app: an offline
+  category pick did exactly that with a `shareIn(WhileSubscribed)` cache.
 - **Assert an effect with `viewModel.effects.awaitEffect<T>()`** (`commonTest`,
   `features/common/presentation/AwaitEffect.kt`); never drain-then-assert. Anything resolved
   through compose-resources `getString` is posted after the virtual scheduler has gone idle, so

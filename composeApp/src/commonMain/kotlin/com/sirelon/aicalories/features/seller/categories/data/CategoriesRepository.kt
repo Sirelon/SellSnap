@@ -7,14 +7,12 @@ import com.sirelon.sellsnap.features.seller.categories.domain.CategoriesMapper
 import com.sirelon.sellsnap.features.seller.categories.domain.OlxAttribute
 import com.sirelon.sellsnap.features.seller.categories.domain.OlxCategory
 import com.sirelon.sellsnap.features.seller.categories.domain.excludedRootCategoryIds
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.shareIn
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 /**
  * Thrown when OLX suggests a category for a listing that this app doesn't support publishing to
@@ -28,36 +26,23 @@ class UnsupportedOlxCategoryException(title: String) :
 class CategoriesRepository(
     private val olxApiClient: OlxApiClient,
     private val mapper: CategoriesMapper,
-    private val scope: CoroutineScope,
     private val countryStore: OlxCountryStore,
 ) {
 
-    // Errors are wrapped as Result so the sharing coroutine is never cancelled by a network failure.
-    // Callers unwrap with getOrThrow(), propagating the exception to their own collector/caller.
-    private fun newCategoriesCache(country: OlxCountry): SharedFlow<Result<List<OlxCategory>>> = flow {
-        emit(runCatching { loadSupportedCategories(country) })
-    }.shareIn(
-        scope = scope,
-        started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000),
-        replay = 1,
-    )
-
     // The tree is per market: OlxConfig.apiBaseUrl follows the current country, and so do the
     // excluded roots. A guest can change country mid-flow, and the saved country loads
-    // asynchronously at startup, so the cache is kept only for the country it was loaded for.
-    private var categoriesCache: Pair<OlxCountry, SharedFlow<Result<List<OlxCategory>>>>? = null
+    // asynchronously at startup, so a tree is kept only for the country it was loaded for.
+    // Only a tree that loaded is kept: a failure goes to its caller and the next call loads again,
+    // and a fetch that fails offline never replaces a tree the seller is already picking from.
+    private var cachedTree: Pair<OlxCountry, List<OlxCategory>>? = null
+    private val loadMutex = Mutex()
 
-    private fun cacheFor(country: OlxCountry): SharedFlow<Result<List<OlxCategory>>> =
-        categoriesCache?.takeIf { it.first == country }?.second
-            ?: newCategoriesCache(country).also { categoriesCache = country to it }
+    fun loadCategories(): Flow<List<OlxCategory>> = flow { emit(categoriesFor(countryStore.current)) }
 
-    // A failure is handed out once and then dropped, so the next call (a retry) loads again
-    // instead of replaying the cached failure.
-    fun loadCategories(): Flow<List<OlxCategory>> = flow {
-        val cache = cacheFor(countryStore.current)
-        val result = cache.first()
-        if (result.isFailure && categoriesCache?.second === cache) categoriesCache = null
-        emit(result.getOrThrow())
+    // The mutex makes concurrent callers share one fetch instead of each starting their own.
+    private suspend fun categoriesFor(country: OlxCountry): List<OlxCategory> = loadMutex.withLock {
+        cachedTree?.takeIf { it.first == country }?.second
+            ?: loadSupportedCategories(country).also { cachedTree = country to it }
     }
 
     fun getRootCategories(): Flow<List<OlxCategory>> =

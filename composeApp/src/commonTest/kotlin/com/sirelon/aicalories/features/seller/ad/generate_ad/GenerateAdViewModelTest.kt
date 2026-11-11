@@ -429,7 +429,6 @@ class GenerateAdViewModelTest {
         val categoriesRepository = CategoriesRepository(
             olxApiClient = OlxApiClient(httpClient = httpClient, json = testJson, errorParser = errorParser),
             mapper = CategoriesMapper(),
-            scope = CoroutineScope(Dispatchers.Default),
             countryStore = countryStore,
         )
         val openAi = OpenAIClient(

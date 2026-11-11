@@ -16,9 +16,8 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
+import kotlinx.io.IOException
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 
@@ -56,7 +55,6 @@ class CategoriesRepositoryTest {
         val repository = CategoriesRepository(
             olxApiClient = OlxApiClient(httpClient = createOlxHttpClient(engine), json = testJson, errorParser = errorParser),
             mapper = CategoriesMapper(),
-            scope = CoroutineScope(Dispatchers.Default),
             countryStore = countryStore,
         )
 
@@ -66,6 +64,35 @@ class CategoriesRepositoryTest {
 
         assertEquals(PL_CATEGORY_ID, repository.categorySuggestion("Sneakers").first().id)
         assertEquals(mapOf("www.olx.ua" to 1, "www.olx.pl" to 1), categoryRequestsByHost)
+    }
+
+    @Test
+    fun `a failed fetch while offline does not replace a tree that already loaded`() = runBlocking {
+        val countryStore = OlxCountryStore(InMemoryOlxKeyValueStore(), FakeAnalytics())
+        countryStore.save(OlxCountry.UA)
+        var offline = false
+        val engine = MockEngine {
+            if (offline) throw IOException("offline")
+            respond(
+                content = """{"data":[{"id":$UA_CATEGORY_ID,"name":"UA","parent_id":0,"is_leaf":true}]}""",
+                status = HttpStatusCode.OK,
+                headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
+            )
+        }
+        val errorParser = OlxRemoteErrorParser(testJson)
+        val repository = CategoriesRepository(
+            olxApiClient = OlxApiClient(httpClient = createOlxHttpClient(engine), json = testJson, errorParser = errorParser),
+            mapper = CategoriesMapper(),
+            countryStore = countryStore,
+        )
+
+        repository.loadCategories().first()
+        // The seller goes offline, opens the category picker and picks a category: the pick reads
+        // the tree again for the category's path label, and on iOS a throw there ends the app.
+        offline = true
+        repository.loadCategories().first()
+
+        assertEquals(UA_CATEGORY_ID, repository.getCategoryById(UA_CATEGORY_ID)?.id)
     }
 
     private class FakeAnalytics : Analytics {

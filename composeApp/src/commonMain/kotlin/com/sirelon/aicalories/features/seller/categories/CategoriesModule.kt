@@ -1,6 +1,5 @@
 package com.sirelon.sellsnap.features.seller.categories
 
-import com.sirelon.sellsnap.di.applicationScopeQualifier
 import com.sirelon.sellsnap.features.seller.categories.data.CategoriesRepository
 import com.sirelon.sellsnap.features.seller.categories.domain.AttributeValidator
 import com.sirelon.sellsnap.features.seller.categories.domain.CategoriesMapper
@@ -16,7 +15,6 @@ val categoriesModule = module {
         CategoriesRepository(
             olxApiClient = get(),
             mapper = get(),
-            scope = get(applicationScopeQualifier),
             countryStore = get(),
         )
     }

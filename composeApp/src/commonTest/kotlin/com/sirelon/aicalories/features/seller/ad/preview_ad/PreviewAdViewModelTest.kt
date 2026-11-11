@@ -1877,7 +1877,6 @@ class PreviewAdViewModelTest {
         val categoriesRepository = CategoriesRepository(
             olxApiClient = olxApiClient,
             mapper = CategoriesMapper(),
-            scope = CoroutineScope(Dispatchers.Default),
             countryStore = countryStore,
         )
         val reviewPromptStore = ReviewPromptStore(InMemoryOlxKeyValueStore())
