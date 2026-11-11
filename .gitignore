@@ -67,8 +67,6 @@ firebase-debug.*.log
 /.claude/tmp/
 /.claude/worktrees/
 /.conductor/
-/.agents/
-/skills-lock.json
 
 # Owner's private notes
 /marketing/
@@ -76,11 +74,9 @@ firebase-debug.*.log
 # Store screenshot generator byproducts and review sheets (regenerated on every run)
 *.raw.png
 /store/assets/**/*.svg
+!/store/assets/play-store/feature-graphic/**/*.svg
 /store/previews/
 
 # Store banners: banner.html is the source; the images beside it are inputs and renders
 /Design/store-banners/*/*
 !/Design/store-banners/*/banner.html
-
-# Per-locale Play feature graphics, kept local
-/artifacts/
