@@ -58,6 +58,7 @@ OLX bot detection blocks automated login. The account gets banned.
 - `takeScreenshot` appends `.png`. Leave it out of `path:`.
 - A flow-level `env:` default shadows the `-e` value from the CLI. Declare no `env:` block. A `COUNTRY` default silently pins the country.
 - `setOrientation: LANDSCAPE_LEFT` needs `waitForAnimationToEnd` after it. Without the wait the screenshot catches the rotation. The flows gate it on `${ORIENTATION == 'landscape'}`.
+- On a landscape iPad, `inspect_screen` reports portrait bounds and a text `tapOn` can land on a different element: "Gallery" tapped Camera. Select by `id`, or rotate to portrait for exploratory taps; the portrait iPad is still a wide window.
 - In Maestro 2.5.1, `env` was undefined inside `evalScript` and `runScript`. Use YAML template variables and guard whole blocks with `when: true: ${...}`. Maestro 2.6.0 is installed; the flows use no `evalScript`, so this is unchecked on 2.6.0.
 - Cyrillic text inside `when: visible: text:` breaks the Maestro parser. `olx_web_login.yaml` branches on `COUNTRY` for BG instead.
 - Selector rules (`testTag` ids, dialogs, `launchApp` permissions): `.claude/rules/maestro.md`. The ids reach Maestro because `MainActivity` sets `testTagsAsResourceId`.
