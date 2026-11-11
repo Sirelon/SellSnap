@@ -1,22 +1,20 @@
 # AGENTS
 
-## Purpose
-AI-optimized repo map for agents working in this workspace. Read this first; only crawl deeper when the task clearly needs it.
-
-These rules apply to every task in this project unless explicitly overridden.
+Repo map and rules for agents working in SellSnap. They apply to every task unless the owner
+overrides them.
 
 ## Rules
 
 Each one is checkable. Where you cannot show it was met, say so (rule 7).
 
-1. Read before you write: exports, callers, shared utilities, and this file's section for the
-   area. State assumptions. A decision that is not yours — product shape, user-facing copy,
+1. Read before you write: exports, callers, shared utilities, and the rule file for the
+   area (Area rules). State assumptions. A decision that is not yours — product shape, user-facing copy,
    what a user sees — is asked, in one line, with your recommended answer.
 2. Minimum code that solves the task. No speculative abstractions, no touching adjacent code,
    match the existing style even where you disagree.
 3. External facts carry their source. Anything asserted about OLX — a status meaning, a
    restriction, a market difference — cites portal and section in the KDoc next to the code.
-   Everything else is marked `Inferred:`. See Documentation / Lookup Rules.
+   Everything else is marked `Inferred:`. See `.claude/rules/olx-api.md`.
 4. **Never invent a limitation.** Withhold a user action only on a documented refusal; if the
    API does not say no, offer it and let the API's own error speak. A missing button is
    invisible in telemetry, and every restriction this app invented cost the seller something.
@@ -34,7 +32,7 @@ Each one is checkable. Where you cannot show it was met, say so (rule 7).
 10. **Read the source, not a summary of it.** A schema, a status list, a limit: quote it from
     the spec file, fetched and opened and searched. A tool that answers in prose has already
     dropped whatever you did not know to ask about. Three fixes in a row were refused by OLX
-    because each came from a paraphrase rather than from the schema. See OLX partner API.
+    because each came from a paraphrase rather than from the schema. See `.claude/rules/olx-api.md`.
 11. **Every feature works on every window size and for every connected account.** SellSnap runs
     on phones, foldables, tablets and desktop, and a seller can connect several OLX accounts per
     country (SIR-83). A plan for a new screen says how it lays out on a wide window — a list
@@ -48,11 +46,21 @@ Each one is checkable. Where you cannot show it was met, say so (rule 7).
     option they pick — and the events that answer them. Events and their params go in
     `AnalyticsEvents` with a KDoc per event (what fires it, every param and its values), codes
     in snake_case, never user text or buyer data. Screen views are already automatic; count
-    the actions and outcomes inside the screen. See Analytics.
+    the actions and outcomes inside the screen. See `.claude/rules/analytics.md`.
 
 Small fixes with obvious files: read the implementation and its immediate callers only,
 validate with the narrowest meaningful build or test command plus `git diff --check`, and skip
 anything above that does not apply.
+
+## Git
+
+- Work on `main`: commit, then push once the change compiles. Create a branch or a PR only when
+  the owner asks; name it `feature/SIR-XX-short-description` or `bugfix/SIR-XX-short-description`.
+- Commit subject: one imperative sentence that says what changed, with no ticket prefix. When the
+  commit implements a Linear ticket, name the ticket id in the body.
+- Compile once before pushing when Kotlin or Gradle files changed
+  (`./gradlew :composeApp:compileAndroidMain`). Commits that touch only docs, skills or config
+  need no compile.
 
 ## Linear ticket status after merge
 Agents merge finished work straight to the default branch. The owner later installs the fresh
@@ -72,121 +80,61 @@ build and checks every pending ticket in one pass.
 > login — accounts are banned after repeated failures; the owner logs in himself. Never call
 > anything that mutates the owner's OLX account (commands, PUT, DELETE, packets).
 
-## Modules
+## Repo map
 
-### `composeApp`
-- Shared Compose Multiplatform UI module.
-- Targets:
-  - Android
-  - iOS framework
-  - Desktop JVM
-  - Web JS
-  - Web Wasm
-- Main responsibilities:
-  - app shell and top-level navigation
-  - feature UIs and view models
-  - shared design system
-  - Koin wiring for UI/domain layer
-  - Ktor/OpenAI client setup
-  - media upload, camera, file picker, permissions
+| Path | What it is |
+| --- | --- |
+| `composeApp/` | Shared Compose Multiplatform module: app shell, navigation, feature UIs and view models, design system, Koin wiring, Ktor clients. Targets Android, iOS, Desktop JVM, Web JS, Web Wasm. It is an Android KMP library, not the app, so it has no `assembleDebug` |
+| `androidApp/` | Thin Android wrapper: `MainActivity`, the push service, OLX auth deep links |
+| `iosApp/` | Xcode entry point, a SwiftUI wrapper around the shared framework |
+| `shared/` | Config and platform helpers used by app and server: BuildKonfig secrets, the Supabase client, `PlatformTargets` |
+| `server/` | Minimal Ktor JVM backend. App business logic does not live here |
+| `functions/` | Firebase Cloud Functions (TypeScript, Node 22), outside the Gradle build: the `openai` proxy |
+| `docs/` | The public website; GitHub Pages serves it from `main` (landing page, privacy policy, terms, support). Documentation goes elsewhere |
+| `store/`, `brand/`, `Design/` | Store listing text and images, brand sources, store banner sources |
+| `research/` | Spike write-ups that code comments cite as their source |
+| `.maestro/`, `scripts/` | UI flows and their runner scripts; `scripts/ship.sh` is the release script |
+| `fastlane/` | Store upload lanes |
 
-### `shared`
-- Cross-platform domain/config module used by app and server.
-- Main responsibilities:
-  - BuildKonfig-backed secrets
-  - Supabase client wrapper
-  - shared models / config / platform helpers
+- Gradle projects: `:composeApp`, `:androidApp`, `:server`, `:shared`. Version catalog: `gradle/libs.versions.toml`.
+- **Directories say `com/sirelon/aicalories/`; the Kotlin package is `com.sirelon.sellsnap`.** A path in this file that starts with `features/`, `navigation/`, `designsystem/`, `startup/` or `di/` is relative to `composeApp/src/commonMain/kotlin/com/sirelon/aicalories/`. Analytics is the exception: `composeApp/src/commonMain/kotlin/com/sirelon/sellsnap/analytics/`.
+- Source sets beyond the usual ones: `dataStoreMain` (Android, JVM, iOS: datastore and SQLDelight) and `jsWasmMain` (JS + Wasm). `kotlin.mpp.applyDefaultHierarchyTemplate=false` is set on purpose.
+- Entry points: `App.kt` (root composable), `androidApp/.../MainActivity.kt`, `iosApp/iosApp/iOSApp.swift`, `composeApp/src/jvmMain/.../main.kt`, `composeApp/src/wasmJsMain/.../main.kt`, `server/.../Application.kt`, `functions/src/index.ts`.
+- Xcode builds the shared framework through `:composeApp:embedAndSignAppleFrameworkForXcode`; the build phase skips it when `OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED=YES`.
 
-### `androidApp`
-- Thin Android application wrapper around `:composeApp`.
-- Hosts `MainActivity`.
-- Initializes Android-specific storage and receives OLX auth deep links.
+## Commands
 
-### `iosApp`
-- Xcode entrypoint.
-- SwiftUI wrapper around the shared Compose app/framework.
+- Compile check (fast): `./gradlew :composeApp:compileAndroidMain`
+- Unit tests: `./gradlew :composeApp:jvmTest` (the shared tests run on the JVM target)
+- Android debug APK: `./gradlew :androidApp:assembleDebug`
+- Desktop run: `OPENAI_KEY=sk-... ./gradlew :composeApp:run` (desktop calls OpenAI directly)
+- Deploy the OpenAI proxy: `cd functions && npm install && npm run deploy`
+- Install on a device: the `install-mobile-app` skill. Release: the `sellsnap-release` skill.
 
-### `server`
-- Minimal Ktor JVM backend.
-- Depends on `:shared`.
-- Current implementation is tiny; do not assume backend business logic lives here.
+## Conventions
 
-### `functions`
-- Firebase Cloud Functions (TypeScript, Node 22), outside the Gradle build.
-- `openai`: HTTP proxy in `europe-west1` that holds the OpenAI key as a Secret Manager secret, verifies the `X-Firebase-AppCheck` header, allows only `POST /v1/responses` with `gpt-4.1` (listings) or `gpt-5.6-luna` (reply suggestions), and forwards OpenAI's status and body unchanged.
-- Deploy: `cd functions && npm install && npm run deploy` (the Firebase CLI runs through `npx firebase-tools`).
+- Shared logic lives in `composeApp/src/commonMain`; platform code lives in `androidMain`, `iosMain` and the other platform source sets.
+- Business logic lives in view models or domain services. Composables and navigation render and route.
+- Every view model extends `BaseViewModel<State, Event, Effect>` (`features/common/presentation/BaseViewModel.kt`) with its contract in `*Contract.kt`. A feature is some of `data/`, `di/`, `presentation/`, `ui/`, `model/`.
+- Repair a crash or a missing DI binding where it starts; a null check that hides it is a second bug.
+- For Android or Google APIs and libraries (Compose, AndroidX, Material, Play services, Firebase), look them up with the Google dev MCP tools.
 
-## Gradle Structure
-- Root includes exactly:
-  - `:composeApp`
-  - `:androidApp`
-  - `:server`
-  - `:shared`
-- Version catalog: `gradle/libs.versions.toml`
-- `enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")` is enabled in `settings.gradle.kts`.
-- Gradle JVM/toolchain resolution is wired through `org.gradle.toolchains.foojay-resolver-convention`.
-- `kotlin.mpp.applyDefaultHierarchyTemplate=false` is intentionally set in `gradle.properties`.
-
-## Source Set Map
-
-### `composeApp/src/commonMain`
-- Most app logic lives here.
-- High-value packages:
-  - `features/` feature code
-  - `designsystem/` reusable UI primitives/tokens
-  - `navigation/` destination types and layouts
-  - `startup/` startup state and top-level nav view model
-  - `di/` Koin modules
-  - `network/` Ktor/OpenAI client setup
-  - `camera/`, `datastore/`, `features/media/` platform-facing abstractions
-
-### `composeApp` platform source sets
-- `androidMain`: Android actuals for camera, image conversion, datastore, OLX web view.
-- `jvmMain`: Desktop entrypoint and desktop actuals.
-- `jsMain` / `wasmJsMain`: web entrypoints and web actuals.
-- `iosMain`: shared iOS source set exists and depends on `dataStoreMain`.
-- `dataStoreMain`: common source set used by Android/JVM/iOS for datastore support.
-- `jsWasmMain`: shared source set for JS + Wasm web code.
-
-### `shared/src/commonMain`
-- Core packages:
-  - `supabase/`
-  - `config/`
-  - `platform/`
-- This module is intentionally small but important.
-
-## App Entry Points
-- Android: `androidApp/src/main/kotlin/com/sirelon/aicalories/MainActivity.kt`
-- Desktop: `composeApp/src/jvmMain/kotlin/com/sirelon/aicalories/main.kt`
-- Web Wasm: `composeApp/src/wasmJsMain/kotlin/com/sirelon/aicalories/main.kt`
-- Root composable: `composeApp/src/commonMain/kotlin/com/sirelon/aicalories/App.kt`
-- iOS: `iosApp/iosApp/iOSApp.swift`
-- iOS Xcode sync/build bridge: `:composeApp:embedAndSignAppleFrameworkForXcode` is invoked from `iosApp/iosApp.xcodeproj/project.pbxproj`
-- Xcode compile phase skips the Gradle bridge when `OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED=YES`
-- Server: `server/src/main/kotlin/com/sirelon/aicalories/Application.kt`
-- Cloud Functions: `functions/src/index.ts`
-
-## Navigation Rules
+## Navigation
 - `App.kt` is intentionally thin. Do not move app navigation state into composables.
-- Top-level destinations are defined in `navigation/AppDestination.kt`.
+- Destinations are the `AppKey` subtypes in `navigation/AppKey.kt`.
 - Top-level back stack ownership lives in `startup/AppNavigationViewModel`.
 - Startup routing logic also lives in `AppNavigationViewModel`:
   - splash
   - onboarding gate
   - seller auth/session gate
-- Current top-level destinations:
-  - `Splash`
-  - `SellerOnboarding`
-  - `SellerLanding`
-  - `Seller`
 - If adding new app-level navigation, prefer:
-  1. add destination to `AppDestination`
+  1. add the destination to `AppKey`
   2. update `AppNavigationViewModel`
   3. register the entry in `App.kt`
   4. register the key in `navigation/AppNavigationSavedState.kt` — the back stack is persisted
      through its explicit `subclass(...)` list, so `@Serializable` alone is not enough
 
-## DI Rules
+## Dependency injection
 - DI framework is Koin.
 - Top-level modules are registered in `composeApp/.../di/KoinModules.kt`.
 - `appModule` includes feature modules; `networkModule` provides shared networking clients.
@@ -194,56 +142,14 @@ build and checks every pending ticket in one pass.
 - Prefer adding dependencies via Koin modules, not manual singleton objects.
 - When calling constructors or factory functions with more than 2 arguments, use named parameters.
 
-## Feature Layout Patterns
-
-### Common pattern
-Most features use some combination of:
-- `data/`
-- `di/`
-- `presentation/`
-- `ui/`
-- `model/`
-
-### ViewModel pattern
-- Common base lives at `features/common/presentation/BaseViewModel.kt`.
-- Contracts are usually split into:
-  - `...Contract.kt`
-  - `...ViewModel.kt`
-  - screen/render layer in `ui/` or feature root file
-
-### Feature inventory
-- `features/seller`
-  - OLX auth/onboarding/ad-generation flow.
-  - Main subareas: `auth/`, `ad/`, `onboarding/`, `profile/`.
-- `features/media`
-  - Upload, permission, picker, format conversion helpers used by seller ad photos.
-- `features/announcements`
-  - Launch dialog fed by the Firestore `announcements` collection (one doc = content + rules,
-    filtered on device; schema in `AnnouncementResponse`). Publish via Firestore REST as in the
-    `release-notes` skill. `content.link` adds a button: `store` opens the platform store page,
-    an https URL opens the browser. A doc with `rules.dismissible: false` plus a link has no
-    other exit, so `maxVersion` + `showMode: everyLaunch` + `link: store` gates a version range
-    that no longer works (the 3.1-3.3 clients broke silently when the AI proxy went live on
-    2026-10-05; those builds predate this feature and cannot be reached). Host images in Firebase Storage: the Android emulator's DNS fails on
-    some third-party hosts (`fastly.picsum.photos` → `UnknownHostException`) while Google hosts
-    resolve, and the dialog silently drops an image that fails to load.
-
-## Supabase Flow
-- Shared Supabase wrapper: `shared/.../supabase/SupabaseClient.kt`
-- Current responsibility is seller media upload:
-  - auth with default test credentials when needed
-  - file upload to Supabase Storage bucket `test`
-  - public URL lookup for uploaded listing photos
-- Food-analysis tables/functions/realtime observers do not belong in this seller-only checkout.
-
-## Design System Rules
+## Design system
 - Prefer `AppTheme.typography` and `AppTheme.colors`.
 - Prefer `AppDimens` tokens over raw `dp`.
 - Add new size tokens only when the exact value matters.
 - Design system code lives under `composeApp/src/commonMain/kotlin/com/sirelon/aicalories/designsystem/`.
 - Reusable templates already exist in `designsystem/templates/`.
 - Avoid reaching for raw Material APIs first when an app component/token already exists.
-- Use the 40 custom icons (`ic_*.xml`) when suitable instead of Material Design icons.
+- Use the custom icons (`ic_*.xml` in `composeResources/drawable/`) when one fits, before a Material icon.
 
 ## Localization
 - New user-facing strings go in `composeApp/src/commonMain/composeResources/values/strings.xml` (English base). Interpolate with `stringResource(id, arg)`; never `String.format`.
@@ -262,146 +168,11 @@ Most features use some combination of:
   only where the seller must act somewhere else or the marketplace said no; a state whose badge and
   buttons already say everything has none.
 - Translation of new or changed keys into every locale is done by the `localize` agent — `.claude/agents/localize.md` holds the locale map and all translation rules. `.claude/rules/localization.md` loads the sequence when you open a `strings.xml`.
-- **No russian, anywhere, by product decision.** `values-ru/strings.xml` is not a translation — it's a byte-identical copy of `values-uk/strings.xml` kept only so a `ru` device/store locale falls back to Ukrainian (see `.claude/agents/localize.md` for the why and the sync step). Do not "fix" it into real russian, and do not add a russian option to the landing page (`docs/index.html`, `docs/assets/landing.js`) or any other SellSnap-facing surface (store listings, screenshots, release notes) — those exclude `ru` entirely, with no fallback shim at all.
+- **No russian on any SellSnap surface, by product decision.** `values-ru/strings.xml` is a byte-identical copy of `values-uk/strings.xml`, so a `ru` device falls back to Ukrainian; the website, store listings, store release notes and screenshots have no `ru` at all; the in-app What's New carries `ru` as a copy of `uk`. The why and the sync step: `.claude/agents/localize.md`.
 
-## Edge-to-Edge / Insets Rules
-
-Rules: `.claude/rules/edge-to-edge.md` — loads when you open a `ui/`, `*Screen.kt` or
-`designsystem/` file.
-
-## Platform Abstractions
-- Camera launcher uses expect/actual style placement under `camera/`.
-- Image conversion is platform-specific under `features/media/ImageFormatConverter.*`.
-- Datastore abstraction lives under `datastore/KeyValueStore*`.
-- Drafts are stored with SQLDelight (schema in `composeApp/src/commonMain/sqldelight/`, generated `SellSnapDatabase`). The drivers per platform and `SqlDelightDraftsRepository` live under `features/seller/drafts/data/`; the repository is in `dataStoreMain`, where `Dispatchers.IO` is not visible, so it runs on `Dispatchers.Default`. The web targets use `InMemoryDraftsRepository`. The iOS framework is static, so it carries no `-lsqlite3` of its own; the app links sqlite3 because the FirebaseAnalytics package declares it. Room is unavailable until a KSP release exists for the project's Kotlin version.
-- Platform checks are centralized in `shared/.../platform/PlatformTargets.kt`.
-
-## Secrets And Config
-- Secrets are resolved in `shared/build.gradle.kts` from:
-  - Gradle properties
-  - environment variables
-  - `local.properties`
-- BuildKonfig object:
-  - package: `com.sirelon.sellsnap.supabase`
-  - object: `SupabaseConfig`
-- Fallback defaults exist for local/dev builds; do not mistake them for production values.
-- The OpenAI key is not in any build. Android and iOS call the `openai` Cloud Function with a Firebase App Check token (`composeApp/.../network/OpenAIEndpoint.kt`, platform modules `OpenAIEndpointModule.*.kt`); the key lives in Secret Manager as `OPENAI_KEY`. Desktop calls OpenAI directly with `OPENAI_KEY` read from the environment at launch. Web has no App Check and cannot generate listings.
-- App Check providers: Play Integrity (Android release), App Attest (iOS release), debug providers in debug builds. A debug build's token must be registered in App Check or the proxy answers 401. Dev machines use fixed tokens: `APP_CHECK_DEBUG_TOKEN` in `local.properties` (Android) and `iosApp/Configuration/AppCheckDebugToken.local.xcconfig` (iOS), both gitignored; the `appcheck-debug-token` skill (`.claude/skills/`) registers them and handles the per-install fallback.
-
-## Analytics
-
-Firebase Analytics and Crashlytics behind `composeApp/.../analytics/Analytics.kt`; event names and their params live in `AnalyticsEvents`. Analytics events wait for the seller's consent, Crashlytics is always on.
-
-**Every error the seller is shown goes through `Analytics.reportShownError(screen, reason, throwable)`** — snackbar, inline error, failure sheet alike, next to the `postEffect`/`setState` that shows it. It logs `error_shown` (snake_case `screen` and `reason` codes, never user text) and records one Crashlytics non-fatal: the real throwable, or a `ShownErrorException("<screen>: <reason>")` when there is none. Do not call `recordException` beside it. `recordNonFatal = false` is only for input-validation nudges in normal use, such as a title that is still too short.
-
-## Push notifications
-
-FCM, shared code in `composeApp/.../features/notifications/`. Every launch reports the user property `notifications_enabled` and subscribes the device to its topics.
-
-- **Topics:** `all`, `all-<lang>` (en/uk/pl/pt/ro/bg/kk; `ru` → `uk`; anything else → `en`), and `qa` (debug builds only, subscribed natively).
-- **Test sends go to `qa` or one device token, never `all*`.** Debug and release share one Firebase app, so an `all*` test reaches real users.
-- **`link` data key** sets the tap target: `store` opens the store page of the receiving platform, `https://…` opens as given, anything else just opens the app.
-- **Send, console:** Messaging → New campaign → Notifications → Target: Topic → Additional options → Custom data `link`.
-- **Send, FCM v1 REST** (works with the owner's `gcloud` login; the Firebase MCP `messaging_send_message` tool failed without a reason on 2026-10-07):
-  `curl -X POST -H "Authorization: Bearer $(gcloud auth print-access-token)" -H "x-goog-user-project: sellsnap-6e85c" -H "Content-Type: application/json" https://fcm.googleapis.com/v1/projects/sellsnap-6e85c/messages:send -d '{"message":{"topic":"qa","notification":{"title":"…","body":"…"},"data":{"link":"store"}}}'`.
-  Everyone except Ukrainian: replace `"topic":"qa"` with `"condition":"'all' in topics && !('all-uk' in topics)"`.
-- **Pair an update push with an `announcements` doc** (see `features/announcements`): users who declined notifications only see the announcement.
-- **Android:** channel `updates`; the SDK displays background messages, `PushMessagingService` displays foreground ones.
-- **iOS:** the APNs key is uploaded in Firebase; `aps-environment` lives in the single `iosApp/iosApp/iosAppRelease.entitlements` (`development`; App Store export re-signs it to `production`, so the `com.sirelon.sellsnap AppStore` profile must include Push Notifications or the export fails). Without notification permission the device still gets the APNs token and topics. FCM refuses topic operations on each launch until the APNs token is set (error 505, no retry), so topic calls wait for `PushTokenBridge`, which the `MessagingDelegate` registration-token callback signals. Under SwiftUI, FCM's swizzled handler takes the APNs token and the app delegate's `didRegisterForRemoteNotificationsWithDeviceToken` is not called, so nothing may depend on it. The share extension asks for permission when it is undecided.
-- **Permission prompt:** a one-time bottom sheet at the start of a returning session in the seller flow, third in the launch-dialog order after the announcement and What's New (`NotificationsPromptViewModel`); once shown it is never offered again. Settings has a Notifications row (mobile only): it shows the OS prompt while the OS can still show it, otherwise it opens the app's system settings (`notificationsTapAction`).
-
-## Important Build Notes
-- `./gradlew` and the Xcode bridge both depend on `gradle/wrapper/gradle-wrapper.jar`; if it disappears again, shell builds can fall back to local Gradle `9.4.1`, but Xcode sync/build needs the wrapper jar restored.
-- `:composeApp` is an Android KMP library target, not the app wrapper. It does not expose `assembleDebug`; use `:composeApp:assemble` for the library artifact or `:androidApp:assembleDebug` for the installable Android APK.
-
-## Common Commands
-- Build `composeApp` Android library artifact: `./gradlew :composeApp:assemble`
-- Build Android app wrapper APK: `./gradlew :androidApp:assembleDebug`
-- Build desktop JVM artifact: `./gradlew :composeApp:jvmJar`
-- Run desktop app: `OPENAI_KEY=sk-... ./gradlew :composeApp:run` (desktop calls OpenAI directly; see Secrets And Config)
-- Run desktop app under Compose Hot Reload: `./gradlew :composeApp:hotRunJvm` (`--auto` for continuous reload; see Desktop UI Verification)
-- Package desktop native app for current OS: `./gradlew :composeApp:packageDistributionForCurrentOS`
-- Build shared module: `./gradlew :shared:build`
-- Build server: `./gradlew :server:build`
-- Run server: `./gradlew :server:run`
-- Run server in Ktor development mode: `./gradlew :server:run -Pdevelopment`
-- Deploy the OpenAI proxy: `cd functions && npm run deploy`; set its key once with `npx firebase-tools functions:secrets:set OPENAI_KEY --project sellsnap-6e85c`
-- Build web Wasm production bundle: `./gradlew :composeApp:wasmJsBrowserProductionWebpack`
-- Run web Wasm: `./gradlew :composeApp:wasmJsBrowserDevelopmentRun`
-- Build web JS production bundle: `./gradlew :composeApp:jsBrowserProductionWebpack`
-- Run web JS: `./gradlew :composeApp:jsBrowserDevelopmentRun`
-- Build/sign Apple framework for Xcode: `./gradlew :composeApp:embedAndSignAppleFrameworkForXcode`
-- Run all tests: `./gradlew allTests`
-- Android lint: `./gradlew lint`
-- JS tests: `./gradlew jsTest`
-- JVM tests: `./gradlew jvmTest`
-- iOS simulator tests: `./gradlew iosSimulatorArm64Test`
-
-## Desktop UI Verification (Compose Hot Reload MCP)
-
-The desktop JVM target runs under Compose Hot Reload, and its MCP server (`compose-hot-reload` in
-`.mcp.json`, task `:composeApp:hotMcpServerJvm`) lets an agent drive the running window. Use it to
-see a `commonMain` UI change working before declaring it done; the shared UI (screens, design system,
-navigation, view models) is what it exercises. Plugin `1.2.0` on Compose Multiplatform `1.12.0`.
-
-The loop:
-
-1. **Start once, in the background:** `./gradlew :composeApp:hotRunJvm --auto` (blocks while the app
-   runs; first run provisions JetBrains Runtime 25 through the foojay resolver). Without `--auto`,
-   reloads are explicit.
-2. **Wait for the connection:** poll `status` until `connected: true`. The server connects a moment
-   after it starts, so the very first call of a session is usually `connected: false`. `status` also
-   reports `buildContinuous` — `true` means `--auto`.
-3. **Edit** a composable, then **`await_reload`** in `--auto` mode (the continuous build already
-   recompiled; a `reload` call there reports "no changed classes to reload"). Without `--auto`, call
-   `reload` — it recompiles `:composeApp` and swaps the classes (~25 s in this repo).
-4. **Look:** `take_screenshot` (pass `save_to`, then Read the PNG) and `get_semantic_tree` (node
-   `id`, `role`, `text`, `testTag`, `selected`, `actions`, `bounds`). Confirm the change in the tree,
-   not only in the picture.
-5. **Drive:** `click` / `long_click` a node whose `actions` include `onClick` / `onLongClick`,
-   `type_text` into a node with `editableText`, `scroll` / `scroll_to_index`, `resize_window`.
-   The tree is a snapshot: re-read it after each interaction, ids change on recomposition.
-6. **Before declaring the change working:** `get_ui_error` must report `hasError: false` and
-   `get_logs` must show no new exception. `reset_ui` drops all `remember`-ed state; `restart`
-   relaunches the process and keeps the build mode, but the original `hotRunJvm` Gradle
-   invocation exits — the app itself stays connected.
-7. **Stop the app when done:** `kill` the `pid=` value from `composeApp/build/run/jvmMain/jvmMain.pid`.
-
-What it does and does not cover:
-
-- Runs the `jvmMain` entry point: Koin wiring, Supabase/OLX network code, datastore, navigation and
-  every `commonMain` screen. Camera, photo picking, deep links, Firebase, insets and anything with
-  an `androidMain` / `iosMain` actual still need a device or simulator (see the Maestro section).
-- `take_screenshot` is a `java.awt.Robot` screen grab at 1x (800×572 for the default 800×600
-  window, while the semantic tree reports 2x bounds on a Retina display). It captures whatever is
-  on screen at the window's position: an occluded window yields the covering window or the
-  wallpaper. Trust `get_semantic_tree` for text and state; use the screenshot for layout only. An
-  in-process capture needs Compose Multiplatform 1.13+ together with a Hot Reload build from
-  2026-09-01 or later, neither of which is on Maven Central; revisit when they are released.
-
-## UI Tests And Store Screenshots (Maestro)
-
-Flows live in `.maestro/`, runner scripts in `scripts/maestro-*.sh`. Three things bite:
-
-- **Android runs need API 33+** — per-country language uses `cmd locale set-app-locales`,
-  which does not exist below 33; the scripts refuse to start rather than capture every country
-  in the device language.
-- **Boot only one iOS simulator per run.** Maestro starts one driver per device and they
-  contend for the same port; the loser is silently ignored and hierarchy and screenshot calls
-  return the *other* device's data.
-- **`screenshotMode` is committed as `false` and must never be committed `true`.** It bypasses
-  the publish confirmation, and `scripts/ship.sh` refuses to release while it is enabled.
-- **A debug build without a registered App Check token cannot generate listings.** With the
-  fixed tokens from Secrets And Config in place this is a one-time setup per machine;
-  without them every `clearState` mints a new token and the `appcheck-debug-token` skill has
-  to run again before any flow that generates a listing.
-
-Prefer `testTag` ids over visible text in selectors — flows run in 4+ locales. Two exceptions bite: a `ModalBottomSheet` or dialog is its own window, where `testTagsAsResourceId` does not reach, so select its content by text; and `launchApp` grants every runtime permission by default (`POST_NOTIFICATIONS` included), so a flow that needs a permission undecided must pass `permissions: { all: unset }` or launch with `adb shell monkey`. Photos are never
-picked through the OS picker. Full workflow: the `sellsnap-screenshots` skill (`.claude/skills/`).
-
-## Fast “Where Do I Edit?” Guide
+## Where do I edit?
 - Add app-level screen/navigation:
-  - `navigation/AppDestination.kt`
+  - `navigation/AppKey.kt`, `navigation/AppNavigationSavedState.kt`
   - `startup/AppNavigationViewModel.kt`
   - `App.kt`
 - Add a feature dependency or ViewModel:
@@ -438,7 +209,7 @@ picked through the OS picker. Full workflow: the `sellsnap-screenshots` skill (`
 - Change drafts (what is kept, the generate-screen section, the Drafts screen):
   - `features/seller/drafts/`
 - Change which OLX top-level categories are user-facing:
-  - `features/seller/categories/data/CategoriesRepository.kt` (`notSupportedParentIds`)
+  - `features/seller/categories/domain/RootCategoryTaxonomy.kt` (`EXCLUDED_ROOT_CATEGORY_KINDS`, per market)
 - Change attribute validation rules:
   - `features/seller/categories/domain/AttributeValidator.kt`
 - Change price formatting / thousand-separator behavior:
@@ -459,121 +230,23 @@ picked through the OS picker. Full workflow: the `sellsnap-screenshots` skill (`
 - Change whether a market may extend listings:
   - `features/seller/auth/domain/OlxCountry.kt` (`supportsExtendCommand`)
 
-## Store Assets & Design Assets
+## Area rules
 
-Everything that ships to App Store Connect / Play Console lives under `store/`; brand source
-material that is not a store asset lives under `brand/`.
+Each file loads on its own when you open a matching file. Read it directly when you plan work in
+its area.
 
-| Directory | Holds |
+| File | Area |
 | --- | --- |
-| `store/copy/` | All listing text, plus `copy.json` — the localized screenshot captions |
-| `store/captures/<device>/<locale>/` | Raw Maestro screenshots. Input, never uploaded |
-| `store/assets/` | Finished App Store and Play Store images |
-| `store/tools/` | `generate-store-screenshots.mjs` and its `scenes.json` manifest |
-| `store/docs/` | `PROGRESS.md` history and per-device screen inventories |
-| `brand/` | App icon sources, Claude Design prototype files |
-
-Screenshot-to-caption pairing is an explicit manifest, never a filename index. Full workflow,
-preflight checks and known source defects: `.claude/skills/app-store-screenshots/`.
-
-## Documentation / Lookup Rules
-- For Android or Google APIs/libraries, use the Google dev MCP tools instead of memory or generic web search.
-- Good examples:
-  - Jetpack Compose
-  - AndroidX
-  - Material
-  - Google Play services
-  - Firebase
-
-### OLX partner API
-
-Every market has its own portal — `developer.olx.pl`, `.ua`, `.pt`, `.ro`, `.bg`, `.kz` — and
-they are not equally complete. PL omits the advert-status definitions and lists 4 of the 11
-`Advert.status` values; UA and PT define all 11. Reading one portal and assuming it speaks for
-the rest is how this app shipped two wrong status meanings.
-
-- **Treat `developer.olx.ua` as the source of truth.** Ukraine is the primary market, and its
-  portal is one of the complete ones.
-- **Before relying on any behaviour, check whether the markets differ.** Read UA plus at least
-  one other portal for the same endpoint and compare. Where a difference exists, it belongs in
-  code as a per-country capability — `OlxCountry.supportsExtendCommand` is the pattern — never as
-  a single global assumption. A feature that works in Poland may be refused in Romania.
-- The only market difference found so far is the `extend` command, which the specs annotate as
-  unavailable in UA and PT. That is one data point, not a guarantee that the rest is uniform.
-- **Read the yaml itself.** It is at `https://developer.olx.<tld>/swagger/v2/partner_api.yaml`,
-  nested `$ref` files resolve against the same path, and plain `curl` gets a CloudFront 403.
-  `curl https://r.jina.ai/<url>` returns the whole file - about 145 KB - and from there the schema
-  is `grep -n` and `sed -n` like any other file. When r.jina.ai refuses the yaml (422), the
-  Wayback raw copy works: `curl -sL "https://web.archive.org/web/2026id_/https://developer.olx.ua/swagger/v2/partner_api.yaml"`. WebFetch and context7 answer in prose: they
-  summarize, and the summary is where `location`'s real position, the absence of `ad_delivery`
-  from the update schema, and the `value`/`values` split all went missing. Each was five lines of
-  yaml and each cost a release.
-- A request body this app assembles is pinned by a test against the spec's own example payload -
-  `AdvertUpdateBodyTest` is the pattern. A body whose only check is installing on a phone is a
-  guess with a delay attached.
-- Cite the portal and section in the KDoc next to the code that relies on the fact, and mark
-  anything you could not confirm `Inferred:` (rule 3). Do not invent a restriction the API does
-  not state (rule 4).
-- For live probes without a user account — token minting, routing checks — use
-  `.claude/skills/olx-api-verify`. Never attempt an OLX login.
-
-## API Response Class Conventions
-
-Rules: `.claude/rules/api-response.md` — loads when you open a `data/response/` file. Review
-rejects violations, so read it before adding a class that maps a JSON response.
-
-### ViewModel / state pattern (seller-wide)
-
-- Every seller VM extends `BaseViewModel<State, Event, Effect>` from `features/common/presentation/BaseViewModel.kt`.
-- Contracts live in `*Contract.kt` files with sealed `Event` and sealed `Effect` interfaces.
-- State updates use `setState { it.copy(...) }`. One-shot side effects use `postEffect(...)`.
-- Streaming repositories return `Flow<T>`; VMs subscribe via `.launchIn(viewModelScope)` and use `.catch { ... }` to keep the stream alive across transient errors. `PreviewAdViewModel` is the canonical reference. One-shot OLX reads (`MyAdvertsRepository`, `MessagesRepository`) are `suspend` calls wrapped in `withAccountToken`; the VM owns retries and polling.
-- `CategoriesRepository` caches the (filtered) category tree via `shareIn`.
-- **Assert an effect with `viewModel.effects.awaitEffect<T>()`** (`commonTest`,
-  `features/common/presentation/AwaitEffect.kt`); never drain-then-assert. Anything resolved
-  through compose-resources `getString` is posted after the virtual scheduler has gone idle, so
-  `advanceUntilIdle()` and `runCurrent()` cannot see it, and `withTimeout` inside `runTest` fires
-  on the virtual clock. For state rather than an effect, await the state:
-  `viewModel.state.first { ... }`.
-- **A test that starts a polling loop must stop it.** `MessagesViewModel` and
-  `ConversationViewModel` poll in `while (true) { delay(PollInterval) }` after `Event.Shown`.
-  If the test ends with that loop alive, `runTest` keeps draining virtual time forever, the test
-  JVM runs out of memory and Gradle hangs with no failure. End every such test with `Event.Hidden`.
-- **A ViewModel restored after process death starts before the account store is hydrated.**
-  `accountsRecordFlow` first emits the empty default record, so a screen that closes itself when
-  "its" account is missing closed on every restore. Treat the account as gone only after the
-  store has loaded (`ConversationViewModel` is the pattern); never on the first emission.
-
-### Ad lifecycle (post-publish actions)
-
-Rules: `.claude/rules/ad-lifecycle.md` — loads when you open anything under
-`features/seller/my_ads/`. Covers the seller-facing `AdvertState` model, what is documented
-versus inferred about OLX's statuses, OLX's eventual consistency after a command, and the
-effect-assertion trap.
-
-### Category filtering
-
-`CategoriesRepository.notSupportedParentIds` blocklist removes top-level OLX categories that aren't part of this product:
-
-| ID | Category |
-| --- | --- |
-| 1 | Real estate (нерухомість) |
-| 6 | Work (робота) |
-| 7 | Business & services (бізнес і послуги) |
-| 35 | Animals (тварини — incl. zoo goods, currently unsupported) |
-| 1532 | Auto transport |
-| 3428 | Rental & leasing (Оренда та прокат) |
-| 3709 | Daily rentals (житло подобово) |
-
-Update this list when adding or hiding categories.
-
-### Currency / formatting
-
-- Currency is hardcoded to UAH (₴) in `PostAdvertRequestMapper` and the price card UI.- Thousand-separator handling uses `DigitOnlyInputTransformation` and `ThousandSeparatorOutputTransformation` from `designsystem/InputTransformations.kt`.
-
-### OLX deep-link / callback wiring
-
-- Default redirect URI: `selolxai://olx-auth/callback` (configurable via `OLX_REDIRECT_URI` BuildKonfig key).
-- Android — `MainActivity.publishOlxCallback(intent)` reads `intent.data` and forwards the URL to `OlxAuthCallbackBridge.publishCallback(url)`. The intent filter must match the configured scheme; verify `androidApp/.../AndroidManifest.xml` whenever the scheme changes.
-- Web (Wasm) — `composeApp/src/wasmJsMain/.../main.kt` checks `window.location` for `code=` / `error=` query parameters before mounting Compose, then calls `OlxAuthCallbackBridge.publishCallback`.
-- The bridge is a global object (`OlxAuthCallbackBridge`); listeners are collected from both the seller landing and seller profile flows.
+| `.claude/rules/olx-api.md` | OLX partner API: the portals, reading the spec, market differences, auth callback wiring |
+| `.claude/rules/ad-lifecycle.md` | What a seller can do to a published listing, `AdvertState`, OLX's eventual consistency |
+| `.claude/rules/api-response.md` | Classes that map a JSON response. Review rejects violations |
+| `.claude/rules/viewmodels.md` | The view model pattern and the traps of testing it |
+| `.claude/rules/analytics.md` | Events, consent, and how a shown error is reported |
+| `.claude/rules/localization.md` | The translation sequence for `strings.xml` |
+| `.claude/rules/edge-to-edge.md` | Insets for screens and design-system components |
+| `.claude/rules/push-notifications.md` | FCM topics, the `link` key, platform specifics, the permission prompt |
+| `.claude/rules/announcements.md` | The launch dialog fed by Firestore |
+| `.claude/rules/secrets-config.md` | BuildKonfig secrets, App Check, the OpenAI proxy, Supabase |
+| `.claude/rules/platform-abstractions.md` | Camera, image conversion, datastore, SQLDelight drafts |
+| `.claude/rules/store-assets.md` | What lives where under `store/` and `brand/` |
+| `.claude/rules/maestro.md` | Writing Maestro flows |
