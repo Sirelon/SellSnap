@@ -1,7 +1,8 @@
 # AGENTS
 
 Repo map and rules for agents working in SellSnap. They apply to every task unless the owner
-overrides them.
+overrides them. A rule the owner sets in a session is written here, or in the matching
+`.claude/rules/` file, in that session; never only in one agent's private memory.
 
 ## Rules
 
@@ -54,8 +55,13 @@ anything above that does not apply.
 
 ## Git
 
-- Work on `main`: commit, then push once the change compiles. Create a branch or a PR only when
-  the owner asks; name it `feature/SIR-XX-short-description` or `bugfix/SIR-XX-short-description`.
+- In a worktree (Conductor, Paseo or any `git worktree`), work on a branch: commit there, push
+  the branch and open a PR against `main`. Never push a worktree's commits to `main` directly.
+- On a checkout of `main` itself, commit and push to `main` once the change compiles. Create a
+  branch or a PR there only when the owner asks.
+- Name a new branch `feature/SIR-XX-short-description` or `bugfix/SIR-XX-short-description`.
+- Merge your own PR: once it compiles, CI passes, GitHub reports it `CLEAN` and it carries no AI
+  attribution, squash-merge it (`gh pr merge N --squash`). Do not leave it open for the owner.
 - Commit subject: one imperative sentence that says what changed, with no ticket prefix. When the
   commit implements a Linear ticket, name the ticket id in the body.
 - Compile once before pushing when Kotlin or Gradle files changed
@@ -63,7 +69,7 @@ anything above that does not apply.
   need no compile.
 
 ## Linear ticket status after merge
-Agents merge finished work straight to the default branch. The owner later installs the fresh
+Agents merge finished work into the default branch through its PR. The owner later installs the fresh
 build and checks every pending ticket in one pass.
 
 - **Human Check** — the change has behaviour a person must see on a device: UI, flows, copy,
@@ -73,6 +79,8 @@ build and checks every pending ticket in one pass.
   build config.
 - Never move a ticket you implemented to Done when it needs a device check. The owner moves it
   from Human Check to Done after checking.
+- When the owner says "confirmed" in the session, move every ticket his check covered to Done
+  yourself, at once. That includes a ticket he accepted on test coverage alone.
 
 ## Subagent limits (append to every brief, after the global block)
 
