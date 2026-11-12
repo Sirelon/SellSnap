@@ -115,6 +115,7 @@ class GenerateAdViewModel(
     private val authRepository: OlxAuthRepository,
     private val countryStore: OlxCountryStore,
     private val adFlowTimerStore: AdFlowTimerStore,
+    private val inputStore: GenerateAdInputStore,
     private val savedStateHandle: SavedStateHandle,
     private val json: Json,
     private val analytics: Analytics,
@@ -136,7 +137,10 @@ class GenerateAdViewModel(
             .drop(1)
             .map(::toSavedState)
             .distinctUntilChanged()
-            .onEach { snapshot -> savedStateHandle[GenerateAdSavedStateKey] = json.encodeToString(snapshot) }
+            .onEach { snapshot ->
+                savedStateHandle[GenerateAdSavedStateKey] = json.encodeToString(snapshot)
+                inputStore.savedState = snapshot
+            }
             .launchIn(viewModelScope)
 
         if (screenshotMode) seedScreenshotPhotos()
@@ -756,6 +760,7 @@ class GenerateAdViewModel(
     private fun readSavedState(): GenerateAdSavedState =
         savedStateHandle.get<String>(GenerateAdSavedStateKey)
             ?.let { runCatching { json.decodeFromString<GenerateAdSavedState>(it) }.getOrNull() }
+            ?: inputStore.savedState
             ?: GenerateAdSavedState()
 
     private fun toSavedState(state: GenerateAdContract.GenerateAdState): GenerateAdSavedState {

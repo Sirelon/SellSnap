@@ -19,6 +19,7 @@ import com.sirelon.sellsnap.features.review.ReviewPromptStore
 import com.sirelon.sellsnap.features.seller.ad.Advertisement
 import com.sirelon.sellsnap.features.seller.ad.AdFlowTimerStore
 import com.sirelon.sellsnap.features.seller.ad.AdvertisementWithAttributes
+import com.sirelon.sellsnap.features.seller.ad.generate_ad.GenerateAdInputStore
 import com.sirelon.sellsnap.features.seller.ad.generation_log.NoOpAdGenerationLogRepository
 import com.sirelon.sellsnap.features.seller.ad.preview_ad.PreviewAdContract.AttributesLoadState
 import com.sirelon.sellsnap.features.seller.ad.preview_ad.PreviewAdContract.PreviewAdEffect
@@ -1913,6 +1914,7 @@ class PreviewAdViewModelTest {
             draftMediaFileStore = FakeDraftMediaFileStore,
             advertOutcomeStore = AdvertOutcomeStore(InMemoryOlxKeyValueStore(), testJson),
             draftsRepository = draftsRepository,
+            generateAdInputStore = GenerateAdInputStore(),
             analyticsConsentRepository = analyticsConsentRepository,
             errorParser = errorParser,
             analytics = analytics,
