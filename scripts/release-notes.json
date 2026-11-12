@@ -1,5 +1,176 @@
 [
   {
+    "version": "3.10",
+    "date": "2026-11-12",
+    "active": true,
+    "changes": [
+      {
+        "id": "market-price-format",
+        "icon": "improvement",
+        "title": {
+          "en": "Prices the way your market writes them",
+          "uk": "Ціни так, як їх пишуть у вашій країні",
+          "ru": "Ціни так, як їх пишуть у вашій країні",
+          "bg": "Цени така, както се пишат на твоя пазар",
+          "kk": "Бағалар сенің нарығыңда жазылатындай",
+          "pl": "Ceny tak, jak zapisuje się je na Twoim rynku",
+          "pt": "Preços como se escrevem no seu mercado",
+          "ro": "Prețuri așa cum se scriu pe piața ta"
+        },
+        "summary": {
+          "en": "Every price shows the amount first and then the currency, the way OLX shows it in your country",
+          "uk": "Кожна ціна показує спочатку суму, а потім валюту, так само, як OLX показує її у вашій країні",
+          "ru": "Кожна ціна показує спочатку суму, а потім валюту, так само, як OLX показує її у вашій країні",
+          "bg": "Всяка цена показва първо сумата, а после валутата, както я показва OLX във твоята държава",
+          "kk": "Әр баға алдымен соманы, содан кейін валютаны көрсетеді, дәл OLX сенің елінде көрсететіндей",
+          "pl": "Każda cena pokazuje najpierw kwotę, a potem walutę, tak jak robi to OLX w Twoim kraju",
+          "pt": "Cada preço mostra primeiro o valor e depois a moeda, tal como o OLX o mostra no seu país",
+          "ro": "Fiecare preț arată mai întâi suma și apoi moneda, așa cum o arată OLX în țara ta"
+        },
+        "detail": {
+          "en": "You see \"1 850 грн.\" in Ukraine, \"280 zł\" in Poland and \"100 lei\" in Romania, on the listing preview, in drafts, in My Ads and in conversations.",
+          "uk": "Ви бачите «1 850 грн.» в Україні, «280 zł» у Польщі та «100 lei» у Румунії — у попередньому перегляді оголошення, у чернетках, у розділі «Мої оголошення» та в розмовах.",
+          "ru": "Ви бачите «1 850 грн.» в Україні, «280 zł» у Польщі та «100 lei» у Румунії — у попередньому перегляді оголошення, у чернетках, у розділі «Мої оголошення» та в розмовах.",
+          "bg": "Виждаш „1 850 грн.“ в Украйна, „280 zł“ в Полша и „100 lei“ в Румъния – в прегледа на обявата, в черновите, в „Моите обяви“ и в разговорите.",
+          "kk": "Украинада «1 850 грн.», Польшада «280 zł», Румынияда «100 lei» көресің – хабарландыру алдын ала қарауында, жобаларда, «Менің хабарландыруларым» бөлімінде және әңгімелерде.",
+          "pl": "Widzisz „1 850 грн.” na Ukrainie, „280 zł” w Polsce i „100 lei” w Rumunii – w podglądzie ogłoszenia, w szkicach, w Moich ogłoszeniach i w rozmowach.",
+          "pt": "Vê «1 850 грн.» na Ucrânia, «280 zł» na Polónia e «100 lei» na Roménia, na pré-visualização do anúncio, nos rascunhos, em Os meus anúncios e nas conversas.",
+          "ro": "Vezi „1 850 грн.” în Ucraina, „280 zł” în Polonia și „100 lei” în România – în previzualizarea anunțului, în ciorne, în Anunțurile mele și în conversații."
+        }
+      },
+      {
+        "id": "new-listing-keeps-photos",
+        "icon": "fix",
+        "title": {
+          "en": "Your photos stay when you switch tabs",
+          "uk": "Ваші фото нікуди не зникають, коли ви перемикаєте вкладки",
+          "ru": "Ваші фото нікуди не зникають, коли ви перемикаєте вкладки",
+          "bg": "Снимките ти остават, когато сменяш табовете",
+          "kk": "Қойындыларды ауыстырғанда фотоларың сақталады",
+          "pl": "Twoje zdjęcia zostają, gdy przełączasz karty",
+          "pt": "As suas fotografias ficam quando muda de separador",
+          "ro": "Pozele tale rămân când schimbi tab-urile"
+        },
+        "summary": {
+          "en": "The photos and the note of a new listing stay in place when you open another tab and come back",
+          "uk": "Фото й нотатка нового оголошення залишаються на місці, коли ви відкриваєте іншу вкладку й повертаєтеся",
+          "ru": "Фото й нотатка нового оголошення залишаються на місці, коли ви відкриваєте іншу вкладку й повертаєтеся",
+          "bg": "Снимките и бележката на нова обява остават на мястото си, когато отвориш друг таб и се върнеш",
+          "kk": "Жаңа хабарландырудың фотолары мен жазбасы басқа қойындыны ашып, қайта оралғанда орнында қалады",
+          "pl": "Zdjęcia i notatka nowego ogłoszenia zostają na miejscu, gdy otworzysz inną kartę i wrócisz",
+          "pt": "As fotografias e a nota de um novo anúncio ficam no lugar quando abre outro separador e volta",
+          "ro": "Pozele și nota unui anunț nou rămân la locul lor când deschizi alt tab și te întorci"
+        }
+      },
+      {
+        "id": "gallery-without-camera",
+        "icon": "fix",
+        "title": {
+          "en": "Gallery works without camera access",
+          "uk": "Галерея працює без доступу до камери",
+          "ru": "Галерея працює без доступу до камери",
+          "bg": "Галерията работи и без достъп до камерата",
+          "kk": "Галерея камераға рұқсатсыз да жұмыс істейді",
+          "pl": "Galeria działa bez dostępu do aparatu",
+          "pt": "A galeria funciona sem acesso à câmara",
+          "ro": "Galeria funcționează fără acces la cameră"
+        },
+        "summary": {
+          "en": "You can add photos from the gallery even when the camera is turned off for SellSnap",
+          "uk": "Ви можете додавати фото з галереї, навіть коли камеру вимкнено для SellSnap",
+          "ru": "Ви можете додавати фото з галереї, навіть коли камеру вимкнено для SellSnap",
+          "bg": "Можеш да добавяш снимки от галерията, дори когато камерата е изключена за SellSnap",
+          "kk": "SellSnap үшін камера өшірулі болса да, галереядан фото қоса аласың",
+          "pl": "Możesz dodawać zdjęcia z galerii, nawet gdy aparat jest wyłączony dla SellSnap",
+          "pt": "Pode adicionar fotografias da galeria mesmo com a câmara desativada para o SellSnap",
+          "ro": "Poți adăuga poze din galerie chiar dacă camera este oprită pentru SellSnap"
+        }
+      },
+      {
+        "id": "category-details-retry",
+        "icon": "improvement",
+        "title": {
+          "en": "Categories load more reliably",
+          "uk": "Категорії завантажуються надійніше",
+          "ru": "Категорії завантажуються надійніше",
+          "bg": "Категориите се зареждат по-надеждно",
+          "kk": "Санаттар сенімдірек жүктеледі",
+          "pl": "Kategorie ładują się pewniej",
+          "pt": "As categorias carregam de forma mais fiável",
+          "ro": "Categoriile se încarcă mai sigur"
+        },
+        "summary": {
+          "en": "When the category details do not load, tap Retry instead of starting over",
+          "uk": "Якщо деталі категорії не завантажилися, торкніться «Повторити» замість того, щоб починати спочатку",
+          "ru": "Якщо деталі категорії не завантажилися, торкніться «Повторити» замість того, щоб починати спочатку",
+          "bg": "Ако данните за категорията не се заредят, докосни „Опитай отново“, вместо да почваш отначало",
+          "kk": "Санат мәліметтері жүктелмесе, басынан бастамай, «Қайталап көру» түймесін бас",
+          "pl": "Gdy szczegóły kategorii się nie wczytają, dotknij „Spróbuj ponownie” zamiast zaczynać od nowa",
+          "pt": "Quando os detalhes da categoria não carregam, toque em «Tentar novamente» em vez de recomeçar",
+          "ro": "Când detaliile categoriei nu se încarcă, atinge „Reîncearcă” în loc să o iei de la capăt"
+        },
+        "detail": {
+          "en": "A draft keeps its category when you open it without internet. After you change the country, you see the categories of that country.",
+          "uk": "Чернетка зберігає свою категорію, коли ви відкриваєте її без інтернету. Після зміни країни ви бачите категорії саме цієї країни.",
+          "ru": "Чернетка зберігає свою категорію, коли ви відкриваєте її без інтернету. Після зміни країни ви бачите категорії саме цієї країни.",
+          "bg": "Черновата запазва категорията си, когато я отвориш без интернет. След като смениш държавата, виждаш категориите на тази държава.",
+          "kk": "Жоба интернетсіз ашылғанда да өз санатын сақтайды. Елді ауыстырғаннан кейін сол елдің санаттарын көресің.",
+          "pl": "Szkic zachowuje swoją kategorię, gdy otworzysz go bez internetu. Po zmianie kraju widzisz kategorie tego kraju.",
+          "pt": "Um rascunho mantém a sua categoria quando o abre sem internet. Depois de mudar o país, vê as categorias desse país.",
+          "ro": "O ciornă își păstrează categoria când o deschizi fără internet. După ce schimbi țara, vezi categoriile acelei țări."
+        }
+      },
+      {
+        "id": "preview-description-warning",
+        "icon": "fix",
+        "title": {
+          "en": "Short descriptions are flagged before you publish",
+          "uk": "Короткий опис помітно ще до публікації",
+          "ru": "Короткий опис помітно ще до публікації",
+          "bg": "Късите описания се отбелязват преди публикуване",
+          "kk": "Қысқа сипаттама жариялау алдында ескертіледі",
+          "pl": "Krótki opis jest oznaczany przed publikacją",
+          "pt": "Descrições curtas são assinaladas antes de publicar",
+          "ro": "Descrierile scurte sunt semnalate înainte să publici"
+        },
+        "summary": {
+          "en": "The preview warns you when the description is under 40 characters, so OLX does not turn the listing down",
+          "uk": "Попередній перегляд попереджає, коли опис коротший за 40 символів, щоб OLX не відхилив оголошення",
+          "ru": "Попередній перегляд попереджає, коли опис коротший за 40 символів, щоб OLX не відхилив оголошення",
+          "bg": "Прегледът те предупреждава, когато описанието е под 40 знака, за да не отхвърли OLX обявата",
+          "kk": "Сипаттама 40 таңбадан қысқа болса, алдын ала қарау ескертеді, сонда OLX хабарландыруды қабылдамай қоймайды",
+          "pl": "Podgląd ostrzega Cię, gdy opis ma mniej niż 40 znaków, żeby OLX nie odrzucił ogłoszenia",
+          "pt": "A pré-visualização avisa-o quando a descrição tem menos de 40 carateres, para que o OLX não recuse o anúncio",
+          "ro": "Previzualizarea te avertizează când descrierea are sub 40 de caractere, ca OLX să nu respingă anunțul"
+        }
+      },
+      {
+        "id": "dialogs-on-wide-screens",
+        "icon": "improvement",
+        "title": {
+          "en": "Better fit on tablets and desktop",
+          "uk": "Зручніше на планшетах і комп'ютері",
+          "ru": "Зручніше на планшетах і комп'ютері",
+          "bg": "По-добро прилягане на таблети и компютър",
+          "kk": "Планшеттер мен компьютерде ыңғайлырақ",
+          "pl": "Lepsze dopasowanie na tabletach i komputerze",
+          "pt": "Melhor adaptação em tablets e computador",
+          "ro": "Potrivire mai bună pe tablete și desktop"
+        },
+        "summary": {
+          "en": "On a wide screen, menus open as a dialog in the centre instead of a sheet at the bottom",
+          "uk": "На широкому екрані меню відкриваються діалогом посередині, а не панеллю внизу",
+          "ru": "На широкому екрані меню відкриваються діалогом посередині, а не панеллю внизу",
+          "bg": "На широк екран менютата се отварят като диалог в центъра, а не като панел отдолу",
+          "kk": "Кең экранда мәзірлер төменгі панельдің орнына ортада диалог ретінде ашылады",
+          "pl": "Na szerokim ekranie menu otwierają się jako okno na środku, a nie panel na dole",
+          "pt": "Num ecrã largo, os menus abrem como uma caixa de diálogo ao centro, em vez de um painel em baixo",
+          "ro": "Pe un ecran lat, meniurile se deschid ca dialog în centru, nu ca un panou jos"
+        }
+      }
+    ]
+  },
+  {
     "version": "3.9",
     "date": "2026-11-09",
     "active": true,

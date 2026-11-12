@@ -2,7 +2,7 @@
 
 Copy-paste text for every listing field. The app ships 8 in-app languages, but this doc
 only has 7 sections — russian shares Ukrainian's in-app UI and has no separate store
-listing (see the "No russian store listing" note below). Written for SellSnap 3.9 (build 21).
+listing (see the "No russian store listing" note below). Written for SellSnap 3.10 (build 22).
 
 The per-language **What's New** blocks below match what's pushed to the stores automatically from `.claude/tmp/release-metadata/` (gitignored, regenerated fresh each release): Android reads `android/<locale>/changelogs/<version_code>.txt`, iOS reads `ios/<locale>/release_notes.txt` (App Store) and the same file feeds TestFlight's localized build info. The `sellsnap-release` skill regenerates both those files and this section on every release.
 
@@ -74,16 +74,16 @@ From snap to live on OLX in about a minute. Download SellSnap and turn your clut
 SellSnap is an independent app and is not affiliated with or endorsed by OLX. Publishing requires an OLX account.
 ```
 
-**What's New (v3.9):**
+**What's New (v3.10):**
 
 ```
-SellSnap 3.9 — reply to buyers
+SellSnap 3.10 — clearer prices, steadier listings
 
-• Reply to buyers right in the app, with AI reply suggestions on tap
-• A warning on messages that look like a scam
-• My Ads shows how many unread messages each listing has
-• Each conversation shows the lowest price you set
-• When OLX turns down a listing, you see the reason OLX gave
+• Prices look the way your market writes them, like "1 850 грн." in Ukraine
+• Photos and your note stay in place when you switch tabs
+• Pick photos from the gallery without a camera permission request
+• Categories load more reliably, and drafts keep their category offline
+• Menus open as centred dialogs on tablets and desktop
 ```
 
 ---
@@ -132,16 +132,16 @@ SellSnap підтримує OLX в Україні, Польщі, Румунії,
 SellSnap — незалежний застосунок, не афілійований з OLX. Для публікації потрібен акаунт OLX.
 ```
 
-**What's New (v3.9):**
+**What's New (v3.10):**
 
 ```
-SellSnap 3.9 — відповідайте покупцям
+SellSnap 3.10 — зрозуміліші ціни, надійніші оголошення
 
-• Відповідайте покупцям просто в застосунку, а ШІ запропонує відповіді за одним дотиком
-• Попередження на повідомленнях, схожих на шахрайство
-• «Мої оголошення» показують, скільки непрочитаних повідомлень має кожне оголошення
-• Кожна розмова показує найнижчу ціну, яку ви встановили
-• Якщо OLX не приймає оголошення, ви бачите причину від OLX
+• Ціни виглядають так, як їх пишуть у вашій країні, наприклад «1 850 грн.»
+• Фото й нотатка лишаються на місці, коли ви перемикаєте вкладки
+• Обирайте фото з галереї без запиту доступу до камери
+• Категорії завантажуються надійніше, а чернетки зберігають категорію без інтернету
+• На планшетах і комп’ютерах меню відкриваються як вікна по центру
 ```
 
 ---
@@ -190,16 +190,16 @@ Od zdjęcia do ogłoszenia na OLX w około minutę. Pobierz SellSnap i zamień n
 SellSnap to niezależna aplikacja, niepowiązana z OLX. Do publikacji wymagane jest konto OLX.
 ```
 
-**What's New (v3.9):**
+**What's New (v3.10):**
 
 ```
-SellSnap 3.9 — odpowiadaj kupującym
+SellSnap 3.10 — czytelniejsze ceny, pewniejsze ogłoszenia
 
-• Odpowiadaj kupującym prosto w aplikacji, a AI podpowie odpowiedzi jednym dotknięciem
-• Ostrzeżenie przy wiadomościach, które wyglądają na oszustwo
-• Moje ogłoszenia pokazują liczbę nieprzeczytanych wiadomości przy każdym ogłoszeniu
-• Każda rozmowa pokazuje najniższą ustaloną przez Ciebie cenę
-• Gdy OLX odrzuci ogłoszenie, zobaczysz powód podany przez OLX
+• Ceny wyglądają tak, jak zapisuje się je w Twoim kraju, na przykład „1 850 zł”
+• Zdjęcia i notatka zostają na miejscu, gdy przełączasz karty
+• Wybieraj zdjęcia z galerii bez prośby o dostęp do aparatu
+• Kategorie wczytują się pewniej, a szkice zachowują kategorię bez internetu
+• Na tabletach i komputerach menu otwierają się jako okna na środku
 ```
 
 ---
@@ -248,16 +248,16 @@ De la poză la anunț publicat pe OLX în aproximativ un minut. Descarcă SellSn
 SellSnap este o aplicație independentă, neafiliată cu OLX. Publicarea necesită un cont OLX.
 ```
 
-**What's New (v3.9):**
+**What's New (v3.10):**
 
 ```
-SellSnap 3.9 — răspunde cumpărătorilor
+SellSnap 3.10 — prețuri mai clare, anunțuri mai sigure
 
-• Răspunde cumpărătorilor direct din aplicație, cu sugestii de răspuns de la AI la o atingere
-• Un avertisment pe mesajele care par înșelătorii
-• Anunțurile mele arată câte mesaje necitite are fiecare anunț
-• Fiecare conversație arată prețul minim pe care l-ai stabilit
-• Când OLX respinge un anunț, vezi motivul dat de OLX
+• Prețurile arată așa cum se scriu în țara ta, de exemplu „1 850 lei”
+• Fotografiile și nota rămân la locul lor când schimbi filele
+• Alege fotografii din galerie fără cerere de acces la cameră
+• Categoriile se încarcă mai sigur, iar ciornele își păstrează categoria fără internet
+• Pe tablete și computere, meniurile se deschid ca ferestre în centru
 ```
 
 ---
@@ -306,16 +306,16 @@ SellSnap поддържа OLX в България, Украйна, Полша, �
 SellSnap е независимо приложение и не е свързано с OLX. За публикуване е необходим акаунт в OLX.
 ```
 
-**What's New (v3.9):**
+**What's New (v3.10):**
 
 ```
-SellSnap 3.9 — отговаряйте на купувачите
+SellSnap 3.10 — по-ясни цени, по-надеждни обяви
 
-• Отговаряйте на купувачите директно в приложението, с предложения за отговор от AI с едно докосване
-• Предупреждение при съобщения, които приличат на измама
-• „Моите обяви“ показва колко непрочетени съобщения има всяка обява
-• Всеки разговор показва най-ниската цена, която сте задали
-• Когато OLX откаже обява, виждате причината, посочена от OLX
+• Цените изглеждат така, както се изписват във вашата държава, например „1 850 лв.“
+• Снимките и бележката остават на място, когато сменяте разделите
+• Избирайте снимки от галерията без искане за достъп до камерата
+• Категориите се зареждат по-надеждно, а черновите запазват категорията си без интернет
+• На таблети и компютри менютата се отварят като прозорци в центъра
 ```
 
 ---
@@ -364,16 +364,16 @@ Da foto ao anúncio publicado no OLX em cerca de um minuto. Descarregue o SellSn
 O SellSnap é uma aplicação independente, sem qualquer afiliação com o OLX. Para publicar é necessária uma conta OLX.
 ```
 
-**What's New (v3.9):**
+**What's New (v3.10):**
 
 ```
-SellSnap 3.9 — responda aos compradores
+SellSnap 3.10 — preços mais claros, anúncios mais estáveis
 
-• Responda aos compradores diretamente na app, com sugestões de resposta da IA num toque
-• Um aviso nas mensagens que parecem burla
-• Os Meus anúncios mostram quantas mensagens não lidas tem cada anúncio
-• Cada conversa mostra o preço mínimo que definiu
-• Quando o OLX recusa um anúncio, vê o motivo indicado pelo OLX
+• Os preços aparecem como se escrevem no seu país, por exemplo «1 850 €»
+• As fotos e a nota mantêm-se quando muda de separador
+• Escolha fotos da galeria sem pedido de acesso à câmara
+• As categorias carregam de forma mais fiável e os rascunhos mantêm a categoria sem internet
+• Em tablets e computadores, os menus abrem como janelas ao centro
 ```
 
 ---
@@ -420,14 +420,14 @@ OLX аккаунтыңыз жоқ па? Қонақ режимін пайдала
 SellSnap — OLX-пен байланысы жоқ тәуелсіз қосымша. Жариялау үшін OLX аккаунты қажет.
 ```
 
-**What's New (v3.9):**
+**What's New (v3.10):**
 
 ```
-SellSnap 3.9 — сатып алушыларға жауап беріңіз
+SellSnap 3.10 — түсінікті бағалар, сенімді хабарландырулар
 
-• Сатып алушыларға тікелей қолданбада жауап беріңіз, ЖИ бір түрту арқылы жауап ұсынады
-• Алаяқтыққа ұқсайтын хабарламаларда ескерту көрсетіледі
-• «Менің хабарландыруларым» әр хабарландырудың оқылмаған хабарлама санын көрсетеді
-• Әр әңгімеде сіз белгілеген ең төмен баға көрсетіледі
-• OLX хабарландыруды қабылдамаса, OLX көрсеткен себепті көресіз
+• Бағалар сіздің еліңізде жазылатындай көрсетіледі, мысалы «1 850 KZT»
+• Қойындыларды ауыстырғанда фотолар мен жазба орнында қалады
+• Галереядан фото таңдағанда камераға рұқсат сұралмайды
+• Санаттар сенімдірек жүктеледі, ал жобалар санатын интернетсіз де сақтайды
+• Планшеттер мен компьютерлерде мәзірлер ортадағы терезе ретінде ашылады
 ```
