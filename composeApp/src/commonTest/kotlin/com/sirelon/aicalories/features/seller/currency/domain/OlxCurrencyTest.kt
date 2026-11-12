@@ -24,10 +24,13 @@ class OlxCurrencyTest {
     }
 
     @Test
-    fun `blank label falls back to the code`() {
-        assertEquals("280 PLN", OlxCurrency("PLN", "", true).format(280f))
-        assertEquals("280 PLN", OlxCurrency("PLN", "  ", true).format(280f))
-        assertEquals("280 PLN", OlxCurrency.format(value = 280L, code = "pln"))
+    fun `blank label falls back to the label OLX gives the code`() {
+        assertEquals("280 zł", OlxCurrency("PLN", "", true).format(280f))
+        assertEquals("280 zł", OlxCurrency("PLN", "  ", true).format(280f))
+        assertEquals("280 zł", OlxCurrency.format(value = 280L, code = "pln"))
+        assertEquals("100 lei", OlxCurrency.format(value = 100L, code = "RON"))
+        assertEquals("50 лв.", OlxCurrency.format(value = 50L, code = "BGN"))
+        assertEquals("20 €", OlxCurrency.format(value = 20L, code = "EUR"))
         assertEquals("₴ 280", OlxCurrency.format(value = 280L, code = "UAH"))
     }
 

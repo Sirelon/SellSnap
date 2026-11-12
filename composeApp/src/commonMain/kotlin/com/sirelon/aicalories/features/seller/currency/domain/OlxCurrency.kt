@@ -29,22 +29,39 @@ data class OlxCurrency(
         private fun isLabelBeforeAmount(code: String): Boolean =
             code.uppercase() in LabelBeforeAmount
 
+        /**
+         * The label OLX gives each currency code, for prices that arrive with a code only (the
+         * advert list and detail). Source: `GET /api/partner/currencies` on olx.pl, olx.ro, olx.bg,
+         * olx.pt and olx.ua, fetched 2026-11-12: PLN `zł`, RON `lei`, BGN `лв.`, EUR `€`, USD `$`.
+         * UAH is left out on purpose: OLX labels it `грн.`, and the app shows `₴` until the owner
+         * picks the Ukrainian format (SIR-191).
+         */
+        private val OlxLabels = mapOf(
+            "PLN" to "zł",
+            "RON" to "lei",
+            "BGN" to "лв.",
+            "EUR" to "€",
+            "USD" to "$",
+        )
+
         private fun displayLabel(code: String, label: String): String = when {
             label.isNotBlank() -> label
             code.equals(Default.code, ignoreCase = true) -> Default.label
-            else -> code.uppercase()
+            else -> OlxLabels[code.uppercase()] ?: code.uppercase()
         }
 
         /**
          * A price as the seller reads it, the single formatter behind every price on screen
          * (preview, publish confirm, drafts, My Ads, the conversation header): `₴ 1 850` for UAH,
-         * `280 zł` for PLN, `100 lei` for RON, `50 лв` for BGN, `20 €` for EUR. The label is the one
-         * OLX supplies in its currency list, else [code] (`280 PLN`); an empty [code] with no
-         * [label] leaves the bare amount. Digits group by thousands with a space ([formatPrice]).
+         * `280 zł` for PLN, `100 lei` for RON, `50 лв.` for BGN, `20 €` for EUR. The label is the
+         * one OLX supplies in its currency list, else the known OLX label for [code] ([OlxLabels]),
+         * else [code] itself (`5 000 KZT`); an empty [code] with no [label] leaves the bare amount.
+         * Digits group by thousands with a space ([formatPrice]).
          *
          * Inferred: the position rule is the local writing convention of each market, not an OLX
-         * fact. The UAH `₴` prefix is how OLX.ua's own listings read; every other market writes
-         * the label after the amount. The position is chosen by currency [code], not by locale.
+         * fact. UAH keeps its label before the amount, as the app has always shown it; every other
+         * currency writes the label after the amount. The position is chosen by currency [code],
+         * not by locale.
          */
         fun format(value: Long, code: String, label: String = ""): String {
             val amount = formatPrice(value)

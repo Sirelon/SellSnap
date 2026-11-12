@@ -34,6 +34,6 @@ internal object MyAdvertItemMapper {
         validTo = advert.validTo,
     )
 
-    /** The advert list and detail carry only the currency code, so the label falls back to it. */
+    /** The advert list and detail carry only the currency code; the formatter supplies its OLX label. */
     private fun OlxAdvertPrice.format(): String = OlxCurrency.format(value = value, code = currency)
 }

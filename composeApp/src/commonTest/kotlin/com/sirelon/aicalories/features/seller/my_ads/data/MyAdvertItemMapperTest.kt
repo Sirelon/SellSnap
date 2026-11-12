@@ -38,7 +38,7 @@ class MyAdvertItemMapperTest {
     }
 
     @Test
-    fun `map writes the currency code after the amount for other markets`() {
+    fun `map writes the OLX label after the amount for other markets`() {
         val item = MyAdvertItemMapper.map(
             OlxAdvert(
                 id = 44,
@@ -52,7 +52,7 @@ class MyAdvertItemMapperTest {
             ),
         )
 
-        assertEquals("280 PLN", item.priceFormatted)
+        assertEquals("280 zł", item.priceFormatted)
     }
 
     @Test
