@@ -38,6 +38,24 @@ class MyAdvertItemMapperTest {
     }
 
     @Test
+    fun `map writes the currency code after the amount for other markets`() {
+        val item = MyAdvertItemMapper.map(
+            OlxAdvert(
+                id = 44,
+                title = "Bike",
+                status = AdvertStatus.Active,
+                url = "",
+                primaryImageUrl = null,
+                price = OlxAdvertPrice(value = 280L, currency = "PLN", negotiable = false),
+                createdAt = "",
+                validTo = "",
+            ),
+        )
+
+        assertEquals("280 PLN", item.priceFormatted)
+    }
+
+    @Test
     fun `map leaves price blank when olx price is missing`() {
         val item = MyAdvertItemMapper.map(
             OlxAdvert(

@@ -1065,8 +1065,21 @@ private fun AdPriceCard(
                         readOnly = readOnly,
                         inputTransformation = DigitOnlyInputTransformation,
                         outputTransformation = ThousandSeparatorOutputTransformation,
-                        prefix = {
-                            Text(text = currency.displayLabel(), style = textStyle)
+                        prefix = if (currency.isLabelBeforeAmount) {
+                            { Text(text = currency.displayLabel(), style = textStyle) }
+                        } else {
+                            null
+                        },
+                        suffix = if (currency.isLabelBeforeAmount) {
+                            null
+                        } else {
+                            {
+                                Text(
+                                    text = currency.displayLabel(),
+                                    style = textStyle,
+                                    modifier = Modifier.padding(start = AppDimens.Spacing.xs),
+                                )
+                            }
                         },
                     )
                 }
