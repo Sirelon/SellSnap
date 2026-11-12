@@ -2,16 +2,14 @@ package com.sirelon.sellsnap.features.seller.currency.domain
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertTrue
 
 class OlxCurrencyTest {
 
     @Test
-    fun `uah keeps its symbol before the amount`() {
-        assertEquals("₴ 1 850", OlxCurrency.Default.format(1850f))
-        assertEquals("₴ 1 850", OlxCurrency.format(value = 1850L, code = "UAH"))
-        assertTrue(OlxCurrency.Default.isLabelBeforeAmount)
+    fun `uah writes its label after the amount`() {
+        assertEquals("1 850 грн.", OlxCurrency.Default.format(1850f))
+        assertEquals("1 850 грн.", OlxCurrency.format(value = 1850L, code = "UAH"))
+        assertEquals("1 850 ₴", OlxCurrency.format(value = 1850L, code = "UAH", label = "₴"))
     }
 
     @Test
@@ -20,7 +18,6 @@ class OlxCurrencyTest {
         assertEquals("100 lei", OlxCurrency("RON", "lei", false).format(100f))
         assertEquals("50 лв", OlxCurrency("BGN", "лв", false).format(50f))
         assertEquals("20 €", OlxCurrency("EUR", "€", false).format(20f))
-        assertFalse(OlxCurrency("PLN", "zł", false).isLabelBeforeAmount)
     }
 
     @Test
@@ -31,12 +28,12 @@ class OlxCurrencyTest {
         assertEquals("100 lei", OlxCurrency.format(value = 100L, code = "RON"))
         assertEquals("50 лв.", OlxCurrency.format(value = 50L, code = "BGN"))
         assertEquals("20 €", OlxCurrency.format(value = 20L, code = "EUR"))
-        assertEquals("₴ 280", OlxCurrency.format(value = 280L, code = "UAH"))
+        assertEquals("280 грн.", OlxCurrency.format(value = 280L, code = "UAH"))
     }
 
     @Test
-    fun `position follows the code even when the label is a code`() {
-        assertEquals("UAH 280", OlxCurrency.format(value = 280L, code = "UAH", label = "UAH"))
+    fun `a label that is a code also goes after the amount`() {
+        assertEquals("280 UAH", OlxCurrency.format(value = 280L, code = "UAH", label = "UAH"))
         assertEquals("1 850 EUR", OlxCurrency.format(value = 1850L, code = "EUR", label = "EUR"))
     }
 
@@ -48,7 +45,7 @@ class OlxCurrencyTest {
     @Test
     fun `large amounts group by thousands with a space`() {
         assertEquals("1 234 567 zł", OlxCurrency("PLN", "zł", false).format(1_234_567f))
-        assertEquals("₴ 12 500", OlxCurrency.format(value = 12_500L, code = "UAH"))
+        assertEquals("12 500 грн.", OlxCurrency.format(value = 12_500L, code = "UAH"))
         assertEquals("2 000 000 000 zł", OlxCurrency.format(value = 2_000_000_000L, code = "PLN", label = "zł"))
         assertEquals("999 lei", OlxCurrency.format(value = 999L, code = "RON", label = "lei"))
     }
