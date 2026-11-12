@@ -129,6 +129,7 @@ build and checks every pending ticket in one pass.
 
 - Compile check (fast): `./gradlew :composeApp:compileAndroidMain`
 - Unit tests: `./gradlew :composeApp:jvmTest` (the shared tests run on the JVM target)
+- CI (`.github/workflows/ci.yml`) runs the compile check and the unit tests on every pull request and every push to `main`.
 - Android debug APK: `./gradlew :androidApp:assembleDebug`
 - Desktop run: `OPENAI_KEY=sk-... ./gradlew :composeApp:run` (desktop calls OpenAI directly)
 - Deploy the OpenAI proxy: `cd functions && npm install && npm run deploy`
