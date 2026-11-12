@@ -188,7 +188,7 @@ private fun MarkAsSoldSheetPreview() {
                         status = AdvertStatus.Active,
                         url = "",
                         primaryImageUrl = null,
-                        priceFormatted = "₴ 1 800",
+                        priceFormatted = "1 800 грн.",
                         priceValue = 1800,
                         currencyCode = "UAH",
                         createdAt = "",
