@@ -249,8 +249,8 @@ internal fun PreviewAdContentRoute(
     val titleText = viewModel.titleState.text
     val descText = viewModel.descriptionState.text
     val validationErrors = buildList {
-        if (titleText.length < 10) add(titleTooShortLabel)
-        if (descText.length < 30) add(descTooShortLabel)
+        if (titleText.trim().length < TitleMinLength) add(titleTooShortLabel)
+        if (descText.trim().length < DescriptionMinLength) add(descTooShortLabel)
         if (state.isSessionResolved && !state.isGuest) {
             if (state.selectedCategory == null) add(noCategoryLabel)
             if (state.location == null) add(noLocationLabel)
