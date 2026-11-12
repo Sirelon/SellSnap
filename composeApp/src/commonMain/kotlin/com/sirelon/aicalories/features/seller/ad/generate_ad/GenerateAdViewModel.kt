@@ -782,6 +782,8 @@ class GenerateAdViewModel(
     private fun clearDraft() {
         val photos = readSavedState().photos
         viewModelScope.launch { draftMediaFileStore.delete(photos) }
+        // Cleared here, not left to the snapshot collector: the screen may leave before it runs.
+        inputStore.clear()
         // The Drafts section belongs to the repository, not to the photos and prompt being
         // cleared: resetting it here would blank the section until the repository emits again.
         setState {
