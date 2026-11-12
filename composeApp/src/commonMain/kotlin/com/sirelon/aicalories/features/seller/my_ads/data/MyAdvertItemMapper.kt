@@ -3,6 +3,7 @@ package com.sirelon.sellsnap.features.seller.my_ads.data
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxAdvert
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxAdvertDetail
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxAdvertPrice
+import com.sirelon.sellsnap.features.seller.currency.domain.OlxCurrency
 import com.sirelon.sellsnap.features.seller.my_ads.model.MyAdvertItem
 
 internal object MyAdvertItemMapper {
@@ -33,22 +34,6 @@ internal object MyAdvertItemMapper {
         validTo = advert.validTo,
     )
 
-    private fun OlxAdvertPrice.format(): String = formatAdvertPrice(value, currency)
-
-    /** An OLX price as the seller reads it: UAH as `₴ 1 800`, any other currency as `1 800 PLN`. */
-    private fun formatAdvertPrice(value: Long, currency: String): String {
-        val amount = value
-            .coerceAtLeast(0L)
-            .toString()
-            .reversed()
-            .chunked(3)
-            .joinToString(" ")
-            .reversed()
-
-        return when (val code = currency.uppercase()) {
-            "UAH" -> "₴ $amount"
-            "" -> amount
-            else -> "$amount $code"
-        }
-    }
+    /** The advert list and detail carry only the currency code; the formatter supplies its OLX label. */
+    private fun OlxAdvertPrice.format(): String = OlxCurrency.format(value = value, code = currency)
 }
