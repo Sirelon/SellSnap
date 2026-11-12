@@ -1,10 +1,12 @@
 package com.sirelon.sellsnap.features.seller.ad.generate_ad
 
 import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.ViewModelStore
 import com.aallam.openai.client.OpenAI
 import com.aallam.openai.client.OpenAIConfig
 import com.aallam.openai.client.RetryStrategy
 import com.mohamedrejeb.calf.io.KmpFile
+import com.mohamedrejeb.calf.io.getPath
 import com.sirelon.sellsnap.analytics.Analytics
 import com.sirelon.sellsnap.analytics.AnalyticsEvents
 import com.sirelon.sellsnap.features.auth.data.InMemoryOlxKeyValueStore
@@ -156,6 +158,32 @@ class GenerateAdViewModelTest {
 
         assertEquals(setOf("duration_ms", "photo_count", "upload_ms", "upload_bytes"), params.keys)
     }
+
+    @Test
+    fun `photos and the note survive a switch to another tab and back`() =
+        runTest(testDispatcher) {
+            // SIR-188: a tab switch clears the back stack, so the GenerateAd entry's ViewModel and
+            // SavedStateHandle are gone; the ViewModel built on return must start from the input store.
+            val fileStore = InMemoryDraftMediaFileStore()
+            val harness = buildHarness(draftMediaFileStore = fileStore)
+            val picked = loadScreenshotPhotos()[1]
+            harness.viewModel.onEvent(
+                GenerateAdContract.GenerateAdEvent.UploadFilesResult(result = Result.success(listOf(picked))),
+            )
+            val before = harness.viewModel.state.first { it.uploads.size == 2 }
+            runCurrent()
+
+            ViewModelStore().apply { put("generate_ad", harness.viewModel) }.clear()
+            val returned = harness.createViewModel().state.value
+
+            assertEquals(before.uploads.keys.map { it.getPath() }.toSet(), returned.uploads.keys.map { it.getPath() }.toSet())
+            assertEquals("Nike Air Max 90, worn twice", returned.prompt)
+            assertEquals(
+                "drafts/photo1.jpg",
+                returned.uploads.values.firstNotNullOf { it.uploadedFile }.path,
+                "an uploaded photo is not uploaded again",
+            )
+        }
 
     @Test
     fun `cancel stops the generation, keeps the photos, and logs exactly one abandoned event`() =
@@ -403,6 +431,7 @@ class GenerateAdViewModelTest {
             uploadedFile = UploadedFile(id = "1", path = "drafts/photo1.jpg"),
         ),
         handler: MockRequestHandler = { awaitCancellation() },
+        draftMediaFileStore: DraftMediaFileStore = FakeDraftMediaFileStore,
     ): Harness {
         val analytics = FakeAnalytics()
         val engine = MockEngine(
@@ -444,20 +473,27 @@ class GenerateAdViewModelTest {
         )
 
         val draftsRepository = InMemoryDraftsRepository()
-        val viewModel = GenerateAdViewModel(
-            mediaUploadHelper = mediaUploadHelper,
-            draftMediaFileStore = FakeDraftMediaFileStore,
-            categoriesRepository = categoriesRepository,
-            openAi = openAi,
-            authRepository = authRepository,
-            countryStore = countryStore,
-            adFlowTimerStore = AdFlowTimerStore(),
-            savedStateHandle = SavedStateHandle(),
-            json = testJson,
-            analytics = analytics,
-            adGenerationLogRepository = NoOpAdGenerationLogRepository,
-            draftsRepository = draftsRepository,
-        )
+        val adFlowTimerStore = AdFlowTimerStore()
+        val inputStore = GenerateAdInputStore()
+        // A fresh SavedStateHandle each time, as a new GenerateAd back-stack entry gets.
+        val createViewModel = {
+            GenerateAdViewModel(
+                mediaUploadHelper = mediaUploadHelper,
+                draftMediaFileStore = draftMediaFileStore,
+                categoriesRepository = categoriesRepository,
+                openAi = openAi,
+                authRepository = authRepository,
+                countryStore = countryStore,
+                adFlowTimerStore = adFlowTimerStore,
+                inputStore = inputStore,
+                savedStateHandle = SavedStateHandle(),
+                json = testJson,
+                analytics = analytics,
+                adGenerationLogRepository = NoOpAdGenerationLogRepository,
+                draftsRepository = draftsRepository,
+            )
+        }
+        val viewModel = createViewModel()
 
         authRepository.enterGuestMode()
 
@@ -474,6 +510,7 @@ class GenerateAdViewModelTest {
 
         return Harness(
             viewModel = viewModel,
+            createViewModel = createViewModel,
             analytics = analytics,
             draftsRepository = draftsRepository,
             countryStore = countryStore,
@@ -488,6 +525,7 @@ class GenerateAdViewModelTest {
 
     private data class Harness(
         val viewModel: GenerateAdViewModel,
+        val createViewModel: () -> GenerateAdViewModel,
         val analytics: FakeAnalytics,
         val draftsRepository: InMemoryDraftsRepository,
         val countryStore: OlxCountryStore,
@@ -527,6 +565,26 @@ class GenerateAdViewModelTest {
         override fun log(message: String) {}
         override fun setAnalyticsCollectionEnabled(enabled: Boolean) {}
         override fun setCrashlyticsCollectionEnabled(enabled: Boolean) {}
+    }
+
+    /** Keeps the picked files by path, so a photo written to the saved state can be restored. */
+    private class InMemoryDraftMediaFileStore : DraftMediaFileStore {
+        private val files = mutableMapOf<String, KmpFile>()
+
+        override suspend fun persist(file: KmpFile): PersistedDraftPhoto? {
+            val path = stablePath(file) ?: return null
+            return PersistedDraftPhoto(file = file, photo = DraftPhoto(id = path, path = path, displayName = null))
+        }
+
+        override fun restore(photo: DraftPhoto): KmpFile? = files[photo.path]
+
+        override fun stablePath(file: KmpFile): String? = file.getPath()?.also { files[it] = file }
+
+        override suspend fun delete(photos: List<DraftPhoto>) {
+            photos.forEach { files.remove(it.path) }
+        }
+
+        override suspend fun deleteAll() = files.clear()
     }
 
     private object FakeDraftMediaFileStore : DraftMediaFileStore {

@@ -6,6 +6,7 @@ import com.sirelon.sellsnap.features.auth.data.InMemoryOlxKeyValueStore
 import com.sirelon.sellsnap.features.media.upload.DraftMediaFileStore
 import com.sirelon.sellsnap.features.media.upload.DraftPhoto
 import com.sirelon.sellsnap.features.media.upload.PersistedDraftPhoto
+import com.sirelon.sellsnap.features.seller.ad.generate_ad.GenerateAdInputStore
 import com.sirelon.sellsnap.features.seller.auth.data.GuestModeStore
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountRecord
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountState
@@ -1792,6 +1793,7 @@ class MyAdvertsViewModelTest {
             draftMediaFileStore = FakeDraftMediaFileStore,
             advertOutcomeStore = AdvertOutcomeStore(InMemoryOlxKeyValueStore(), testJson),
             draftsRepository = InMemoryDraftsRepository(),
+            generateAdInputStore = GenerateAdInputStore(),
             analyticsConsentRepository = analyticsConsentRepository,
             errorParser = errorParser,
             analytics = analytics,
