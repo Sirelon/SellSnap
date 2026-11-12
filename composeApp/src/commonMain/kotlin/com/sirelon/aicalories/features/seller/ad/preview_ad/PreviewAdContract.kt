@@ -11,6 +11,19 @@ import com.sirelon.sellsnap.features.seller.currency.domain.OlxCurrency
 import com.sirelon.sellsnap.features.seller.location.OlxLocation
 import kotlin.jvm.JvmInline
 
+/**
+ * The app's own floor for a title, not an OLX limit. OLX publishes no maximum here either: the
+ * app sends any longer title and lets OLX's own refusal speak (AGENTS.md rule 4).
+ *
+ * The partner_api.yaml "Create advert" validation rules say "The title has to be at least 16
+ * characters long and cannot be longer than 70 characters" (olx.ua) and "150 characters" (olx.pl,
+ * olx.ro, olx.bg, olx.pt), with no minLength/maxLength on the schema. The live sites do not hold
+ * to it (public `GET /api/v1/offers`, 2026-11-12): olx.pl offer 1111530813 "Rower" (5 characters,
+ * posted 2026-11-11), olx.ua offer 940644326 "Велосипед спорт" (15), and olx.ua titles of 121 and
+ * 130 characters. No SellSnap publish has been refused for its title (`ad_publish_failed` reason
+ * `validation:title`: 0 of 88 publishes by 2026-11-12). Those offers may come from OLX's own
+ * posting form rather than the partner API, so the API limit itself is still unproven (SIR-190).
+ */
 internal const val TitleMinLength = 10
 
 /**
