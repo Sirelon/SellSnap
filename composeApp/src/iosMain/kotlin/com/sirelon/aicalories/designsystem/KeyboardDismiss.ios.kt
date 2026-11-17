@@ -23,18 +23,20 @@ private const val DoneButtonWidth = 88.0
 
 @Composable
 internal actual fun rememberPlatformImeOptions(
-    doneLabel: String,
+    doneLabel: String?,
     onDone: () -> Unit,
 ): PlatformImeOptions? {
     val latestOnDone = rememberUpdatedState(onDone)
     return remember(doneLabel) {
         PlatformImeOptions {
             usingNativeTextInput(true)
-            inputAccessoryView(
-                createKeyboardDoneAccessoryView(doneLabel) {
-                    latestOnDone.value()
-                }
-            )
+            if (doneLabel != null) {
+                inputAccessoryView(
+                    createKeyboardDoneAccessoryView(doneLabel) {
+                        latestOnDone.value()
+                    }
+                )
+            }
         }
     }
 }
