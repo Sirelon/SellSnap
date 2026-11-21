@@ -37,7 +37,7 @@ const val AD_GENERATION_MODEL_ID = "gpt-4.1"
 
 // Bump whenever adGenerationInstructions changes, so ad-generation-log records stay attributable
 // to the exact prompt that produced them.
-const val AD_GENERATION_PROMPT_VERSION = "v6"
+const val AD_GENERATION_PROMPT_VERSION = "v7"
 
 private val DEFAULT_MODEL = ModelId(AD_GENERATION_MODEL_ID)
 private const val DEFAULT_IMAGE_DETAIL = "high"
@@ -60,11 +60,12 @@ with exactly one of these codes:
 - too_blurry: too out of focus or motion-blurred to make out what the item is.
 - too_dark: too dark or too blown out to make out what the item is.
 - not_an_item: nothing sellable in frame — a bare wall, a floor, the sky, a person on their own.
-- different_items: the photos show unrelated items rather than one item from several angles.
+- different_items: two or more photos each show a separate item that does not belong with the others, so no single listing fits them all — trainers in one photo and a coffee machine in another, or two unrelated pairs of shoes.
 
-Refuse only when one of those plainly applies. A usable photo of an ordinary item is never a refusal, and clutter or a busy background is not `different_items` — pick the main item and write the listing.
-A seller note that names the item is enough to write a listing even from poor photos: when a note names it, write the listing rather than refusing.
-`different_items` is the one exception — report it even when a seller note is present, because every photo the seller uploaded is published alongside the listing.
+Refuse only when one of those plainly applies. A usable photo of an ordinary item is never a refusal.
+Things sold together are one listing, never `different_items`: a set or a pair (two matching bowls, four chairs, a cutlery set), a lot of similar things (a stack of books, a bag of baby clothes), or an item with its accessories. Write one listing that covers all of them.
+A single photo is never `different_items`: whatever one photo shows together is being sold together. Clutter or a busy background is not `different_items` either — pick the main item and write the listing.
+A seller note settles both cases. A note that names the item is enough to write a listing even from poor photos, and a note that says the items are sold together is enough to write one listing for all of them: in either case write the listing rather than refusing.
 
 If the seller note is present, treat it as the source of truth.
 - Preserve the seller's exact tokens for brand, model, size, condition, and purchase age.
