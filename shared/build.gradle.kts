@@ -58,7 +58,7 @@ val olxAuthBaseUrl =
 
 val olxRedirectUri =
     resolveSecret("OLX_REDIRECT_URI", "olx.redirect.uri")
-        ?: "selolxai://olx-auth/callback"
+        ?: "https://sirelon.github.io/SellSnap/olx-callback/"
 
 // Single source of truth for app version, shared with iOS via fastlane (see Fastfile) and with
 // Android via androidApp/build.gradle.kts.
