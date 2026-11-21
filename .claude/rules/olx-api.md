@@ -41,7 +41,15 @@ the rest is how this app shipped two wrong status meanings.
 
 ## Auth callback wiring
 
-- Default redirect URI: `selolxai://olx-auth/callback` (configurable via `OLX_REDIRECT_URI` BuildKonfig key).
+- **OLX accepts only HTTPS redirect URIs** (`developer.olx.<tld>/docs/faq`, "How do I set or
+  change the redirect URI"). With a custom scheme the login silently never returns: the seller
+  ends on the OLX account page, and our analytics logs it as `user_cancelled`. The old
+  `partner_api.yaml` does not state this rule; the newer `/docs` pages do.
+- Redirect URI: `https://sirelon.github.io/SellSnap/olx-callback/` (`docs/olx-callback/`,
+  configurable via the `OLX_REDIRECT_URI` BuildKonfig key). The page forwards `code` and `state`
+  to `selolxai://olx-auth/callback` (`OlxConfig.appCallbackScheme`), which the app catches. It
+  must be registered under "Your apps" on every market's developer portal; a market without it
+  rejects the login.
 - Android — `MainActivity.publishOlxCallback(intent)` reads `intent.data` and forwards the URL to `OlxAuthCallbackBridge.publishCallback(url)`. The intent filter must match the configured scheme; verify `androidApp/.../AndroidManifest.xml` whenever the scheme changes.
 - Web (Wasm) — `composeApp/src/wasmJsMain/.../main.kt` checks `window.location` for `code=` / `error=` query parameters before mounting Compose, then calls `OlxAuthCallbackBridge.publishCallback`.
 - The bridge is a global object (`OlxAuthCallbackBridge`); listeners are collected from both the seller landing and seller profile flows.

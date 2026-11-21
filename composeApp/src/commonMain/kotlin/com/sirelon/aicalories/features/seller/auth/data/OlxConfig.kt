@@ -25,7 +25,17 @@ object OlxConfig {
     val apiBaseUrl: String
         get() = _currentOlxCountry.apiBaseUrl
 
-    // Changing redirect scheme? See SIR-178 (App Links migration) and update policy pages above.
+    /**
+     * The `redirect_uri` sent to OLX: an HTTPS page (`docs/olx-callback/`) that forwards OLX's
+     * `code` and `state` to [appCallbackScheme]. OLX accepts only HTTPS redirect URIs
+     * (developer.olx.<tld>/docs/faq, "How do I set or change the redirect URI (callback URL)?");
+     * with the custom scheme, OLX's login never returned to the app. The URI must also be
+     * registered under "Your apps" on each market's developer portal.
+     * Changing it? See SIR-178 (App Links migration) and update policy pages above.
+     */
     val redirectUri: String
         get() = AppConfig.olxRedirectUri
+
+    /** The scheme the forwarding page opens; Android's intent filter and iOS's auth session catch it. */
+    const val appCallbackScheme = "selolxai"
 }

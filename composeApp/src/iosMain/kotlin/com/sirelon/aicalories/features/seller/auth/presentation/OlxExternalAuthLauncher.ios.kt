@@ -29,8 +29,7 @@ actual fun rememberOlxAuthLauncher(
     return remember(forceReauth) {
         { url: String ->
             val nsUrl = NSURL.URLWithString(url) ?: return@remember
-            val scheme = OlxConfig.redirectUri.substringBefore("://")
-            val callback = ASWebAuthenticationSessionCallback.callbackWithCustomScheme(scheme)
+            val callback = ASWebAuthenticationSessionCallback.callbackWithCustomScheme(OlxConfig.appCallbackScheme)
             val session = ASWebAuthenticationSession(
                 uRL = nsUrl,
                 callback = callback,
