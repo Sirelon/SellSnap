@@ -12,6 +12,7 @@ import com.sirelon.sellsnap.features.seller.auth.data.OlxRemoteErrorParser
 import com.sirelon.sellsnap.features.seller.auth.data.createOlxAuthorizedHttpClient
 import com.sirelon.sellsnap.features.seller.auth.data.createOlxHttpClient
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxApiError
+import com.sirelon.sellsnap.features.seller.auth.domain.analyticsReason
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxCountry
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxApiException
 import com.sirelon.sellsnap.features.seller.ad.publish_success.AdvertStatus
@@ -508,6 +509,19 @@ class OlxApiClientTest {
         val error = assertIs<OlxApiError.Unknown>(exception.error)
         assertTrue(error.userMessage.contains("HTTP 502"))
         assertTrue(error.userMessage.contains("empty"))
+        assertEquals("unknown:http_502", error.analyticsReason)
+    }
+
+    @Test
+    fun `remote error parser keeps the status of a refusal that carries only a message`() {
+        val exception = OlxRemoteErrorParser(testJson).parse(
+            HttpStatusCode.BadRequest,
+            """{"error":{"status":400,"title":"Bad Request","detail":"Advert cannot be posted."}}""",
+        )
+
+        val error = assertIs<OlxApiError.Unknown>(exception.error)
+        assertEquals("Advert cannot be posted.", error.userMessage)
+        assertEquals("unknown:http_400", error.analyticsReason)
     }
 
     private fun sampleTokens(accessToken: String, refreshToken: String = "refresh-token") = OlxTokens(

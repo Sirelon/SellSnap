@@ -501,7 +501,7 @@ class OlxApiClient(
             json.decodeFromString(payload)
         } catch (exception: SerializationException) {
             throw OlxApiException(
-                OlxApiError.Unknown("Could not parse OLX response for $operation."),
+                OlxApiError.Unknown("Could not parse OLX response for $operation.", httpStatus = status.value),
             )
         }
     }
