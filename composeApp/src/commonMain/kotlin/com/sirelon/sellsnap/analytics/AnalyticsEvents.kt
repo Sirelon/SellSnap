@@ -85,6 +85,14 @@ object AnalyticsEvents {
      * from one that landed clean.
      */
     const val AD_PUBLISH_SUCCEEDED = "ad_publish_succeeded"
+
+    /**
+     * A publish that did not end in a live advert. `account_index` is the account it was sent
+     * from. `reason` is `validation:<field>` for a field OLX refused, `network` when OLX never
+     * answered, an OLX auth code such as `invalid_token`, `unknown:http_<status>` for any other OLX
+     * answer (a `2xx` status there means OLX answered but the reply could not be read), or the
+     * exception class name for anything that never reached OLX.
+     */
     const val AD_PUBLISH_FAILED = "ad_publish_failed"
 
     /**

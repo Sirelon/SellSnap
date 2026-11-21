@@ -112,8 +112,14 @@ sealed interface OlxApiError {
         override val userMessage: String,
     ) : OlxApiError
 
+    /**
+     * An OLX failure no other case names. [httpStatus] is the status OLX answered with, or null when
+     * the failure did not come with one; it is what tells a server error from a refusal of this
+     * request in analytics, where the message itself cannot go.
+     */
     data class Unknown(
         override val userMessage: String,
+        val httpStatus: Int? = null,
     ) : OlxApiError
 
     /**
@@ -151,7 +157,7 @@ val OlxApiError.analyticsReason: String
         is OlxApiError.NetworkFailure -> "network_failure"
         is OlxApiError.RateLimited -> "rate_limited"
         is OlxApiError.ValidationError -> "validation_error"
-        is OlxApiError.Unknown -> "unknown"
+        is OlxApiError.Unknown -> httpStatus?.let { "unknown:http_$it" } ?: "unknown"
     }
 
 /**

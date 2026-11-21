@@ -12,8 +12,8 @@ import kotlin.test.assertTrue
 class AdGenerationInstructionsTest {
 
     @Test
-    fun promptVersionIsV6() {
-        assertEquals("v6", AD_GENERATION_PROMPT_VERSION)
+    fun promptVersionIsV7() {
+        assertEquals("v7", AD_GENERATION_PROMPT_VERSION)
     }
 
     @Test
@@ -32,6 +32,9 @@ class AdGenerationInstructionsTest {
             "never the pictures of it", "na zdjęciu",
             // Every seller fact reaches the listing.
             "Every fact in the seller note must reach the listing",
+            // A set, a lot, or one photo is never refused as different items.
+            "Things sold together are one listing", "A single photo is never `different_items`",
+            "a note that says the items are sold together",
             // Earlier guardrails stay.
             "Do not invent brand, size, material, defects, or condition.",
             "Do not infer the season of clothing",
