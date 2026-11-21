@@ -50,6 +50,14 @@ the rest is how this app shipped two wrong status meanings.
   to `selolxai://olx-auth/callback` (`OlxConfig.appCallbackScheme`), which the app catches. It
   must be registered under "Your apps" on every market's developer portal; a market without it
   rejects the login.
+- **On phones, OLX's partner login is broken on OLX's side (seen 2026-11-22, olx.ro).** A phone
+  browser is always sent from `www.olx.<tld>` to `m.olx.<tld>` (no URL or path avoids it), signs
+  in on `auth.olx.<tld>`, and is sent back to `/oauth/authorize`, which then checks `login.olx.<tld>`
+  silently (`prompt=none`), gets `login_required`, logs the seller out and shows the home page.
+  Desktop browsers work. Retrying from the app does not help. Trace and report text:
+  SIR-195. Before blaming app code for "the login ends on the OLX home page", re-run that trace
+  in a browser; Android Chrome's DevTools socket (`adb forward tcp:9222
+  localabstract:chrome_devtools_remote`) shows every redirect without a new login.
 - Android — `MainActivity.publishOlxCallback(intent)` reads `intent.data` and forwards the URL to `OlxAuthCallbackBridge.publishCallback(url)`. The intent filter must match the configured scheme; verify `androidApp/.../AndroidManifest.xml` whenever the scheme changes.
 - Web (Wasm) — `composeApp/src/wasmJsMain/.../main.kt` checks `window.location` for `code=` / `error=` query parameters before mounting Compose, then calls `OlxAuthCallbackBridge.publishCallback`.
 - The bridge is a global object (`OlxAuthCallbackBridge`); listeners are collected from both the seller landing and seller profile flows.
