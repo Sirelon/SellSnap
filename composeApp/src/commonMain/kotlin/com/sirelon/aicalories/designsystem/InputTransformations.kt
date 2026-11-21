@@ -11,11 +11,17 @@ val DigitOnlyInputTransformation = InputTransformation {
     }
 }
 
+/**
+ * Groups digits by three with a space: "9500" shows as "9 500".
+ *
+ * Inserts each space (an empty-range replace) rather than replacing the whole text: Compose maps
+ * the cursor through an insert exactly, but snaps a cursor inside a replaced range to one of its
+ * ends, which left the cursor away from the last digit while typing.
+ */
 val ThousandSeparatorOutputTransformation = OutputTransformation {
-    val text = toString()
-    if (text.isEmpty()) return@OutputTransformation
-    val formatted = text.reversed().chunked(3).joinToString(" ").reversed()
-    if (formatted != text) {
-        replace(0, length, formatted)
+    var index = length - 3
+    while (index > 0) {
+        replace(index, index, " ")
+        index -= 3
     }
 }

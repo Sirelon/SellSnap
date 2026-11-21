@@ -104,6 +104,7 @@ import com.sirelon.sellsnap.designsystem.buttons.AppButton
 import com.sirelon.sellsnap.designsystem.buttons.AppButtonDefaults
 import com.sirelon.sellsnap.features.seller.ad.preview_ad.ui.GuestConnectPromptSheet
 import com.sirelon.sellsnap.designsystem.dismissKeyboardOnTapOutside
+import com.sirelon.sellsnap.designsystem.dismissKeyboardOnVerticalDrag
 import com.sirelon.sellsnap.designsystem.pager.ImagesCarousel
 import com.sirelon.sellsnap.designsystem.rememberKeyboardDismissAction
 import com.sirelon.sellsnap.designsystem.shimmer
@@ -194,6 +195,9 @@ import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
+import kotlin.math.floor
+import kotlin.math.log10
+import kotlin.math.pow
 import kotlin.math.roundToInt
 import kotlin.math.roundToLong
 import kotlin.time.Duration.Companion.milliseconds
@@ -373,6 +377,7 @@ internal fun PreviewAdContentRoute(
         Column(
             modifier = Modifier
                 .testTag("preview_ad_scrollable_content")
+                .dismissKeyboardOnVerticalDrag(dismissKeyboard)
                 .verticalScroll(scrollState)
                 .padding(bottom = AppDimens.Spacing.xl3),
             verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.xl3)
@@ -1101,7 +1106,7 @@ private fun AdPriceCard(
                     value = price,
                     onValueChange = {
                         priceTextFieldState.setTextAndPlaceCursorAtEnd(
-                            it.fastRoundToInt().toString()
+                            snapToSliderStep(it, minPrice, maxPrice).toString()
                         )
                     },
                     valueRange = minPrice..maxPrice,
@@ -1124,6 +1129,22 @@ private fun AdPriceCard(
             )
         }
     }
+}
+
+/**
+ * Rounds a dragged price to a round step so the slider lands on 9 500, not 9 521. The step is the
+ * 1, 2 or 5 times a power of ten nearest to a fiftieth of the range: 100 for a 950–10 000 range.
+ */
+private fun snapToSliderStep(value: Float, minPrice: Float, maxPrice: Float): Int {
+    val rough = (maxPrice - minPrice) / 50f
+    if (rough < 1f) return value.fastRoundToInt()
+    val magnitude = 10f.pow(floor(log10(rough)))
+    val step = when {
+        rough / magnitude < 2f -> magnitude
+        rough / magnitude < 5f -> magnitude * 2
+        else -> magnitude * 5
+    }
+    return ((value / step).roundToInt() * step).coerceIn(minPrice, maxPrice).fastRoundToInt()
 }
 
 @Composable

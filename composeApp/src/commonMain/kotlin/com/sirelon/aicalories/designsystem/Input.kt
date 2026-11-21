@@ -165,8 +165,10 @@ fun TransparentInput(
     outputTransformation: OutputTransformation? = null,
 ) {
     val dismissKeyboard = rememberKeyboardDismissAction()
+    // No "Done" bar above the keyboard: the screens that host this field close the keyboard on
+    // a tap outside it or on scroll.
     val platformImeOptions = rememberPlatformImeOptions(
-        doneLabel = stringResource(Res.string.keyboard_done_action),
+        doneLabel = null,
         onDone = dismissKeyboard,
     )
     val resolvedKeyboardOptions = keyboardOptions.withKeyboardDismissDefaults(platformImeOptions)

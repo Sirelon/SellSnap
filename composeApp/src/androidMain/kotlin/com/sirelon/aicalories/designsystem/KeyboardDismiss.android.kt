@@ -6,6 +6,6 @@ import androidx.compose.ui.text.input.PlatformImeOptions
 @Composable
 @Suppress("UNUSED_PARAMETER")
 internal actual fun rememberPlatformImeOptions(
-    doneLabel: String,
+    doneLabel: String?,
     onDone: () -> Unit,
 ): PlatformImeOptions? = null

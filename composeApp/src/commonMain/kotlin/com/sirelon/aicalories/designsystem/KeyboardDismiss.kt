@@ -17,6 +17,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.PlatformImeOptions
+import kotlin.math.abs
 
 @Composable
 internal fun rememberKeyboardDismissAction(): () -> Unit {
@@ -58,6 +59,32 @@ internal fun rememberDismissKeyboardOnDragConnection(onDismiss: () -> Unit): Nes
     }
 }
 
+/**
+ * Closes the keyboard when the seller drags vertically on the content, e.g. scrolls a form.
+ *
+ * Watches the finger, not the scroll: Compose reports the scroll that brings a focused field into
+ * view as `NestedScrollSource.UserInput` (foundation 1.12 `ContentInViewNode`), so
+ * [rememberDismissKeyboardOnDragConnection] would close the keyboard the moment it opens over a
+ * field inside the scrolled content.
+ */
+internal fun Modifier.dismissKeyboardOnVerticalDrag(onDismiss: () -> Unit): Modifier =
+    pointerInput(onDismiss) {
+        awaitEachGesture {
+            val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+            var drag = Offset.Zero
+            while (true) {
+                val change = awaitPointerEvent(PointerEventPass.Initial).changes
+                    .firstOrNull { it.id == down.id }
+                if (change == null || !change.pressed) break
+                drag += change.position - change.previousPosition
+                if (abs(drag.y) > viewConfiguration.touchSlop && abs(drag.y) > abs(drag.x)) {
+                    onDismiss()
+                    break
+                }
+            }
+        }
+    }
+
 internal fun KeyboardOptions.withKeyboardDismissDefaults(
     platformImeOptions: PlatformImeOptions?,
 ): KeyboardOptions =
@@ -72,8 +99,12 @@ internal fun KeyboardOptions.withKeyboardDismissDefaults(
         hintLocales = hintLocales,
     )
 
+/**
+ * iOS: native text input with a "Done" bar above the keyboard, or without the bar when
+ * [doneLabel] is null. Other platforms: null.
+ */
 @Composable
 internal expect fun rememberPlatformImeOptions(
-    doneLabel: String,
+    doneLabel: String?,
     onDone: () -> Unit,
 ): PlatformImeOptions?
