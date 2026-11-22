@@ -84,7 +84,7 @@ data class OlxCountry(
         val PT = OlxCountry("pt", "🇵🇹", "Portugal",   "Portugal",   "olx.pt",  clientId = "201248",  clientSecret = "lss3rMOnf8RGDQMkCYuzq3ipE3WuTBa2u1o53kWlwFYtBuXP", language = "Portuguese", currencyCode = "EUR")
         val RO = OlxCountry("ro", "🇷🇴", "Romania",    "România",    "olx.ro",  clientId = "200864",  clientSecret = "DVq0A30wixRWs70OZhguxgtQ8rVltcsvfQfD84YW0oPLzZC8",  language = "Romanian",   currencyCode = "RON")
         val PL = OlxCountry("pl", "🇵🇱", "Poland",     "Polska",     "olx.pl",  clientId = "203018", clientSecret = "22f2Mk6pSqJsBtKWsKhxe7UKCLJcHfUsoOuNCR08GT7rvcqM",   language = "Polish",     currencyCode = "PLN")
-        val UA = OlxCountry("ua", "🇺🇦", "Ukraine",    "Україна",    "olx.ua",  clientId = "202504",  clientSecret = "HrYHpyqOxmviAjajemibiPgIIg8u20Sru0QeOOG59ISXltJW",  language = "Ukrainian",  currencyCode = "UAH")
+        val UA = OlxCountry("ua", "🇺🇦", "Ukraine",    "Україна",    "olx.ua",  clientId = "203527",  clientSecret = "F9pH3xXHLaagb7rUam8EfSXIICGAtgNGHLJPoQhOtP365FJK",  language = "Ukrainian",  currencyCode = "UAH")
         // Bulgaria uses the euro since 2026-01-01; OLX.bg lists EUR as its default currency.
         val BG = OlxCountry("bg", "🇧🇬", "Bulgaria",   "България",   "olx.bg",  clientId = "200500",  clientSecret = "BRldA1nMMFJsT4taqqEW9htNkPNcECt9FQzmJ984mfzIj8bP",  language = "Bulgarian",  currencyCode = "EUR")
         val KZ = OlxCountry("kz", "🇰🇿", "Kazakhstan", "Қазақстан",  "olx.kz",  clientId = "",        clientSecret = "",                                                    language = "Russian",    currencyCode = "KZT")
