@@ -201,6 +201,14 @@ object AnalyticsEvents {
      */
     const val USER_PROPERTY_CONNECTED_ACCOUNT_COUNT = "connected_account_count"
 
+    /**
+     * User property: which screen runs the OLX login on Android and iOS, `in_app` (WebView /
+     * WKWebView) or `system_browser` (Custom Tab / ASWebAuthenticationSession). Set when the app
+     * first reads the Firestore switch `config/olx_login` (OlxLoginModeRepository), so
+     * `auth_started` → `auth_completed` can be compared per mode.
+     */
+    const val USER_PROPERTY_OLX_LOGIN_MODE = "olx_login_mode"
+
     // Which button the seller pressed on the "close this listing?" sheet, as `choice`
     // (stay | leave | dismissed - swiped away or system back, which keeps editing like stay).
     // Leaving keeps the draft in Drafts. The sheet's own screen_view only says it

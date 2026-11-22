@@ -191,7 +191,17 @@ into the final report and leave the two pages as they are; edit and push them af
 
 Done when: the report lists each added SDK, permission and data flow with the paragraph that covers it.
 
-## 11. Commit, push, report
+## 11. Check whether OLX's browser login works again
+
+Run while the Firestore switch `config/olx_login.systemBrowser` is `false` (SIR-195): on the booted Android emulator,
+`maestro test -e OLX_EMAIL=… -e OLX_PASSWORD=… .maestro/olx_login_canary.yaml` (credentials in `.maestro/.env`). It logs
+in once; never re-run it on a failure in the same release.
+
+Done when: the report says "OLX browser login: still broken" (the flow failed at "Open SellSnap") or "works again —
+owner can set `systemBrowser` to `true`" (the flow passed). A failure at any earlier step is a broken flow, not an
+answer: say so.
+
+## 12. Commit, push, report
 
 Commit and push to `main` everything the run changed in tracked files: `version.properties`,
 `iosApp/iosApp.xcodeproj/project.pbxproj`, `store/copy/store-listing.md`, `scripts/release-notes.json`, and `docs/`

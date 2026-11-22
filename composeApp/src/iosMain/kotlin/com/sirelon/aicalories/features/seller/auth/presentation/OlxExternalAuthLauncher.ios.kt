@@ -2,13 +2,16 @@ package com.sirelon.sellsnap.features.seller.auth.presentation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAuthCallbackBridge
 import com.sirelon.sellsnap.features.seller.auth.data.OlxConfig
+import com.sirelon.sellsnap.features.seller.auth.data.OlxLoginModeRepository
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.ObjCSignatureOverride
 import kotlinx.cinterop.readValue
+import org.koin.compose.koinInject
 import platform.CoreGraphics.CGRectZero
 import platform.Foundation.NSURL
 import platform.Foundation.NSURLRequest
@@ -41,7 +44,24 @@ import platform.darwin.dispatch_get_main_queue
 import platform.darwin.dispatch_time
 
 /**
- * Runs the OLX login in an in-app WKWebView instead of an ASWebAuthenticationSession.
+ * Picks the OLX login screen from the Firestore switch `config/olx_login.systemBrowser`
+ * (OlxLoginModeRepository): an `ASWebAuthenticationSession` when on, otherwise the in-app
+ * WKWebView below. Until the switch is read, the in-app WKWebView is used.
+ */
+@Composable
+actual fun rememberOlxAuthLauncher(
+    forceReauth: Boolean,
+    onDismissed: (OlxAuthDismissReason) -> Unit,
+): (String) -> Unit {
+    val loginMode = koinInject<OlxLoginModeRepository>()
+    val systemBrowser by produceState(initialValue = false, loginMode) { value = loginMode.useSystemBrowser() }
+    val inApp = rememberInAppOlxAuthLauncher(forceReauth, onDismissed)
+    val browser = rememberSystemBrowserOlxAuthLauncher(forceReauth, onDismissed)
+    return remember(systemBrowser, inApp, browser) { if (systemBrowser) browser else inApp }
+}
+
+/**
+ * The OLX login in an in-app WKWebView instead of an ASWebAuthenticationSession.
  *
  * Why (SIR-195, `.claude/rules/olx-api.md`): a phone is sent to `m.olx.<tld>`, logs in there, and
  * OLX's page jumps straight back to `www.olx.<tld>/oauth/authorize`. Arriving within about a
@@ -55,7 +75,7 @@ import platform.darwin.dispatch_time
  * [onDismissed] fires when the seller closes the screen without finishing.
  */
 @Composable
-actual fun rememberOlxAuthLauncher(
+private fun rememberInAppOlxAuthLauncher(
     forceReauth: Boolean,
     onDismissed: (OlxAuthDismissReason) -> Unit,
 ): (String) -> Unit {

@@ -34,7 +34,11 @@
   // the same query to the app's own callback scheme, which the app already handles.
   var target = "selolxai://olx-auth/callback" + window.location.search;
   document.getElementById("open").href = target;
-  window.location.replace(target);
+  // The release check (.maestro/olx_login_canary.yaml) sends state=canary-*: stay on this page so
+  // the test can see that OLX returned a code, instead of jumping into an installed app.
+  if (!/^canary/.test(new URLSearchParams(window.location.search).get("state") || "")) {
+    window.location.replace(target);
+  }
 </script>
 </body>
 </html>

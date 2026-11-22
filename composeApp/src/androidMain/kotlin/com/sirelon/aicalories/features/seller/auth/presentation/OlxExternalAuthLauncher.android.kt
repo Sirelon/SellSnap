@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
@@ -22,9 +23,28 @@ import androidx.core.net.toUri
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAuthCallbackBridge
 import com.sirelon.sellsnap.designsystem.screens.LoadingOverlay
 import com.sirelon.sellsnap.features.seller.auth.data.OlxConfig
+import com.sirelon.sellsnap.features.seller.auth.data.OlxLoginModeRepository
+import org.koin.compose.koinInject
 
 /**
- * Runs the OLX login in an in-app WebView instead of a Custom Tab.
+ * Picks the OLX login screen from the Firestore switch `config/olx_login.systemBrowser`
+ * (OlxLoginModeRepository): a Custom Tab when on, otherwise the in-app WebView below. Until the
+ * switch is read, the in-app WebView is used.
+ */
+@Composable
+actual fun rememberOlxAuthLauncher(
+    forceReauth: Boolean,
+    onDismissed: (OlxAuthDismissReason) -> Unit,
+): (String) -> Unit {
+    val loginMode = koinInject<OlxLoginModeRepository>()
+    val systemBrowser by produceState(initialValue = false, loginMode) { value = loginMode.useSystemBrowser() }
+    val inApp = rememberInAppOlxAuthLauncher(forceReauth, onDismissed)
+    val browser = rememberSystemBrowserOlxAuthLauncher(forceReauth, onDismissed)
+    return remember(systemBrowser, inApp, browser) { if (systemBrowser) browser else inApp }
+}
+
+/**
+ * The OLX login in an in-app WebView instead of a Custom Tab.
  *
  * Why (SIR-195, `.claude/rules/olx-api.md`): a phone is sent to `m.olx.<tld>`, logs in there, and
  * OLX's page jumps straight back to `www.olx.<tld>/oauth/authorize`. Arriving within about a
@@ -39,7 +59,7 @@ import com.sirelon.sellsnap.features.seller.auth.data.OlxConfig
  * [onDismissed] fires when the seller closes the screen without finishing.
  */
 @Composable
-actual fun rememberOlxAuthLauncher(
+private fun rememberInAppOlxAuthLauncher(
     forceReauth: Boolean,
     onDismissed: (OlxAuthDismissReason) -> Unit,
 ): (String) -> Unit {

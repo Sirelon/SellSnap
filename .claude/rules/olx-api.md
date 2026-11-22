@@ -59,7 +59,9 @@ the rest is how this app shipped two wrong status meanings.
   Tab or `ASWebAuthenticationSession` cannot hold that jump, so `OlxExternalAuthLauncher.android.kt`
   and `.ios.kt` own a WebView/WKWebView: they delay OLX's jump by 5 s, retry up to twice if OLX
   still lands on its home page, and catch the HTTPS callback directly. Desktop browsers do not
-  hit this. To trace a login, make the WebView debuggable and attach to its DevTools socket
+  hit this. The browser login is kept beside it, behind the Firestore switch
+  `config/olx_login.systemBrowser` (`OlxLoginModeRepository`, default `false`): turn it on once
+  `.maestro/olx_login_canary.yaml`, run each release, passes again. To trace a login, make the WebView debuggable and attach to its DevTools socket
   (`adb shell cat /proc/net/unix | grep webview_devtools_remote`, then `adb forward`).
 - Android — `MainActivity.publishOlxCallback(intent)` reads `intent.data` and forwards the URL to `OlxAuthCallbackBridge.publishCallback(url)`. The intent filter must match the configured scheme; verify `androidApp/.../AndroidManifest.xml` whenever the scheme changes.
 - Web (Wasm) — `composeApp/src/wasmJsMain/.../main.kt` checks `window.location` for `code=` / `error=` query parameters before mounting Compose, then calls `OlxAuthCallbackBridge.publishCallback`.
