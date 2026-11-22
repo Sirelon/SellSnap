@@ -69,13 +69,36 @@ tags:
 - tapOn:
     below: "E-mail"
     optional: true
-- tapOn:
-    point: "50%,71%"
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - tapOn:
+          point: "50%,71%"
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn:
+          point: "50%,84%"
 - inputText: "${OLX_EMAIL}"
+# A loaded device can add or drop characters (seen: "6sirelon@…", "vsirelon@…"). Retype until
+# the field reads back exactly; stop before the password otherwise, so a typing slip never
+# becomes a rejected login on the account.
+- repeat:
+    while:
+      notVisible: "${OLX_EMAIL}"
+    times: 3
+    commands:
+      - eraseText: 40
+      - inputText: "${OLX_EMAIL}"
+- assertVisible: "${OLX_EMAIL}"
 - pressKey: Enter
 - extendedWaitUntil:
     visible: "Introdu parola"
     timeout: 60000
+- waitForAnimationToEnd:
+    timeout: 2000
 - inputText: "${OLX_PASSWORD}"
 - pressKey: Enter
 
@@ -89,7 +112,7 @@ tags:
     optional: true
 - waitForAnimationToEnd
 - tapOn:
-    point: "70%,93%"
+    point: "70%,92%"
 - extendedWaitUntil:
     visible: "${OLX_ACCOUNT_ID}"
     timeout: 30000
