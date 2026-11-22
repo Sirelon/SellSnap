@@ -62,13 +62,12 @@ the rest is how this app shipped two wrong status meanings.
   hit this. The browser login is kept beside it, behind the Firestore switch
   `config/olx_login.systemBrowser` (`OlxLoginModeRepository`, default `false`): turn it on once
   `.maestro/olx_login_canary.yaml`, run each release, passes again.
-- **Per market, in-app login on Android (2026-11-22):** ro connects. pt reaches OLX's
-  redirect check and stops at "The redirect URI provided is missing or does not match" until the
-  HTTPS URI is on the pt portal. bg: `/oauth/authorize` checks `login.olx.bg` silently, and that
-  page itself says the login moved to the home page, so the partner login cannot finish there; an
-  OLX fix, not an app fix. pl still serves OLX's older single-page login and was not verified. ua:
-  not tested (separate credentials). To trace a login, make the WebView debuggable and attach to its DevTools socket
-  (`adb shell cat /proc/net/unix | grep webview_devtools_remote`, then `adb forward`).
+- **Per market, in-app login on Android (2026-11-22, one OLX account):** ro, pt and pl connect.
+  pt only after the HTTPS URI was added to the pt portal; before that OLX answered "The redirect URI
+  provided is missing or does not match". pl still serves OLX's older one-page login form, and it
+  works. bg fails on OLX's side: `/oauth/authorize` checks `login.olx.bg` silently, fails, logs the
+  seller out and shows the home page, and the two retries end the same way; an OLX fix, not an app
+  fix. ua: not tested (separate credentials).
 - Android — `MainActivity.publishOlxCallback(intent)` reads `intent.data` and forwards the URL to `OlxAuthCallbackBridge.publishCallback(url)`. The intent filter must match the configured scheme; verify `androidApp/.../AndroidManifest.xml` whenever the scheme changes.
 - Web (Wasm) — `composeApp/src/wasmJsMain/.../main.kt` checks `window.location` for `code=` / `error=` query parameters before mounting Compose, then calls `OlxAuthCallbackBridge.publishCallback`.
 - The bridge is a global object (`OlxAuthCallbackBridge`); listeners are collected from both the seller landing and seller profile flows.
