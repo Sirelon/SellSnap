@@ -13,6 +13,7 @@ private fun announcement(
     userIds: Set<String> = emptySet(),
     olxUserIds: Set<Long> = emptySet(),
     priority: Int = 0,
+    platforms: Set<String> = emptySet(),
 ) = Announcement(
     id = id,
     title = "Title",
@@ -25,17 +26,20 @@ private fun announcement(
     userIds = userIds,
     olxUserIds = olxUserIds,
     priority = priority,
+    platforms = platforms,
 )
 
 private fun select(
     vararg announcements: Announcement,
     appVersion: String = "3.3",
+    platform: String = "android",
     installationId: String? = "fid-1",
     olxUserIds: Set<Long> = emptySet(),
     seenIds: Set<String> = emptySet(),
 ) = selectAnnouncement(
     announcements = announcements.toList(),
     appVersion = appVersion,
+    platform = platform,
     installationId = installationId,
     olxUserIds = olxUserIds,
     seenIds = seenIds,
@@ -80,6 +84,23 @@ class AnnouncementFilterTest {
     fun `an app version that cannot be compared hides a bounded announcement only`() {
         assertNull(select(announcement(minVersion = "3.0"), appVersion = "dev"))
         assertEquals("a", select(announcement(), appVersion = "dev"))
+    }
+
+    @Test
+    fun `no platforms is every platform`() {
+        assertEquals("a", select(announcement(), platform = "ios"))
+    }
+
+    @Test
+    fun `platforms keep only the named ones`() {
+        val androidOnly = announcement(platforms = setOf("android"))
+        assertEquals("a", select(androidOnly, platform = "android"))
+        assertNull(select(androidOnly, platform = "ios"))
+    }
+
+    @Test
+    fun `an unknown platform matches no device`() {
+        assertNull(select(announcement(platforms = setOf("andriod")), platform = "android"))
     }
 
     @Test
