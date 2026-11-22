@@ -61,8 +61,8 @@ anything above that does not apply.
 - On a checkout of `main` itself, commit and push to `main` once the change compiles. Create a
   branch or a PR there only when the owner asks.
 - Name a new branch `feature/SIR-XX-short-description` or `bugfix/SIR-XX-short-description`.
-- Merge your own PR: once it compiles, CI passes, GitHub reports it `CLEAN` and it carries no AI
-  attribution, squash-merge it (`gh pr merge N --squash`). Do not leave it open for the owner.
+- The owner merges every PR. Open it, report it, and leave it open; never run `gh pr merge`.
+- Leave the worktree and its Conductor workspace in place after the merge; the owner archives them.
 - Commit subject: one imperative sentence that says what changed, with no ticket prefix. When the
   commit implements a Linear ticket, name the ticket id in the body.
 - Compile once before pushing when Kotlin or Gradle files changed
@@ -74,8 +74,8 @@ anything above that does not apply.
 - Each item gets a Linear ticket first, so its branch and commits carry a `SIR-XX` key.
 - One agent per item, each in its own worktree and branch. The agent reviews its own diff and
   compiles before it reports.
-- The lead reads the full diff, then lands the branch through a PR as in Git above. After the
-  merge, it runs the compile check and the unit tests on `main`.
+- The lead reads the full diff, then opens a PR for the branch as in Git above. After the owner
+  merges it, the lead runs the compile check and the unit tests on `main`.
 - At most two agents run Gradle at once, and each runs its Gradle tasks one after another. Six
   building agents in parallel took the Mac's load average past 40 and killed every session.
 - A worktree's `local.properties` is a one-time copy and goes stale: copy it from the main
@@ -84,7 +84,7 @@ anything above that does not apply.
 - The lead keeps a progress log in `.claude/tmp/orchestration-<date>.md`.
 
 ## Linear ticket status after merge
-Agents merge finished work into the default branch through its PR. The owner later installs the fresh
+The owner merges finished work into the default branch through its PR, later installs the fresh
 build and checks every pending ticket in one pass.
 
 - **Human Check** — the change has behaviour a person must see on a device: UI, flows, copy,
