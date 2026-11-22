@@ -113,7 +113,7 @@ private fun OlxAuthWebViewDialog(
                         settings.domStorageEnabled = true
                         webViewClient = OlxAuthWebViewClient(
                             authorizeUrl = authorizeUrl,
-                            onWaiting = { waiting = true },
+                            onWaiting = { waiting = it },
                             onCallback = { currentOnCallback(it) },
                         )
                         loadUrl(authorizeUrl)
@@ -129,7 +129,7 @@ private const val MAX_RETRIES = 2
 
 private class OlxAuthWebViewClient(
     private val authorizeUrl: String,
-    private val onWaiting: () -> Unit,
+    private val onWaiting: (Boolean) -> Unit,
     private val onCallback: (String) -> Unit,
 ) : WebViewClient() {
     private var done = false
@@ -140,8 +140,7 @@ private class OlxAuthWebViewClient(
         if (interceptCallback(url)) return true
         // OLX's own jump back to the partner page right after the login: hold it (see KDoc above).
         if (request.isForMainFrame && !request.isRedirect && isAuthorize(url)) {
-            onWaiting()
-            view.postDelayed({ if (!done) view.loadUrl(url) }, AUTHORIZE_DELAY_MS)
+            hold(view, url)
             return true
         }
         return false
@@ -154,8 +153,18 @@ private class OlxAuthWebViewClient(
     override fun onPageFinished(view: WebView, url: String) {
         if (done || retries >= MAX_RETRIES || !isOlxHome(url)) return
         retries++
-        onWaiting()
-        view.postDelayed({ if (!done) view.loadUrl(authorizeUrl) }, AUTHORIZE_DELAY_MS)
+        hold(view, authorizeUrl)
+    }
+
+    /** Shows the spinner for [AUTHORIZE_DELAY_MS], then opens [url]; an OLX error page stays visible. */
+    private fun hold(view: WebView, url: String) {
+        onWaiting(true)
+        view.postDelayed({
+            if (!done) {
+                onWaiting(false)
+                view.loadUrl(url)
+            }
+        }, AUTHORIZE_DELAY_MS)
     }
 
     private fun isAuthorize(url: String): Boolean {

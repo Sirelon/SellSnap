@@ -61,7 +61,13 @@ the rest is how this app shipped two wrong status meanings.
   still lands on its home page, and catch the HTTPS callback directly. Desktop browsers do not
   hit this. The browser login is kept beside it, behind the Firestore switch
   `config/olx_login.systemBrowser` (`OlxLoginModeRepository`, default `false`): turn it on once
-  `.maestro/olx_login_canary.yaml`, run each release, passes again. To trace a login, make the WebView debuggable and attach to its DevTools socket
+  `.maestro/olx_login_canary.yaml`, run each release, passes again.
+- **Per market, in-app login on Android (2026-11-22):** ro connects. pt reaches OLX's
+  redirect check and stops at "The redirect URI provided is missing or does not match" until the
+  HTTPS URI is on the pt portal. bg: `/oauth/authorize` checks `login.olx.bg` silently, and that
+  page itself says the login moved to the home page, so the partner login cannot finish there; an
+  OLX fix, not an app fix. pl still serves OLX's older single-page login and was not verified. ua:
+  not tested (separate credentials). To trace a login, make the WebView debuggable and attach to its DevTools socket
   (`adb shell cat /proc/net/unix | grep webview_devtools_remote`, then `adb forward`).
 - Android — `MainActivity.publishOlxCallback(intent)` reads `intent.data` and forwards the URL to `OlxAuthCallbackBridge.publishCallback(url)`. The intent filter must match the configured scheme; verify `androidApp/.../AndroidManifest.xml` whenever the scheme changes.
 - Web (Wasm) — `composeApp/src/wasmJsMain/.../main.kt` checks `window.location` for `code=` / `error=` query parameters before mounting Compose, then calls `OlxAuthCallbackBridge.publishCallback`.
