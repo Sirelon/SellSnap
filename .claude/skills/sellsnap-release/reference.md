@@ -73,6 +73,12 @@ Play shows a new description at once. Apple accepts a description only on the un
 
 The iOS framework's release link is the peak-memory task of the build. It needs `org.gradle.jvmargs=-Xmx8g` (set in `gradle.properties`). At 4g it died with a Kotlin/Native `OutOfMemoryError` partway through the archive, after Android had already uploaded.
 
+The 4.0 archive (2026-11-23, 8.6 GB free disk, Xcode 27.2) failed twice in `Compile Kotlin Framework`: first "Gradle
+build daemon disappeared unexpectedly", then "Unable to compile C bridges" in `linkReleaseFrameworkIosArm64`. What
+worked: `./gradlew --stop`, run `./gradlew :composeApp:linkReleaseFrameworkIosArm64` alone (about 11 min), then rerun
+only `bundle exec fastlane ios beta && bundle exec fastlane ios release`. The root cause is not proven; low free disk
+is the lead suspect.
+
 ## App Store banners
 
 Banners (product-page header and search-results images) are placements on one App Store version, and a new version starts with none. `copy-banners.rb` takes the newest iOS version as target and, per locale, the newest earlier version with banners as source. It skips placements the target already has. A draft (`PREPARE_FOR_SUBMISSION`) accepts them at once and they go live with that release. A version in review rejects placements with 409 `waitingForReview`.
