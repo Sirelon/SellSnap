@@ -2,10 +2,24 @@
   "active": true,
   "content": {
     "title": {
-      "en": "Update SellSnap"
+      "en": "Update SellSnap",
+      "uk": "Оновіть SellSnap",
+      "ru": "Оновіть SellSnap",
+      "bg": "Обнови SellSnap",
+      "kk": "SellSnap-ты жаңарт",
+      "pl": "Zaktualizuj SellSnap",
+      "pt": "Atualize o SellSnap",
+      "ro": "Actualizează SellSnap"
     },
     "body": {
-      "en": "This version of SellSnap no longer works. Install the update to keep creating and publishing listings."
+      "en": "This version of SellSnap no longer works. Install the update to keep creating and publishing listings.",
+      "uk": "Ця версія SellSnap більше не працює. Встановіть оновлення, щоб і далі створювати й публікувати оголошення.",
+      "ru": "Ця версія SellSnap більше не працює. Встановіть оновлення, щоб і далі створювати й публікувати оголошення.",
+      "bg": "Тази версия на SellSnap вече не работи. Инсталирай актуализацията, за да продължиш да създаваш и публикуваш обяви.",
+      "kk": "SellSnap-тың бұл нұсқасы енді жұмыс істемейді. Хабарландыруларды жасап, жариялай беру үшін жаңартуды орнат.",
+      "pl": "Ta wersja SellSnap już nie działa. Zainstaluj aktualizację, aby dalej tworzyć i publikować ogłoszenia.",
+      "pt": "Esta versão do SellSnap já não funciona. Instale a atualização para continuar a criar e publicar anúncios.",
+      "ro": "Această versiune SellSnap nu mai funcționează. Instalează actualizarea ca să poți crea și publica în continuare anunțuri."
     },
     "link": "store"
   },
@@ -13,7 +27,9 @@
     "dismissible": false,
     "showMode": "everyLaunch",
     "maxVersion": "LAST_BROKEN_VERSION",
-    "platforms": ["PLATFORM"],
+    "platforms": [
+      "PLATFORM"
+    ],
     "priority": 100
   }
 }
