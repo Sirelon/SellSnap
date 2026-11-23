@@ -3,18 +3,19 @@ name: sellsnap-release
 description: >-
   Release SellSnap end to end in one run: version bump, store release notes in every language, Play internal +
   TestFlight upload, App Store draft, in-app What's New, and website and store descriptions when a capability is
-  complete. Use when the user says "release" or "ship version X.Y". Submitting to App Store review and promoting
-  to Play production stay manual.
+  complete, then App Store review submission with automatic release. Use when the user says "release" or "ship
+  version X.Y". Promoting to Play production stays manual.
 ---
 
 # SellSnap release
 
-One request runs steps 1 to 11 in one go. The owner pre-approved every decision inside them. Decide each one
+One request runs steps 1 to 12 in one go. The owner pre-approved every decision inside them. Decide each one
 yourself, publish it, and report once at the end. Stop to ask only when a step fails in a way you cannot fix.
 
-The run ends before production: it uploads to Play internal testing and TestFlight and prepares the App Store
-draft (`fastlane ios release`, which never submits). Submitting for App Store review and promoting on Play
-(`fastlane android release`) are the owner's two manual steps. Background for each step: [reference.md](reference.md).
+The run uploads to Play internal testing and TestFlight, prepares the App Store draft (`fastlane ios release`,
+which never submits), and submits that draft for review as its last action (step 12). The draft's release type is
+`AFTER_APPROVAL`, so Apple publishes it on approval. Promoting on Play (`fastlane android release`) is the owner's
+one manual step. Background for each step: [reference.md](reference.md).
 
 ## 1. Pull the latest
 
@@ -207,8 +208,28 @@ Commit and push to `main` everything the run changed in tracked files: `version.
 `iosApp/iosApp.xcodeproj/project.pbxproj`, `store/copy/store-listing.md`, `scripts/release-notes.json`, and `docs/`
 when step 9 ran (GitHub Pages serves `docs/` from `main`). The release-metadata files are gitignored.
 
+Then submit the App Store draft for review. It comes last because a version in review rejects banner placements
+(step 7) and `fastlane ios release` (step 9):
+
+```bash
+bundle exec ruby -r spaceship -e '
+Spaceship::ConnectAPI.token = Spaceship::ConnectAPI::Token.create(key_id: "G5TTXS7GV3",
+  issuer_id: "8873b38c-775e-4a3e-baf5-4e2bada765a8", filepath: File.expand_path("fastlane/AuthKey_G5TTXS7GV3.p8"))
+app = Spaceship::ConnectAPI::App.find("com.sirelon.sellsnap")
+v = app.get_edit_app_store_version(includes: "build")
+abort "release_type #{v.release_type}" unless v.release_type == "AFTER_APPROVAL"
+abort "build #{v.build&.version}" unless v.build&.version.to_s == File.read("version.properties")[/VERSION_CODE=(\d+)/, 1]
+sub = app.create_review_submission(platform: "IOS")
+sub.add_app_store_version_to_review_items(app_store_version_id: v.id)
+sub.submit_for_review
+'
+```
+
+Skip it when step 6 printed the in-review warning: the earlier version is still in review.
+
 Report once: the version shipped, the English store notes (other languages live in `store-listing.md`), the surfaces
-updated, and what was verified live. End with the owner's two steps: submit the App Store draft for review, and
+updated, what was verified live, and the App Store state (`WAITING_FOR_REVIEW`). End with the owner's one step:
 promote on Play.
 
-Done when: tracked files are clean in `git status` and `main` is pushed.
+Done when: tracked files are clean in `git status`, `main` is pushed, and the new App Store version is
+`WAITING_FOR_REVIEW`.
