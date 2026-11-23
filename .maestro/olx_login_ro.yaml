@@ -1,0 +1,118 @@
+appId: com.sirelon.sellsnap
+name: OLX login connects (olx.ro)
+tags:
+  - olx-login
+---
+# End-to-end OLX login on olx.ro from a clean install. Passes only when SellSnap's Profile shows
+# the connected OLX account ID (OLX_ACCOUNT_ID). Works for both login screens: the in-app web view
+# and the Chrome Custom Tab (config/olx_login.systemBrowser); OLX's page is the same in both.
+#   maestro test -e OLX_EMAIL=... -e OLX_PASSWORD=... -e OLX_ACCOUNT_ID=... .maestro/olx_login_ro.yaml
+# One real login per run. OLX locks accounts after repeated failures: never loop it unattended.
+
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible: "Next.*"
+    timeout: 90000
+- repeat:
+    while:
+      notVisible: "Continue with OLX"
+    times: 6
+    commands:
+      - tapOn:
+          point: "50%,92%"
+      - waitForAnimationToEnd
+- tapOn: "Continue with OLX"
+- extendedWaitUntil:
+    visible:
+      id: "country_row_pt"
+    timeout: 15000
+- tapOn:
+    id: "country_row_ro"
+- tapOn:
+    id: "country_picker_continue_button"
+
+# Chrome's first-run screens (Custom Tab mode only, after Chrome's data was cleared).
+- tapOn:
+    text: "(?i)^(stay signed out|use without an account|continue as guest)$"
+    optional: true
+- tapOn:
+    text: "(?i)^(no thanks|no, thanks|got it)$"
+    optional: true
+
+# OLX: cookie banner, then the two-step login on auth.olx.ro.
+# The cookie banner can cover the form, and it can render before or after it: wait for either,
+# then clear the banner. A loaded emulator can turn a tap into a long press, so retry.
+- extendedWaitUntil:
+    visible: "(Acceptă toate|E-mail)"
+    timeout: 90000
+- extendedWaitUntil:
+    visible: "Acceptă toate"
+    timeout: 45000
+    optional: true
+- repeat:
+    while:
+      visible: "Acceptă toate"
+    times: 4
+    commands:
+      - tapOn:
+          text: "Acceptă toate"
+          optional: true
+      - waitForAnimationToEnd:
+          timeout: 5000
+# Maestro sometimes cannot read the web page inside the app's login window; fall back to the
+# field's position (in-app layout: the e-mail field sits at about 71% of the screen height).
+- extendedWaitUntil:
+    visible: "E-mail"
+    timeout: 30000
+    optional: true
+- tapOn:
+    below: "E-mail"
+    optional: true
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - tapOn:
+          point: "50%,71%"
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn:
+          point: "50%,84%"
+- inputText: "${OLX_EMAIL}"
+# A loaded device can add or drop characters (seen: "6sirelon@…", "vsirelon@…"). Retype until
+# the field reads back exactly; stop before the password otherwise, so a typing slip never
+# becomes a rejected login on the account.
+- repeat:
+    while:
+      notVisible: "${OLX_EMAIL}"
+    times: 3
+    commands:
+      - eraseText: 40
+      - inputText: "${OLX_EMAIL}"
+- assertVisible: "${OLX_EMAIL}"
+- pressKey: Enter
+- extendedWaitUntil:
+    visible: "Introdu parola"
+    timeout: 60000
+- waitForAnimationToEnd:
+    timeout: 2000
+- inputText: "${OLX_PASSWORD}"
+- pressKey: Enter
+
+# Back in SellSnap: dismiss any launch announcement, open Profile, check the account.
+# Home may open under a launch announcement dialog, which hides the home screen from Maestro.
+- extendedWaitUntil:
+    visible: "(OK|New listing)"
+    timeout: 120000
+- tapOn:
+    text: "OK"
+    optional: true
+- waitForAnimationToEnd
+- tapOn:
+    point: "70%,92%"
+- extendedWaitUntil:
+    visible: "${OLX_ACCOUNT_ID}"
+    timeout: 30000
