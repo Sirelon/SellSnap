@@ -14,3 +14,6 @@ paths:
   2026-10-05; those builds predate this feature and cannot be reached). Host images in Firebase Storage: the Android emulator's DNS fails on
   some third-party hosts (`fastly.picsum.photos` → `UnknownHostException`) while Google hosts
   resolve, and the dialog silently drops an image that fails to load.
+
+`rules.platforms` (`android`, `ios`, `web`, `desktop`; absent or empty = every platform) limits
+a document to those platforms. To force an update, use the `force-update` skill.

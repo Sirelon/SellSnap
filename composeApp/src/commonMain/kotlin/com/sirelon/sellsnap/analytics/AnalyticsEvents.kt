@@ -269,6 +269,21 @@ object AnalyticsEvents {
     const val NOTIFICATION_PROMPT_ANSWERED = "notification_prompt_answered"
 
     /**
+     * A Firestore announcement opened as the launch dialog. `announcement_id` is the Firestore
+     * document id, which the owner names. `gate` is the Boolean "the store or link button is the
+     * only exit" (non-dismissible with a link), which is how a version is forced to update:
+     * gate events per day count the sellers still on a blocked version.
+     */
+    const val ANNOUNCEMENT_SHOWN = "announcement_shown"
+
+    /**
+     * The announcement's link button was tapped. `announcement_id` as in [ANNOUNCEMENT_SHOWN];
+     * `link_type` is `store` (this platform's store page) or `url` (an https link). Against
+     * [ANNOUNCEMENT_SHOWN] with `gate` true, it says how many blocked sellers went to update.
+     */
+    const val ANNOUNCEMENT_LINK_TAPPED = "announcement_link_tapped"
+
+    /**
      * The seller was shown an error. Logged only through `reportShownError`, which also records the
      * Crashlytics non-fatal. `screen` is a snake_case screen code (`preview_ad`, `generate_ad`,
      * `my_adverts`, ...) and `reason` a stable code, optionally `kind:detail` - an OLX validation

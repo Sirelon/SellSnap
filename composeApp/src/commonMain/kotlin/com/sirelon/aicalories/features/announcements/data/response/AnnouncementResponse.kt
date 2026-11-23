@@ -41,4 +41,7 @@ internal class AnnouncementRulesResponse(
     @SerialName("userIds") val userIds: List<String>? = null,
     @SerialName("olxUserIds") val olxUserIds: List<Long>? = null,
     @SerialName("priority") val priority: Int? = null,
+    // "android", "ios", "web", "desktop". Absent or empty means every platform. A store gate
+    // names one platform, because each store approves a new build on its own day.
+    @SerialName("platforms") val platforms: List<String>? = null,
 )

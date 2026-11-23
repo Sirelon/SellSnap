@@ -18,6 +18,8 @@ data class Announcement(
     val userIds: Set<String>,
     val olxUserIds: Set<Long>,
     val priority: Int,
+    /** Lowercase `android`, `ios`, `web` or `desktop`, plus any unknown value the document holds; empty means every platform. */
+    val platforms: Set<String> = emptySet(),
 ) {
     enum class ShowMode {
         /** Shown on one launch, then never again on this device. */
