@@ -1,5 +1,84 @@
 [
   {
+    "version": "4.0",
+    "date": "2026-11-23",
+    "active": true,
+    "changes": [
+      {
+        "id": "olx-login-in-app",
+        "icon": "fix",
+        "title": {
+          "en": "OLX login works again",
+          "uk": "Вхід в OLX знову працює",
+          "ru": "Вхід в OLX знову працює",
+          "bg": "Входът в OLX отново работи",
+          "kk": "OLX-ке кіру қайта жұмыс істейді",
+          "pl": "Logowanie do OLX znów działa",
+          "pt": "O login no OLX volta a funcionar",
+          "ro": "Autentificarea în OLX merge din nou"
+        },
+        "summary": {
+          "en": "Log in to OLX right inside the app, on any phone",
+          "uk": "Входьте в OLX прямо в застосунку, на будь-якому телефоні",
+          "ru": "Входьте в OLX прямо в застосунку, на будь-якому телефоні",
+          "bg": "Влизайте в OLX направо в приложението, на всеки телефон",
+          "kk": "OLX-ке кез келген телефонда тікелей қолданба ішінде кіріңіз",
+          "pl": "Logujesz się do OLX bezpośrednio w aplikacji, na każdym telefonie",
+          "pt": "Inicie sessão no OLX dentro da app, em qualquer telemóvel",
+          "ro": "Te autentifici în OLX direct în aplicație, pe orice telefon"
+        }
+      },
+      {
+        "id": "sets-one-listing",
+        "icon": "magic",
+        "title": {
+          "en": "Sets become one listing",
+          "uk": "Комплект — одне оголошення",
+          "ru": "Комплект — одне оголошення",
+          "bg": "Комплектът е една обява",
+          "kk": "Жиынтық — бір хабарландыру",
+          "pl": "Zestaw to jedno ogłoszenie",
+          "pt": "Um conjunto, um anúncio",
+          "ro": "Un set, un singur anunț"
+        },
+        "summary": {
+          "en": "A set, a pair or an item with accessories becomes one listing instead of a request to remove photos",
+          "uk": "Комплект, пара чи річ з аксесуарами стають одним оголошенням, а не проханням прибрати фото",
+          "ru": "Комплект, пара чи річ з аксесуарами стають одним оголошенням, а не проханням прибрати фото",
+          "bg": "Комплект, чифт или вещ с аксесоари стават една обява, вместо молба да махнете снимки",
+          "kk": "Жиынтық, жұп немесе аксессуарлары бар зат фотоны алып тастау өтінішінің орнына бір хабарландыру болады",
+          "pl": "Zestaw, para lub rzecz z akcesoriami to jedno ogłoszenie, a nie prośba o usunięcie zdjęć",
+          "pt": "Um conjunto, um par ou um artigo com acessórios passa a ser um só anúncio, sem pedido para remover fotos",
+          "ro": "Un set, o pereche sau un obiect cu accesorii devine un singur anunț, fără cererea de a șterge fotografii"
+        }
+      },
+      {
+        "id": "smoother-price-input",
+        "icon": "improvement",
+        "title": {
+          "en": "Smoother price editing",
+          "uk": "Зручніше редагування ціни",
+          "ru": "Зручніше редагування ціни",
+          "bg": "По-удобна редакция на цената",
+          "kk": "Бағаны ыңғайлы өңдеу",
+          "pl": "Wygodniejsza edycja ceny",
+          "pt": "Edição de preço mais fácil",
+          "ro": "Editare mai ușoară a prețului"
+        },
+        "summary": {
+          "en": "The cursor stays where you type, the slider stops on round numbers, and scrolling hides the keyboard",
+          "uk": "Курсор лишається там, де ви пишете, повзунок зупиняється на круглих сумах, а прокручування ховає клавіатуру",
+          "ru": "Курсор лишається там, де ви пишете, повзунок зупиняється на круглих сумах, а прокручування ховає клавіатуру",
+          "bg": "Курсорът остава там, където пишете, плъзгачът спира на кръгли суми, а превъртането скрива клавиатурата",
+          "kk": "Курсор сіз жазған жерде қалады, жүгірткі дөңгелек сомаларға тоқтайды, ал айналдыру пернетақтаны жасырады",
+          "pl": "Kursor zostaje tam, gdzie piszesz, suwak zatrzymuje się na okrągłych kwotach, a przewijanie chowa klawiaturę",
+          "pt": "O cursor fica onde escreve, o seletor para em valores redondos e deslizar esconde o teclado",
+          "ro": "Cursorul rămâne unde scrii, glisorul se oprește la sume rotunde, iar derularea ascunde tastatura"
+        }
+      }
+    ]
+  },
+  {
     "version": "3.10",
     "date": "2026-11-12",
     "active": true,
