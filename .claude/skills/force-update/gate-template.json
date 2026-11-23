@@ -1,0 +1,19 @@
+{
+  "active": true,
+  "content": {
+    "title": {
+      "en": "Update SellSnap"
+    },
+    "body": {
+      "en": "This version of SellSnap no longer works. Install the update to keep creating and publishing listings."
+    },
+    "link": "store"
+  },
+  "rules": {
+    "dismissible": false,
+    "showMode": "everyLaunch",
+    "maxVersion": "LAST_BROKEN_VERSION",
+    "platforms": ["PLATFORM"],
+    "priority": 100
+  }
+}
