@@ -22,10 +22,10 @@ class OlxTokenStore internal constructor(
     constructor(json: Json) : this(createKeyValueStore("olx_tokens"), json)
 
     suspend fun read(): OlxTokens? =
-        storage.getString(KEY)?.let { json.decodeFromString<OlxTokens>(it) }
+        storage.getString(KEY)?.let { json.decodeFromString<OlxTokensRecord>(it).toDomain() }
 
     suspend fun write(tokens: OlxTokens) =
-        storage.putString(KEY, json.encodeToString<OlxTokens>(tokens))
+        storage.putString(KEY, json.encodeToString<OlxTokensRecord>(tokens.toRecord()))
 
     suspend fun clear() = storage.remove(KEY)
 

@@ -28,6 +28,7 @@ internal data class OlxAccountRecord(
     val localIndex: Int,
     val countryCode: String,
     val olxUserId: Long? = null,
+    @Serializable(with = OlxTokensRecordSerializer::class)
     val tokens: OlxTokens,
     val profile: OlxProfileSnapshot? = null,
     val lastUsedAtEpochSeconds: Long,

@@ -1,5 +1,6 @@
 package com.sirelon.sellsnap.features.seller.auth.data
 
+import com.sirelon.sellsnap.features.seller.auth.data.response.OlxTokenResponse
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxApiError
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxApiException
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxAuthCallback
@@ -224,7 +225,7 @@ class OlxAuthRepository internal constructor(
             throw errorParser.parse(response.status, response.bodyAsText())
         }
 
-        return response.body<TokenResponse>().toDomain(currentEpochSeconds())
+        return response.body<OlxTokenResponse>().toDomain(currentEpochSeconds())
     }
 
     private fun currentEpochSeconds(): Long = Clock.System.now().toEpochMilliseconds() / 1000
@@ -238,22 +239,4 @@ class OlxAuthRepository internal constructor(
         @SerialName("code") val code: String? = null,
         @SerialName("redirect_uri") val redirectUri: String? = null,
     )
-
-    @Serializable
-    private class TokenResponse(
-        @SerialName("access_token") val accessToken: String,
-        @SerialName("refresh_token") val refreshToken: String? = null,
-        @SerialName("expires_in") val expiresInSeconds: Long,
-        @SerialName("token_type") val tokenType: String,
-        @SerialName("scope") val scope: String,
-    ) {
-        fun toDomain(issuedAtEpochSeconds: Long): OlxTokens = OlxTokens(
-            accessToken = accessToken,
-            refreshToken = refreshToken,
-            expiresInSeconds = expiresInSeconds,
-            tokenType = tokenType,
-            scope = scope,
-            issuedAtEpochSeconds = issuedAtEpochSeconds,
-        )
-    }
 }
