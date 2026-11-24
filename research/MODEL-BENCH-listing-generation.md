@@ -7,7 +7,8 @@ Rerun with the `model-bench` skill (`.claude/skills/model-bench/SKILL.md`).
 
 ## Recommendation
 
-**gpt-6.1-terra, reasoning effort `none`, image detail `high`, plus one prompt paragraph.**
+**gpt-6.1-terra, reasoning effort `none`, image detail `high`, plus one prompt paragraph.** This is
+the production setup since SIR-200 (prompt v8), for the listing, the attribute fill and the polish.
 
 | Setting | Value | Why |
 | --- | --- | --- |
@@ -17,12 +18,16 @@ Rerun with the `model-bench` skill (`.claude/skills/model-bench/SKILL.md`).
 | `detail` | `high` (unchanged) | a 1280 px photo already fits inside `high`; `original` and `auto` cannot add pixels (Inferred: from the gpt-5.6-terra row of the [images guide](https://developers.openai.com/api/docs/guides/images-vision); the guide has no gpt-6.1-terra row). `low` shrinks the photo to 512 px, where the part-number labels (#3, #4, #11) are the likely loss; not run |
 | `maxOutputTokens` | 1000 (unchanged) | at effort `none` the answer is about 92 output tokens and 0 reasoning tokens |
 
-Prompt paragraph, appended to `adGenerationInstructions` (bump `AD_GENERATION_PROMPT_VERSION`):
+Prompt paragraph, at the end of `adGenerationInstructions` (prompt v8):
 
 ```
-Names printed on the item: read every legible word on the item itself, on its label or tag, and on the box or packaging shown with it. A brand, model name or part number printed there is a visible fact: put it in the title exactly as printed. Reading a name off the box does not make the box part of the offer.
-Exact model: name it only when it is printed, or when a distinctive design visible in the photos fits one model and no other (for a phone, the camera layout together with the body colour). Many products have close lookalikes, and a general resemblance is not enough: when more than one model fits what is visible, give the brand or product line and stop there. A wrong model is worse than no model.
+Names printed on the item: read every legible word on the item itself, on its label or tag, and on the box or packaging shown with it. A brand, model name or part number printed there is a visible fact: put it in the title, spelled as printed but in the brand's usual capitalisation (Nike, not NIKE); part numbers stay exactly as printed. Reading a name off the box does not make the box part of the offer.
+Exact model: name it only when it is printed, or when a distinctive design visible in the photos fits one model and no other (for a phone, the camera layout together with the body colour). Many products have close lookalikes, and a general resemblance is not enough: when more than one model fits what is visible, give the brand or product line and stop there. A wrong model is worse than no model. Never fill the model's place in the title with a feature ("with three cameras", "with a strap"): item type, brand and colour are enough.
 ```
+
+The capitalisation clause and the last sentence come from the v8 run below: "exactly as printed"
+copied logos in capitals ("Кросівки NIKE", "GUESS"), against the prompt's no-ALL-CAPS rule, and
+the phone title read "Apple iPhone з потрійною камерою".
 
 It makes terra name the brand printed on the box (Guess, #2) in both runs, with no wrong model
 anywhere. It does not make terra name a model it must recognise by design (iPhone 11 Pro, Air Max
@@ -58,6 +63,13 @@ earlier calls, so compare it only within one model.
 | terra-ladder-specific-b (repeat) | 0 | 2/2 | 0 | 10 | 19/25 | 1/5 | 0.00063 | 3.9 |
 | terra-ladder-specific-high | **1** (#43) | 2/2 | 0 | 12 | 21/25 | 2/5 | 0.00245 | 8.4 |
 | sol-low (gpt-6.2-sol) | 0 | 2/2 | 0 | 12 | 13/25 | 2/5 | 0.00569 | 3.9 |
+
+Production prompt v8 (2026-11-25, `terra-none` reading the prompt from `OpenAIClient.kt`, 45
+calls, $0.037): 0 wrong items, refusals 2/2, 0 wrong details, bonus 10/17, 16/25 on modal
+price, 2/5 within ±10%, median 6.4 s (Inferred: slower API that hour; the same config ran at
+3.7 s an hour earlier). Titles: "Кросівки Nike", "Ботильйони Guess", "Смартфон Apple iPhone
+темно-зелений". A chained spot check on #1, #2 and #11 (listing, attribute fill, polish "make it
+shorter and add Nova Poshta delivery") filled brand, size and colour correctly and kept every fact.
 
 - **terra-ladder-specific-high** called the hookah kaloud (#43) "a round metal stand with a
   handle", a wrong item by the owner's rule. It is the only terra config to name iPhone 11 Pro,

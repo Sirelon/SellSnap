@@ -14,7 +14,13 @@ const OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses";
  * Mirrors AD_GENERATION_MODEL_ID (OpenAIClient.kt) and REPLY_SUGGESTIONS_MODEL_ID
  * (ReplySuggestionsPrompt.kt). Anything else is a 400, not a bill.
  */
-const ALLOWED_MODELS = new Set(["gpt-4.1", "gpt-5.6-luna"]);
+const ALLOWED_MODELS = new Set(["gpt-6.1-terra", "gpt-5.6-luna"]);
+/**
+ * Models that installed app versions still request, and the model that serves them instead.
+ * OpenAI shuts gpt-4.1 down on 2027-01-14 (https://developers.openai.com/api/docs/deprecations);
+ * app versions before SIR-200 send it with `temperature`, which reasoning models refuse.
+ */
+const REPLACED_MODELS: Record<string, string> = { "gpt-4.1": "gpt-6.1-terra" };
 const APP_CHECK_HEADER = "x-firebase-appcheck";
 /** Enough for openai-kotlin to keep its 429 back-off and for OpenAI support to trace a call. */
 const FORWARDED_RESPONSE_HEADERS = ["content-type", "retry-after", "x-request-id", "openai-processing-ms"];
@@ -35,7 +41,7 @@ function usageOf(responseBody: string): unknown {
 /**
  * Thin proxy in front of OpenAI's Responses API. The app never holds the key: it sends a Firebase
  * App Check token instead (composeApp/.../network/OpenAIEndpoint.kt), this function verifies the
- * token, pins the model and forwards the body unchanged. Status and body go back untouched, so
+ * token, pins the model and forwards the body; only a replaced model (REPLACED_MODELS) is rewritten. Status and body go back untouched, so
  * the client's retry on 429 (openai-kotlin RetryStrategy) keeps working.
  */
 export const openai = onRequest(
@@ -77,6 +83,13 @@ export const openai = onRequest(
       res.status(400).json(openAiError("Body must be a JSON object", "invalid_body"));
       return;
     }
+    const requestedModel = body.model;
+    const replacement = REPLACED_MODELS[requestedModel];
+    if (replacement) {
+      body.model = replacement;
+      delete body.temperature;
+      body.reasoning ??= { effort: "none" };
+    }
     if (!ALLOWED_MODELS.has(body.model)) {
       res.status(400).json(openAiError(`Model not allowed: ${body.model}`, "model_not_allowed"));
       return;
@@ -104,6 +117,7 @@ export const openai = onRequest(
       appId,
       status: upstream.status,
       model: body.model,
+      requestedModel,
       durationMs: Date.now() - startedAt,
       usage: usageOf(responseBody),
     });

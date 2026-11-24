@@ -34,17 +34,24 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
 /**
- * Listing-generation model. Before changing it, its reasoning effort, the image detail or the
- * prompt, rerun the model bench: `scripts/model-bench/`, results and the recommended replacement in
- * `research/MODEL-BENCH-listing-generation.md`.
+ * Listing-generation model, used for the listing, its attribute fill and the polish. Chosen by the
+ * model bench (SIR-199): `scripts/model-bench/`, results in `research/MODEL-BENCH-listing-generation.md`.
+ * Rerun the bench before changing it, its reasoning effort, the image detail or the prompt. The
+ * proxy's `ALLOWED_MODELS` (`functions/src/index.ts`) must list it.
  */
-const val AD_GENERATION_MODEL_ID = "gpt-4.1"
+const val AD_GENERATION_MODEL_ID = "gpt-6.1-terra"
 
 // Bump whenever adGenerationInstructions changes, so ad-generation-log records stay attributable
 // to the exact prompt that produced them.
-const val AD_GENERATION_PROMPT_VERSION = "v7"
+const val AD_GENERATION_PROMPT_VERSION = "v8"
 
 private val DEFAULT_MODEL = ModelId(AD_GENERATION_MODEL_ID)
+
+/**
+ * A reasoning model refuses `temperature`. Effort "none" scored as well as "low" and "medium" in the
+ * model bench and answers fastest; "high" named one item wrong.
+ */
+private val DEFAULT_REASONING = ResponseReasoning(effort = Effort("none"))
 private const val DEFAULT_IMAGE_DETAIL = "high"
 private val NUMBER_PATTERN = Regex("""-?\d+(?:\.\d+)?""")
 
@@ -101,6 +108,9 @@ Return ONLY valid JSON. A listing has this exact shape:
 A refusal has this exact shape:
   {"unrecognized":"string"}
 The response must start with `{` and end with `}`.
+
+Names printed on the item: read every legible word on the item itself, on its label or tag, and on the box or packaging shown with it. A brand, model name or part number printed there is a visible fact: put it in the title, spelled as printed but in the brand's usual capitalisation (Nike, not NIKE); part numbers stay exactly as printed. Reading a name off the box does not make the box part of the offer.
+Exact model: name it only when it is printed, or when a distinctive design visible in the photos fits one model and no other (for a phone, the camera layout together with the body colour). Many products have close lookalikes, and a general resemblance is not enough: when more than one model fits what is visible, give the brand or product line and stop there. A wrong model is worse than no model. Never fill the model's place in the title with a feature ("with three cameras", "with a strap"): item type, brand and colour are enough.
 """
 
 internal fun listingPolishInstructions(country: OlxCountry): String = """
@@ -249,8 +259,7 @@ class OpenAIClient(
                 // Continues the same thread as the listing turn so the model still "remembers" the images and draft.
                 previousResponseId = previousResponseId,
                 instructions = ATTRIBUTE_FILL_INSTRUCTIONS.trimIndent(),
-                // Form filling is mechanical — we want stable, non-creative picks.
-                temperature = 0.0,
+                reasoning = DEFAULT_REASONING,
                 maxOutputTokens = attributeOutputTokenLimit(attributes.size),
                 store = false,
                 input = ResponseInput(
@@ -295,10 +304,7 @@ class OpenAIClient(
                     model = model,
                     previousResponseId = chainedTo,
                     instructions = adGenerationInstructions(country).trimIndent(),
-                    // Low so the same item gets the same price from one generation to the next: at 0.7
-                    // prices for one item drifted up to 46% apart (SIR-116). The opener rule in the
-                    // instructions now carries the variety in voice that the higher temperature gave.
-                    temperature = 0.3,
+                    reasoning = DEFAULT_REASONING,
                     // Polish and Ukrainian tokenize at roughly twice the English rate, so a six-sentence
                     // description plus title and three prices needs this much headroom; a 600 cap was hit in production.
                     maxOutputTokens = 1000,
@@ -384,8 +390,7 @@ class OpenAIClient(
                     } else {
                         listingPolishInstructions(country).trimIndent()
                     },
-                    // Same as the listing turn: low, so the same item gets the same price (SIR-116).
-                    temperature = 0.3,
+                    reasoning = DEFAULT_REASONING,
                     // The description field holds up to 9000 characters; Polish and Ukrainian run at
                     // roughly two characters per token.
                     maxOutputTokens = 4500,
