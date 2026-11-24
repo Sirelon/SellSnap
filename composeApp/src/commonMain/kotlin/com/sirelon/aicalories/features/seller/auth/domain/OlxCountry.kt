@@ -54,7 +54,7 @@ data class OlxCountry(
             "pl" -> "pl-PL"
             "ua" -> "uk-UA"
             "bg" -> "bg-BG"
-            "kz" -> "ru-KZ"
+            "kz" -> "kk-KZ"
             else -> null
         }
 
@@ -90,10 +90,9 @@ data class OlxCountry(
         val UA = OlxCountry("ua", "🇺🇦", "Ukraine",    "Україна",    "olx.ua",  clientId = "203527",  clientSecret = "F9pH3xXHLaagb7rUam8EfSXIICGAtgNGHLJPoQhOtP365FJK",  language = "Ukrainian",  currencyCode = "UAH")
         // Bulgaria uses the euro since 2026-01-01; OLX.bg lists EUR as its default currency.
         val BG = OlxCountry("bg", "🇧🇬", "Bulgaria",   "България",   "olx.bg",  clientId = "200500",  clientSecret = "BRldA1nMMFJsT4taqqEW9htNkPNcECt9FQzmJ984mfzIj8bP",  language = "Bulgarian",  currencyCode = "EUR")
-        // Russian is the language of the listing the seller publishes on OLX.kz: OLX.kz names its
-        // categories in Russian (`GET categories`, 2026-11-24). SellSnap's own screens stay in
-        // Kazakh or the device language; see AGENTS.md, Localization.
-        val KZ = OlxCountry("kz", "🇰🇿", "Kazakhstan", "Қазақстан",  "olx.kz",  clientId = "200659",  clientSecret = "o058wfQWTI3Cc9yQyInaxF1ZmOEkGsIwevxYgPdNholinZDd",  language = "Russian",    currencyCode = "KZT")
+        // Listings for OLX.kz are written in Kazakh, by the owner's decision (SIR-197, 2026-11-24),
+        // although OLX.kz names its categories in Russian (`GET categories`, 2026-11-24).
+        val KZ = OlxCountry("kz", "🇰🇿", "Kazakhstan", "Қазақстан",  "olx.kz",  clientId = "200659",  clientSecret = "o058wfQWTI3Cc9yQyInaxF1ZmOEkGsIwevxYgPdNholinZDd",  language = "Kazakh",     currencyCode = "KZT")
 
         val all = listOf(PT, RO, PL, UA, BG, KZ).filter { it.clientId.isNotEmpty() && it.clientSecret.isNotEmpty() }
 
