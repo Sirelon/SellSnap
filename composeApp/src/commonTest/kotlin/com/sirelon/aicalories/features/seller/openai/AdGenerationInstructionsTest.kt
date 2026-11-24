@@ -12,8 +12,8 @@ import kotlin.test.assertTrue
 class AdGenerationInstructionsTest {
 
     @Test
-    fun promptVersionIsV7() {
-        assertEquals("v7", AD_GENERATION_PROMPT_VERSION)
+    fun promptVersionIsV8() {
+        assertEquals("v8", AD_GENERATION_PROMPT_VERSION)
     }
 
     @Test
@@ -35,6 +35,9 @@ class AdGenerationInstructionsTest {
             // A set, a lot, or one photo is never refused as different items.
             "Things sold together are one listing", "A single photo is never `different_items`",
             "a note that says the items are sold together",
+            // Printed names reach the title in normal case; no guessed model, no feature in its place.
+            "Names printed on the item", "Nike, not NIKE", "A wrong model is worse than no model",
+            "Never fill the model's place in the title with a feature",
             // Earlier guardrails stay.
             "Do not invent brand, size, material, defects, or condition.",
             "Do not infer the season of clothing",
