@@ -1,16 +1,14 @@
 package com.sirelon.sellsnap.features.seller.auth.domain
 
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
-@Serializable
 data class OlxTokens(
-    @SerialName("access_token") val accessToken: String,
-    @SerialName("refresh_token") val refreshToken: String? = null,
-    @SerialName("expires_in") val expiresInSeconds: Long,
-    @SerialName("token_type") val tokenType: String,
-    @SerialName("scope") val scope: String,
-    @SerialName("issued_at_epoch_seconds") val issuedAtEpochSeconds: Long,
+    val accessToken: String,
+    val refreshToken: String? = null,
+    val expiresInSeconds: Long,
+    val tokenType: String,
+    val scope: String,
+    val issuedAtEpochSeconds: Long,
 ) {
     val expiresAtEpochSeconds: Long
         get() = issuedAtEpochSeconds + expiresInSeconds
