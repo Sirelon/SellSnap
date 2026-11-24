@@ -2,24 +2,24 @@
   "active": true,
   "content": {
     "title": {
-      "en": "We fixed the login",
-      "uk": "Ми полагодили вхід",
-      "pl": "Naprawiliśmy logowanie",
-      "pt": "Corrigimos o início de sessão",
-      "ro": "Am reparat autentificarea",
-      "bg": "Оправихме входа",
-      "kk": "Кіруді түзеттік",
-      "ru": "Ми полагодили вхід"
+      "en": "Login works again",
+      "uk": "Вхід знову працює",
+      "pl": "Logowanie znowu działa",
+      "pt": "O início de sessão voltou a funcionar",
+      "ro": "Autentificarea funcționează din nou",
+      "bg": "Входът работи отново",
+      "kk": "Кіру қайта жұмыс істейді",
+      "ru": "Вхід знову працює"
     },
     "body": {
-      "en": "OLX changed how login works, so this version can't connect to your account and nothing works. The new version fixes it. Update the app and keep selling.",
-      "uk": "OLX змінив спосіб входу, тому ця версія не може підключитися до вашого акаунта, і нічого не працює. У новій версії це виправлено. Оновіть застосунок і продавайте далі.",
-      "pl": "OLX zmienił sposób logowania, więc ta wersja nie może połączyć się z Twoim kontem i nic nie działa. Nowa wersja to naprawia. Zaktualizuj aplikację i sprzedawaj dalej.",
-      "pt": "A OLX mudou a forma de iniciar sessão, por isso esta versão não consegue ligar-se à sua conta e nada funciona. A nova versão resolve isto. Atualize a app e continue a vender.",
-      "ro": "OLX a schimbat modul de autentificare, așa că această versiune nu se poate conecta la contul tău și nimic nu funcționează. Versiunea nouă rezolvă asta. Actualizează aplicația și vinde în continuare.",
-      "bg": "OLX промени начина на вход, затова тази версия не може да се свърже с профила ти и нищо не работи. Новата версия го оправя. Обнови приложението и продължи да продаваш.",
-      "kk": "OLX кіру тәсілін өзгертті, сондықтан бұл нұсқа аккаунтыңа қосыла алмайды және ештеңе жұмыс істемейді. Жаңа нұсқа мұны түзетеді. Қолданбаны жаңартып, сатуды жалғастыр.",
-      "ru": "OLX змінив спосіб входу, тому ця версія не може підключитися до вашого акаунта, і нічого не працює. У новій версії це виправлено. Оновіть застосунок і продавайте далі."
+      "en": "We fixed the login. Update SellSnap to sign in and keep selling. Sorry for the trouble!",
+      "uk": "Ми полагодили вхід. Оновіть SellSnap, і можна знову входити та продавати. Вибачте за тимчасові незручності!",
+      "pl": "Naprawiliśmy logowanie. Zaktualizuj SellSnap, żeby znowu się zalogować i sprzedawać. Przepraszamy za utrudnienia!",
+      "pt": "Corrigimos o início de sessão. Atualize o SellSnap para voltar a entrar e vender. Pedimos desculpa pelo incómodo!",
+      "ro": "Am reparat autentificarea. Actualizează SellSnap ca să te poți conecta și să vinzi din nou. Ne pare rău pentru neplăcere!",
+      "bg": "Оправихме входа. Обнови SellSnap, за да влезеш отново и да продаваш. Извинявай за неудобството!",
+      "kk": "Кіруді түзеттік. Қайта кіріп, сатуды жалғастыру үшін SellSnap-ты жаңарт. Қолайсыздық үшін кешірім сұраймыз!",
+      "ru": "Ми полагодили вхід. Оновіть SellSnap, і можна знову входити та продавати. Вибачте за тимчасові незручності!"
     },
     "link": "store"
   },
