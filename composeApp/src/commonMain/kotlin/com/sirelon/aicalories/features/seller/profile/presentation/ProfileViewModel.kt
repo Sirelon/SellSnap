@@ -106,7 +106,8 @@ class ProfileViewModel(
             ProfileEvent.AddAccountConfirmed -> startAuthorization(forceReauth = true)
             is ProfileEvent.CountrySelected -> viewModelScope.launch {
                 olxCountryStore.save(event.country)
-                setState { it.copy(country = event.country) }
+                val location = accountRepository.savedLocation()
+                setState { it.copy(country = event.country, location = location) }
             }
         }
     }
