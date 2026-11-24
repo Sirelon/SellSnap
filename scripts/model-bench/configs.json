@@ -1,0 +1,68 @@
+{
+ "terra-none": {
+  "model": "gpt-6.1-terra",
+  "effort": "none",
+  "detail": "high",
+  "maxOutputTokens": 4000
+ },
+ "terra-low": {
+  "model": "gpt-6.1-terra",
+  "effort": "low",
+  "detail": "high",
+  "maxOutputTokens": 4000
+ },
+ "terra-medium": {
+  "model": "gpt-6.1-terra",
+  "effort": "medium",
+  "detail": "high",
+  "maxOutputTokens": 8000
+ },
+ "sol-low": {
+  "model": "gpt-6.2-sol",
+  "effort": "low",
+  "detail": "high",
+  "maxOutputTokens": 4000
+ },
+ "terra-ladder": {
+  "model": "gpt-6.1-terra",
+  "effort": "none",
+  "detail": "high",
+  "maxOutputTokens": 4000,
+  "promptAppend": "Price rule: suggestedPrice, minPrice and maxPrice may only be numbers from this ladder: 1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 25, 30, 40, 50, 60, 80, 100, 120, 150, 200, 250, 300, 400, 500, 600, 800, 1000, and the same pattern above that (1200, 1500, 2000, 2500, 3000, 4000, 5000, 6000, 8000, 10000, 12000 and so on). suggestedPrice is the typical asking price for this item in this condition: what most comparable second-hand listings ask, not the best case. When the price you have in mind lies between two ladder numbers, take the lower one."
+ },
+ "terra-specific": {
+  "model": "gpt-6.1-terra",
+  "effort": "none",
+  "detail": "high",
+  "maxOutputTokens": 4000,
+  "promptAppend": "Names printed on the item: read every legible word on the item itself, on its label or tag, and on the box or packaging shown with it. A brand, model name or part number printed there is a visible fact: put it in the title exactly as printed. Reading a name off the box does not make the box part of the offer.\nExact model: name it only when it is printed, or when a distinctive design visible in the photos fits one model and no other (for a phone, the camera layout together with the body colour). Many products have close lookalikes, and a general resemblance is not enough: when more than one model fits what is visible, give the brand or product line and stop there. A wrong model is worse than no model."
+ },
+ "terra-ladder-specific": {
+  "model": "gpt-6.1-terra",
+  "effort": "none",
+  "detail": "high",
+  "maxOutputTokens": 4000,
+  "promptAppend": "Names printed on the item: read every legible word on the item itself, on its label or tag, and on the box or packaging shown with it. A brand, model name or part number printed there is a visible fact: put it in the title exactly as printed. Reading a name off the box does not make the box part of the offer.\nExact model: name it only when it is printed, or when a distinctive design visible in the photos fits one model and no other (for a phone, the camera layout together with the body colour). Many products have close lookalikes, and a general resemblance is not enough: when more than one model fits what is visible, give the brand or product line and stop there. A wrong model is worse than no model.\n\nPrice rule: suggestedPrice, minPrice and maxPrice may only be numbers from this ladder: 1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 25, 30, 40, 50, 60, 80, 100, 120, 150, 200, 250, 300, 400, 500, 600, 800, 1000, and the same pattern above that (1200, 1500, 2000, 2500, 3000, 4000, 5000, 6000, 8000, 10000, 12000 and so on). suggestedPrice is the typical asking price for this item in this condition: what most comparable second-hand listings ask, not the best case. When the price you have in mind lies between two ladder numbers, take the lower one."
+ },
+ "terra-ladder-specific-b": {
+  "model": "gpt-6.1-terra",
+  "effort": "none",
+  "detail": "high",
+  "maxOutputTokens": 4000,
+  "promptAppend": "Names printed on the item: read every legible word on the item itself, on its label or tag, and on the box or packaging shown with it. A brand, model name or part number printed there is a visible fact: put it in the title exactly as printed. Reading a name off the box does not make the box part of the offer.\nExact model: name it only when it is printed, or when a distinctive design visible in the photos fits one model and no other (for a phone, the camera layout together with the body colour). Many products have close lookalikes, and a general resemblance is not enough: when more than one model fits what is visible, give the brand or product line and stop there. A wrong model is worse than no model.\n\nPrice rule: suggestedPrice, minPrice and maxPrice may only be numbers from this ladder: 1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 25, 30, 40, 50, 60, 80, 100, 120, 150, 200, 250, 300, 400, 500, 600, 800, 1000, and the same pattern above that (1200, 1500, 2000, 2500, 3000, 4000, 5000, 6000, 8000, 10000, 12000 and so on). suggestedPrice is the typical asking price for this item in this condition: what most comparable second-hand listings ask, not the best case. When the price you have in mind lies between two ladder numbers, take the lower one."
+ },
+ "terra-ladder-specific-high": {
+  "model": "gpt-6.1-terra",
+  "effort": "high",
+  "detail": "high",
+  "maxOutputTokens": 8000,
+  "promptAppend": "Names printed on the item: read every legible word on the item itself, on its label or tag, and on the box or packaging shown with it. A brand, model name or part number printed there is a visible fact: put it in the title exactly as printed. Reading a name off the box does not make the box part of the offer.\nExact model: name it only when it is printed, or when a distinctive design visible in the photos fits one model and no other (for a phone, the camera layout together with the body colour). Many products have close lookalikes, and a general resemblance is not enough: when more than one model fits what is visible, give the brand or product line and stop there. A wrong model is worse than no model.\n\nPrice rule: suggestedPrice, minPrice and maxPrice may only be numbers from this ladder: 1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 25, 30, 40, 50, 60, 80, 100, 120, 150, 200, 250, 300, 400, 500, 600, 800, 1000, and the same pattern above that (1200, 1500, 2000, 2500, 3000, 4000, 5000, 6000, 8000, 10000, 12000 and so on). suggestedPrice is the typical asking price for this item in this condition: what most comparable second-hand listings ask, not the best case. When the price you have in mind lies between two ladder numbers, take the lower one."
+ },
+ "terra-specific-b": {
+  "model": "gpt-6.1-terra",
+  "effort": "none",
+  "detail": "high",
+  "maxOutputTokens": 4000,
+  "promptAppend": "Names printed on the item: read every legible word on the item itself, on its label or tag, and on the box or packaging shown with it. A brand, model name or part number printed there is a visible fact: put it in the title exactly as printed. Reading a name off the box does not make the box part of the offer.\nExact model: name it only when it is printed, or when a distinctive design visible in the photos fits one model and no other (for a phone, the camera layout together with the body colour). Many products have close lookalikes, and a general resemblance is not enough: when more than one model fits what is visible, give the brand or product line and stop there. A wrong model is worse than no model."
+ }
+}
