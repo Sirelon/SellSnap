@@ -48,8 +48,10 @@ Copy [`gate-template.json`](gate-template.json) to
 document id, for example `force-update-ios-3.11.json`. Then:
 
 - Replace `LAST_BROKEN_VERSION` and `PLATFORM`.
-- Keep the template's title and body; they are approved copy in every app language. New
-  wording is user-facing copy: post the English to the owner and wait before you translate it.
+- Replace the template's generic title and body with the real cause in every app language:
+  what broke, that the new version fixes it, and "update" (AGENTS.md § Localization, be direct
+  and friendly). The owner's request names the cause; write from it and publish, no extra
+  approval round. `force-update-ios-4.0.json` is the reference.
 - `ru` is a byte copy of `uk`. The script refuses a file where they differ.
 
 Done when the file has no placeholder left.

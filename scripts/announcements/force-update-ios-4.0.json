@@ -2,24 +2,24 @@
   "active": true,
   "content": {
     "title": {
-      "en": "Update SellSnap",
-      "uk": "Оновіть SellSnap",
-      "ru": "Оновіть SellSnap",
-      "bg": "Обнови SellSnap",
-      "kk": "SellSnap-ты жаңарт",
-      "pl": "Zaktualizuj SellSnap",
-      "pt": "Atualize o SellSnap",
-      "ro": "Actualizează SellSnap"
+      "en": "We fixed the login",
+      "uk": "Ми полагодили вхід",
+      "pl": "Naprawiliśmy logowanie",
+      "pt": "Corrigimos o início de sessão",
+      "ro": "Am reparat autentificarea",
+      "bg": "Оправихме входа",
+      "kk": "Кіруді түзеттік",
+      "ru": "Ми полагодили вхід"
     },
     "body": {
-      "en": "This version of SellSnap no longer works. Install the update to keep creating and publishing listings.",
-      "uk": "Ця версія SellSnap більше не працює. Встановіть оновлення, щоб і далі створювати й публікувати оголошення.",
-      "ru": "Ця версія SellSnap більше не працює. Встановіть оновлення, щоб і далі створювати й публікувати оголошення.",
-      "bg": "Тази версия на SellSnap вече не работи. Инсталирай актуализацията, за да продължиш да създаваш и публикуваш обяви.",
-      "kk": "SellSnap-тың бұл нұсқасы енді жұмыс істемейді. Хабарландыруларды жасап, жариялай беру үшін жаңартуды орнат.",
-      "pl": "Ta wersja SellSnap już nie działa. Zainstaluj aktualizację, aby dalej tworzyć i publikować ogłoszenia.",
-      "pt": "Esta versão do SellSnap já não funciona. Instale a atualização para continuar a criar e publicar anúncios.",
-      "ro": "Această versiune SellSnap nu mai funcționează. Instalează actualizarea ca să poți crea și publica în continuare anunțuri."
+      "en": "OLX changed how login works, so this version can't connect to your account and nothing works. The new version fixes it. Update the app and keep selling.",
+      "uk": "OLX змінив спосіб входу, тому ця версія не може підключитися до вашого акаунта, і нічого не працює. У новій версії це виправлено. Оновіть застосунок і продавайте далі.",
+      "pl": "OLX zmienił sposób logowania, więc ta wersja nie może połączyć się z Twoim kontem i nic nie działa. Nowa wersja to naprawia. Zaktualizuj aplikację i sprzedawaj dalej.",
+      "pt": "A OLX mudou a forma de iniciar sessão, por isso esta versão não consegue ligar-se à sua conta e nada funciona. A nova versão resolve isto. Atualize a app e continue a vender.",
+      "ro": "OLX a schimbat modul de autentificare, așa că această versiune nu se poate conecta la contul tău și nimic nu funcționează. Versiunea nouă rezolvă asta. Actualizează aplicația și vinde în continuare.",
+      "bg": "OLX промени начина на вход, затова тази версия не може да се свърже с профила ти и нищо не работи. Новата версия го оправя. Обнови приложението и продължи да продаваш.",
+      "kk": "OLX кіру тәсілін өзгертті, сондықтан бұл нұсқа аккаунтыңа қосыла алмайды және ештеңе жұмыс істемейді. Жаңа нұсқа мұны түзетеді. Қолданбаны жаңартып, сатуды жалғастыр.",
+      "ru": "OLX змінив спосіб входу, тому ця версія не може підключитися до вашого акаунта, і нічого не працює. У новій версії це виправлено. Оновіть застосунок і продавайте далі."
     },
     "link": "store"
   },

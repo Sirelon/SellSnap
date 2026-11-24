@@ -185,6 +185,10 @@ build and checks every pending ticket in one pass.
 - **Then show the Ukrainian.** Ukrainian is the language the owner actually reads and the primary
   market, so after `localize` returns, post the `key → text` list for `values-uk` before calling
   the ticket done. The other locales follow from it and are not posted.
+- **Be direct and friendly with sellers.** When something broke, say plainly what broke, that we
+  fixed it, and what the seller does now: "OLX changed its login and broke the app. We fixed it!
+  Update SellSnap and sell again." A message that asks the seller to act names the reason to act.
+  Never a vague "This version no longer works".
 - Copy is written from the seller's side and answers two questions: what is happening to my
   listing, and do I need to do anything. Words that fail: `status`, `moderation`, `verification`,
   `API`, and anything describing how SellSnap talks to OLX ("Changes go straight to OLX"). A badge

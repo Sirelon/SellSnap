@@ -16,7 +16,8 @@ A test goes to the `qa` topic or to one device token. Debug and release builds s
 app, so a test sent to `all` or `all-<lang>` reaches real users.
 
 A campaign goes to `all`, `all-<lang>` or a condition. Its title and body are user-facing copy:
-the owner approves the text in every language before it is sent (AGENTS.md rule 6).
+the owner approves the text in every language before it is sent (AGENTS.md rule 6), unless
+the owner's request already gives the message; then write it in every language and send.
 
 Done when the target is fixed and, for a campaign, the owner approved the text.
 
