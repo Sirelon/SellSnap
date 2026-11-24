@@ -197,7 +197,7 @@ build and checks every pending ticket in one pass.
   only where the seller must act somewhere else or the marketplace said no; a state whose badge and
   buttons already say everything has none.
 - Translation of new or changed keys into every locale is done by the `localize` agent — `.claude/agents/localize.md` holds the locale map and all translation rules. `.claude/rules/localization.md` loads the sequence when you open a `strings.xml`.
-- **No russian on any SellSnap surface, by product decision.** `values-ru/strings.xml` is a byte-identical copy of `values-uk/strings.xml`, so a `ru` device falls back to Ukrainian; the website, store listings, store release notes and screenshots have no `ru` at all; the in-app What's New carries `ru` as a copy of `uk`. The why and the sync step: `.claude/agents/localize.md`.
+- **No russian on any SellSnap surface, by product decision.** `values-ru/strings.xml` is a byte-identical copy of `values-uk/strings.xml`, so a `ru` device falls back to Ukrainian; the website, store listings, store release notes and screenshots have no `ru` at all; the in-app What's New carries `ru` as a copy of `uk`. The rule covers SellSnap's own surfaces, not the listing text the AI writes for a market: OLX.kz listings are in Russian, the language OLX.kz itself uses (`OlxCountry.KZ`). The why and the sync step: `.claude/agents/localize.md`.
 
 ## Where do I edit?
 - Add app-level screen/navigation:

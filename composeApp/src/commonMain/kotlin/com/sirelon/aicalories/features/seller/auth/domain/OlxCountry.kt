@@ -34,12 +34,14 @@ data class OlxCountry(
      * before rounding.
      *
      * Inferred: these steps are SellSnap's own convention for what a private seller would type,
-     * not an OLX rule. Bulgaria prices in EUR, so it takes the EUR steps. A currency without a
-     * step here is left as the model wrote it.
+     * not an OLX rule. Bulgaria prices in EUR, so it takes the EUR steps. A tenge is worth about
+     * a tenth of a hryvnia, so KZT takes UAH's steps times ten. A currency without a step here is
+     * left as the model wrote it.
      */
     fun priceRoundingStep(price: Float): Int = when (currencyCode) {
         "PLN", "RON" -> if (price < 100f) 5 else 10
         "UAH" -> if (price < 1_000f) 50 else 100
+        "KZT" -> if (price < 10_000f) 500 else 1_000
         "EUR" -> if (price < 50f) 1 else 5
         else -> 1
     }
@@ -52,6 +54,7 @@ data class OlxCountry(
             "pl" -> "pl-PL"
             "ua" -> "uk-UA"
             "bg" -> "bg-BG"
+            "kz" -> "ru-KZ"
             else -> null
         }
 
@@ -87,7 +90,10 @@ data class OlxCountry(
         val UA = OlxCountry("ua", "🇺🇦", "Ukraine",    "Україна",    "olx.ua",  clientId = "203527",  clientSecret = "F9pH3xXHLaagb7rUam8EfSXIICGAtgNGHLJPoQhOtP365FJK",  language = "Ukrainian",  currencyCode = "UAH")
         // Bulgaria uses the euro since 2026-01-01; OLX.bg lists EUR as its default currency.
         val BG = OlxCountry("bg", "🇧🇬", "Bulgaria",   "България",   "olx.bg",  clientId = "200500",  clientSecret = "BRldA1nMMFJsT4taqqEW9htNkPNcECt9FQzmJ984mfzIj8bP",  language = "Bulgarian",  currencyCode = "EUR")
-        val KZ = OlxCountry("kz", "🇰🇿", "Kazakhstan", "Қазақстан",  "olx.kz",  clientId = "",        clientSecret = "",                                                    language = "Russian",    currencyCode = "KZT")
+        // Russian is the language of the listing the seller publishes on OLX.kz: OLX.kz names its
+        // categories in Russian (`GET categories`, 2026-11-24). SellSnap's own screens stay in
+        // Kazakh or the device language; see AGENTS.md, Localization.
+        val KZ = OlxCountry("kz", "🇰🇿", "Kazakhstan", "Қазақстан",  "olx.kz",  clientId = "200659",  clientSecret = "o058wfQWTI3Cc9yQyInaxF1ZmOEkGsIwevxYgPdNholinZDd",  language = "Russian",    currencyCode = "KZT")
 
         val all = listOf(PT, RO, PL, UA, BG, KZ).filter { it.clientId.isNotEmpty() && it.clientSecret.isNotEmpty() }
 

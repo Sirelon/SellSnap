@@ -39,7 +39,12 @@ class OlxCurrencyTest {
 
     @Test
     fun `unknown currency also writes the label after the amount`() {
-        assertEquals("5 000 KZT", OlxCurrency.format(value = 5000L, code = "KZT"))
+        assertEquals("5 000 CHF", OlxCurrency.format(value = 5000L, code = "CHF"))
+    }
+
+    @Test
+    fun `tenge takes olx kz label`() {
+        assertEquals("5 000 тг.", OlxCurrency.format(value = 5000L, code = "KZT"))
     }
 
     @Test

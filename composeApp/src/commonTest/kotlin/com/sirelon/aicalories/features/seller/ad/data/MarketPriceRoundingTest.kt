@@ -82,8 +82,8 @@ class MarketPriceRoundingTest {
         assertRounded(OlxCountry.PL, Triple(1f, 2f, 3f), Triple(5f, 5f, 5f))
 
     @Test
-    fun currencyWithoutAStepIsLeftAsWritten() =
-        assertRounded(OlxCountry.KZ, Triple(4_210f, 5_330f, 6_470f), Triple(4_210f, 5_330f, 6_470f))
+    fun tengeRoundsToFiveHundredsThenThousands() =
+        assertRounded(OlxCountry.KZ, Triple(4_210f, 5_330f, 16_470f), Triple(4_000f, 5_500f, 17_000f))
 
     @Test
     fun orderingHoldsAndTheRangeOnlyWidens() {

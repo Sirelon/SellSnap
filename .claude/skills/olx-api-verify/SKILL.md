@@ -2,7 +2,7 @@
 name: olx-api-verify
 description: >-
   Live OLX partner-API probes that need no user account, for a given country
-  (pt/ro/pl/ua/bg). Use to mint a client_credentials token, check routing,
+  (pt/ro/pl/ua/bg/kz). Use to mint a client_credentials token, check routing,
   diff the live JSON of any partner endpoint against our Response classes
   and mapper, or verify whether we parse an OLX endpoint correctly.
   Fixes mismatches and adds regression tests from the captured payloads.
@@ -15,7 +15,7 @@ API for one country, and close any gap with a fix + regression test. The worked 
 below is the categories API (categories, category suggestion, attributes); the same
 steps apply to any partner endpoint a token without a user account can read.
 
-The user names a country (one of the live ones: `pt`, `ro`, `pl`, `ua`, `bg`).
+The user names a country (one of the live ones: `pt`, `ro`, `pl`, `ua`, `bg`, `kz`).
 You mint the token yourself from the hardcoded credentials — the user does **not**
 provide a token.
 
@@ -24,7 +24,7 @@ provide a token.
 | What | Location |
 |---|---|
 | Per-country creds (`clientId`, `clientSecret`, `domain`) | `composeApp/src/commonMain/kotlin/com/sirelon/aicalories/features/seller/auth/domain/OlxCountry.kt` |
-| Live countries | PT `olx.pt`, RO `olx.ro`, PL `olx.pl`, UA `olx.ua`, BG `olx.bg` (KZ has no creds — excluded) |
+| Live countries | PT `olx.pt`, RO `olx.ro`, PL `olx.pl`, UA `olx.ua`, BG `olx.bg`, KZ `olx.kz` |
 | API client / endpoints | `.../features/seller/auth/data/OlxApiClient.kt` |
 | HTTP client + `Json` config + token refresh | `.../features/seller/auth/data/OlxHttpClientFactory.kt` |
 | Categories Response classes | `.../features/seller/categories/data/response/{OlxCategoryResponse,OlxCategorySuggestionResponse,OlxAttributesResponse}.kt` |

@@ -67,7 +67,10 @@ the rest is how this app shipped two wrong status meanings.
   HTTPS URI is on the pt portal. bg: `/oauth/authorize` checks `login.olx.bg` silently, and that
   page itself says the login moved to the home page, so the partner login cannot finish there; an
   OLX fix, not an app fix. pl still serves OLX's older single-page login and was not verified. ua:
-  not tested (separate credentials). To trace a login, make the WebView debuggable and attach to its DevTools socket
+  not tested (separate credentials). kz (2026-11-24, SIR-197): `/oauth/authorize` sends the
+  phone to the older single-page form on `www.olx.kz/account/` (ids `username`, `password`,
+  `Login`). Maestro typing into it got OLX's anti-bot page "Доступ временно ограничен" right
+  after submit, before any password check, so a KZ login is checked by a person typing. To trace a login, make the WebView debuggable and attach to its DevTools socket
   (`adb shell cat /proc/net/unix | grep webview_devtools_remote`, then `adb forward`).
 - Android — `MainActivity.publishOlxCallback(intent)` reads `intent.data` and forwards the URL to `OlxAuthCallbackBridge.publishCallback(url)`. The intent filter must match the configured scheme; verify `androidApp/.../AndroidManifest.xml` whenever the scheme changes.
 - Web (Wasm) — `composeApp/src/wasmJsMain/.../main.kt` checks `window.location` for `code=` / `error=` query parameters before mounting Compose, then calls `OlxAuthCallbackBridge.publishCallback`.

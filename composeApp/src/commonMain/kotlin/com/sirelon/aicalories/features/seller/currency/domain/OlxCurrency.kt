@@ -18,13 +18,15 @@ data class OlxCurrency(
          * The label OLX gives each currency code, for prices that arrive with a code only (the
          * advert list and detail) or before OLX's currency list has loaded. Source:
          * `GET /api/partner/currencies` on olx.ua, olx.pl, olx.ro, olx.bg and olx.pt, fetched
-         * 2026-11-12: UAH `грн.`, PLN `zł`, RON `lei`, BGN `лв.`, EUR `€`, USD `$`.
+         * 2026-11-12: UAH `грн.`, PLN `zł`, RON `lei`, BGN `лв.`, EUR `€`, USD `$`; olx.kz,
+         * 2026-11-24: KZT `тг.`.
          */
         private val OlxLabels = mapOf(
             "UAH" to "грн.",
             "PLN" to "zł",
             "RON" to "lei",
             "BGN" to "лв.",
+            "KZT" to "тг.",
             "EUR" to "€",
             "USD" to "$",
         )
@@ -35,9 +37,9 @@ data class OlxCurrency(
         /**
          * A price as the seller reads it, the single formatter behind every price on screen
          * (preview, publish confirm, drafts, My Ads, the conversation header): `1 850 грн.` for
-         * UAH, `280 zł` for PLN, `100 lei` for RON, `50 лв.` for BGN, `20 €` for EUR. The label is
-         * the one OLX supplies in its currency list, else the known OLX label for [code]
-         * ([OlxLabels]), else [code] itself (`5 000 KZT`); an empty [code] with no [label] leaves
+         * UAH, `280 zł` for PLN, `100 lei` for RON, `50 лв.` for BGN, `20 €` for EUR, `5 000 тг.` for
+         * KZT. The label is the one OLX supplies in its currency list, else the known OLX label for
+         * [code] ([OlxLabels]), else [code] itself (`5 000 CHF`); an empty [code] with no [label] leaves
          * the bare amount. Digits group by thousands with a space ([formatPrice]).
          *
          * Inferred: the label goes after the amount in every market, as sellers in each of them

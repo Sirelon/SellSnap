@@ -25,7 +25,7 @@ Notes before you paste:
 - **No emoji anywhere** — App Store Connect rejects emoji in metadata fields ("This field contains one or more invalid characters"). All blocks below are emoji-free. If a subtitle is rejected for the same reason, the `→` arrow is the culprit — replace it with a comma or "=".
 - **App Store Connect has no Bulgarian or Kazakh localization.** Use the bg/kk sections for Google Play only; on the App Store those users see your primary (English) listing.
 - **"OLX" in the name/subtitle is a trademark risk.** The name below avoids it; the subtitle and keywords use it, which is common practice but could be challenged in review. If Apple/Google object, drop it from the subtitle first.
-- **Kazakh is machine-of-mine quality** — I'd have a native speaker skim it before shipping. The KZ market is also currently disabled in-app (no OLX.kz credentials), so kk is for the in-app language audience, not an active market.
+- **Kazakh is machine-of-mine quality** — I'd have a native speaker skim it before shipping. Kazakhstan (OLX.kz) is a live market in the app.
 - **No russian *store listing*.** By product decision, neither store gets russian marketing copy or release notes — don't add a russian section back to this doc. This doesn't apply to the in-app UI: `values-ru/strings.xml` still exists as a byte-identical copy of `values-uk`, so russian-locale devices see Ukrainian rather than falling back to English (see `.claude/agents/localize.md`).
 
 ---
