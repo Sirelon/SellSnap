@@ -60,8 +60,9 @@ Done when the file has no placeholder left.
 node scripts/publish-announcement.mjs scripts/announcements/<id>.json --dry-run
 ```
 
-Show the owner the dry-run output and wait for a go: a gate blocks real users within seconds
-of publishing. Then run the same command without `--dry-run`.
+The owner's request to force an update is the go: when the dry run passes and every store
+serves the fixed version, run the same command without `--dry-run` straight away. Stop and ask
+only when a check in steps 1–3 failed or a fact was missing.
 
 Done when the script prints `Published announcements/<id>`.
 
