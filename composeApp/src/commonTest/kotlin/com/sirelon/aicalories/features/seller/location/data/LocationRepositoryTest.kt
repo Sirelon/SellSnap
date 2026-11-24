@@ -56,14 +56,14 @@ class LocationRepositoryTest {
         val location = repository.fetchUserLocation()
 
         assertEquals(OlxLocation(1, "Kyiv", 10, "Pechersk"), location)
-        assertEquals(location, store.read())
+        assertEquals(location, store.read(countryStore.current.code))
     }
 
     @Test
     fun `fetchUserLocation does not overwrite saved location when device location is missing`() = runBlocking {
         val saved = OlxLocation(1, "Kyiv", 10, "Pechersk")
         val store = LocationStore(InMemoryOlxKeyValueStore(), testJson).apply {
-            write(saved)
+            write(countryStore.current.code, saved)
         }
         val repository = LocationRepository(
             locationProvider = FakeLocationProvider(),
@@ -75,7 +75,39 @@ class LocationRepositoryTest {
         val location = repository.fetchUserLocation()
 
         assertNull(location)
-        assertEquals(saved, store.read())
+        assertEquals(saved, store.read(countryStore.current.code))
+    }
+
+    @Test
+    fun `saved location belongs to the country it was picked in`() = runBlocking {
+        val countryStore = OlxCountryStore(InMemoryOlxKeyValueStore(), FakeAnalytics())
+        countryStore.save(OlxCountry.UA)
+        val repository = LocationRepository(
+            locationProvider = FakeLocationProvider(),
+            olxApiClient = createApiClient(MockEngine { error("No OLX request expected.") }),
+            locationStore = LocationStore(InMemoryOlxKeyValueStore(), testJson),
+            countryStore = countryStore,
+        )
+        val kyiv = OlxLocation(1, "Kyiv", 10, "Pechersk")
+        repository.saveLocation(kyiv)
+
+        countryStore.save(OlxCountry.PT)
+        assertNull(repository.getSavedLocation())
+
+        countryStore.save(OlxCountry.UA)
+        assertEquals(kyiv, repository.getSavedLocation())
+    }
+
+    @Test
+    fun `a location saved before per-country storage moves to the first country that reads it`() = runBlocking {
+        val storage = InMemoryOlxKeyValueStore()
+        val kyiv = OlxLocation(1, "Kyiv", 10, "Pechersk")
+        storage.putString("selected_location", testJson.encodeToString(kyiv))
+        val store = LocationStore(storage, testJson)
+
+        assertEquals(kyiv, store.read("ua"))
+        assertNull(store.read("pt"))
+        assertEquals(kyiv, store.read("ua"))
     }
 
     @Test
@@ -106,7 +138,7 @@ class LocationRepositoryTest {
 
         assertEquals(listOf(CitySuggestion(OlxLocation(1, "Kyiv", null, null), region = "Kyiv")), cities)
         assertEquals(listOf("Kyiv, Ukraine" to "ua"), provider.searchQueries)
-        assertNull(store.read())
+        assertNull(store.read(countryStore.current.code))
     }
 
     @Test

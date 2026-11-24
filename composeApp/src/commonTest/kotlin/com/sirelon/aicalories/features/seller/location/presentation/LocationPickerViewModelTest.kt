@@ -41,6 +41,7 @@ class LocationPickerViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
     private val testJson = Json { ignoreUnknownKeys = true }
     private val store = LocationStore(InMemoryOlxKeyValueStore(), testJson)
+    private val countryStore = OlxCountryStore(InMemoryOlxKeyValueStore(), NoOpAnalytics())
 
     @BeforeTest
     fun setUp() {
@@ -82,7 +83,7 @@ class LocationPickerViewModelTest {
         advanceUntilIdle()
 
         assertEquals(LocationPickerEffect.LocationChosen(lviv), viewModel.effects.first())
-        assertEquals(lviv, store.read())
+        assertEquals(lviv, store.read(countryStore.current.code))
         assertNull(viewModel.state.value.districtCity)
     }
 
@@ -96,7 +97,7 @@ class LocationPickerViewModelTest {
         val state = viewModel.state.value
         assertEquals(kyiv, state.districtCity)
         assertEquals(listOf("Holosiivskyi", "Pecherskyi"), state.districts.map { it.districtName })
-        assertNull(store.read(), "the city alone must not be saved while it needs a district")
+        assertNull(store.read(countryStore.current.code), "the city alone must not be saved while it needs a district")
     }
 
     @Test
@@ -111,7 +112,7 @@ class LocationPickerViewModelTest {
 
         val expected = OlxLocation(cityId = 268, cityName = "Kyiv", districtId = 3, districtName = "Pecherskyi")
         assertEquals(LocationPickerEffect.LocationChosen(expected), viewModel.effects.first())
-        assertEquals(expected, store.read())
+        assertEquals(expected, store.read(countryStore.current.code))
     }
 
     @Test
@@ -186,7 +187,6 @@ class LocationPickerViewModelTest {
         districtsJson: String? = null,
         districtsOf: OlxLocation? = null,
     ): LocationPickerViewModel {
-        val countryStore = OlxCountryStore(InMemoryOlxKeyValueStore(), NoOpAnalytics())
         val engine = MockEngine(
             MockEngineConfig().apply {
                 dispatcher = testDispatcher
