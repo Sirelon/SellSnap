@@ -61,7 +61,7 @@ WHY SELLSNAP
 • Light and dark themes
 
 WORKS WHERE YOU SELL
-SellSnap supports OLX in Ukraine, Poland, Romania, Bulgaria, and Portugal. Pick your country and listings come out in the right language and currency.
+SellSnap supports OLX in Ukraine, Poland, Romania, Bulgaria, Portugal, and Kazakhstan. Pick your country and listings come out in the right language and currency.
 
 TRY IT WITHOUT AN ACCOUNT
 No OLX account? Use guest mode: build the ad, then copy the title, description, and price and paste them into OLX yourself. Connect OLX later to publish in one tap.
@@ -119,7 +119,7 @@ SellSnap перетворює фото на готове оголошення д
 • Світла та темна теми
 
 ПРАЦЮЄ ТАМ, ДЕ ВИ ПРОДАЄТЕ
-SellSnap підтримує OLX в Україні, Польщі, Румунії, Болгарії та Португалії. Оберіть країну — і оголошення створюватимуться потрібною мовою та у місцевій валюті.
+SellSnap підтримує OLX в Україні, Польщі, Румунії, Болгарії, Португалії та Казахстані. Оберіть країну — і оголошення створюватимуться потрібною мовою та у місцевій валюті.
 
 СПРОБУЙТЕ БЕЗ АКАУНТА
 Немає акаунта OLX? Скористайтеся гостьовим режимом: створіть оголошення, скопіюйте назву, опис і ціну та вставте їх на OLX самостійно. Підключіть OLX пізніше, щоб публікувати одним тапом.
@@ -177,7 +177,7 @@ DLACZEGO SELLSNAP
 • Jasny i ciemny motyw
 
 DZIAŁA TAM, GDZIE SPRZEDAJESZ
-SellSnap obsługuje OLX w Polsce, Ukrainie, Rumunii, Bułgarii i Portugalii. Wybierz kraj, a ogłoszenia powstaną we właściwym języku i lokalnej walucie.
+SellSnap obsługuje OLX w Polsce, Ukrainie, Rumunii, Bułgarii, Portugalii i Kazachstanie. Wybierz kraj, a ogłoszenia powstaną we właściwym języku i lokalnej walucie.
 
 WYPRÓBUJ BEZ KONTA
 Nie masz konta OLX? Skorzystaj z trybu gościa: przygotuj ogłoszenie, skopiuj tytuł, opis i cenę i wklej je na OLX samodzielnie. Połącz konto OLX później, aby publikować jednym dotknięciem.
@@ -235,7 +235,7 @@ DE CE SELLSNAP
 • Temă luminoasă și întunecată
 
 FUNCȚIONEAZĂ ACOLO UNDE VINZI
-SellSnap acceptă OLX în România, Ucraina, Polonia, Bulgaria și Portugalia. Alege țara, iar anunțurile sunt generate în limba potrivită și în moneda locală.
+SellSnap acceptă OLX în România, Ucraina, Polonia, Bulgaria, Portugalia și Kazahstan. Alege țara, iar anunțurile sunt generate în limba potrivită și în moneda locală.
 
 ÎNCEARCĂ FĂRĂ CONT
 Nu ai cont OLX? Folosește modul de oaspete: creează anunțul, copiază titlul, descrierea și prețul și lipește-le singur pe OLX. Conectează OLX mai târziu ca să publici dintr-o atingere.
@@ -293,7 +293,7 @@ SellSnap превръща снимката в готова обява за OLX. 
 • Светла и тъмна тема
 
 РАБОТИ ТАМ, КЪДЕТО ПРОДАВАТЕ
-SellSnap поддържа OLX в България, Украйна, Полша, Румъния и Португалия. Изберете държава и обявите се създават на правилния език и в местната валута.
+SellSnap поддържа OLX в България, Украйна, Полша, Румъния, Португалия и Казахстан. Изберете държава и обявите се създават на правилния език и в местната валута.
 
 ОПИТАЙТЕ БЕЗ АКАУНТ
 Нямате акаунт в OLX? Използвайте гост режим: създайте обявата, копирайте заглавието, описанието и цената и ги поставете в OLX сами. Свържете OLX по-късно, за да публикувате с едно докосване.
@@ -351,7 +351,7 @@ PORQUÊ O SELLSNAP
 • Tema claro e escuro
 
 FUNCIONA ONDE VENDE
-O SellSnap suporta o OLX em Portugal, na Ucrânia, na Polónia, na Roménia e na Bulgária. Escolha o país e os anúncios são criados no idioma certo e na moeda local.
+O SellSnap suporta o OLX em Portugal, na Ucrânia, na Polónia, na Roménia, na Bulgária e no Cazaquistão. Escolha o país e os anúncios são criados no idioma certo e na moeda local.
 
 EXPERIMENTE SEM CONTA
 Não tem conta OLX? Use o modo convidado: crie o anúncio, copie o título, a descrição e o preço e cole-os no OLX. Ligue a conta OLX mais tarde para publicar com um toque.
@@ -407,7 +407,7 @@ SellSnap фотоны OLX-ке жариялауға дайын хабарлан�
 • Ашық және қараңғы тақырып
 
 СІЗ САТАТЫН ЖЕРДЕ ЖҰМЫС ІСТЕЙДІ
-SellSnap Украина, Польша, Румыния, Болгария және Португалиядағы OLX-ті қолдайды. Елді таңдаңыз — хабарландырулар тиісті тілде және жергілікті валютада жасалады.
+SellSnap Қазақстан, Украина, Польша, Румыния, Болгария және Португалиядағы OLX-ті қолдайды. Елді таңдаңыз — хабарландырулар тиісті тілде және жергілікті валютада жасалады.
 
 АККАУНТСЫЗ БАЙҚАП КӨРІҢІЗ
 OLX аккаунтыңыз жоқ па? Қонақ режимін пайдаланыңыз: хабарландыруды жасап, атауын, сипаттамасын және бағасын көшіріп, OLX-ке өзіңіз қойыңыз. Бір түртумен жариялау үшін OLX-ті кейін қосыңыз.
