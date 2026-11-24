@@ -229,7 +229,8 @@ Skip it when step 6 printed the in-review warning: the earlier version is still 
 
 Report once: the version shipped, the English store notes (other languages live in `store-listing.md`), the surfaces
 updated, what was verified live, and the App Store state (`WAITING_FOR_REVIEW`). End with the owner's one step:
-promote on Play.
+promote on Play. Then list every open Linear ticket in the Sirelon team whose title starts with "After release:"
+(today SIR-198, Kazakhstan on both stores): each is a step for once this version is live.
 
 Done when: tracked files are clean in `git status`, `main` is pushed, and the new App Store version is
 `WAITING_FOR_REVIEW`.
