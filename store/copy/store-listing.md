@@ -2,7 +2,7 @@
 
 Copy-paste text for every listing field. The app ships 8 in-app languages, but this doc
 only has 7 sections — russian shares Ukrainian's in-app UI and has no separate store
-listing (see the "No russian store listing" note below). Written for SellSnap 4.0 (build 23).
+listing (see the "No russian store listing" note below). Written for SellSnap 4.1 (build 24).
 
 The per-language **What's New** blocks below match what's pushed to the stores automatically from `.claude/tmp/release-metadata/` (gitignored, regenerated fresh each release): Android reads `android/<locale>/changelogs/<version_code>.txt`, iOS reads `ios/<locale>/release_notes.txt` (App Store) and the same file feeds TestFlight's localized build info. The `sellsnap-release` skill regenerates both those files and this section on every release.
 
@@ -74,16 +74,13 @@ From snap to live on OLX in about a minute. Download SellSnap and turn your clut
 SellSnap is an independent app and is not affiliated with or endorsed by OLX. Publishing requires an OLX account.
 ```
 
-**What's New (v4.0):**
+**What's New (v4.1):**
 
 ```
-SellSnap 4.0 — OLX login works again, sets become one listing
+SellSnap 4.1 — Even better listings
 
-• Log in to OLX right inside the app, on any phone
-• A set, a pair or an item with accessories becomes one listing
-• The price stays where you type, and the slider stops on round numbers
-• Scroll the listing to hide the keyboard
-• Prices look the way your market writes them, like "1 850 грн." in Ukraine
+• We improved what matters most: SellSnap recognizes your items better and writes even better listings. Try it, you'll feel the difference
+• New country: SellSnap now works in Kazakhstan. Publish your listings on OLX.kz
 ```
 
 ---
@@ -132,16 +129,13 @@ SellSnap підтримує OLX в Україні, Польщі, Румунії,
 SellSnap — незалежний застосунок, не афілійований з OLX. Для публікації потрібен акаунт OLX.
 ```
 
-**What's New (v4.0):**
+**What's New (v4.1):**
 
 ```
-SellSnap 4.0 — вхід в OLX знову працює, комплект стає одним оголошенням
+SellSnap 4.1 — ще кращі оголошення
 
-• Входьте в OLX прямо в застосунку, на будь-якому телефоні
-• Комплект, пара чи річ з аксесуарами стають одним оголошенням
-• Курсор у ціні лишається там, де ви пишете, а повзунок зупиняється на круглих сумах
-• Прокрутіть оголошення, щоб сховати клавіатуру
-• Ціни виглядають так, як їх пишуть у вашій країні, наприклад «1 850 грн.»
+• Ми покращили головне: SellSnap краще розпізнає речі на фото і пише ще кращі оголошення. Спробуйте — ви відчуєте різницю
+• Нова країна: SellSnap тепер працює в Казахстані. Публікуйте оголошення на OLX.kz
 ```
 
 ---
@@ -190,16 +184,13 @@ Od zdjęcia do ogłoszenia na OLX w około minutę. Pobierz SellSnap i zamień n
 SellSnap to niezależna aplikacja, niepowiązana z OLX. Do publikacji wymagane jest konto OLX.
 ```
 
-**What's New (v4.0):**
+**What's New (v4.1):**
 
 ```
-SellSnap 4.0 — logowanie do OLX znów działa, zestaw to jedno ogłoszenie
+SellSnap 4.1 — jeszcze lepsze ogłoszenia
 
-• Logujesz się do OLX bezpośrednio w aplikacji, na każdym telefonie
-• Zestaw, para lub rzecz z akcesoriami to jedno ogłoszenie
-• Kursor w cenie zostaje tam, gdzie piszesz, a suwak zatrzymuje się na okrągłych kwotach
-• Przewiń ogłoszenie, aby schować klawiaturę
-• Ceny wyglądają tak, jak zapisuje się je w Twoim kraju, na przykład „1 850 zł”
+• Ulepszyliśmy to, co najważniejsze: SellSnap lepiej rozpoznaje rzeczy na zdjęciach i pisze jeszcze lepsze ogłoszenia. Wypróbuj, poczujesz różnicę
+• Nowy kraj: SellSnap działa teraz w Kazachstanie. Publikuj ogłoszenia na OLX.kz
 ```
 
 ---
@@ -248,16 +239,13 @@ De la poză la anunț publicat pe OLX în aproximativ un minut. Descarcă SellSn
 SellSnap este o aplicație independentă, neafiliată cu OLX. Publicarea necesită un cont OLX.
 ```
 
-**What's New (v4.0):**
+**What's New (v4.1):**
 
 ```
-SellSnap 4.0 — autentificarea în OLX merge din nou, un set devine un singur anunț
+SellSnap 4.1 — anunțuri și mai bune
 
-• Te autentifici în OLX direct în aplicație, pe orice telefon
-• Un set, o pereche sau un obiect cu accesorii devine un singur anunț
-• Cursorul din preț rămâne unde scrii, iar glisorul se oprește la sume rotunde
-• Derulează anunțul ca să ascunzi tastatura
-• Prețurile arată așa cum se scriu în țara ta, de exemplu „1 850 lei”
+• Am îmbunătățit ce contează cel mai mult: SellSnap recunoaște mai bine obiectele din poze și scrie anunțuri și mai bune. Încearcă și vei simți diferența
+• Țară nouă: SellSnap funcționează acum în Kazahstan. Publică anunțuri pe OLX.kz
 ```
 
 ---
@@ -306,16 +294,13 @@ SellSnap поддържа OLX в България, Украйна, Полша, �
 SellSnap е независимо приложение и не е свързано с OLX. За публикуване е необходим акаунт в OLX.
 ```
 
-**What's New (v4.0):**
+**What's New (v4.1):**
 
 ```
-SellSnap 4.0 — входът в OLX отново работи, комплектът става една обява
+SellSnap 4.1 — още по-добри обяви
 
-• Влизайте в OLX направо в приложението, на всеки телефон
-• Комплект, чифт или вещ с аксесоари стават една обява
-• Курсорът в цената остава там, където пишете, а плъзгачът спира на кръгли суми
-• Превъртете обявата, за да скриете клавиатурата
-• Цените изглеждат така, както се изписват във вашата държава, например „1 850 лв.“
+• Подобрихме най-важното: SellSnap по-добре разпознава вещите на снимките и пише още по-добри обяви. Опитайте и ще усетите разликата
+• Нова държава: SellSnap вече работи в Казахстан. Публикувайте обяви в OLX.kz
 ```
 
 ---
@@ -364,16 +349,13 @@ Da foto ao anúncio publicado no OLX em cerca de um minuto. Descarregue o SellSn
 O SellSnap é uma aplicação independente, sem qualquer afiliação com o OLX. Para publicar é necessária uma conta OLX.
 ```
 
-**What's New (v4.0):**
+**What's New (v4.1):**
 
 ```
-SellSnap 4.0 — o login no OLX volta a funcionar, um conjunto é um só anúncio
+SellSnap 4.1 — anúncios ainda melhores
 
-• Inicie sessão no OLX dentro da app, em qualquer telemóvel
-• Um conjunto, um par ou um artigo com acessórios passa a ser um só anúncio
-• O cursor do preço fica onde escreve e o seletor para em valores redondos
-• Deslize o anúncio para esconder o teclado
-• Os preços aparecem como se escrevem no seu país, por exemplo «1 850 €»
+• Melhorámos o essencial: o SellSnap reconhece melhor os artigos nas fotos e escreve anúncios ainda melhores. Experimente e vai notar a diferença
+• Novo país: o SellSnap já funciona no Cazaquistão. Publique os seus anúncios no OLX.kz
 ```
 
 ---
@@ -420,14 +402,11 @@ OLX аккаунтыңыз жоқ па? Қонақ режимін пайдала
 SellSnap — OLX-пен байланысы жоқ тәуелсіз қосымша. Жариялау үшін OLX аккаунты қажет.
 ```
 
-**What's New (v4.0):**
+**What's New (v4.1):**
 
 ```
-SellSnap 4.0 — OLX-ке кіру қайта жұмыс істейді, жиынтық бір хабарландыру болады
+SellSnap 4.1 — бұрынғыдан да жақсы хабарландырулар
 
-• OLX-ке кез келген телефонда тікелей қолданба ішінде кіріңіз
-• Жиынтық, жұп немесе аксессуарлары бар зат бір хабарландыру болады
-• Бағадағы курсор сіз жазған жерде қалады, ал жүгірткі дөңгелек сомаларға тоқтайды
-• Пернетақтаны жасыру үшін хабарландыруды айналдырыңыз
-• Бағалар сіздің еліңізде жазылатындай көрсетіледі, мысалы «1 850 KZT»
+• Ең бастысын жақсарттық: SellSnap фотодағы заттарды жақсырақ таниды және бұрынғыдан да жақсы хабарландырулар жазады. Байқап көріңіз — айырмашылықты сезесіз
+• Жаңа ел: SellSnap енді Қазақстанда жұмыс істейді. Хабарландыруларды OLX.kz-ке жариялаңыз
 ```

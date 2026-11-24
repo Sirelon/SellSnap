@@ -1,5 +1,60 @@
 [
   {
+    "version": "4.1",
+    "date": "2026-11-25",
+    "active": true,
+    "changes": [
+      {
+        "id": "better-listings",
+        "icon": "magic",
+        "title": {
+          "en": "Even better listings",
+          "uk": "Ще кращі оголошення",
+          "ru": "Ще кращі оголошення",
+          "bg": "Още по-добри обяви",
+          "kk": "Бұрынғыдан да жақсы хабарландырулар",
+          "pl": "Jeszcze lepsze ogłoszenia",
+          "pt": "Anúncios ainda melhores",
+          "ro": "Anunțuri și mai bune"
+        },
+        "summary": {
+          "en": "SellSnap recognizes your items better and writes even better listings. Try it, you'll feel the difference",
+          "uk": "SellSnap краще розпізнає речі на фото і пише ще кращі оголошення. Спробуйте — ви відчуєте різницю",
+          "ru": "SellSnap краще розпізнає речі на фото і пише ще кращі оголошення. Спробуйте — ви відчуєте різницю",
+          "bg": "SellSnap по-добре разпознава вещите на снимките и пише още по-добри обяви. Пробвай и ще усетиш разликата",
+          "kk": "SellSnap фотодағы заттарды жақсырақ таниды және бұрынғыдан да жақсы хабарландырулар жазады. Байқап көр — айырмашылықты сезесің",
+          "pl": "SellSnap lepiej rozpoznaje rzeczy na zdjęciach i pisze jeszcze lepsze ogłoszenia. Wypróbuj, poczujesz różnicę",
+          "pt": "O SellSnap reconhece melhor os artigos nas fotos e escreve anúncios ainda melhores. Experimente e vai notar a diferença",
+          "ro": "SellSnap recunoaște mai bine obiectele din poze și scrie anunțuri și mai bune. Încearcă și vei simți diferența"
+        }
+      },
+      {
+        "id": "kazakhstan",
+        "icon": "feature",
+        "title": {
+          "en": "Now in Kazakhstan",
+          "uk": "Тепер у Казахстані",
+          "ru": "Тепер у Казахстані",
+          "bg": "Вече в Казахстан",
+          "kk": "Енді Қазақстанда",
+          "pl": "Teraz w Kazachstanie",
+          "pt": "Agora no Cazaquistão",
+          "ro": "Acum în Kazahstan"
+        },
+        "summary": {
+          "en": "Publish your listings on OLX.kz",
+          "uk": "Публікуйте оголошення на OLX.kz",
+          "ru": "Публікуйте оголошення на OLX.kz",
+          "bg": "Публикувай обявите си в OLX.kz",
+          "kk": "Хабарландыруларыңды OLX.kz-ке жарияла",
+          "pl": "Publikuj swoje ogłoszenia na OLX.kz",
+          "pt": "Publique os seus anúncios no OLX.kz",
+          "ro": "Publică-ți anunțurile pe OLX.kz"
+        }
+      }
+    ]
+  },
+  {
     "version": "4.0",
     "date": "2026-11-23",
     "active": true,

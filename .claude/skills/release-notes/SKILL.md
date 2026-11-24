@@ -158,14 +158,15 @@ needs better judgment than the extraction step):
 - Assign an `icon` from the vocabulary in step 0.
 - Write final English copy: `title` short (a few words), `summary` one sentence, `detail`
   only when there's genuinely more to say (omit the key otherwise).
-- **Order by importance, not date**: new top-level capability first, then a new capability
-  the user couldn't do at all, then restored/fixed access, then visible improvements,
-  then fixes.
+- **Order by how many sellers gain, not by change type or date.** A change to the core
+  (photo in, listing out) goes first. Word every card by "Writing for sellers" in the
+  `sellsnap-release` skill (step 3): the benefit as a short story, never the mechanism,
+  and no small-slice fixes.
 - Each version keeps its own card, so every change stays attributed to the version that
   shipped it.
 
 Done when every remaining item passes the seller-gain test and has an icon from the
-vocabulary, English `title` and `summary`, and its place in the importance order.
+vocabulary, English `title` and `summary`, and its place in that order.
 
 ## 5. Translate
 

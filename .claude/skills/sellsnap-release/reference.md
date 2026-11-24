@@ -82,3 +82,11 @@ is the lead suspect.
 ## App Store banners
 
 Banners (product-page header and search-results images) are placements on one App Store version, and a new version starts with none. `copy-banners.rb` takes the newest iOS version as target and, per locale, the newest earlier version with banners as source. It skips placements the target already has. A draft (`PREPARE_FOR_SUBMISSION`) accepts them at once and they go live with that release. A version in review rejects placements with 409 `waitingForReview`.
+
+## Play production promotion
+
+The service account in `fastlane/google-play-key.json` may upload to the internal track and edit the store listing
+and changelogs, but it may not release to production. Promoting with `track_promote_to: production` (the
+`android release` lane or `upload_to_play_store` by hand) fails at commit with `Google Api Error: Invalid request -
+The caller does not have permission` (4.1, 2026-11-25). The owner promotes in Play Console. The notes and
+descriptions on the internal release carry over to production with the promotion.

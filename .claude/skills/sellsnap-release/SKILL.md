@@ -77,12 +77,52 @@ Done when: `NEW_CODE`, the `VERSION_NAME` to ship and the step 3 base are fixed,
 ## 3. Draft the English What's New
 
 Find the base bump commit with `git log --oneline -- version.properties`, then read `git log --oneline <base>..HEAD`.
-Write 2 to 5 user-facing bullets in benefit language ("Improved crash reporting", not "Enable Crashlytics and
-capture iOS Kotlin crashes"). Follow the voice in `store/copy/store-listing.md`: headline `SellSnap X.Y — <short theme>`,
+Write 1 to 5 user-facing bullets, chosen and worded by the rules in "Writing for sellers" below. Follow the voice in `store/copy/store-listing.md`: headline `SellSnap X.Y — <short theme>`,
 blank line, `•` bullets. Use no emoji: App Store Connect rejects metadata fields that contain one. The same text
 serves Play, iOS release notes and TestFlight.
 
-Done when: the text has 2 to 5 bullets, no emoji, at most 500 characters (Google Play's limit; App Store allows 4000).
+### Writing for sellers
+
+The owner's rules. They apply to these store notes and to the in-app cards (`release-notes` skill):
+
+- Tell the seller what got better for them, as a short story. Never describe how it was built.
+- Lead with what every seller feels. A change to the core (photo in, listing out) goes first, even when the diff
+  is small: "We improved what matters most: SellSnap recognizes your items better and writes even better listings.
+  Try it, you'll feel the difference." Not "a newer AI model", not a list of what the AI now reads.
+- A new market is one plain line: "New country: SellSnap now works in Kazakhstan. Publish your listings on OLX.kz."
+  Leave out its mechanics (listing language, currency, price rounding).
+- Drop fixes and tweaks that only a small slice of sellers meets (a per-country city, a button on an expired
+  account). Two strong bullets beat five mixed ones.
+- Order by how many sellers gain, never by change type.
+
+Worked example, 4.1. The owner rejected the first draft and approved the second.
+
+Rejected (ordered by change type, written from the diff):
+
+```
+SellSnap 4.1 — Kazakhstan joins, smoother OLX accounts
+
+• Sell on OLX.kz: Kazakhstan is now in the country picker
+• Your saved city is kept separately for each OLX country
+• When your OLX account needs reconnecting, the Reconnect button shows right away
+• Sharper listings from a newer AI model
+```
+
+What was wrong: the core improvement came last and named the mechanism ("a newer AI model"). Two bullets were
+small-slice fixes. The headline sold the minor items. A later fix still listed mechanics ("takes the brand and model
+printed on the item", "listings in Kazakh, prices in tenge").
+
+Approved:
+
+```
+SellSnap 4.1 — Even better listings
+
+• We improved what matters most: SellSnap recognizes your items better and writes even better listings. Try it, you'll feel the difference
+• New country: SellSnap now works in Kazakhstan. Publish your listings on OLX.kz
+```
+
+Done when: the text has 1 to 5 bullets that pass the rules above, no emoji, at most 500 characters (Google Play's
+limit; App Store allows 4000).
 
 ## 4. Translate
 
