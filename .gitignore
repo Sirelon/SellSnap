@@ -80,3 +80,6 @@ firebase-debug.*.log
 # Store banners: banner.html is the source; the images beside it are inputs and renders
 /Design/store-banners/*/*
 !/Design/store-banners/*/banner.html
+
+# Model bench: seller photos and raw answers (scripts/model-bench)
+/scripts/model-bench/.cache/

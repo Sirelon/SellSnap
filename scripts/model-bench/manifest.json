@@ -1,0 +1,279 @@
+{
+ "country": {
+  "nameEn": "Ukraine",
+  "language": "Ukrainian",
+  "currencyCode": "UAH"
+ },
+ "stability": {
+  "items": [
+   17,
+   1,
+   42,
+   36,
+   28
+  ],
+  "runs": 5
+ },
+ "items": [
+  {
+   "id": 16,
+   "gs": "gs://sellsnap-6e85c.firebasestorage.app/d4ADC1dKmElPljIgYxkEAK/a84168a3-3999-4bf9-9bcd-e73e55e94dc3_9CE6735E-64DB-46CA-B79D-94F7BEEDDAC9.jpg",
+   "item": "JBL JR Pop kids speaker (close-up GPT-5 models once misread as headphones)",
+   "must": [
+    "колонк|динамік|акустик"
+   ],
+   "wrong": [
+    "навушник"
+   ],
+   "bonus": "jr ?pop|junior",
+   "wrongDetail": [
+    "jbl ?(go|clip|flip|charge|xtreme)"
+   ]
+  },
+  {
+   "id": 12,
+   "gs": "gs://sellsnap-6e85c.firebasestorage.app/d2QDW52HDEyOlAez5njzG9/cd897b62-4203-4799-ad7b-bb40b0e94a35_A0CBF7E9-C3FB-442A-9ABB-E01BC8A7847C.jpg",
+   "item": "Car xenon (HID) bulb with igniter base",
+   "must": [
+    "ксенон|xenon|\\bhid\\b"
+   ]
+  },
+  {
+   "id": 20,
+   "gs": "gs://sellsnap-6e85c.firebasestorage.app/dBqb2bMLzUZbgQyiF95RHO/829291fb-245c-4f25-890c-3ceb5647af22_FC30C561-6A76-4B5D-A5A3-4F52D6272A0C.jpg",
+   "item": "Videx angle flashlight / headlamp with magnetic base",
+   "must": [
+    "ліхтар"
+   ],
+   "bonus": "videx"
+  },
+  {
+   "id": 4,
+   "gs": "gs://sellsnap-6e85c.firebasestorage.app/ceRgtiwCZkt6r2W9-jDQWp/73dae245-8df4-4c5a-abe0-2a6212b3a629_4EDC59B3-98A6-4CD4-A63A-F93C2C347557.jpg",
+   "item": "VW engine ECU, Magneti Marelli, label 036 906 034 DD (not PD)",
+   "must": [
+    "блок (керування|управління)|\\becu\\b|ебу|ебк|мозок|комп.ютер"
+   ],
+   "bonus": "036 ?906 ?034 ?dd",
+   "wrongDetail": [
+    "034 ?pd\\b"
+   ]
+  },
+  {
+   "id": 3,
+   "gs": "gs://sellsnap-6e85c.firebasestorage.app/ceRgtiwCZkt6r2W9-jDQWp/c9432e6f-8a2c-4697-8c2d-3676aef77e72_2CCE4530-C126-4FE4-82D9-B427461D107F.jpg",
+   "item": "Hyundai windscreen wiper motor 98100-A5000",
+   "must": [
+    "мотор|двигун|привід",
+    "склоочисн|двірник|очисник"
+   ],
+   "bonus": "98100.?a5000"
+  },
+  {
+   "id": 11,
+   "gs": "gs://sellsnap-6e85c.firebasestorage.app/cnhqlgYkUkEWgcZVrSjCz9/1e48c40d-b8ca-497c-ade8-66fe4edc7557_BFE33843-2B1B-41D6-A4BD-78CFC0246ABD.jpeg",
+   "item": "Figo jeans W30, Havuc model",
+   "must": [
+    "джинс"
+   ],
+   "bonus": "havuc"
+  },
+  {
+   "id": 17,
+   "gs": "gs://sellsnap-6e85c.firebasestorage.app/d4ADC1dKmElPljIgYxkEAK/4488a5fd-522f-4d78-b552-2a1f1d01a839_54A9C07E-031B-496B-B91B-9BD8A9D71057.jpg",
+   "item": "Carrera sunglasses (~900 UAH; 1500 or more is overpriced)",
+   "must": [
+    "окуляр"
+   ],
+   "bonus": "carrera",
+   "maxPrice": 1499
+  },
+  {
+   "id": 44,
+   "gs": "gs://sellsnap-6e85c.firebasestorage.app/euy8Ra0AFUn3oy2eHWwbtp/a872fe97-1d88-46a6-8339-7a3369f9e7f4_7591D5C0-B63B-4BB2-BFC9-5A0CCD9B4A02.jpg",
+   "item": "Ugears wooden mechanical model kit, Mars rover (lid reads MARS 2050 UGEARS)",
+   "must": [
+    "марс|ровер"
+   ],
+   "bonus": "ugears|югірс"
+  },
+  {
+   "id": 43,
+   "gs": "gs://sellsnap-6e85c.firebasestorage.app/euy8Ra0AFUn3oy2eHWwbtp/c9ff878e-577f-45b0-8c0b-f8891475c2d6_053A4BE5-B346-4FEB-95FC-C5773254B085.jpg",
+   "item": "Hookah heat-management device (kaloud)",
+   "must": [
+    "калауд|kaloud|калаут|кальян"
+   ],
+   "wrong": [
+    "терк",
+    "дзвін",
+    "дзеркал"
+   ]
+  },
+  {
+   "id": 1,
+   "gs": "gs://sellsnap-6e85c.firebasestorage.app/c00Uc7BX2EMLm6FUs-Gp-X/56863c5d-d9bc-4aa9-bb61-18ad31e8bce5_995F6F13-45D5-43FA-AC2D-1559385D8280.jpeg",
+   "item": "Nike low sneakers, black and white",
+   "must": [
+    "кросівк|кеди|снікер"
+   ],
+   "bonus": "court|borough",
+   "wrongDetail": [
+    "air force|jordan|dunk"
+   ]
+  },
+  {
+   "id": 28,
+   "gs": "gs://sellsnap-6e85c.firebasestorage.app/djBa7tnwKU1DpPndJpWqI5/7e434aef-5efc-47da-957f-4c233cc073dd_B1D21CF1-9ED7-491D-AD95-0696335FCD9D.jpeg",
+   "item": "Dr. Martens tassel loafers (Adrian), brand on the box",
+   "must": [
+    "лофер|туфл|мокасин"
+   ],
+   "bonus": "adrian"
+  },
+  {
+   "id": 56,
+   "gs": "gs://sellsnap-6e85c.firebasestorage.app/fXsSfgf6_kUMiOuOi0FFQx/df0d6015-9cdb-4233-8971-684378041379_A8D8157B-DE78-4D33-93C5-20617AD928AD.jpeg",
+   "item": "Nike Air Max Dn sneakers",
+   "must": [
+    "кросівк"
+   ],
+   "bonus": "\\bdn\\b",
+   "wrongDetail": [
+    "air max ?(90|95|97|270|720|plus|tn|1\\b)"
+   ]
+  },
+  {
+   "id": 42,
+   "gs": "gs://sellsnap-6e85c.firebasestorage.app/euy8Ra0AFUn3oy2eHWwbtp/ef5e988e-8ddd-48eb-9bf4-7fbbeb03d67a_605945C5-B849-48F0-AE53-350999A8E3E6.jpg",
+   "item": "iPhone 11 Pro, midnight green",
+   "must": [
+    "iphone|айфон|смартфон|телефон"
+   ],
+   "bonus": "11 ?pro",
+   "wrongDetail": [
+    "iphone ?(x\\b|xs|xr|1[2-7])"
+   ]
+  },
+  {
+   "id": 36,
+   "gs": "gs://sellsnap-6e85c.firebasestorage.app/edUYCSW60Uq-n8Vh-5Rlkg/976c6265-218a-4882-95dc-9c49b0410a2f_4DF929FE-08D2-4D3F-A41C-F65D165F3513.jpeg",
+   "item": "White bar stool on a chrome gas-lift base",
+   "must": [
+    "стіл[еьц]|стільц|табурет"
+   ],
+   "wrong": [
+    "\\bстіл\\b",
+    "столик"
+   ]
+  },
+  {
+   "id": 2,
+   "gs": "gs://sellsnap-6e85c.firebasestorage.app/c00Uc7BX2EMLm6FUs-Gp-X/d0133edd-0c19-4893-bc9a-885ce9c8caeb_A8B261A1-7A43-4C32-B024-36CD60E9A1B8.jpeg",
+   "item": "Guess stiletto ankle boots, brand printed on the box",
+   "must": [
+    "ботильйон|черевик|чобіт|чоботи"
+   ],
+   "bonus": "guess"
+  },
+  {
+   "id": 7,
+   "gs": "gs://sellsnap-6e85c.firebasestorage.app/cfX7xXD2kUETjz_-V4LmCh/30bc0b68-884f-418d-85f1-6b437699876d_31187C12-D9F8-4F92-B0F6-7EBA97260392.jpg",
+   "item": "Pair of wireless lavalier mics with receiver, in the retail box",
+   "must": [
+    "мікрофон"
+   ]
+  },
+  {
+   "id": 14,
+   "gs": "gs://sellsnap-6e85c.firebasestorage.app/d2rH9kbwq0ZsqRKvo2lmsk/85754eb3-df65-4f2b-b83d-ee27041e696b_1E27A53A-090A-4422-A31E-2327B55BCA1D.jpg",
+   "item": "Corset top with puff sleeves, red and white ornament fabric",
+   "must": [
+    "корсет|\\bтоп"
+   ]
+  },
+  {
+   "id": 22,
+   "gs": "gs://sellsnap-6e85c.firebasestorage.app/dDDcqUEd8E-Ppchlk5woFN/13684a2c-7974-46fe-be5c-6f8563d79e7c_C841C427-5633-4EC4-811C-215963F2EEFC.jpg",
+   "item": "Over-ear headphones, black, no brand visible",
+   "must": [
+    "навушник"
+   ],
+   "wrong": [
+    "колонк"
+   ]
+  },
+  {
+   "id": 23,
+   "gs": "gs://sellsnap-6e85c.firebasestorage.app/dDDcqUEd8E-Ppchlk5woFN/1269f611-a27e-43bd-aaae-5260c013377d_26759231-846E-4711-8EA7-928FCC7A7972.jpg",
+   "item": "Ceriotti hairdresser trolley (an air cooler is wrong)",
+   "must": [
+    "візок|візочок|тележк|етажерк|столик|тумб"
+   ],
+   "wrong": [
+    "охолоджувач",
+    "кондиціон",
+    "зволожувач",
+    "обігрівач"
+   ],
+   "bonus": "ceriotti"
+  },
+  {
+   "id": 25,
+   "gs": "gs://sellsnap-6e85c.firebasestorage.app/dMuhom1f-Er1hzfpzKVdAI/8c08e175-09e8-42da-a440-1d06b3aa5abb_FB8F6E40-7FEC-41C8-B6F1-B5C389F89374.jpg",
+   "item": "Motion-blurred dark frame: must refuse",
+   "refuse": [
+    "too_blurry",
+    "too_dark"
+   ]
+  },
+  {
+   "id": 33,
+   "gs": "gs://sellsnap-6e85c.firebasestorage.app/eJG0UlokTvS2QeqHNKKTVr/465dad3e-a789-4577-99b3-b152f071e9c3_9695789d-826b-4f30-ae05-a6498dcfd7f2.jpg",
+   "item": "Chevrolet Tacuma (car; price is a guess, not scored)",
+   "must": [
+    "chevrolet|шевроле|автомобіль|\\bавто\\b|машин"
+   ],
+   "bonus": "tacuma|rezzo|такума"
+  },
+  {
+   "id": 35,
+   "gs": "gs://sellsnap-6e85c.firebasestorage.app/eV3yNsd8NknGo6W7x1JSAr/1345728d-9656-4130-88e2-2489ccff4b0f_6FFAB5C4-D513-4D01-98C5-5874557DE0EA.jpg",
+   "item": "Black frame: must refuse",
+   "refuse": [
+    "too_dark",
+    "not_an_item"
+   ]
+  },
+  {
+   "id": 39,
+   "gs": "gs://sellsnap-6e85c.firebasestorage.app/eqbBucySBUftjkaupjA_jn/7815dbdd-1f4e-4224-a864-4a209b856f65_A1ECB992-3870-4BE0-8A19-50515D2E29A4.jpg",
+   "item": "TWO Adidas Benfica mini balls (AI-generated product shot)",
+   "must": [
+    "м.?яч"
+   ],
+   "bonus": "\\bдва\\b|\\bдві\\b|2 шт|пара|набір|комплект|2 м"
+  },
+  {
+   "id": 41,
+   "gs": "gs://sellsnap-6e85c.firebasestorage.app/eqbBucySBUftjkaupjA_jn/99a39539-165b-43e9-8804-96790325eeb4_34FC2AE4-FC79-4E87-B82F-BFE70473CEAF.jpg",
+   "item": "SilverCrest deep fryer (four-photo collage)",
+   "must": [
+    "фритюрниц"
+   ],
+   "bonus": "silvercrest|silver crest"
+  },
+  {
+   "id": 47,
+   "gs": "gs://sellsnap-6e85c.firebasestorage.app/f1wZ7yYc50JUuzE-YVN7Q_/caa6d9a1-2606-4d31-befd-84c4e8ed5539_2A7E161A-0745-42E6-8CFF-099DE2645629.jpeg",
+   "item": "Nike Mercurial football boots, pink",
+   "must": [
+    "бутс"
+   ],
+   "bonus": "mercurial",
+   "wrongDetail": [
+    "phantom|tiempo|hypervenom|magista|predator"
+   ]
+  }
+ ]
+}

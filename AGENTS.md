@@ -235,6 +235,8 @@ build and checks every pending ticket in one pass.
 - Change AI ad generation pipeline:
   - `features/seller/ad/generate_ad/GenerateAdViewModel.kt`
   - `features/seller/openai/OpenAIClient.kt`
+  - Changing the model, reasoning effort, image detail or listing prompt: run the `model-bench`
+    skill first (`scripts/model-bench/`, results in `research/MODEL-BENCH-listing-generation.md`)
 - Change drafts (what is kept, the generate-screen section, the Drafts screen):
   - `features/seller/drafts/`
 - Change which OLX top-level categories are user-facing:

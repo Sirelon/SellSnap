@@ -33,6 +33,11 @@ import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
+/**
+ * Listing-generation model. Before changing it, its reasoning effort, the image detail or the
+ * prompt, rerun the model bench: `scripts/model-bench/`, results and the recommended replacement in
+ * `research/MODEL-BENCH-listing-generation.md`.
+ */
 const val AD_GENERATION_MODEL_ID = "gpt-4.1"
 
 // Bump whenever adGenerationInstructions changes, so ad-generation-log records stay attributable
