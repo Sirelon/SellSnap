@@ -1,0 +1,36 @@
+{
+  "active": true,
+  "content": {
+    "title": {
+      "en": "TITLE_EN",
+      "uk": "TITLE_UK",
+      "ru": "TITLE_UK",
+      "bg": "TITLE_BG",
+      "kk": "TITLE_KK",
+      "pl": "TITLE_PL",
+      "pt": "TITLE_PT",
+      "ro": "TITLE_RO"
+    },
+    "body": {
+      "en": "BODY_EN",
+      "uk": "BODY_UK",
+      "ru": "BODY_UK",
+      "bg": "BODY_BG",
+      "kk": "BODY_KK",
+      "pl": "BODY_PL",
+      "pt": "BODY_PT",
+      "ro": "BODY_RO"
+    },
+    "link": "store"
+  },
+  "rules": {
+    "dismissible": true,
+    "showMode": "once",
+    "minVersion": "4.1",
+    "maxVersion": "4.1",
+    "platforms": ["android", "ios"],
+    "userIds": ["FIREBASE_INSTALLATION_ID"],
+    "olxUserIds": [123456789],
+    "priority": 10
+  }
+}

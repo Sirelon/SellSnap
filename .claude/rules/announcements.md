@@ -6,8 +6,8 @@ paths:
 # Announcements
 
 - Launch dialog fed by the Firestore `announcements` collection (one doc = content + rules,
-  filtered on device; schema in `AnnouncementResponse`). Publish via Firestore REST as in the
-  `release-notes` skill. `content.link` adds a button: `store` opens the platform store page,
+  filtered on device; schema in `AnnouncementResponse`). Publish with
+  `scripts/publish-announcement.mjs` (the `announce` skill). `content.link` adds a button: `store` opens the platform store page,
   an https URL opens the browser. A doc with `rules.dismissible: false` plus a link has no
   other exit, so `maxVersion` + `showMode: everyLaunch` + `link: store` gates a version range
   that no longer works (the 3.1-3.3 clients broke silently when the AI proxy went live on
@@ -16,4 +16,5 @@ paths:
   resolve, and the dialog silently drops an image that fails to load.
 
 `rules.platforms` (`android`, `ios`, `web`, `desktop`; absent or empty = every platform) limits
-a document to those platforms. To force an update, use the `force-update` skill.
+a document to those platforms. To show a dialog to sellers, use the `announce` skill; to force an
+update, use the `force-update` skill.

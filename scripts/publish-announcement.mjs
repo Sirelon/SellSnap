@@ -2,7 +2,7 @@
 // Publishes one announcement file (scripts/announcements/<id>.json) to the `announcements`
 // Firestore collection, as document <id>. firestore.rules denies client writes there, so this
 // authenticates as a project member through gcloud. The file is the whole document: a publish
-// overwrites it. See .claude/skills/force-update/SKILL.md.
+// overwrites it. See .claude/skills/announce/SKILL.md and .claude/skills/force-update/SKILL.md.
 //
 //   node scripts/publish-announcement.mjs scripts/announcements/<id>.json --dry-run
 //   node scripts/publish-announcement.mjs scripts/announcements/<id>.json
