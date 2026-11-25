@@ -24,6 +24,7 @@
     <string name="guest_connect_prompt_body">Skopiowałeś 3 ogłoszenia. Połącz swoje konto OLX, a SellSnap opublikuje je za Ciebie.</string>
     <string name="guest_connect_prompt_connect">Połącz OLX</string>
     <string name="generate_ad_guest_connect_hint">Teraz jesteś w trybie gościa — połącz OLX w dowolnym momencie w Profilu, by publikować jednym kliknięciem.</string>
+    <string name="generate_ad_reconnect_hint">Twoje logowanie do OLX wygasło. Nadal możesz tworzyć ogłoszenia — połącz ponownie, by je opublikować.</string>
     <string name="continue_with_olx">Kontynuuj z OLX</string>
     <string name="terms_privacy_prefix">Kontynuując, akceptujesz nasze </string>
     <string name="terms_of_service">Warunki korzystania</string>

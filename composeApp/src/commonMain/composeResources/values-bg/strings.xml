@@ -24,6 +24,7 @@
     <string name="guest_connect_prompt_body">Копира 3 обяви. Свържи акаунта си в OLX и SellSnap може да ги публикува вместо теб.</string>
     <string name="guest_connect_prompt_connect">Свържи OLX</string>
     <string name="generate_ad_guest_connect_hint">Сега си в гостови режим — свържи OLX по всяко време в Профила, за да публикуваш с един допир.</string>
+    <string name="generate_ad_reconnect_hint">Входът ти в OLX е изтекъл. Все още можеш да създаваш обяви — свържи отново, за да ги публикуваш.</string>
     <string name="continue_with_olx">Продължи с OLX</string>
     <string name="terms_privacy_prefix">С продължаването приемаш нашите </string>
     <string name="terms_of_service">Условия за ползване</string>

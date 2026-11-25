@@ -24,6 +24,7 @@
     <string name="guest_connect_prompt_body">Copiou 3 anúncios. Ligue a sua conta OLX e o SellSnap pode publicá-los por si.</string>
     <string name="guest_connect_prompt_connect">Ligar o OLX</string>
     <string name="generate_ad_guest_connect_hint">Está agora no modo convidado — ligue o OLX a qualquer momento em Perfil para publicar num toque.</string>
+    <string name="generate_ad_reconnect_hint">O seu início de sessão no OLX expirou. Pode continuar a criar anúncios — reconecte para os publicar.</string>
     <string name="continue_with_olx">Continuar com o OLX</string>
     <string name="terms_privacy_prefix">Ao continuar, aceita os nossos </string>
     <string name="terms_of_service">Termos de Serviço</string>

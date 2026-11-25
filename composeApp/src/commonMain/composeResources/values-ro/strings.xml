@@ -24,6 +24,7 @@
     <string name="guest_connect_prompt_body">Ai copiat 3 anunțuri. Conectează-ți contul OLX și SellSnap le poate posta pentru tine.</string>
     <string name="guest_connect_prompt_connect">Conectează OLX</string>
     <string name="generate_ad_guest_connect_hint">Acum ești în modul oaspete — conectează OLX oricând din Profil, ca să publici dintr-o atingere.</string>
+    <string name="generate_ad_reconnect_hint">Autentificarea ta în OLX a expirat. Poți crea în continuare anunțuri — reconectează-te pentru a le publica.</string>
     <string name="continue_with_olx">Continuă cu OLX</string>
     <string name="terms_privacy_prefix">Continuând, ești de acord cu </string>
     <string name="terms_of_service">Termenii de serviciu</string>
