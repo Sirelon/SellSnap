@@ -487,6 +487,9 @@ fun App() {
                                         navVm.backStack.add(AppKey.Drafts)
                                     }
                                 },
+                                openReconnect = {
+                                    navVm.backStack.add(AppKey.Profile(source = "generate_reconnect"))
+                                },
                                 onLoadingChanged = { isGeneratingAd = it },
                             )
                         }
@@ -623,6 +626,7 @@ fun App() {
                                             duration = SnackbarDuration.Long,
                                         )
                                         if (result == SnackbarResult.ActionPerformed) {
+                                            previewViewModel.onEvent(PreviewAdContract.PreviewAdEvent.ReconnectClicked)
                                             navVm.backStack.add(AppKey.Profile(reason = effect.message, source = "publish_reconnect"))
                                         }
                                     }

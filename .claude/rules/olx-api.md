@@ -36,6 +36,11 @@ the rest is how this app shipped two wrong status meanings.
 - Cite the portal and section in the KDoc next to the code that relies on the fact, and mark
   anything you could not confirm `Inferred:` (rule 3). Do not invent a restriction the API does
   not state (rule 4).
+- **Every partner endpoint needs a token, the catalog included.** `categories`, `categories/suggestion`,
+  `categories/{id}/attributes` and `currencies` answer 401 with no token (all six markets,
+  2026-11-25), so a guest never calls them. `CategoriesRepository` reads with the seller's token
+  and falls back to the app's own `client_credentials` token (`createOlxAppHttpClient`) when the
+  market has no usable account. That token lives 900 s (86400 s in kz) and has no refresh token.
 - For live probes without a user account — token minting, routing checks — use
   `.claude/skills/olx-api-verify`. Never attempt an OLX login.
 

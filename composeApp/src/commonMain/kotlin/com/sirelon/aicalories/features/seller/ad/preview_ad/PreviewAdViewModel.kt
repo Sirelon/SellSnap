@@ -535,6 +535,9 @@ class PreviewAdViewModel internal constructor(
                 }
             }
 
+            PreviewAdEvent.ReconnectClicked ->
+                analytics.logEvent(AnalyticsEvents.RECONNECT_PROMPT_TAPPED, mapOf("source" to "publish"))
+
             is PreviewAdEvent.GuestConnectPromptAnswered -> {
                 analytics.logEvent(
                     AnalyticsEvents.GUEST_CONNECT_PROMPT_ANSWERED,
@@ -850,6 +853,7 @@ class PreviewAdViewModel internal constructor(
                 // just point at Profile via a distinct, named action (see PublishNeedsReconnect KDoc).
                 olxError is OlxApiError.InvalidGrant || olxError is OlxApiError.InvalidToken -> {
                     val accountName = displayAccountName(targetAccount)
+                    analytics.logEvent(AnalyticsEvents.RECONNECT_PROMPT_SHOWN, mapOf("source" to "publish"))
                     postEffect(
                         PreviewAdEffect.PublishNeedsReconnect(
                             message = getString(Res.string.error_publish_needs_reconnect, accountName),

@@ -24,6 +24,7 @@
     <string name="guest_connect_prompt_body">Сен 3 хабарландыруды көшірдің. OLX аккаунтыңды қос, сонда SellSnap оларды сенің орныңа жариялай алады.</string>
     <string name="guest_connect_prompt_connect">OLX-ті қосу</string>
     <string name="generate_ad_guest_connect_hint">Қазір қонақ режиміндесің — бір түртіп жариялау үшін кез келген уақытта Профильде OLX-ті қос.</string>
+    <string name="generate_ad_reconnect_hint">OLX-ке кіру мерзімі аяқталды. Хабарландыру жасай беруге болады — жариялау үшін қайта қос.</string>
     <string name="continue_with_olx">OLX арқылы кіру</string>
     <string name="terms_privacy_prefix">Жалғастыру арқылы сен біздің </string>
     <string name="terms_of_service">Қызмет шарттарымен</string>

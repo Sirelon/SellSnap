@@ -5,9 +5,9 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
- * Body of a successful OLX token-endpoint call (`authorization_code` and `refresh_token` grants).
- * Inferred from the fields the app has always read; OLX does not send an issue time, so the
- * caller supplies it.
+ * Body of a successful OLX token-endpoint call (`authorization_code`, `refresh_token` and
+ * `client_credentials` grants). Inferred from the fields the app has always read; OLX does not
+ * send an issue time, so the caller supplies it.
  */
 @Serializable
 internal class OlxTokenResponse(

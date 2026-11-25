@@ -224,6 +224,9 @@ interface PreviewAdContract {
 
         /** The one-time "connect OLX" sheet closed; [choice] is `connect`, `not_now` or `dismissed`. */
         data class GuestConnectPromptAnswered(val choice: String) : PreviewAdEvent
+
+        /** SIR-201: the seller tapped Reconnect on the [PreviewAdEffect.PublishNeedsReconnect] snackbar. */
+        data object ReconnectClicked : PreviewAdEvent
     }
 
     sealed interface PreviewAdEffect {

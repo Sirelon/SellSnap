@@ -69,6 +69,8 @@ import com.sirelon.sellsnap.features.seller.ad.AdvertisementWithAttributes
 import com.sirelon.sellsnap.features.seller.drafts.Draft
 import com.sirelon.sellsnap.features.seller.drafts.ui.DraftsSection
 import com.sirelon.sellsnap.generated.resources.Res
+import com.sirelon.sellsnap.generated.resources.action_reconnect_target_account
+import com.sirelon.sellsnap.generated.resources.generate_ad_reconnect_hint
 import com.sirelon.sellsnap.generated.resources.add_photos_to_continue
 import com.sirelon.sellsnap.features.media.DictatePill
 import com.sirelon.sellsnap.features.media.ListeningStrip
@@ -99,6 +101,7 @@ import org.koin.compose.viewmodel.koinViewModel
 fun GenerateAdScreen(
     openAdPreview: (AdvertisementWithAttributes) -> Unit,
     openDrafts: () -> Unit,
+    openReconnect: () -> Unit,
     modifier: Modifier = Modifier,
     onLoadingChanged: (Boolean) -> Unit = {},
 ) {
@@ -149,6 +152,8 @@ fun GenerateAdScreen(
             is GenerateAdContract.GenerateAdEffect.OpenAdPreview -> openAdPreview(effect.ad)
 
             GenerateAdContract.GenerateAdEffect.OpenDrafts -> openDrafts()
+
+            GenerateAdContract.GenerateAdEffect.OpenReconnect -> openReconnect()
         }
     }
 
@@ -191,6 +196,9 @@ fun GenerateAdScreen(
                 onSeeAllDrafts = {
                     viewModel.onEvent(GenerateAdContract.GenerateAdEvent.OpenAllDrafts)
                 },
+                onReconnect = {
+                    viewModel.onEvent(GenerateAdContract.GenerateAdEvent.ReconnectClicked)
+                },
                 modifier = modifier,
             )
         }
@@ -213,6 +221,7 @@ private fun GenerateAdScreenContent(
     onSubmitClick: () -> Unit,
     onOpenDraft: (Draft) -> Unit,
     onSeeAllDrafts: () -> Unit,
+    onReconnect: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val dismissKeyboard = rememberKeyboardDismissAction()
@@ -259,6 +268,12 @@ private fun GenerateAdScreenContent(
             if (state.showGuestConnectHint) {
                 item {
                     GuestConnectHintCard()
+                }
+            }
+
+            state.reconnectAccountName?.let { accountName ->
+                item {
+                    ReconnectCard(accountName = accountName, onReconnect = onReconnect)
                 }
             }
 
@@ -328,6 +343,36 @@ private fun GuestConnectHintCard(modifier: Modifier = Modifier) {
             style = AppTheme.typography.body,
             color = AppTheme.colors.primary,
         )
+    }
+}
+
+@Composable
+private fun ReconnectCard(
+    accountName: String,
+    onReconnect: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    AppCard(
+        modifier = modifier.fillMaxWidth().testTag("generate_ad_reconnect_card"),
+        containerColor = AppTheme.colors.primary.copy(alpha = 0.12f),
+        contentColor = AppTheme.colors.primary,
+    ) {
+        Column(
+            modifier = Modifier.padding(AppDimens.Spacing.xl3),
+            verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.xl3),
+        ) {
+            Text(
+                text = stringResource(Res.string.generate_ad_reconnect_hint),
+                style = AppTheme.typography.body,
+                color = AppTheme.colors.primary,
+            )
+            AppButton(
+                text = stringResource(Res.string.action_reconnect_target_account, accountName),
+                onClick = onReconnect,
+                modifier = Modifier.fillMaxWidth(),
+                style = AppButtonDefaults.primary(),
+            )
+        }
     }
 }
 
@@ -613,6 +658,7 @@ private fun GenerateAdScreenEmptyPreview() {
             onSubmitClick = {},
             onOpenDraft = {},
             onSeeAllDrafts = {},
+            onReconnect = {},
         )
     }
 }
@@ -634,6 +680,7 @@ private fun GenerateAdScreenWithPromptPreview() {
             onSubmitClick = {},
             onOpenDraft = {},
             onSeeAllDrafts = {},
+            onReconnect = {},
         )
     }
 }
