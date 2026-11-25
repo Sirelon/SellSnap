@@ -1,0 +1,41 @@
+{
+  "active": true,
+  "content": {
+    "title": {
+      "en": "Reconnect your OLX account",
+      "uk": "Підключіть акаунт OLX знову",
+      "ru": "Підключіть акаунт OLX знову",
+      "bg": "Свържи отново профила си в OLX",
+      "kk": "OLX аккаунтын қайта қос",
+      "pl": "Połącz ponownie konto OLX",
+      "pt": "Volte a ligar a sua conta OLX",
+      "ro": "Reconectează contul OLX"
+    },
+    "body": {
+      "en": "Your OLX connection has expired. Open your profile and tap Reconnect to keep creating and publishing listings.",
+      "uk": "Підключення до OLX завершилося. Відкрийте профіль і підключіть акаунт знову, щоб і далі створювати й публікувати оголошення.",
+      "ru": "Підключення до OLX завершилося. Відкрийте профіль і підключіть акаунт знову, щоб і далі створювати й публікувати оголошення.",
+      "bg": "Връзката ти с OLX е изтекла. Отвори профила си и свържи акаунта отново, за да продължиш да създаваш и публикуваш обяви.",
+      "kk": "OLX-пен байланыстың мерзімі бітті. Хабарландыруларды жасап, жариялай беру үшін профильді ашып, аккаунтты қайта қос.",
+      "pl": "Połączenie z OLX wygasło. Otwórz profil i połącz konto ponownie, aby dalej tworzyć i publikować ogłoszenia.",
+      "pt": "A ligação ao OLX expirou. Abra o seu perfil e volte a ligar a conta para continuar a criar e publicar anúncios.",
+      "ro": "Conexiunea cu OLX a expirat. Deschide profilul și reconectează contul ca să poți crea și publica în continuare anunțuri."
+    }
+  },
+  "rules": {
+    "dismissible": true,
+    "showMode": "once",
+    "platforms": [
+      "android",
+      "ios"
+    ],
+    "userIds": [
+      "cfX7xXD2kUETjz_-V4LmCh"
+    ],
+    "olxUserIds": [
+      252212836,
+      1031171571
+    ],
+    "priority": 20
+  }
+}
