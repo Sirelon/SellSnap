@@ -19,6 +19,8 @@ interface GenerateAdContract {
         val isLoading: Boolean = false,
         val isGuestMode: Boolean = false,
         val showGuestConnectHint: Boolean = false,
+        /** SIR-201: the active account's name while its OLX connection has expired, else null. */
+        val reconnectAccountName: String? = null,
         val completedSteps: Int = 0,
         val errorMessage: String? = null,
         val uploads: Map<KmpFile, UploadingItem> = emptyMap(),
@@ -49,6 +51,9 @@ interface GenerateAdContract {
         data class OpenDraft(val draft: Draft) : GenerateAdEvent
 
         data object OpenAllDrafts : GenerateAdEvent
+
+        /** SIR-201: the seller tapped Reconnect on the expired-connection card. */
+        data object ReconnectClicked : GenerateAdEvent
     }
 
     sealed interface GenerateAdEffect {
@@ -59,5 +64,8 @@ interface GenerateAdContract {
         ) : GenerateAdEffect
 
         data object OpenDrafts : GenerateAdEffect
+
+        /** Opens Profile, where the seller reconnects the account. */
+        data object OpenReconnect : GenerateAdEffect
     }
 }

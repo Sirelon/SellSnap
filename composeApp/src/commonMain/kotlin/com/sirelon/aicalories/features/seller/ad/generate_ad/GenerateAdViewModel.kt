@@ -31,6 +31,8 @@ import com.sirelon.sellsnap.features.seller.ad.AdvertisementWithAttributes
 import com.sirelon.sellsnap.features.seller.ad.data.IncompleteGeneratedAdException
 import com.sirelon.sellsnap.features.seller.ad.generation_log.AdGenerationAttempt
 import com.sirelon.sellsnap.features.seller.ad.generation_log.AdGenerationLogRepository
+import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountState
+import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountStore
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAuthRepository
 import com.sirelon.sellsnap.features.seller.auth.data.OlxCountryStore
 import com.sirelon.sellsnap.features.seller.auth.domain.SellerSessionMode
@@ -55,6 +57,7 @@ import com.sirelon.sellsnap.generated.resources.error_photo_unreadable
 import com.sirelon.sellsnap.generated.resources.error_selected_files_process_failed
 import com.sirelon.sellsnap.generated.resources.error_upload_file_failed
 import com.sirelon.sellsnap.generated.resources.photos_limit_kept_message
+import com.sirelon.sellsnap.generated.resources.publish_target_account_fallback_name
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.TimeSource
@@ -107,7 +110,7 @@ internal class AdGenerationTimeoutException : Exception("Ad generation exceeded 
  * and reported it, so the generation failure path only ends the run and adds nothing for the seller. */
 internal class PhotoUploadFailedException(message: String) : Exception(message)
 
-class GenerateAdViewModel(
+class GenerateAdViewModel internal constructor(
     private val mediaUploadHelper: MediaUploadHelper,
     private val draftMediaFileStore: DraftMediaFileStore,
     private val categoriesRepository: CategoriesRepository,
@@ -121,6 +124,7 @@ class GenerateAdViewModel(
     private val analytics: Analytics,
     private val adGenerationLogRepository: AdGenerationLogRepository,
     private val draftsRepository: DraftsRepository,
+    private val accountStore: OlxAccountStore,
 ) : BaseViewModel<GenerateAdContract.GenerateAdState, GenerateAdContract.GenerateAdEvent, GenerateAdContract.GenerateAdEffect>() {
 
     private val restoredSavedState = readSavedState()
@@ -151,6 +155,33 @@ class GenerateAdViewModel(
         }
             .onEach { (drafts, currency) ->
                 setState { it.copy(latestDraft = drafts.firstOrNull(), draftsCurrency = currency) }
+            }
+            .launchIn(viewModelScope)
+
+        observeExpiredConnection()
+    }
+
+    /**
+     * SIR-201: while the active account for the market needs a reconnect, the screen offers it.
+     * Generation itself goes on as usual - the catalog reads fall back to the app's own token -
+     * so the card only says what the seller must do before publishing.
+     */
+    private fun observeExpiredConnection() {
+        var shownLogged = false
+        combine(accountStore.recordFlow, countryStore.currentFlow) { record, country ->
+            val activeIndex = record.activeByCountry[country.code]
+            record.accounts.find { it.localIndex == activeIndex && it.state == OlxAccountState.NeedsReconnect }
+        }
+            .map { account ->
+                account?.let { it.profile?.name?.takeIf(String::isNotBlank) ?: getString(Res.string.publish_target_account_fallback_name) }
+            }
+            .distinctUntilChanged()
+            .onEach { name ->
+                if (name != null && !shownLogged) {
+                    shownLogged = true
+                    analytics.logEvent(AnalyticsEvents.RECONNECT_PROMPT_SHOWN, mapOf("source" to "generate"))
+                }
+                setState { it.copy(reconnectAccountName = name) }
             }
             .launchIn(viewModelScope)
     }
@@ -245,6 +276,11 @@ class GenerateAdViewModel(
                 adFlowTimerStore.clear()
                 adFlowTimerStore.markFlowStartedIfNeeded()
                 postEffect(GenerateAdContract.GenerateAdEffect.OpenAdPreview(ad = event.draft.listing))
+            }
+
+            GenerateAdContract.GenerateAdEvent.ReconnectClicked -> {
+                analytics.logEvent(AnalyticsEvents.RECONNECT_PROMPT_TAPPED, mapOf("source" to "generate"))
+                postEffect(GenerateAdContract.GenerateAdEffect.OpenReconnect)
             }
 
             GenerateAdContract.GenerateAdEvent.OpenAllDrafts ->

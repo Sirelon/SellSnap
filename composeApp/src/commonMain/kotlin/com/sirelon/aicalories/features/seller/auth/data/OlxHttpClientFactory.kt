@@ -98,6 +98,67 @@ internal fun createOlxAuthorizedHttpClient(
     }
 }
 
+/**
+ * Carries the app's own token instead of a seller's: OAuth `client_credentials`, scope `v2 read`,
+ * minted for the current market. It reads OLX's catalog (categories, category suggestion,
+ * attributes) when no seller token works, so a seller whose OLX connection expired still gets a
+ * full listing (SIR-201).
+ *
+ * developer.olx.ua swagger v2: `components.securitySchemes.access_token.flows.clientCredentials`
+ * (tokenUrl `/api/open/oauth/token`), and `/categories`, `/categories/suggestion` and
+ * `/categories/{categoryId}/attributes` ask for `access_token` with `v2`, `read`, naming no flow.
+ * Live on 2026-11-25 in pt, ro, pl, ua, bg and kz: the grant answered, all three endpoints
+ * answered 200 with the minted token, and a request with no token got 401. The token lives 900 s
+ * (86400 s in kz) and comes without a refresh token, so a 401 simply mints a new one. That also
+ * covers a market switch: the old market's token gets a 401 on the new market's host.
+ */
+internal fun createOlxAppHttpClient(
+    authRefreshClient: HttpClient,
+    credentialsProvider: OlxCredentialsProvider,
+    errorParser: OlxRemoteErrorParser,
+    engine: HttpClientEngine? = null,
+): HttpClient {
+    val configure: HttpClientConfig<*>.() -> Unit = {
+        commonOlxHttpClientConfig().invoke(this)
+        install(Auth) {
+            bearer {
+                loadTokens { mintOlxAppToken(authRefreshClient, credentialsProvider, errorParser).toBearerTokens() }
+                refreshTokens { mintOlxAppToken(authRefreshClient, credentialsProvider, errorParser).toBearerTokens() }
+            }
+        }
+    }
+
+    return if (engine != null) {
+        HttpClient(engine, configure)
+    } else {
+        HttpClient(configure)
+    }
+}
+
+private suspend fun mintOlxAppToken(
+    client: HttpClient,
+    credentialsProvider: OlxCredentialsProvider,
+    errorParser: OlxRemoteErrorParser,
+): OlxTokens {
+    val response = client.post("/api/${OlxConfig.authTokenPath}") {
+        contentType(ContentType.Application.Json)
+        setBody(
+            ClientCredentialsRequest(
+                grantType = "client_credentials",
+                clientId = credentialsProvider.getClientId(),
+                clientSecret = credentialsProvider.getClientSecret(),
+                scope = "v2 read",
+            ),
+        )
+    }
+
+    if (!response.status.isSuccess()) {
+        throw errorParser.parse(response.status, response.bodyAsText())
+    }
+
+    return response.body<OlxTokenResponse>().toDomain(issuedAtEpochSeconds = nowEpochSeconds())
+}
+
 private fun activeAccount(accountStore: OlxAccountStore, countryStore: OlxCountryStore): OlxAccountRecord? {
     val record = accountStore.recordFlow.value
     val activeIndex = record.activeByCountry[countryStore.current.code] ?: return null
@@ -181,4 +242,12 @@ private class RefreshTokenRequest(
     @SerialName("client_id") val clientId: String,
     @SerialName("client_secret") val clientSecret: String,
     @SerialName("refresh_token") val refreshToken: String,
+)
+
+@Serializable
+private class ClientCredentialsRequest(
+    @SerialName("grant_type") val grantType: String,
+    @SerialName("client_id") val clientId: String,
+    @SerialName("client_secret") val clientSecret: String,
+    @SerialName("scope") val scope: String,
 )

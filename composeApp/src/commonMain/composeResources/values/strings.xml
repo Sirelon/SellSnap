@@ -24,6 +24,7 @@
     <string name="guest_connect_prompt_body">You've copied 3 listings. Connect your OLX account and SellSnap can post them for you.</string>
     <string name="guest_connect_prompt_connect">Connect OLX</string>
     <string name="generate_ad_guest_connect_hint">You're browsing as a guest — connect OLX anytime from Profile to publish in one tap.</string>
+    <string name="generate_ad_reconnect_hint">Your OLX login has expired. You can still create listings — reconnect to publish them.</string>
     <string name="continue_with_olx">Continue with OLX</string>
     <string name="terms_privacy_prefix">By continuing, you're cool with our </string>
     <string name="terms_of_service">Terms of Service</string>

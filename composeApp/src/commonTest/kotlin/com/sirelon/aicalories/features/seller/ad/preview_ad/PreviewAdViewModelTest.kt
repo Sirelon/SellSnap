@@ -1921,6 +1921,8 @@ class PreviewAdViewModelTest {
         )
         val categoriesRepository = CategoriesRepository(
             olxApiClient = olxApiClient,
+            appApiClient = olxApiClient,
+            accountStore = OlxAccountStore(InMemoryOlxKeyValueStore(), testJson),
             mapper = CategoriesMapper(),
             countryStore = countryStore,
         )

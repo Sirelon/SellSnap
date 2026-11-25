@@ -27,7 +27,12 @@ import com.sirelon.sellsnap.features.seller.ad.AdvertisementWithAttributes
 import com.sirelon.sellsnap.features.seller.ad.generation_log.NoOpAdGenerationLogRepository
 import com.sirelon.sellsnap.features.seller.ad.loadScreenshotPhotos
 import com.sirelon.sellsnap.features.seller.auth.data.GuestModeStore
+import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountRecord
+import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountState
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountStore
+import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountsRecord
+import com.sirelon.sellsnap.features.seller.auth.data.OlxProfileSnapshot
+import com.sirelon.sellsnap.features.seller.auth.domain.OlxTokens
 import com.sirelon.sellsnap.features.seller.auth.data.OlxApiClient
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAuthRepository
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAuthSessionStore
@@ -158,6 +163,61 @@ class GenerateAdViewModelTest {
 
         assertEquals(setOf("duration_ms", "photo_count", "upload_ms", "upload_bytes"), params.keys)
     }
+
+    @Test
+    fun `an expired connection offers Reconnect, logs it once, and the tap opens it`() =
+        runTest(testDispatcher) {
+            val harness = buildHarness()
+            runCurrent()
+            assertEquals(null, harness.viewModel.state.value.reconnectAccountName)
+
+            harness.accountStore.write(expiredAccountRecord(countryCode = "ua", name = "Olena"))
+            runCurrent()
+            assertEquals("Olena", harness.viewModel.state.value.reconnectAccountName)
+            // A second write - e.g. another account's refresh - shows the same card, not a second event.
+            harness.accountStore.write(expiredAccountRecord(countryCode = "ua", name = "Olena", lastUsed = 5))
+            runCurrent()
+            val shown = harness.analytics.events.filter { it.first == AnalyticsEvents.RECONNECT_PROMPT_SHOWN }
+            assertEquals(listOf(mapOf<String, Any>("source" to "generate")), shown.map { it.second })
+
+            harness.viewModel.onEvent(GenerateAdContract.GenerateAdEvent.ReconnectClicked)
+            harness.viewModel.effects.awaitEffect<GenerateAdContract.GenerateAdEffect.OpenReconnect>()
+            assertEquals(1, harness.analytics.events.count { it.first == AnalyticsEvents.RECONNECT_PROMPT_TAPPED })
+        }
+
+    @Test
+    fun `an expired account in another market offers nothing here`() =
+        runTest(testDispatcher) {
+            val harness = buildHarness()
+            harness.accountStore.write(expiredAccountRecord(countryCode = "pl", name = "Jan"))
+            runCurrent()
+
+            assertEquals(null, harness.viewModel.state.value.reconnectAccountName)
+            assertTrue(harness.analytics.events.none { it.first == AnalyticsEvents.RECONNECT_PROMPT_SHOWN })
+        }
+
+    private fun expiredAccountRecord(countryCode: String, name: String, lastUsed: Long = 0) = OlxAccountsRecord(
+        accounts = listOf(
+            OlxAccountRecord(
+                localIndex = 1,
+                countryCode = countryCode,
+                tokens = OlxTokens(
+                    accessToken = "dead-token",
+                    refreshToken = "dead-refresh-token",
+                    expiresInSeconds = 86_400,
+                    tokenType = "bearer",
+                    scope = "v2 read write",
+                    issuedAtEpochSeconds = 0,
+                ),
+                profile = OlxProfileSnapshot(name = name, email = null, avatarUrl = null, isBusiness = false),
+                lastUsedAtEpochSeconds = lastUsed,
+                lastRefreshedAtEpochSeconds = 0,
+                state = OlxAccountState.NeedsReconnect,
+            ),
+        ),
+        activeByCountry = mapOf(countryCode to 1),
+        nextLocalIndex = 2,
+    )
 
     @Test
     fun `photos and the note survive a switch to another tab and back`() =
@@ -455,8 +515,11 @@ class GenerateAdViewModelTest {
             errorParser = errorParser,
         )
 
+        val olxApiClient = OlxApiClient(httpClient = httpClient, json = testJson, errorParser = errorParser)
         val categoriesRepository = CategoriesRepository(
-            olxApiClient = OlxApiClient(httpClient = httpClient, json = testJson, errorParser = errorParser),
+            olxApiClient = olxApiClient,
+            appApiClient = olxApiClient,
+            accountStore = OlxAccountStore(InMemoryOlxKeyValueStore(), testJson),
             mapper = CategoriesMapper(),
             countryStore = countryStore,
         )
@@ -473,6 +536,7 @@ class GenerateAdViewModelTest {
         )
 
         val draftsRepository = InMemoryDraftsRepository()
+        val accountStore = OlxAccountStore(InMemoryOlxKeyValueStore(), testJson)
         val adFlowTimerStore = AdFlowTimerStore()
         val inputStore = GenerateAdInputStore()
         // A fresh SavedStateHandle each time, as a new GenerateAd back-stack entry gets.
@@ -491,6 +555,7 @@ class GenerateAdViewModelTest {
                 analytics = analytics,
                 adGenerationLogRepository = NoOpAdGenerationLogRepository,
                 draftsRepository = draftsRepository,
+                accountStore = accountStore,
             )
         }
         val viewModel = createViewModel()
@@ -514,6 +579,7 @@ class GenerateAdViewModelTest {
             analytics = analytics,
             draftsRepository = draftsRepository,
             countryStore = countryStore,
+            accountStore = accountStore,
         )
     }
 
@@ -529,6 +595,7 @@ class GenerateAdViewModelTest {
         val analytics: FakeAnalytics,
         val draftsRepository: InMemoryDraftsRepository,
         val countryStore: OlxCountryStore,
+        val accountStore: OlxAccountStore,
     )
 
     private class TestCredentialsProvider : OlxCredentialsProvider {
