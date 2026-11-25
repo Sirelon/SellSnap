@@ -2,6 +2,8 @@ package com.sirelon.sellsnap.features.announcements.data
 
 import com.sirelon.sellsnap.features.announcements.data.response.AnnouncementResponse
 import com.sirelon.sellsnap.features.announcements.model.Announcement
+import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountState
+import com.sirelon.sellsnap.navigation.AppDeepLink
 import com.sirelon.sellsnap.features.whatsnew.data.FALLBACK_LANGUAGE_CODE
 import com.sirelon.sellsnap.platform.PlatformTargets
 import com.sirelon.sellsnap.platform.appLanguageCode
@@ -27,6 +29,7 @@ internal fun AnnouncementResponse.toDomain(id: String, languageCode: String): An
         body = content?.body.resolve(languageCode),
         imageUrl = content?.imageUrl?.takeIf { it.isNotBlank() },
         link = content?.link.normalizedLink(),
+        buttonText = content?.buttonText.resolve(languageCode),
         dismissible = rules?.dismissible ?: true,
         // Anything but "everyLaunch" - including a typo - is "once": the quieter reading.
         showMode = if (rules?.showMode == SHOW_MODE_EVERY_LAUNCH) {
@@ -40,12 +43,15 @@ internal fun AnnouncementResponse.toDomain(id: String, languageCode: String): An
         olxUserIds = rules?.olxUserIds.orEmpty().toSet(),
         priority = rules?.priority ?: 0,
         // An unknown value such as a typo is kept, so it matches no device: the quieter reading.
-        platforms = rules?.platforms.orEmpty()
-            .map { it.trim().lowercase() }
-            .filter { it.isNotEmpty() }
-            .toSet(),
+        platforms = rules?.platforms.normalizedCodes(),
+        olxConnections = rules?.olxConnection.normalizedCodes(),
     )
 }
+
+private fun List<String>?.normalizedCodes(): Set<String> = orEmpty()
+    .map { it.trim().lowercase() }
+    .filter { it.isNotEmpty() }
+    .toSet()
 
 internal const val ANNOUNCEMENT_PLATFORM_ANDROID = "android"
 internal const val ANNOUNCEMENT_PLATFORM_IOS = "ios"
@@ -63,10 +69,42 @@ internal fun currentAnnouncementPlatform(): String = when {
 /** The `link` value that opens this platform's store page rather than a URL. */
 internal const val ANNOUNCEMENT_LINK_STORE = "store"
 
-// Anything that is neither the store keyword nor an https URL is dropped rather than opened: a
-// typo in the console must not hand the browser a bare word.
-private fun String?.normalizedLink(): String? =
-    this?.trim()?.takeIf { it == ANNOUNCEMENT_LINK_STORE || it.startsWith("https://") }
+/** `rules.olxConnection` values: no OLX account on the device, one that needs reconnecting, one that works. */
+internal const val OLX_CONNECTION_NONE = "none"
+internal const val OLX_CONNECTION_EXPIRED = "expired"
+internal const val OLX_CONNECTION_CONNECTED = "connected"
+
+/**
+ * Every `rules.olxConnection` value this device has, from the states of all its OLX accounts in
+ * every country. A device with one working and one expired account is both `connected` and
+ * `expired`, so a reconnect reminder reaches it.
+ */
+internal fun olxConnectionsOf(accountStates: List<OlxAccountState>): Set<String> =
+    if (accountStates.isEmpty()) {
+        setOf(OLX_CONNECTION_NONE)
+    } else {
+        accountStates.mapTo(mutableSetOf()) { state ->
+            when (state) {
+                OlxAccountState.Usable -> OLX_CONNECTION_CONNECTED
+                OlxAccountState.NeedsReconnect -> OLX_CONNECTION_EXPIRED
+            }
+        }
+    }
+
+/** The `link_type` analytics value of a normalized link: `store`, `in_app` or `url`. */
+internal fun announcementLinkType(link: String): String = when {
+    link == ANNOUNCEMENT_LINK_STORE -> "store"
+    AppDeepLink.parse(link) != null -> "in_app"
+    else -> "url"
+}
+
+// Anything that is not the store keyword, an https URL or an in-app link this version knows is
+// dropped rather than opened: a typo in the console must not hand the browser a bare word.
+private fun String?.normalizedLink(): String? {
+    val link = this?.trim() ?: return null
+    if (link == ANNOUNCEMENT_LINK_STORE || link.startsWith("https://")) return link
+    return AppDeepLink.parse(link)?.url
+}
 
 // Falls back to English when a translation is missing rather than dropping the announcement -
 // content is hand-edited in Firestore and a locale won't always be filled in right away.
@@ -97,8 +135,8 @@ internal fun compareVersions(a: String, b: String): Int? {
 /**
  * The one announcement to show on this launch, or null. An announcement is eligible when the app
  * version is inside its inclusive [minVersion, maxVersion] range, its `platforms` are empty or
- * contain [platform], the device is targeted, and it is not a `once` announcement already in
- * [seenIds]. Highest priority wins; a tie goes to the lowest id so the outcome never depends on
+ * contain [platform], its `olxConnection` is empty or shares a value with [olxConnections], the
+ * device is targeted, and it is not a `once` announcement already in [seenIds]. Highest priority wins; a tie goes to the lowest id so the outcome never depends on
  * Firestore's document order.
  *
  * Targeting: no `userIds` and no `olxUserIds` means everyone. Otherwise the device matches when
@@ -110,10 +148,12 @@ internal fun selectAnnouncement(
     platform: String,
     installationId: String?,
     olxUserIds: Set<Long>,
+    olxConnections: Set<String>,
     seenIds: Set<String>,
 ): Announcement? = announcements
     .filter { it.isInVersionRange(appVersion) }
     .filter { it.platforms.isEmpty() || platform in it.platforms }
+    .filter { it.olxConnections.isEmpty() || olxConnections.any { state -> state in it.olxConnections } }
     .filter { it.targets(installationId, olxUserIds) }
     .filterNot { it.showMode == Announcement.ShowMode.Once && it.id in seenIds }
     .sortedWith(compareByDescending<Announcement> { it.priority }.thenBy { it.id })

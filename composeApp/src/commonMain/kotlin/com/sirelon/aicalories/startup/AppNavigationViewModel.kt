@@ -1,5 +1,6 @@
 package com.sirelon.sellsnap.startup
 
+import androidx.compose.runtime.snapshotFlow
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.serialization.saved
@@ -20,9 +21,12 @@ import com.sirelon.sellsnap.features.seller.auth.domain.SellerSessionMode
 import com.sirelon.sellsnap.features.seller.auth.presentation.OlxAuthDismissReason
 import com.sirelon.sellsnap.features.seller.profile.data.SellerAccountRepository
 import com.sirelon.sellsnap.features.whatsnew.data.WhatsNewStore
+import com.sirelon.sellsnap.navigation.AppDeepLinkBridge
 import com.sirelon.sellsnap.navigation.AppKey
 import com.sirelon.sellsnap.navigation.appNavigationSavedStateConfiguration
 import com.sirelon.sellsnap.navigation.isSellerFlowEntry
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -50,6 +54,10 @@ class AppNavigationViewModel(
         configuration = appNavigationSavedStateConfiguration,
     ) { NavBackStack(AppKey.Splash) }
 
+    // Set once the startup destination is on the back stack, so a deep link is never opened and
+    // then wiped by startup routing.
+    private val startupRouted = MutableStateFlow(false)
+
     init {
         // Its own coroutine: reporting the permission and subscribing topics must not wait on
         // routing, and a failure there must not stop routing.
@@ -60,6 +68,7 @@ class AppNavigationViewModel(
             reportInterruptedAuthorization()
             olxAccountMigration.migrateIfNeeded()
             resolveStartupDestination()
+            startupRouted.value = true
             // After routing, so a slow or hung `users/me` (up to the OLX client's 15 s connect +
             // 90 s request timeouts) never holds the splash; routing never used its result. Same
             // coroutine as the keep-alive below so the two never refresh a rotating token at once.
@@ -83,6 +92,30 @@ class AppNavigationViewModel(
             .filterNotNull()
             .onEach { if (backStack.lastOrNull() != AppKey.GenerateAd) popToAdRoot() }
             .launchIn(viewModelScope)
+
+        // An in-app link waits until the seller is in the main flow: on onboarding, consent or the
+        // landing screen it stays queued and opens once they get past it. Opening one works like a
+        // tab tap - the stack becomes that tab alone; an unfinished listing stays in Drafts.
+        combine(
+            AppDeepLinkBridge.pending,
+            startupRouted,
+            snapshotFlow { backStack.firstOrNull()?.isSellerFlowEntry == true },
+        ) { pending, routed, inSellerFlow -> pending.takeIf { routed && inSellerFlow } }
+            .filterNotNull()
+            .onEach { openPendingDeepLink() }
+            .launchIn(viewModelScope)
+    }
+
+    private fun openPendingDeepLink() {
+        val pending = AppDeepLinkBridge.consume() ?: return
+        val destination = pending.link.destination
+        if (backStack.size != 1 || backStack.firstOrNull() != destination) {
+            replaceWith(destination)
+        }
+        analytics.logEvent(
+            AnalyticsEvents.DEEP_LINK_OPENED,
+            mapOf("destination" to pending.link.analyticsCode, "source" to pending.source),
+        )
     }
 
     fun navigateTo(destination: AppKey) {
