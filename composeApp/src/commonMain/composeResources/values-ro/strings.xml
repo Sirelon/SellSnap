@@ -61,7 +61,7 @@
     <string name="validation_all_valid">Arată grozav — ești pregătit ✨</string>
     <string name="validation_fields_remaining">%1$d de completat</string>
     <string name="validation_error_title_too_short">Titlul trebuie să aibă cel puțin 10 caractere</string>
-    <string name="validation_error_desc_too_short">Descrierea trebuie să aibă cel puțin 30 de caractere</string>
+    <string name="validation_error_desc_too_short">Descrierea trebuie să aibă cel puțin 40 de caractere</string>
     <string name="validation_error_no_category">Alege o categorie</string>
     <string name="validation_error_no_location">Adaugă o locație</string>
     <string name="validation_errors_more">…și %1$d altele</string>
@@ -293,6 +293,7 @@
     <string name="photos_limit_kept_message">Am păstrat primele %1$d fotografii — acesta e maximul pentru acest pas.</string>
     <string name="error_upload_file_failed">Nu s-a putut încărca una dintre fotografii.</string>
     <string name="error_publish_failed">Publicarea nu a reușit. Mai încearcă o dată.</string>
+    <string name="error_publish_rejected_by_olx">OLX nu a acceptat anunțul: %1$s</string>
     <string name="error_generate_ad_failed">Nu s-a putut genera anunțul. Încerci din nou?</string>
     <string name="error_app_check_failed">Nu am putut verifica această instalare. Actualizează serviciile Google Play sau instalează SellSnap din Google Play, apoi încearcă din nou.</string>
     <string name="error_photo_unreadable">Nu am putut recunoaște articolul din fotografiile tale. Încearcă să le refaci.</string>
@@ -451,6 +452,11 @@
         <item quantity="few">Mai sunt %1$d zile</item>
         <item quantity="other">Mai sunt %1$d de zile</item>
     </plurals>
+    <plurals name="my_ads_unread_messages">
+        <item quantity="one">%1$d mesaj necitit</item>
+        <item quantity="few">%1$d mesaje necitite</item>
+        <item quantity="other">%1$d de mesaje necitite</item>
+    </plurals>
     <string name="advert_extend_unavailable">Poți prelungi asta doar pe OLX, nu de aici.</string>
 
     <!-- Ad lifecycle — statistics -->
@@ -504,4 +510,11 @@
     </plurals>
     <string name="conversation_load_failed">Nu am putut încărca această conversație.</string>
     <string name="conversation_reply_on_olx">Răspunde pe OLX</string>
+    <string name="conversation_reply_hint">Scrie un răspuns</string>
+    <string name="conversation_send">Trimite</string>
+    <string name="conversation_message_sending">Se trimite…</string>
+    <string name="conversation_message_not_sent">Netrimis</string>
+    <string name="conversation_suggest_replies">Sugerează răspunsuri</string>
+    <string name="conversation_suggestions_dismiss">Ascunde sugestiile</string>
+    <string name="conversation_scam_warning">Posibilă înșelătorie. OLX nu îți cere niciodată să confirmi o vânzare printr-un link sau un bot de mesagerie. Nu da datele cardului.</string>
 </resources>

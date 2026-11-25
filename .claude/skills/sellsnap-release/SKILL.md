@@ -1,136 +1,54 @@
 ---
 name: sellsnap-release
 description: >-
-  Bump SellSnap's version, write the "What's New" release notes for every supported
-  language on both stores, and ship a new internal/beta build. Use when the user says
-  "release a new version", "ship version X.Y", "cut a release", "publish an update",
-  "bump the version and publish", or asks what's new in the current build. Covers Play
-  Store internal testing + TestFlight beta only — promoting to production (Play) or
-  submitting to the App Store is a separate manual step, never run by this skill. After
-  a real ship, hand off to the `release-notes` skill to publish the in-app What's New
-  content — this skill writes store-listing changelogs only, it doesn't touch Firestore.
+  Release SellSnap end to end in one run: version bump, store release notes in every language, Play internal +
+  TestFlight upload, App Store draft, in-app What's New, and website and store descriptions when a capability is
+  complete, then App Store review submission with automatic release. Use when the user says "release" or "ship
+  version X.Y". Promoting to Play production stays manual.
 ---
 
 # SellSnap release
 
-Merge `origin/main`, bump `version.properties`, translate the release notes into all
-supported languages, write them where each store's fastlane action actually reads them
-from, then run `scripts/ship.sh` to build and upload. Fully autonomous once started — no pause before
-upload, per standing preference — but everything it's about to publish gets generated
-as files first, so it's all visible in the diff.
+One request runs steps 1 to 12 in one go. The owner pre-approved every decision inside them. Decide each one
+yourself, publish it, and report once at the end. Stop to ask only when a step fails in a way you cannot fix.
 
-**Scope is beta/internal only.** This skill runs `fastlane android beta` (Play internal
-track) and `fastlane ios beta` (TestFlight). It never runs `fastlane android release`
-(promote to production) or `fastlane ios release` (App Store submission) — those stay
-manual, separate actions the user triggers themselves when ready.
+The run uploads to Play internal testing and TestFlight, prepares the App Store draft (`fastlane ios release`,
+which never submits), and submits that draft for review as its last action (step 12). The draft's release type is
+`AFTER_APPROVAL`, so Apple publishes it on approval. Promoting on Play (`fastlane android release`) is the owner's
+one manual step. Background for each step: [reference.md](reference.md).
 
-## 1. Pull the latest first
-
-Before reading versions or drafting anything, bring the branch up to date:
+## 1. Pull the latest
 
 ```bash
 git fetch origin && git merge origin/main
 ```
 
-A release cut from a stale branch ships without whatever landed on `main` since, and its
-changelog silently omits those features — the notes are drafted from the git range, so
-anything not merged in cannot appear in them. Resolve any conflict, then run
-`./gradlew :composeApp:compileAndroidMain` and `./gradlew :composeApp:jvmTest` before
-going further; `ship.sh` compiles too, but finding a broken merge after the version has
-already been bumped wastes a build number.
+The notes come from the git range, so unmerged work cannot appear in them. Resolve conflicts, then run
+`./gradlew :composeApp:compileAndroidMain` and `./gradlew :composeApp:jvmTest`; a broken merge found after the bump
+wastes a build number. `.claude/tmp/release-metadata/` is gitignored, so the merge never touches it. When uncommitted
+edits to the tracked `store/copy/store-listing.md` make the merge refuse, run `git checkout --` on that file; step 5
+rewrites it.
 
-`.claude/tmp/release-metadata/` is gitignored, so a merge never touches the changelog
-files — but `store/copy/store-listing.md` is tracked and `main` may have edited it. If
-that file also has uncommitted edits from an earlier release attempt, the merge will
-refuse; those edits get rewritten in step 7 anyway, so discard them (`git checkout --` on
-that one file) and let the merge through rather than reconciling both by hand.
+Done when: the merge is complete with no conflict, and compile and `jvmTest` pass.
 
-## 2. Locale codes (looked up once, reuse — don't re-derive)
+## 2. Decide the version
 
-Google Play and App Store Connect use different locale strings for the same language.
-More importantly, **neither store's set is "all 8 in-app languages"** — each store only
-has whatever listing locales someone actually configured for it, which is smaller than
-and different from the in-app-supported language list. Confirmed for Play by actually
-downloading the live listing (`bundle exec fastlane run download_from_play_store
-package_name:com.sirelon.sellsnap json_key:fastlane/google-play-key.json
-metadata_path:<fresh-empty-dir>` — use a directory that doesn't already exist, supply
-silently no-ops on one that does):
+`NEW_CODE = VERSION_CODE + 1` (from `version.properties`), every release.
 
-| Language | Google Play locale | Play listing exists? | App Store / TestFlight locale | Apple support |
-| --- | --- | --- | --- | --- |
-| English | `en-US` | **No** — no title configured, confirmed by download | `en-US` | yes — confirmed live in App Store Connect |
-| Ukrainian | `uk` | Yes | `uk` | yes |
-| Polish | `pl-PL` | Yes | `pl` | yes |
-| Romanian | `ro` | Yes | `ro` | yes |
-| Bulgarian | `bg` | Yes | — | not supported by Apple |
-| Portuguese (Portugal) | `pt-PT` | Yes | `pt-PT` | yes |
-| Kazakh | `kk` | Yes | — | not supported by Apple |
+`VERSION_NAME` is `MAJOR.MINOR` or `MAJOR.MINOR.PATCH`. A version named in the request ("release 4.0") is `NEW_NAME`.
+Otherwise the range decides (`git log --oneline <last bump commit>..HEAD`, the range step 3 reads); the highest level
+in it wins:
 
-**No russian *store listing*, on either store, by product decision** — not an
-Apple/Google support gap. This is scoped to store metadata only (descriptions,
-keywords, promotional text, this skill's release notes): never add a `ru`/`ru-RU`
-folder anywhere under `.claude/tmp/release-metadata/`, never add a russian section to
-`store/copy/store-listing.md`, and if a stray `ios/ru/` or `android/ru-RU/` directory
-ever reappears, delete it rather than filling it in. **This does not apply to the
-in-app UI** — `composeApp/.../composeResources/values-ru/` still exists and must stay a
-byte-identical copy of `values-uk` (see `.claude/agents/localize.md`); it's a fallback
-so russian-locale devices see Ukrainian, not a real translation. Don't conflate the two.
-
-**Android: 6 real locales** — `uk, pl-PL, ro, bg, pt-PT, kk`. Do not add `en-US` back to
-the Android changelog automation without first actually creating that Play Store listing
-(title, descriptions, everything — see `store/copy/store-listing.md` for drafted copy) —
-pushing just a changelog for a locale with no base listing fails the whole edit (Google
-validates atomically at commit time, not per-locale, so the failure can surface on
-whichever locale it happens to check first, not necessarily the one that's actually
-missing something).
-
-**iOS: 5 real locales** — `en-US, uk, pl, ro, pt-PT`. Confirmed live in App Store Connect
-(2026-08-27, via an actual `fastlane ios release` run): `en-US` exists as a localization
-but was still missing Description/Keywords/Support URL (first-ever production submission
-for this app — those fields were never backfilled); `uk`/`pl`/`ro`/`pt-PT` already had
-complete listings with no missing-field errors.
-
-If the discovered reality ever changes (e.g. an English Play listing gets added
-properly), update this table and `ANDROID_LOCALES` in `scripts/ship.sh` together — they
-must stay in sync or the guard in step 9 will check locales that no longer match what
-`metadata_path` actually contains.
-
-## 3. Where the text actually goes
-
-These are mechanical inputs for fastlane, not content worth versioning — they live under
-`.claude/tmp/release-metadata/`, which is gitignored, and get regenerated fresh every
-release. The Fastfile points `supply`/`deliver` at this directory explicitly via
-`metadata_path:` (its default location is inside `fastlane/`, which we deliberately don't
-use, so these never end up tracked or pushed to the repo).
-
-| File | Read by | Notes |
+| The range ships | Bump | From 3.9 |
 | --- | --- | --- |
-| `.claude/tmp/release-metadata/android/<play-locale>/changelogs/<version_code>.txt` | `upload_to_play_store` (supply), automatically via `metadata_path: ANDROID_METADATA_DIR` | Filename **must** be the new numeric version code, e.g. `9.txt`. One file per real Play locale (6 — see step 2, not all 8 in-app languages). supply scans every locale folder that exists under this path, so don't leave stray folders for locales Play doesn't actually have a listing for. |
-| `.claude/tmp/release-metadata/ios/<appstore-locale>/release_notes.txt` | `upload_to_app_store` (deliver, `ios release` lane, via `metadata_path: IOS_METADATA_DIR`) **and** the `ios beta` lane's `localized_build_info` (hand-read in the Fastfile, since pilot has no folder convention) | Same file, same text serves both TestFlight's "What to Test" and the eventual App Store release notes. One file per App Store locale (5 files), overwritten each release — no version number in the filename. |
-| `.claude/tmp/release-metadata/ios/RELEASE_NOTES_VERSION` | `scripts/ship.sh` (guard only, not read by fastlane) | Plain text, just the version code, e.g. `9`. Proves the iOS notes were actually refreshed for this build before shipping. |
-| `.claude/tmp/release-metadata/ios/<appstore-locale>/promotional_text.txt` | `upload_to_app_store` (deliver, `ios release` lane only — **not** read by the beta/TestFlight lane, Apple has no such concept for TestFlight) | See step 6 — leave alone by default. |
-| `store/copy/store-listing.md` | Nobody automatically — tracked, human reference doc | Update so it keeps describing current state, matching every other doc in this repo. This is the only piece of this whole flow that belongs in git. |
+| Fixes only | patch | 3.9.1 |
+| Small updates to features that already exist | minor | 3.10 |
+| A big new feature or a big update (the kind step 9 puts on the website) | major | 4.0 |
 
-`ship.sh` hard-fails if any of the 6 Android changelog files or the iOS
-`RELEASE_NOTES_VERSION` marker don't match the new version code — so do not skip a
-locale, and do not run `ship.sh` before finishing this skill's writes.
+Pass `NEW_NAME` to `ship.sh` as `$1`. Only "just bump the build" in the request keeps `VERSION_NAME`; then run
+`ship.sh` without an argument.
 
-## 4. Work out the version numbers
-
-Read `version.properties`. `NEW_CODE = CURRENT_CODE + 1` — always, every release. Ask
-the user (or infer from their message) whether `VERSION_NAME` changes this time:
-
-- "release 2.2" / "bump minor to 2.2" → `NEW_NAME = 2.2`, pass it to `ship.sh` as `$1`.
-- "ship a hotfix" / "just bump the build" / no version mentioned → `VERSION_NAME` stays
-  as-is, run `ship.sh` with no argument.
-
-**A `VERSION_NAME` already released on the App Store forces a marketing bump, whatever
-the user asked for.** Apple closes a version's pre-release train the moment that version
-goes `READY_FOR_SALE`, and every later build under the same `VERSION_NAME` is refused with
-`Invalid Pre-Release Train ... is closed for new build submissions (90186)` — after the
-archive is built, and after the Android half of `ship.sh` has already uploaded. Play has
-no such rule, so this splits the two stores mid-run. Check the live version before
-choosing the number, and bump `VERSION_NAME` if the current one is already public:
+Then read the live App Store state:
 
 ```bash
 bundle exec ruby -r spaceship -e '
@@ -150,177 +68,209 @@ end
 '
 ```
 
-`live:` is the number that forces the bump. `edit:` shows whether a version is already
-open for the next submission, and the build list shows which trains exist — all three in
-one call, because deciding the number needs all three.
+When the resulting `VERSION_NAME` equals `live:`, bump it by the table above (a patch at least) whatever the request
+said, and pass it to `ship.sh`: Apple refuses builds for a released version (error 90186). After a forced bump, step 3's base is
+the bump commit of the last public version (`live:`). Reference: "Apple's pre-release train rule".
 
-Use this rather than `fastlane run app_store_build_number ... api_key_path:`: that action's
-`api_key_path` wants fastlane's own JSON key-file format, so handing it the raw `.p8`
-fails with `JSON::ParserError: invalid number: '-----BEGIN'`. The key triple above is the
-same one `fastlane/Fastfile` already hardcodes.
+Done when: `NEW_CODE`, the `VERSION_NAME` to ship and the step 3 base are fixed, and that `VERSION_NAME` differs from `live:`.
 
-When this forces a bump, the notes change too: draft them against the last *public*
-version rather than the last build, since the skipped train's features are already in
-users' hands and must not be announced a second time.
+## 3. Draft the English What's New
 
-## 5. Draft the English "What's New" first
+Find the base bump commit with `git log --oneline -- version.properties`, then read `git log --oneline <base>..HEAD`.
+Write 1 to 5 user-facing bullets, chosen and worded by the rules in "Writing for sellers" below. Follow the voice in `store/copy/store-listing.md`: headline `SellSnap X.Y — <short theme>`,
+blank line, `•` bullets. Use no emoji: App Store Connect rejects metadata fields that contain one. The same text
+serves Play, iOS release notes and TestFlight.
 
-Look at what actually changed:
+### Writing for sellers
 
-```bash
-git log --oneline <last-version-bump-commit>..HEAD
+The owner's rules. They apply to these store notes and to the in-app cards (`release-notes` skill):
+
+- Tell the seller what got better for them, as a short story. Never describe how it was built.
+- Lead with what every seller feels. A change to the core (photo in, listing out) goes first, even when the diff
+  is small: "We improved what matters most: SellSnap recognizes your items better and writes even better listings.
+  Try it, you'll feel the difference." Not "a newer AI model", not a list of what the AI now reads.
+- A new market is one plain line: "New country: SellSnap now works in Kazakhstan. Publish your listings on OLX.kz."
+  Leave out its mechanics (listing language, currency, price rounding).
+- Drop fixes and tweaks that only a small slice of sellers meets (a per-country city, a button on an expired
+  account). Two strong bullets beat five mixed ones.
+- Order by how many sellers gain, never by change type.
+
+Worked example, 4.1. The owner rejected the first draft and approved the second.
+
+Rejected (ordered by change type, written from the diff):
+
+```
+SellSnap 4.1 — Kazakhstan joins, smoother OLX accounts
+
+• Sell on OLX.kz: Kazakhstan is now in the country picker
+• Your saved city is kept separately for each OLX country
+• When your OLX account needs reconnecting, the Reconnect button shows right away
+• Sharper listings from a newer AI model
 ```
 
-(Find the last version-bump commit by searching for one that touched
-`version.properties`, e.g. `git log --oneline -- version.properties`.)
+What was wrong: the core improvement came last and named the mechanism ("a newer AI model"). Two bullets were
+small-slice fixes. The headline sold the minor items. A later fix still listed mechanics ("takes the brand and model
+printed on the item", "listings in Kazakh, prices in tenge").
 
-Write 2-5 short, user-facing bullets — benefit language, not commit messages ("Improved
-crash reporting" not "Enable Crashlytics and capture iOS Kotlin crashes"). Match the
-existing voice in `store/copy/store-listing.md`: a one-line headline
-(`SellSnap X.Y — <short theme>`), blank line, then `•` bullets. No emoji anywhere — App
-Store Connect rejects metadata fields containing emoji.
+Approved:
 
-**Keep it under Google Play's 500-character changelog limit.** The same text is reused
-for the iOS release notes and TestFlight's what's-new (App Store's own limit is 4000
-chars, so the tighter Play limit is the real ceiling — no need to maintain two versions
-of the copy).
+```
+SellSnap 4.1 — Even better listings
 
-## 6. Translate to the other languages
-
-Adapt (don't machine-translate flatly) into `uk`, `pl`, `ro`, `bg`, `pt-PT`, `kk` — no
-`ru`, see step 2 — match each language's established terminology from that language's existing section in
-`store/copy/store-listing.md` (e.g. reuse how "privacy"/"analytics"/"bug fixes" were
-already phrased there, so the voice stays consistent release over release). Kazakh is
-already flagged in that doc as machine-quality — keep that caveat in mind but don't
-skip it, Google Play still needs the file.
-
-## 7. Write the files
-
-For the 6 real Play locales (`uk, pl-PL, ro, bg, pt-PT, kk` — not `en-US`, see
-step 2): `.claude/tmp/release-metadata/android/<play-locale>/changelogs/<NEW_CODE>.txt`.
-The English draft still gets written to `store/copy/store-listing.md` (every
-language's section stays current there) — it just doesn't get a Play changelog file,
-since pushing one for a locale with no base listing breaks the whole Play upload.
-
-For all 5 App Store locales: overwrite `.claude/tmp/release-metadata/ios/<appstore-locale>/release_notes.txt`,
-then overwrite `.claude/tmp/release-metadata/ios/RELEASE_NOTES_VERSION` with `<NEW_CODE>` (bare
-number, no newline needed either way).
-
-Update `store/copy/store-listing.md`: replace each language's `**What's New (vX.Y):**`
-block with the new version/text, and update the top-of-file "Written for SellSnap X.Y
-(build N)" line. This doc describes current state only — don't accumulate old versions'
-blocks, git history already has them.
-
-## 8. Promotional text — leave it alone unless asked
-
-`promotional_text.txt` is **not** touched by this skill by default — but it does get
-re-uploaded on every ship, and that is the point.
-
-Apple carries neither promotional text nor What's New into a new App Store version. A
-version created by hand in App Store Connect therefore always comes up with both fields
-empty and no build selected, which is why filling them in used to be manual work every
-single release. `ship.sh` now closes that gap itself: after the two beta uploads it runs
-`fastlane ios release`, which creates/updates the version draft, resupplies
-`.claude/tmp/release-metadata/ios/<locale>/{release_notes,promotional_text}.txt` for all
-5 App Store locales via deliver's folder convention (`skip_metadata: false`), and
-attaches the build just uploaded (`skip_binary_upload: true` — no rebuild). **It does not
-submit for review**; the draft is left ready for a deliberate click.
-
-So the resupply is what keeps promotional text from going blank, and it does not require
-the wording to change. Only rewrite `promotional_text.txt` if the user explicitly asks to
-update the pitch this run.
-
-deliver picks a build only as part of submitting for review, so passing it `build_number`
-alone attaches nothing — `attach_build_to_app_store_version` in the Fastfile does that
-step explicitly. Server-side filtering on `preReleaseVersion.version` is rejected by the
-API, hence the local match over recent uploads there; don't "simplify" it back into the
-filter.
-
-These files are gitignored and don't propagate across git worktrees — if a fresh worktree
-is missing them, copy them from another checkout rather than regenerating with
-placeholder text.
-
-## 9. Ship it
-
-```bash
-./scripts/ship.sh            # build-only bump
-./scripts/ship.sh 2.2         # marketing version bump to 2.2
+• We improved what matters most: SellSnap recognizes your items better and writes even better listings. Try it, you'll feel the difference
+• New country: SellSnap now works in Kazakhstan. Publish your listings on OLX.kz
 ```
 
-This compiles, bumps `version.properties`, runs `fastlane android beta` +
-`fastlane ios beta` (Play internal track and TestFlight), then `fastlane ios release` to
-prepare the App Store draft — see step 8. Let it run to completion (background + wait for
-the notification if it takes a while; don't poll).
+Done when: the text has 1 to 5 bullets that pass the rules above, no emoji, at most 500 characters (Google Play's
+limit; App Store allows 4000).
 
-The App Store step is deliberately non-fatal: both binaries are already uploaded by the
-time it runs, and its one expected failure is a version currently in review, which cannot
-be edited. A warning there does not mean the ship failed.
+## 4. Translate
 
-The iOS framework's release link is the peak-memory task in the build and needs
-`org.gradle.jvmargs=-Xmx8g`; at 4g it died with a Kotlin/Native `OutOfMemoryError` partway
-through the archive, after Android had already uploaded.
+Adapt, rather than machine-translate, into `uk`, `pl`, `ro`, `bg`, `pt-PT`, `kk`. Reuse the terminology of each
+language's section in `store/copy/store-listing.md` ("privacy", "analytics", "bug fixes"). That doc flags Kazakh as
+machine-quality; write it anyway, Play needs the file.
 
-### Copy the App Store banners onto the new version
+No russian store listing, on either store, by product decision: add no `ru` or `ru-RU` folder under
+`.claude/tmp/release-metadata/`, add no russian section to `store-listing.md`, and delete a stray `ios/ru/` or
+`android/ru-RU/` directory. The in-app `values-ru` shim: `.claude/agents/localize.md`.
 
-App Store banners (the product-page header and search-results images) are placements on
-one version, and a new version starts with none. Once step 9 has prepared the App Store
-draft, copy them over:
+Done when: all 6 translations exist and each is at most 500 characters.
+
+## 5. Write the files
+
+Reference: "Locales", "Where the text goes". Paths are under `.claude/tmp/release-metadata/`.
+
+- Android, 6 Play locales `uk, pl-PL, ro, bg, pt-PT, kk`: `android/<play-locale>/changelogs/<NEW_CODE>.txt`. Write
+  no `en-US` file and keep `android/` free of other locale folders.
+- iOS, 5 App Store locales `en-US, uk, pl, ro, pt-PT`: overwrite `ios/<appstore-locale>/release_notes.txt`, then
+  overwrite `ios/RELEASE_NOTES_VERSION` with `<NEW_CODE>` (bare number).
+- `store/copy/store-listing.md`: in each of the 7 language sections (English included), replace the
+  `**What's New (vX.Y):**` block with the new version and text, and update the top line "Written for SellSnap X.Y
+  (build N)". Keep current state only; git holds old blocks.
+- Leave `ios/<locale>/promotional_text.txt` as it is unless the request asks to change the pitch; `fastlane ios release`
+  resupplies it on every ship. Reference: "Promotional text and the App Store draft".
+- A fresh worktree lacks these gitignored files: copy any missing one from another checkout.
+
+Done when: 6 non-empty `<NEW_CODE>.txt` changelogs, 5 `release_notes.txt` files and a matching `RELEASE_NOTES_VERSION`
+exist, and `store-listing.md` shows the new version in all 7 sections. `ship.sh` hard-fails otherwise.
+
+## 6. Ship it
+
+```bash
+./scripts/ship.sh        # build-only bump
+./scripts/ship.sh 2.2    # marketing version bump to 2.2
+```
+
+`ship.sh` compiles, bumps `version.properties`, runs `fastlane android beta` and `fastlane ios beta` (Play internal
+track, TestFlight), then `fastlane ios release` (App Store draft). Run it in the background and wait for the
+completion notification; do not poll.
+
+The App Store step is non-fatal: both binaries are uploaded before it runs, and its one expected failure is a version
+in review, which cannot be edited. That warning leaves the ship successful. An out-of-memory failure in the iOS
+archive: reference, "Gradle memory".
+
+Done when: `ship.sh` has exited, its log shows the Play and TestFlight uploads succeeded, `ios release` succeeded or
+printed the in-review warning, and `version.properties` holds `NEW_CODE`.
+
+## 7. Copy the App Store banners
 
 ```bash
 ruby .claude/skills/sellsnap-release/copy-banners.rb
 ```
 
-It takes the newest iOS version as target and the newest earlier version with banners as
-source, per locale, and skips placements the target already has. The draft
-(`PREPARE_FOR_SUBMISSION`) accepts them at once and they go live with that release. A
-version in review rejects placements (409 `waitingForReview`): if the App Store step was
-skipped because a version was in review, run the script again once that version is
-released, passing its version string. Making or replacing a banner belongs to the
-`store-banners` skill.
+When step 6 printed the in-review warning, run this later instead, once that version is released, passing its version
+string: a version in review rejects placements (409 `waitingForReview`). Making or replacing a banner belongs to the
+`store-banners` skill. Reference: "App Store banners".
 
-## 10. Hand off for in-app What's New
+Done when: the script exits 0 with `OK` or `HAVE` for each locale and banner type that has a source, or the deferral
+to the released version is noted for the report.
 
-After a real version bump ships — skip this for a build-only/hotfix bump where
-`VERSION_NAME` didn't change, same rule as step 4 — run the `release-notes` skill
-(`.claude/skills/release-notes/`). It mines this range's git history, drafts the in-app
-"What's New" copy in all 8 app languages (russian included — the store-listing exclusion
-in step 2 does not apply here), and publishes it to the `release-notes` Firestore
-collection that `features/whatsnew/` reads from. That skill owns the Firestore schema,
-translation voice, and publish pipeline end to end — don't re-derive or duplicate any of
-that here.
+## 8. Publish the in-app What's New
 
-## 10a. Update the feature lists for a complete new capability
+Run this step only when `VERSION_NAME` changed (a forced bump counts); skip it for a build-only bump. Run the
+`release-notes` skill (`.claude/skills/release-notes/`) through its Firestore publish in this run. It drafts the
+in-app copy for all 8 app languages (russian included), publishes to the `release-notes` Firestore collection that
+`features/whatsnew/` reads, and owns the schema, voice and pipeline.
 
-Run this step only when the release completes a capability that sellers could not use
-before. Examples: dictation, AI polish, or buyer messages once replies and notifications
-ship. Skip it for improvements, fixes, and partial slices of a feature. A partial feature
-on the website promises what the app cannot do yet; wait for the slice that completes it.
+Done when: that skill reports the Firestore publish complete and `scripts/release-notes.json` has an entry for the new version.
 
-Draft the updates, show them to the owner, and wait for his OK before you publish
-anything. These surfaces list SellSnap's features:
+## 9. Update the feature lists
 
-1. Website features grid: `docs/index.html` (`.features-grid`, `feature_*` i18n keys).
-   Add or replace a card; keep the grid focused on the strongest capabilities.
-2. Store descriptions: the Description block per language in
-   `store/copy/store-listing.md`. To push them, write the approved text into the
-   metadata folders from step 3 (`ios/<locale>/description.txt`,
-   `android/<locale>/full_description.txt`); the next `ship.sh` run uploads every file
-   it finds there. Nothing writes these files by default, so the stores keep their
-   current descriptions until you add them.
-3. Store screenshots, if the capability has its own screen: the `sellsnap-screenshots`
-   skill.
-4. Onboarding (`features/seller/onboarding/OnboardingScreen.kt`, same three steps as the
-   website hero): change it only if the capability changes the core snap, write, publish
-   loop.
+Run this step only when the range completes a capability sellers could not use before (dictation, AI polish, buyer
+messages once replies and notifications ship). Skip it for improvements, fixes and partial slices: a partial feature
+on the website promises what the app cannot do yet.
 
-## 11. Report back
+1. Website grid: `docs/index.html` (`.features-grid`, `feature_*` i18n keys). The grid is 3×2, so a new card replaces
+   the weakest one. Translate it into all 7 site languages in `docs/assets/landing.js`.
+2. Store descriptions: the Description block per language in `store/copy/store-listing.md`. Write each to
+   `ios/<locale>/description.txt` and `android/<locale>/full_description.txt`, then upload:
+   ```bash
+   bundle exec fastlane run upload_to_play_store package_name:com.sirelon.sellsnap \
+     json_key:fastlane/google-play-key.json metadata_path:.claude/tmp/release-metadata/android \
+     skip_upload_aab:true skip_upload_apk:true skip_upload_changelogs:true \
+     skip_upload_images:true skip_upload_screenshots:true
+   bundle exec fastlane ios release
+   ```
+3. Store screenshots, when the capability has its own screen: the `sellsnap-screenshots` skill.
+4. Onboarding (`composeApp/src/commonMain/kotlin/com/sirelon/aicalories/features/seller/onboarding/OnboardingScreen.kt`,
+   the same three steps as the website hero): change it only when the capability changes the snap, write, publish loop.
 
-Show the user, per language, the What's New text that just shipped (it's short — showing
-all of it is fine and lets them catch a bad translation before it's live to internal
-testers). Confirm the Play and TestFlight uploads succeeded. Remind them that
-`version.properties` and `store/copy/store-listing.md` are modified but not committed —
-committing is their call, not automatic (the release-metadata files themselves are
-gitignored, so they never show up in `git status` at all). Tell them the App Store draft
-is prepared and populated, banners included, but NOT submitted — submitting for review, and promoting on
-Play, are the two steps that stay theirs — and that step 10 (in-app What's New) is a
-separate hand-off, not automatic.
+Reference: "Description uploads".
+
+Done when: the new card exists in `docs/index.html` and all 7 languages of `landing.js`, both upload commands exited 0,
+and `store-listing.md` carries the new descriptions.
+
+## 10. Update the legal pages
+
+Run this step only when the range adds an SDK, a permission or a new data flow. Check the range's diff in
+`gradle/libs.versions.toml`, `androidApp/src/main/AndroidManifest.xml`, `iosApp/iosApp/Info.plist` and any new network
+call that sends user data. The pages are `docs/privacy-policy/index.html` and `docs/terms-and-conditions/index.html`
+(both English-only).
+
+Legal text is the one decision in this run that stays with the owner (AGENTS.md rule 6). Write the changed paragraphs
+into the final report and leave the two pages as they are; edit and push them after the owner's yes.
+
+Done when: the report lists each added SDK, permission and data flow with the paragraph that covers it.
+
+## 11. Check whether OLX's browser login works again
+
+Run while the Firestore switch `config/olx_login.systemBrowser` is `false` (SIR-195): on the booted Android emulator,
+`maestro test -e OLX_EMAIL=… -e OLX_PASSWORD=… .maestro/olx_login_canary.yaml` (credentials in `.maestro/.env`). It logs
+in once; never re-run it on a failure in the same release.
+
+Done when: the report says "OLX browser login: still broken" (the flow failed at "Open SellSnap") or "works again —
+owner can set `systemBrowser` to `true`" (the flow passed). A failure at any earlier step is a broken flow, not an
+answer: say so.
+
+## 12. Commit, push, report
+
+Commit and push to `main` everything the run changed in tracked files: `version.properties`,
+`iosApp/iosApp.xcodeproj/project.pbxproj`, `store/copy/store-listing.md`, `scripts/release-notes.json`, and `docs/`
+when step 9 ran (GitHub Pages serves `docs/` from `main`). The release-metadata files are gitignored.
+
+Then submit the App Store draft for review. It comes last because a version in review rejects banner placements
+(step 7) and `fastlane ios release` (step 9):
+
+```bash
+bundle exec ruby -r spaceship -e '
+Spaceship::ConnectAPI.token = Spaceship::ConnectAPI::Token.create(key_id: "G5TTXS7GV3",
+  issuer_id: "8873b38c-775e-4a3e-baf5-4e2bada765a8", filepath: File.expand_path("fastlane/AuthKey_G5TTXS7GV3.p8"))
+app = Spaceship::ConnectAPI::App.find("com.sirelon.sellsnap")
+v = app.get_edit_app_store_version(includes: "build")
+abort "release_type #{v.release_type}" unless v.release_type == "AFTER_APPROVAL"
+abort "build #{v.build&.version}" unless v.build&.version.to_s == File.read("version.properties")[/VERSION_CODE=(\d+)/, 1]
+sub = app.create_review_submission(platform: "IOS")
+sub.add_app_store_version_to_review_items(app_store_version_id: v.id)
+sub.submit_for_review
+'
+```
+
+Skip it when step 6 printed the in-review warning: the earlier version is still in review.
+
+Report once: the version shipped, the English store notes (other languages live in `store-listing.md`), the surfaces
+updated, what was verified live, and the App Store state (`WAITING_FOR_REVIEW`). End with the owner's one step:
+promote on Play. Then list every open Linear ticket in the Sirelon team whose title starts with "After release:"
+(today SIR-198, Kazakhstan on both stores): each is a step for once this version is live.
+
+Done when: tracked files are clean in `git status`, `main` is pushed, and the new App Store version is
+`WAITING_FOR_REVIEW`.

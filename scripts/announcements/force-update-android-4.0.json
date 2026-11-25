@@ -1,0 +1,35 @@
+{
+  "active": true,
+  "content": {
+    "title": {
+      "en": "Login works again",
+      "uk": "Вхід знову працює",
+      "pl": "Logowanie znowu działa",
+      "pt": "O início de sessão voltou a funcionar",
+      "ro": "Autentificarea funcționează din nou",
+      "bg": "Входът работи отново",
+      "kk": "Кіру қайта жұмыс істейді",
+      "ru": "Вхід знову працює"
+    },
+    "body": {
+      "en": "We fixed the login. Update SellSnap to sign in and keep selling. Sorry for the trouble!",
+      "uk": "Ми полагодили вхід. Оновіть SellSnap, і можна знову входити та продавати. Вибачте за тимчасові незручності!",
+      "pl": "Naprawiliśmy logowanie. Zaktualizuj SellSnap, żeby znowu się zalogować i sprzedawać. Przepraszamy za utrudnienia!",
+      "pt": "Corrigimos o início de sessão. Atualize o SellSnap para voltar a entrar e vender. Pedimos desculpa pelo incómodo!",
+      "ro": "Am reparat autentificarea. Actualizează SellSnap ca să te poți conecta și să vinzi din nou. Ne pare rău pentru neplăcere!",
+      "bg": "Оправихме входа. Обнови SellSnap, за да влезеш отново и да продаваш. Извинявай за неудобството!",
+      "kk": "Кіруді түзеттік. Қайта кіріп, сатуды жалғастыру үшін SellSnap-ты жаңарт. Қолайсыздық үшін кешірім сұраймыз!",
+      "ru": "Ми полагодили вхід. Оновіть SellSnap, і можна знову входити та продавати. Вибачте за тимчасові незручності!"
+    },
+    "link": "store"
+  },
+  "rules": {
+    "dismissible": false,
+    "showMode": "everyLaunch",
+    "maxVersion": "3.10",
+    "platforms": [
+      "android"
+    ],
+    "priority": 100
+  }
+}

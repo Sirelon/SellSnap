@@ -61,7 +61,7 @@
     <string name="validation_all_valid">Тамаша — бәрі дайын ✨</string>
     <string name="validation_fields_remaining">%1$d толтыру керек</string>
     <string name="validation_error_title_too_short">Тақырып 10+ таңбадан тұруы керек</string>
-    <string name="validation_error_desc_too_short">Сипаттама 30+ таңбадан тұруы керек</string>
+    <string name="validation_error_desc_too_short">Сипаттама 40+ таңбадан тұруы керек</string>
     <string name="validation_error_no_category">Санатты таңда</string>
     <string name="validation_error_no_location">Орынды қос</string>
     <string name="validation_errors_more">…және тағы %1$d</string>
@@ -293,6 +293,7 @@
     <string name="photos_limit_kept_message">Алғашқы %1$d фото сақталды — бұл осы қадам үшін максимум.</string>
     <string name="error_upload_file_failed">Фотолардың бірін жүктеу мүмкін болмады.</string>
     <string name="error_publish_failed">Жариялау сәтсіз аяқталды. Қайталап көр.</string>
+    <string name="error_publish_rejected_by_olx">OLX хабарландыруды қабылдамады: %1$s</string>
     <string name="error_generate_ad_failed">Хабарландыруды жасау мүмкін болмады. Қайталап көресің бе?</string>
     <string name="error_app_check_failed">Бұл орнатуды тексеру мүмкін болмады. Google Play services қызметін жаңарт немесе SellSnap-ты Google Play-ден орнатып, қайталап көр.</string>
     <string name="error_photo_unreadable">Фотодағы затты тани алмадық. Қайта түсіріп көр.</string>
@@ -450,6 +451,10 @@
         <item quantity="one">%1$d күн қалды</item>
         <item quantity="other">%1$d күн қалды</item>
     </plurals>
+    <plurals name="my_ads_unread_messages">
+        <item quantity="one">%1$d оқылмаған хабарлама</item>
+        <item quantity="other">%1$d оқылмаған хабарлама</item>
+    </plurals>
     <string name="advert_extend_unavailable">Мұны тек OLX-те ұзарта аласың, осы жерден емес.</string>
 
     <!-- Ad lifecycle — statistics -->
@@ -500,4 +505,11 @@
     </plurals>
     <string name="conversation_load_failed">Бұл әңгімені жүктей алмадық.</string>
     <string name="conversation_reply_on_olx">OLX-те жауап беру</string>
+    <string name="conversation_reply_hint">Жауап жаз</string>
+    <string name="conversation_send">Жіберу</string>
+    <string name="conversation_message_sending">Жіберілуде…</string>
+    <string name="conversation_message_not_sent">Жіберілмеді</string>
+    <string name="conversation_suggest_replies">Жауап ұсын</string>
+    <string name="conversation_suggestions_dismiss">Ұсыныстарды жасыр</string>
+    <string name="conversation_scam_warning">Алаяқтық болуы мүмкін. OLX сатылымды сілтеме немесе мессенджердегі бот арқылы растауды ешқашан сұрамайды. Карта деректерін бөліспе.</string>
 </resources>

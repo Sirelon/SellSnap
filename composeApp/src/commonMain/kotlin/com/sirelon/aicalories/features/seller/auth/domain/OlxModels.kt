@@ -1,16 +1,14 @@
 package com.sirelon.sellsnap.features.seller.auth.domain
 
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
-@Serializable
 data class OlxTokens(
-    @SerialName("access_token") val accessToken: String,
-    @SerialName("refresh_token") val refreshToken: String? = null,
-    @SerialName("expires_in") val expiresInSeconds: Long,
-    @SerialName("token_type") val tokenType: String,
-    @SerialName("scope") val scope: String,
-    @SerialName("issued_at_epoch_seconds") val issuedAtEpochSeconds: Long,
+    val accessToken: String,
+    val refreshToken: String? = null,
+    val expiresInSeconds: Long,
+    val tokenType: String,
+    val scope: String,
+    val issuedAtEpochSeconds: Long,
 ) {
     val expiresAtEpochSeconds: Long
         get() = issuedAtEpochSeconds + expiresInSeconds
@@ -112,8 +110,14 @@ sealed interface OlxApiError {
         override val userMessage: String,
     ) : OlxApiError
 
+    /**
+     * An OLX failure no other case names. [httpStatus] is the status OLX answered with, or null when
+     * the failure did not come with one; it is what tells a server error from a refusal of this
+     * request in analytics, where the message itself cannot go.
+     */
     data class Unknown(
         override val userMessage: String,
+        val httpStatus: Int? = null,
     ) : OlxApiError
 
     /**
@@ -151,7 +155,7 @@ val OlxApiError.analyticsReason: String
         is OlxApiError.NetworkFailure -> "network_failure"
         is OlxApiError.RateLimited -> "rate_limited"
         is OlxApiError.ValidationError -> "validation_error"
-        is OlxApiError.Unknown -> "unknown"
+        is OlxApiError.Unknown -> httpStatus?.let { "unknown:http_$it" } ?: "unknown"
     }
 
 /**

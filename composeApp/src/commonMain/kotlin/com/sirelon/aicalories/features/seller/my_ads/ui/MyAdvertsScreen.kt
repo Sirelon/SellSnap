@@ -39,6 +39,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -62,6 +64,8 @@ import com.sirelon.sellsnap.features.seller.my_ads.presentation.MyAdvertsViewMod
 import com.sirelon.sellsnap.generated.resources.Res
 import com.sirelon.sellsnap.generated.resources.account_needs_reconnect_badge
 import com.sirelon.sellsnap.generated.resources.ic_arrow_right
+import com.sirelon.sellsnap.generated.resources.ic_message_circle
+import com.sirelon.sellsnap.generated.resources.my_ads_unread_messages
 import com.sirelon.sellsnap.generated.resources.ic_camera
 import com.sirelon.sellsnap.generated.resources.ic_check
 import com.sirelon.sellsnap.generated.resources.ic_circle_alert
@@ -89,6 +93,7 @@ import com.sirelon.sellsnap.generated.resources.profile_reconnect_account_action
 import com.sirelon.sellsnap.generated.resources.retry
 import com.sirelon.sellsnap.platform.openUrl
 import org.jetbrains.compose.resources.painterResource
+import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -97,6 +102,7 @@ fun MyAdvertsScreenRoute(
     onConnectOlxClick: () -> Unit,
     onCreateListingClick: () -> Unit,
     onReconnectClick: () -> Unit,
+    onOpenMessagesClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val viewModel: MyAdvertsViewModel = koinViewModel()
@@ -110,6 +116,7 @@ fun MyAdvertsScreenRoute(
             is MyAdvertsContract.Effect.OpenUrl -> openUrl(effect.url)
             is MyAdvertsContract.Effect.ShowMessage -> snackbarHostState.showSnackbar(effect.message)
             is MyAdvertsContract.Effect.Reconnect -> onReconnectClick()
+            MyAdvertsContract.Effect.OpenMessages -> onOpenMessagesClick()
         }
     }
 
@@ -400,7 +407,9 @@ private fun AccountPageContent(
                     ) { advert ->
                         AdvertCard(
                             advert = advert,
+                            unreadCount = page.unreadByAdvert[advert.id] ?: 0,
                             onClick = { onEvent(Event.AdvertClicked(page.localIndex, advert)) },
+                            onUnreadClick = { count -> onEvent(Event.UnreadMarkerClicked(count)) },
                         )
                     }
 
@@ -576,7 +585,9 @@ private fun StateCard(
 @Composable
 private fun AdvertCard(
     advert: MyAdvertItem,
+    unreadCount: Int,
     onClick: () -> Unit,
+    onUnreadClick: (Int) -> Unit,
 ) {
     AppCard(
         modifier = Modifier.fillMaxWidth().testTag("my_ads_advert_card"),
@@ -610,6 +621,19 @@ private fun AdvertCard(
                         overflow = TextOverflow.Ellipsis,
                     )
                     StatusChip(status = advert.status)
+                }
+
+                if (unreadCount > 0) {
+                    val description = pluralStringResource(Res.plurals.my_ads_unread_messages, unreadCount, unreadCount)
+                    Pill(
+                        text = unreadCount.toString(),
+                        iconResource = Res.drawable.ic_message_circle,
+                        color = AppTheme.colors.primary,
+                        onClick = { onUnreadClick(unreadCount) },
+                        modifier = Modifier
+                            .testTag("my_ads_unread_marker")
+                            .semantics { contentDescription = description },
+                    )
                 }
 
                 Text(

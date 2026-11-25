@@ -34,4 +34,11 @@ class MessagesAnalyticsBucketsTest {
         assertEquals("unknown", MessagesAnalyticsBuckets.listingState(null, isDeleted = false))
         assertEquals("removed_by_moderator", MessagesAnalyticsBuckets.listingState(AdvertStatus.RemovedByModerator, false))
     }
+
+    @Test
+    fun `a gap of under one percent is not at or below the floor`() {
+        assertEquals("0", MessagesAnalyticsBuckets.floorGap(1000, 1000))
+        assertEquals("1_10", MessagesAnalyticsBuckets.floorGap(1000, 1009))
+        assertEquals("1_10", MessagesAnalyticsBuckets.floorGap(1000, 1001))
+    }
 }

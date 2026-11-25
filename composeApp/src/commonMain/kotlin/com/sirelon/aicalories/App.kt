@@ -498,6 +498,7 @@ fun App() {
                                     navVm.exitGuestModeToLanding()
                                 },
                                 onCreateListingClick = { switchRootTab(SellerRootTab.GenerateAd) },
+                                onOpenMessagesClick = { switchRootTab(SellerRootTab.Messages) },
                                 onReconnectClick = {
                                     // Reuses Profile's existing reconnect route rather than a
                                     // second OAuth entry point - same pattern as
@@ -594,7 +595,11 @@ fun App() {
                                     }
 
                                     is PreviewAdContract.PreviewAdEffect.PublishFailure ->
-                                        snackbarHostState.showSnackbar(effect.message)
+                                        snackbarHostState.showSnackbar(
+                                            message = effect.message,
+                                            withDismissAction = effect.untilDismissed,
+                                            duration = if (effect.untilDismissed) SnackbarDuration.Indefinite else SnackbarDuration.Short,
+                                        )
 
                                     is PreviewAdContract.PreviewAdEffect.NavigateToProfile ->
                                         navVm.backStack.add(AppKey.Profile(reason = effect.reason, source = "publish_contact"))

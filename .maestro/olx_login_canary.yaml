@@ -1,0 +1,66 @@
+appId: com.android.chrome
+name: OLX system-browser login check
+tags:
+  - olx-canary
+---
+# Release check for SIR-195: does OLX's normal phone login work again in a plain browser?
+#
+# Since November 2026 OLX rejects a phone login that jumps back to /oauth/authorize at once, so the
+# app runs the login in its own web view (config/olx_login.systemBrowser = false). This flow runs
+# the original browser login in Chrome on the Android emulator, from a clean Chrome:
+#   PASS: Chrome ends on our callback page with a code -> OLX is fixed; set
+#         config/olx_login.systemBrowser = true in Firestore to bring back the browser login.
+#   FAIL at "callback page": Chrome ended on the OLX home page -> OLX still broken; keep the switch.
+# The callback page does not jump into the app when state starts with "canary".
+#
+# Run once per release (see the sellsnap-release skill):
+#   maestro test -e OLX_EMAIL=... -e OLX_PASSWORD=... .maestro/olx_login_canary.yaml
+# Uses olx.ro (client 200864), where the HTTPS redirect URI is registered. One real login per run:
+# never loop it, OLX locks accounts after repeated failures.
+
+- clearState
+- launchApp
+# Chrome's first-run screens after clearState.
+- tapOn:
+    text: "(?i)^(stay signed out|use without an account|continue as guest)$"
+    optional: true
+- waitForAnimationToEnd
+- tapOn:
+    text: "(?i)^(no thanks|no, thanks)$"
+    optional: true
+- tapOn:
+    text: "(?i)^(no thanks|no, thanks|got it)$"
+    optional: true
+
+- openLink:
+    link: "https://www.olx.ro/oauth/authorize/?client_id=200864&response_type=code&state=canary-release&scope=read+write+v2&redirect_uri=https%3A%2F%2Fsirelon.github.io%2FSellSnap%2Folx-callback%2F"
+    browser: true
+
+# OLX cookie banner.
+- extendedWaitUntil:
+    visible:
+      id: "onetrust-accept-btn-handler"
+    timeout: 30000
+    optional: true
+- tapOn:
+    id: "onetrust-accept-btn-handler"
+    optional: true
+
+# Two-step login on auth.olx.ro: e-mail, then password.
+- extendedWaitUntil:
+    visible: "E-mail"
+    timeout: 30000
+- tapOn:
+    below: "E-mail"
+- inputText: "${OLX_EMAIL}"
+- pressKey: Enter
+- extendedWaitUntil:
+    visible: "Introdu parola"
+    timeout: 30000
+- inputText: "${OLX_PASSWORD}"
+- pressKey: Enter
+
+# The check itself: our callback page shows its "Open SellSnap" button only when OLX sent a code.
+- extendedWaitUntil:
+    visible: "Open SellSnap"
+    timeout: 60000

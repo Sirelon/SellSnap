@@ -33,6 +33,7 @@ val profileModule = module {
             draftMediaFileStore = get(),
             advertOutcomeStore = get(),
             draftsRepository = get(),
+            generateAdInputStore = get(),
             analyticsConsentRepository = get(),
             errorParser = get(),
             analytics = get(),

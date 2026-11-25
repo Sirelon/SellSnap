@@ -1,5 +1,8 @@
 package com.sirelon.sellsnap.features.seller.openai
 
+import com.aallam.openai.api.chat.Effort
+import com.aallam.openai.api.response.ResponseReasoning
+import com.aallam.openai.api.chat.ChatResponseFormat
 import com.aallam.openai.api.exception.OpenAIAPIException
 import com.aallam.openai.api.model.ModelId
 import com.aallam.openai.api.response.Response
@@ -7,6 +10,7 @@ import com.aallam.openai.api.response.ResponseId
 import com.aallam.openai.api.response.ResponseInput
 import com.aallam.openai.api.response.ResponseInputItem
 import com.aallam.openai.api.response.ResponseRequest
+import com.aallam.openai.api.response.ResponseText
 import com.aallam.openai.client.OpenAI
 import com.sirelon.sellsnap.features.seller.ad.Advertisement
 import com.sirelon.sellsnap.features.seller.ad.data.GeneratedAdMapper
@@ -15,6 +19,7 @@ import com.sirelon.sellsnap.features.seller.auth.domain.OlxCountry
 import com.sirelon.sellsnap.features.seller.categories.domain.AttributeInputType
 import com.sirelon.sellsnap.features.seller.categories.domain.OlxAttribute
 import com.sirelon.sellsnap.features.seller.categories.domain.OlxAttributeValue
+import com.sirelon.sellsnap.features.seller.messages.domain.ReplySuggestion
 import com.sirelon.sellsnap.features.seller.openai.requests.OpenAIAttributeOptionRequest
 import com.sirelon.sellsnap.features.seller.openai.requests.OpenAIAttributeRequest
 import com.sirelon.sellsnap.features.seller.openai.requests.OpenAIAttributesRequest
@@ -22,18 +27,31 @@ import com.sirelon.sellsnap.features.seller.openai.response.OpenAIAttributeSugge
 import com.sirelon.sellsnap.features.seller.openai.response.OpenAIAttributeSuggestionsResponse
 import com.sirelon.sellsnap.features.seller.openai.response.OpenAIGeneratedAd
 import com.sirelon.sellsnap.features.seller.openai.response.OpenAIPolishedListing
+import com.sirelon.sellsnap.features.seller.openai.response.OpenAIReplySuggestionsResponse
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
-const val AD_GENERATION_MODEL_ID = "gpt-4.1"
+/**
+ * Listing-generation model, used for the listing, its attribute fill and the polish. Chosen by the
+ * model bench (SIR-199): `scripts/model-bench/`, results in `research/MODEL-BENCH-listing-generation.md`.
+ * Rerun the bench before changing it, its reasoning effort, the image detail or the prompt. The
+ * proxy's `ALLOWED_MODELS` (`functions/src/index.ts`) must list it.
+ */
+const val AD_GENERATION_MODEL_ID = "gpt-6.1-terra"
 
 // Bump whenever adGenerationInstructions changes, so ad-generation-log records stay attributable
 // to the exact prompt that produced them.
-const val AD_GENERATION_PROMPT_VERSION = "v6"
+const val AD_GENERATION_PROMPT_VERSION = "v8"
 
 private val DEFAULT_MODEL = ModelId(AD_GENERATION_MODEL_ID)
+
+/**
+ * A reasoning model refuses `temperature`. Effort "none" scored as well as "low" and "medium" in the
+ * model bench and answers fastest; "high" named one item wrong.
+ */
+private val DEFAULT_REASONING = ResponseReasoning(effort = Effort("none"))
 private const val DEFAULT_IMAGE_DETAIL = "high"
 private val NUMBER_PATTERN = Regex("""-?\d+(?:\.\d+)?""")
 
@@ -54,11 +72,12 @@ with exactly one of these codes:
 - too_blurry: too out of focus or motion-blurred to make out what the item is.
 - too_dark: too dark or too blown out to make out what the item is.
 - not_an_item: nothing sellable in frame — a bare wall, a floor, the sky, a person on their own.
-- different_items: the photos show unrelated items rather than one item from several angles.
+- different_items: two or more photos each show a separate item that does not belong with the others, so no single listing fits them all — trainers in one photo and a coffee machine in another, or two unrelated pairs of shoes.
 
-Refuse only when one of those plainly applies. A usable photo of an ordinary item is never a refusal, and clutter or a busy background is not `different_items` — pick the main item and write the listing.
-A seller note that names the item is enough to write a listing even from poor photos: when a note names it, write the listing rather than refusing.
-`different_items` is the one exception — report it even when a seller note is present, because every photo the seller uploaded is published alongside the listing.
+Refuse only when one of those plainly applies. A usable photo of an ordinary item is never a refusal.
+Things sold together are one listing, never `different_items`: a set or a pair (two matching bowls, four chairs, a cutlery set), a lot of similar things (a stack of books, a bag of baby clothes), or an item with its accessories. Write one listing that covers all of them.
+A single photo is never `different_items`: whatever one photo shows together is being sold together. Clutter or a busy background is not `different_items` either — pick the main item and write the listing.
+A seller note settles both cases. A note that names the item is enough to write a listing even from poor photos, and a note that says the items are sold together is enough to write one listing for all of them: in either case write the listing rather than refusing.
 
 If the seller note is present, treat it as the source of truth.
 - Preserve the seller's exact tokens for brand, model, size, condition, and purchase age.
@@ -89,6 +108,9 @@ Return ONLY valid JSON. A listing has this exact shape:
 A refusal has this exact shape:
   {"unrecognized":"string"}
 The response must start with `{` and end with `}`.
+
+Names printed on the item: read every legible word on the item itself, on its label or tag, and on the box or packaging shown with it. A brand, model name or part number printed there is a visible fact: put it in the title, spelled as printed but in the brand's usual capitalisation (Nike, not NIKE); part numbers stay exactly as printed. Reading a name off the box does not make the box part of the offer.
+Exact model: name it only when it is printed, or when a distinctive design visible in the photos fits one model and no other (for a phone, the camera layout together with the body colour). Many products have close lookalikes, and a general resemblance is not enough: when more than one model fits what is visible, give the brand or product line and stop there. A wrong model is worse than no model. Never fill the model's place in the title with a feature ("with three cameras", "with a strap"): item type, brand and colour are enough.
 """
 
 internal fun listingPolishInstructions(country: OlxCountry): String = """
@@ -237,8 +259,7 @@ class OpenAIClient(
                 // Continues the same thread as the listing turn so the model still "remembers" the images and draft.
                 previousResponseId = previousResponseId,
                 instructions = ATTRIBUTE_FILL_INSTRUCTIONS.trimIndent(),
-                // Form filling is mechanical — we want stable, non-creative picks.
-                temperature = 0.0,
+                reasoning = DEFAULT_REASONING,
                 maxOutputTokens = attributeOutputTokenLimit(attributes.size),
                 store = false,
                 input = ResponseInput(
@@ -283,10 +304,7 @@ class OpenAIClient(
                     model = model,
                     previousResponseId = chainedTo,
                     instructions = adGenerationInstructions(country).trimIndent(),
-                    // Low so the same item gets the same price from one generation to the next: at 0.7
-                    // prices for one item drifted up to 46% apart (SIR-116). The opener rule in the
-                    // instructions now carries the variety in voice that the higher temperature gave.
-                    temperature = 0.3,
+                    reasoning = DEFAULT_REASONING,
                     // Polish and Ukrainian tokenize at roughly twice the English rate, so a six-sentence
                     // description plus title and three prices needs this much headroom; a 600 cap was hit in production.
                     maxOutputTokens = 1000,
@@ -372,8 +390,7 @@ class OpenAIClient(
                     } else {
                         listingPolishInstructions(country).trimIndent()
                     },
-                    // Same as the listing turn: low, so the same item gets the same price (SIR-116).
-                    temperature = 0.3,
+                    reasoning = DEFAULT_REASONING,
                     // The description field holds up to 9000 characters; Polish and Ukrainian run at
                     // roughly two characters per token.
                     maxOutputTokens = 4500,
@@ -420,6 +437,32 @@ class OpenAIClient(
             sameItem = polished.sameItem,
             advertisement = advertisement,
         )
+    }
+
+    /**
+     * SIR-96: replies the seller could send to a buyer, from [instructions] and [input] (see
+     * `replySuggestionsInstructions` and `replySuggestionsInput`). JSON mode on top of the
+     * prompt's own shape; nothing is stored at OpenAI. Empty when the model answered with no
+     * usable reply. Throws on an API error and on an answer that is not the expected JSON.
+     */
+    suspend fun suggestReplies(instructions: String, input: String): List<ReplySuggestion> {
+        val response = openAI.response(
+            request = ResponseRequest(
+                model = ModelId(REPLY_SUGGESTIONS_MODEL_ID),
+                instructions = instructions,
+                // A reasoning model: it refuses `temperature`, and effort "none" keeps a reply
+                // under ~2 s (SIR-96 bench, .context/bench).
+                reasoning = ResponseReasoning(effort = Effort("none")),
+                // Three replies of at most 160 characters plus the JSON around them; Polish and
+                // Ukrainian run at roughly two characters per token.
+                maxOutputTokens = 400,
+                store = false,
+                text = ResponseText(format = ChatResponseFormat.JsonObject),
+                input = ResponseInput(items = listOf(createTextUserResponseItem(input))),
+            )
+        )
+        return json.decodeFromString<OpenAIReplySuggestionsResponse>(extractTextPayload(response))
+            .toReplySuggestions()
     }
 
     /** The listing's prices before a polish; see [polishListing]. */

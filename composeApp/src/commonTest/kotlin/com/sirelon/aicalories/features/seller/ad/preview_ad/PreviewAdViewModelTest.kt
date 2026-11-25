@@ -19,6 +19,7 @@ import com.sirelon.sellsnap.features.review.ReviewPromptStore
 import com.sirelon.sellsnap.features.seller.ad.Advertisement
 import com.sirelon.sellsnap.features.seller.ad.AdFlowTimerStore
 import com.sirelon.sellsnap.features.seller.ad.AdvertisementWithAttributes
+import com.sirelon.sellsnap.features.seller.ad.generate_ad.GenerateAdInputStore
 import com.sirelon.sellsnap.features.seller.ad.generation_log.NoOpAdGenerationLogRepository
 import com.sirelon.sellsnap.features.seller.ad.preview_ad.PreviewAdContract.AttributesLoadState
 import com.sirelon.sellsnap.features.seller.ad.preview_ad.PreviewAdContract.PreviewAdEffect
@@ -94,6 +95,7 @@ import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlinx.io.IOException
 
 private const val TestSessionId = "test-session"
 
@@ -1023,6 +1025,87 @@ class PreviewAdViewModelTest {
     }
 
     @Test
+    fun `Retry after a failed attributes fetch loads the same category's details and logs the outcome`() =
+        runTest(testDispatcher) {
+            var attributeRequests = 0
+            val engine = buildEngine {
+                addHandler { request ->
+                    when {
+                        request.url.encodedPath.contains("attributes") -> {
+                            attributeRequests += 1
+                            if (attributeRequests == 1) {
+                                respond("{}", status = HttpStatusCode.InternalServerError, headers = jsonHeaders())
+                            } else {
+                                respond(STATE_ATTRIBUTE_JSON, status = HttpStatusCode.OK, headers = jsonHeaders())
+                            }
+                        }
+
+                        else -> respond("{}", status = HttpStatusCode.OK, headers = jsonHeaders())
+                    }
+                }
+            }
+            val harness = harness(engine, loggedInAccountStore())
+            val viewModel = buildViewModel(harness)
+            advanceUntilIdle()
+
+            viewModel.onEvent(PreviewAdEvent.CategorySelected(testCategory))
+            advanceUntilIdle()
+            assertEquals(AttributesLoadState.Failed, viewModel.state.value.attributesLoadState)
+
+            viewModel.onEvent(PreviewAdEvent.RetryAttributes)
+            advanceUntilIdle()
+
+            assertEquals(AttributesLoadState.Loaded, viewModel.state.value.attributesLoadState)
+            assertEquals(testCategory.id, viewModel.state.value.selectedCategory?.id)
+            assertEquals(listOf("state"), viewModel.state.value.attributeItems.map { it.attribute.code })
+            assertEquals(2, attributeRequests)
+            val retryEvent = harness.analytics.events.single { it.first == AnalyticsEvents.AD_PREVIEW_ATTRIBUTES_RETRY }
+            assertEquals("success", retryEvent.second["result"])
+        }
+
+    @Test
+    fun `a draft opened offline keeps its category and Retry resolves it and loads its details`() =
+        runTest(testDispatcher) {
+            // Id 1 is UA's real-estate root, which the app leaves out of the tree.
+            val draftCategory = OlxCategory(id = 37, label = "Electronics", parentId = null, isLeaf = true)
+            var offline = true
+            val engine = buildEngine {
+                addHandler { request ->
+                    val path = request.url.encodedPath
+                    when {
+                        offline && (path.endsWith("/categories") || path.contains("attributes")) ->
+                            throw IOException("offline")
+
+                        path.endsWith("/categories") -> respond(
+                            """{"data":[{"id":${draftCategory.id},"name":"${draftCategory.label}","parent_id":0,"is_leaf":true}]}""",
+                            status = HttpStatusCode.OK,
+                            headers = jsonHeaders(),
+                        )
+
+                        path.contains("attributes") ->
+                            respond(STATE_ATTRIBUTE_JSON, status = HttpStatusCode.OK, headers = jsonHeaders())
+
+                        else -> respond("{}", status = HttpStatusCode.OK, headers = jsonHeaders())
+                    }
+                }
+            }
+            val harness = harness(engine, loggedInAccountStore())
+            val viewModel = buildViewModel(harness, listing = testListing.copy(selectedCategoryId = draftCategory.id))
+            advanceUntilIdle()
+
+            assertEquals(AttributesLoadState.Failed, viewModel.state.value.attributesLoadState)
+            assertTrue(viewModel.state.value.isSessionResolved, "the failed lookup must not stop the rest of the setup")
+
+            offline = false
+            viewModel.onEvent(PreviewAdEvent.RetryAttributes)
+            advanceUntilIdle()
+
+            assertEquals(draftCategory.id, viewModel.state.value.selectedCategory?.id)
+            assertEquals(AttributesLoadState.Loaded, viewModel.state.value.attributesLoadState)
+            assertEquals(listOf("state"), viewModel.state.value.attributeItems.map { it.attribute.code })
+        }
+
+    @Test
     fun `moving the cursor in the title does not ask OLX for a category again`() = runTest(testDispatcher) {
         var suggestionRequests = 0
         val engine = buildEngine {
@@ -1831,6 +1914,7 @@ class PreviewAdViewModelTest {
             draftMediaFileStore = FakeDraftMediaFileStore,
             advertOutcomeStore = AdvertOutcomeStore(InMemoryOlxKeyValueStore(), testJson),
             draftsRepository = draftsRepository,
+            generateAdInputStore = GenerateAdInputStore(),
             analyticsConsentRepository = analyticsConsentRepository,
             errorParser = errorParser,
             analytics = analytics,
@@ -1838,7 +1922,6 @@ class PreviewAdViewModelTest {
         val categoriesRepository = CategoriesRepository(
             olxApiClient = olxApiClient,
             mapper = CategoriesMapper(),
-            scope = CoroutineScope(Dispatchers.Default),
             countryStore = countryStore,
         )
         val reviewPromptStore = ReviewPromptStore(InMemoryOlxKeyValueStore())

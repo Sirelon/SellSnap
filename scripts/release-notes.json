@@ -1,5 +1,521 @@
 [
   {
+    "version": "4.1",
+    "date": "2026-11-25",
+    "active": true,
+    "changes": [
+      {
+        "id": "better-listings",
+        "icon": "magic",
+        "title": {
+          "en": "Even better listings",
+          "uk": "Ще кращі оголошення",
+          "ru": "Ще кращі оголошення",
+          "bg": "Още по-добри обяви",
+          "kk": "Бұрынғыдан да жақсы хабарландырулар",
+          "pl": "Jeszcze lepsze ogłoszenia",
+          "pt": "Anúncios ainda melhores",
+          "ro": "Anunțuri și mai bune"
+        },
+        "summary": {
+          "en": "SellSnap recognizes your items better and writes even better listings. Try it, you'll feel the difference",
+          "uk": "SellSnap краще розпізнає речі на фото і пише ще кращі оголошення. Спробуйте — ви відчуєте різницю",
+          "ru": "SellSnap краще розпізнає речі на фото і пише ще кращі оголошення. Спробуйте — ви відчуєте різницю",
+          "bg": "SellSnap по-добре разпознава вещите на снимките и пише още по-добри обяви. Пробвай и ще усетиш разликата",
+          "kk": "SellSnap фотодағы заттарды жақсырақ таниды және бұрынғыдан да жақсы хабарландырулар жазады. Байқап көр — айырмашылықты сезесің",
+          "pl": "SellSnap lepiej rozpoznaje rzeczy na zdjęciach i pisze jeszcze lepsze ogłoszenia. Wypróbuj, poczujesz różnicę",
+          "pt": "O SellSnap reconhece melhor os artigos nas fotos e escreve anúncios ainda melhores. Experimente e vai notar a diferença",
+          "ro": "SellSnap recunoaște mai bine obiectele din poze și scrie anunțuri și mai bune. Încearcă și vei simți diferența"
+        }
+      },
+      {
+        "id": "kazakhstan",
+        "icon": "feature",
+        "title": {
+          "en": "Now in Kazakhstan",
+          "uk": "Тепер у Казахстані",
+          "ru": "Тепер у Казахстані",
+          "bg": "Вече в Казахстан",
+          "kk": "Енді Қазақстанда",
+          "pl": "Teraz w Kazachstanie",
+          "pt": "Agora no Cazaquistão",
+          "ro": "Acum în Kazahstan"
+        },
+        "summary": {
+          "en": "Publish your listings on OLX.kz",
+          "uk": "Публікуйте оголошення на OLX.kz",
+          "ru": "Публікуйте оголошення на OLX.kz",
+          "bg": "Публикувай обявите си в OLX.kz",
+          "kk": "Хабарландыруларыңды OLX.kz-ке жарияла",
+          "pl": "Publikuj swoje ogłoszenia na OLX.kz",
+          "pt": "Publique os seus anúncios no OLX.kz",
+          "ro": "Publică-ți anunțurile pe OLX.kz"
+        }
+      }
+    ]
+  },
+  {
+    "version": "4.0",
+    "date": "2026-11-23",
+    "active": true,
+    "changes": [
+      {
+        "id": "olx-login-in-app",
+        "icon": "fix",
+        "title": {
+          "en": "OLX login works again",
+          "uk": "Вхід в OLX знову працює",
+          "ru": "Вхід в OLX знову працює",
+          "bg": "Входът в OLX отново работи",
+          "kk": "OLX-ке кіру қайта жұмыс істейді",
+          "pl": "Logowanie do OLX znów działa",
+          "pt": "O login no OLX volta a funcionar",
+          "ro": "Autentificarea în OLX merge din nou"
+        },
+        "summary": {
+          "en": "Log in to OLX right inside the app, on any phone",
+          "uk": "Входьте в OLX прямо в застосунку, на будь-якому телефоні",
+          "ru": "Входьте в OLX прямо в застосунку, на будь-якому телефоні",
+          "bg": "Влизайте в OLX направо в приложението, на всеки телефон",
+          "kk": "OLX-ке кез келген телефонда тікелей қолданба ішінде кіріңіз",
+          "pl": "Logujesz się do OLX bezpośrednio w aplikacji, na każdym telefonie",
+          "pt": "Inicie sessão no OLX dentro da app, em qualquer telemóvel",
+          "ro": "Te autentifici în OLX direct în aplicație, pe orice telefon"
+        }
+      },
+      {
+        "id": "sets-one-listing",
+        "icon": "magic",
+        "title": {
+          "en": "Sets become one listing",
+          "uk": "Комплект — одне оголошення",
+          "ru": "Комплект — одне оголошення",
+          "bg": "Комплектът е една обява",
+          "kk": "Жиынтық — бір хабарландыру",
+          "pl": "Zestaw to jedno ogłoszenie",
+          "pt": "Um conjunto, um anúncio",
+          "ro": "Un set, un singur anunț"
+        },
+        "summary": {
+          "en": "A set, a pair or an item with accessories becomes one listing instead of a request to remove photos",
+          "uk": "Комплект, пара чи річ з аксесуарами стають одним оголошенням, а не проханням прибрати фото",
+          "ru": "Комплект, пара чи річ з аксесуарами стають одним оголошенням, а не проханням прибрати фото",
+          "bg": "Комплект, чифт или вещ с аксесоари стават една обява, вместо молба да махнете снимки",
+          "kk": "Жиынтық, жұп немесе аксессуарлары бар зат фотоны алып тастау өтінішінің орнына бір хабарландыру болады",
+          "pl": "Zestaw, para lub rzecz z akcesoriami to jedno ogłoszenie, a nie prośba o usunięcie zdjęć",
+          "pt": "Um conjunto, um par ou um artigo com acessórios passa a ser um só anúncio, sem pedido para remover fotos",
+          "ro": "Un set, o pereche sau un obiect cu accesorii devine un singur anunț, fără cererea de a șterge fotografii"
+        }
+      },
+      {
+        "id": "smoother-price-input",
+        "icon": "improvement",
+        "title": {
+          "en": "Smoother price editing",
+          "uk": "Зручніше редагування ціни",
+          "ru": "Зручніше редагування ціни",
+          "bg": "По-удобна редакция на цената",
+          "kk": "Бағаны ыңғайлы өңдеу",
+          "pl": "Wygodniejsza edycja ceny",
+          "pt": "Edição de preço mais fácil",
+          "ro": "Editare mai ușoară a prețului"
+        },
+        "summary": {
+          "en": "The cursor stays where you type, the slider stops on round numbers, and scrolling hides the keyboard",
+          "uk": "Курсор лишається там, де ви пишете, повзунок зупиняється на круглих сумах, а прокручування ховає клавіатуру",
+          "ru": "Курсор лишається там, де ви пишете, повзунок зупиняється на круглих сумах, а прокручування ховає клавіатуру",
+          "bg": "Курсорът остава там, където пишете, плъзгачът спира на кръгли суми, а превъртането скрива клавиатурата",
+          "kk": "Курсор сіз жазған жерде қалады, жүгірткі дөңгелек сомаларға тоқтайды, ал айналдыру пернетақтаны жасырады",
+          "pl": "Kursor zostaje tam, gdzie piszesz, suwak zatrzymuje się na okrągłych kwotach, a przewijanie chowa klawiaturę",
+          "pt": "O cursor fica onde escreve, o seletor para em valores redondos e deslizar esconde o teclado",
+          "ro": "Cursorul rămâne unde scrii, glisorul se oprește la sume rotunde, iar derularea ascunde tastatura"
+        }
+      }
+    ]
+  },
+  {
+    "version": "3.10",
+    "date": "2026-11-12",
+    "active": true,
+    "changes": [
+      {
+        "id": "market-price-format",
+        "icon": "improvement",
+        "title": {
+          "en": "Prices the way your market writes them",
+          "uk": "Ціни так, як їх пишуть у вашій країні",
+          "ru": "Ціни так, як їх пишуть у вашій країні",
+          "bg": "Цени така, както се пишат на твоя пазар",
+          "kk": "Бағалар сенің нарығыңда жазылатындай",
+          "pl": "Ceny tak, jak zapisuje się je na Twoim rynku",
+          "pt": "Preços como se escrevem no seu mercado",
+          "ro": "Prețuri așa cum se scriu pe piața ta"
+        },
+        "summary": {
+          "en": "Every price shows the amount first and then the currency, the way OLX shows it in your country",
+          "uk": "Кожна ціна показує спочатку суму, а потім валюту, так само, як OLX показує її у вашій країні",
+          "ru": "Кожна ціна показує спочатку суму, а потім валюту, так само, як OLX показує її у вашій країні",
+          "bg": "Всяка цена показва първо сумата, а после валутата, както я показва OLX във твоята държава",
+          "kk": "Әр баға алдымен соманы, содан кейін валютаны көрсетеді, дәл OLX сенің елінде көрсететіндей",
+          "pl": "Każda cena pokazuje najpierw kwotę, a potem walutę, tak jak robi to OLX w Twoim kraju",
+          "pt": "Cada preço mostra primeiro o valor e depois a moeda, tal como o OLX o mostra no seu país",
+          "ro": "Fiecare preț arată mai întâi suma și apoi moneda, așa cum o arată OLX în țara ta"
+        },
+        "detail": {
+          "en": "You see \"1 850 грн.\" in Ukraine, \"280 zł\" in Poland and \"100 lei\" in Romania, on the listing preview, in drafts, in My Ads and in conversations.",
+          "uk": "Ви бачите «1 850 грн.» в Україні, «280 zł» у Польщі та «100 lei» у Румунії — у попередньому перегляді оголошення, у чернетках, у розділі «Мої оголошення» та в розмовах.",
+          "ru": "Ви бачите «1 850 грн.» в Україні, «280 zł» у Польщі та «100 lei» у Румунії — у попередньому перегляді оголошення, у чернетках, у розділі «Мої оголошення» та в розмовах.",
+          "bg": "Виждаш „1 850 грн.“ в Украйна, „280 zł“ в Полша и „100 lei“ в Румъния – в прегледа на обявата, в черновите, в „Моите обяви“ и в разговорите.",
+          "kk": "Украинада «1 850 грн.», Польшада «280 zł», Румынияда «100 lei» көресің – хабарландыру алдын ала қарауында, жобаларда, «Менің хабарландыруларым» бөлімінде және әңгімелерде.",
+          "pl": "Widzisz „1 850 грн.” na Ukrainie, „280 zł” w Polsce i „100 lei” w Rumunii – w podglądzie ogłoszenia, w szkicach, w Moich ogłoszeniach i w rozmowach.",
+          "pt": "Vê «1 850 грн.» na Ucrânia, «280 zł» na Polónia e «100 lei» na Roménia, na pré-visualização do anúncio, nos rascunhos, em Os meus anúncios e nas conversas.",
+          "ro": "Vezi „1 850 грн.” în Ucraina, „280 zł” în Polonia și „100 lei” în România – în previzualizarea anunțului, în ciorne, în Anunțurile mele și în conversații."
+        }
+      },
+      {
+        "id": "new-listing-keeps-photos",
+        "icon": "fix",
+        "title": {
+          "en": "Your photos stay when you switch tabs",
+          "uk": "Ваші фото нікуди не зникають, коли ви перемикаєте вкладки",
+          "ru": "Ваші фото нікуди не зникають, коли ви перемикаєте вкладки",
+          "bg": "Снимките ти остават, когато сменяш табовете",
+          "kk": "Қойындыларды ауыстырғанда фотоларың сақталады",
+          "pl": "Twoje zdjęcia zostają, gdy przełączasz karty",
+          "pt": "As suas fotografias ficam quando muda de separador",
+          "ro": "Pozele tale rămân când schimbi tab-urile"
+        },
+        "summary": {
+          "en": "The photos and the note of a new listing stay in place when you open another tab and come back",
+          "uk": "Фото й нотатка нового оголошення залишаються на місці, коли ви відкриваєте іншу вкладку й повертаєтеся",
+          "ru": "Фото й нотатка нового оголошення залишаються на місці, коли ви відкриваєте іншу вкладку й повертаєтеся",
+          "bg": "Снимките и бележката на нова обява остават на мястото си, когато отвориш друг таб и се върнеш",
+          "kk": "Жаңа хабарландырудың фотолары мен жазбасы басқа қойындыны ашып, қайта оралғанда орнында қалады",
+          "pl": "Zdjęcia i notatka nowego ogłoszenia zostają na miejscu, gdy otworzysz inną kartę i wrócisz",
+          "pt": "As fotografias e a nota de um novo anúncio ficam no lugar quando abre outro separador e volta",
+          "ro": "Pozele și nota unui anunț nou rămân la locul lor când deschizi alt tab și te întorci"
+        }
+      },
+      {
+        "id": "gallery-without-camera",
+        "icon": "fix",
+        "title": {
+          "en": "Gallery works without camera access",
+          "uk": "Галерея працює без доступу до камери",
+          "ru": "Галерея працює без доступу до камери",
+          "bg": "Галерията работи и без достъп до камерата",
+          "kk": "Галерея камераға рұқсатсыз да жұмыс істейді",
+          "pl": "Galeria działa bez dostępu do aparatu",
+          "pt": "A galeria funciona sem acesso à câmara",
+          "ro": "Galeria funcționează fără acces la cameră"
+        },
+        "summary": {
+          "en": "You can add photos from the gallery even when the camera is turned off for SellSnap",
+          "uk": "Ви можете додавати фото з галереї, навіть коли камеру вимкнено для SellSnap",
+          "ru": "Ви можете додавати фото з галереї, навіть коли камеру вимкнено для SellSnap",
+          "bg": "Можеш да добавяш снимки от галерията, дори когато камерата е изключена за SellSnap",
+          "kk": "SellSnap үшін камера өшірулі болса да, галереядан фото қоса аласың",
+          "pl": "Możesz dodawać zdjęcia z galerii, nawet gdy aparat jest wyłączony dla SellSnap",
+          "pt": "Pode adicionar fotografias da galeria mesmo com a câmara desativada para o SellSnap",
+          "ro": "Poți adăuga poze din galerie chiar dacă camera este oprită pentru SellSnap"
+        }
+      },
+      {
+        "id": "category-details-retry",
+        "icon": "improvement",
+        "title": {
+          "en": "Categories load more reliably",
+          "uk": "Категорії завантажуються надійніше",
+          "ru": "Категорії завантажуються надійніше",
+          "bg": "Категориите се зареждат по-надеждно",
+          "kk": "Санаттар сенімдірек жүктеледі",
+          "pl": "Kategorie ładują się pewniej",
+          "pt": "As categorias carregam de forma mais fiável",
+          "ro": "Categoriile se încarcă mai sigur"
+        },
+        "summary": {
+          "en": "When the category details do not load, tap Retry instead of starting over",
+          "uk": "Якщо деталі категорії не завантажилися, торкніться «Повторити» замість того, щоб починати спочатку",
+          "ru": "Якщо деталі категорії не завантажилися, торкніться «Повторити» замість того, щоб починати спочатку",
+          "bg": "Ако данните за категорията не се заредят, докосни „Опитай отново“, вместо да почваш отначало",
+          "kk": "Санат мәліметтері жүктелмесе, басынан бастамай, «Қайталап көру» түймесін бас",
+          "pl": "Gdy szczegóły kategorii się nie wczytają, dotknij „Spróbuj ponownie” zamiast zaczynać od nowa",
+          "pt": "Quando os detalhes da categoria não carregam, toque em «Tentar novamente» em vez de recomeçar",
+          "ro": "Când detaliile categoriei nu se încarcă, atinge „Reîncearcă” în loc să o iei de la capăt"
+        },
+        "detail": {
+          "en": "A draft keeps its category when you open it without internet. After you change the country, you see the categories of that country.",
+          "uk": "Чернетка зберігає свою категорію, коли ви відкриваєте її без інтернету. Після зміни країни ви бачите категорії саме цієї країни.",
+          "ru": "Чернетка зберігає свою категорію, коли ви відкриваєте її без інтернету. Після зміни країни ви бачите категорії саме цієї країни.",
+          "bg": "Черновата запазва категорията си, когато я отвориш без интернет. След като смениш държавата, виждаш категориите на тази държава.",
+          "kk": "Жоба интернетсіз ашылғанда да өз санатын сақтайды. Елді ауыстырғаннан кейін сол елдің санаттарын көресің.",
+          "pl": "Szkic zachowuje swoją kategorię, gdy otworzysz go bez internetu. Po zmianie kraju widzisz kategorie tego kraju.",
+          "pt": "Um rascunho mantém a sua categoria quando o abre sem internet. Depois de mudar o país, vê as categorias desse país.",
+          "ro": "O ciornă își păstrează categoria când o deschizi fără internet. După ce schimbi țara, vezi categoriile acelei țări."
+        }
+      },
+      {
+        "id": "preview-description-warning",
+        "icon": "fix",
+        "title": {
+          "en": "Short descriptions are flagged before you publish",
+          "uk": "Короткий опис помітно ще до публікації",
+          "ru": "Короткий опис помітно ще до публікації",
+          "bg": "Късите описания се отбелязват преди публикуване",
+          "kk": "Қысқа сипаттама жариялау алдында ескертіледі",
+          "pl": "Krótki opis jest oznaczany przed publikacją",
+          "pt": "Descrições curtas são assinaladas antes de publicar",
+          "ro": "Descrierile scurte sunt semnalate înainte să publici"
+        },
+        "summary": {
+          "en": "The preview warns you when the description is under 40 characters, so OLX does not turn the listing down",
+          "uk": "Попередній перегляд попереджає, коли опис коротший за 40 символів, щоб OLX не відхилив оголошення",
+          "ru": "Попередній перегляд попереджає, коли опис коротший за 40 символів, щоб OLX не відхилив оголошення",
+          "bg": "Прегледът те предупреждава, когато описанието е под 40 знака, за да не отхвърли OLX обявата",
+          "kk": "Сипаттама 40 таңбадан қысқа болса, алдын ала қарау ескертеді, сонда OLX хабарландыруды қабылдамай қоймайды",
+          "pl": "Podgląd ostrzega Cię, gdy opis ma mniej niż 40 znaków, żeby OLX nie odrzucił ogłoszenia",
+          "pt": "A pré-visualização avisa-o quando a descrição tem menos de 40 carateres, para que o OLX não recuse o anúncio",
+          "ro": "Previzualizarea te avertizează când descrierea are sub 40 de caractere, ca OLX să nu respingă anunțul"
+        }
+      },
+      {
+        "id": "dialogs-on-wide-screens",
+        "icon": "improvement",
+        "title": {
+          "en": "Better fit on tablets and desktop",
+          "uk": "Зручніше на планшетах і комп'ютері",
+          "ru": "Зручніше на планшетах і комп'ютері",
+          "bg": "По-добро прилягане на таблети и компютър",
+          "kk": "Планшеттер мен компьютерде ыңғайлырақ",
+          "pl": "Lepsze dopasowanie na tabletach i komputerze",
+          "pt": "Melhor adaptação em tablets e computador",
+          "ro": "Potrivire mai bună pe tablete și desktop"
+        },
+        "summary": {
+          "en": "On a wide screen, menus open as a dialog in the centre instead of a sheet at the bottom",
+          "uk": "На широкому екрані меню відкриваються діалогом посередині, а не панеллю внизу",
+          "ru": "На широкому екрані меню відкриваються діалогом посередині, а не панеллю внизу",
+          "bg": "На широк екран менютата се отварят като диалог в центъра, а не като панел отдолу",
+          "kk": "Кең экранда мәзірлер төменгі панельдің орнына ортада диалог ретінде ашылады",
+          "pl": "Na szerokim ekranie menu otwierają się jako okno na środku, a nie panel na dole",
+          "pt": "Num ecrã largo, os menus abrem como uma caixa de diálogo ao centro, em vez de um painel em baixo",
+          "ro": "Pe un ecran lat, meniurile se deschid ca dialog în centru, nu ca un panou jos"
+        }
+      }
+    ]
+  },
+  {
+    "version": "3.9",
+    "date": "2026-11-09",
+    "active": true,
+    "changes": [
+      {
+        "id": "reply-to-buyers",
+        "icon": "feature",
+        "title": {
+          "en": "Reply to buyers",
+          "uk": "Відповідайте покупцям",
+          "ru": "Відповідайте покупцям",
+          "bg": "Отговаряй на купувачите",
+          "kk": "Сатып алушыларға жауап бер",
+          "pl": "Odpowiadaj kupującym",
+          "pt": "Responda aos compradores",
+          "ro": "Răspunde cumpărătorilor"
+        },
+        "summary": {
+          "en": "Answer buyers right in SellSnap, without opening OLX",
+          "uk": "Відповідайте покупцям просто в SellSnap, не відкриваючи OLX",
+          "ru": "Відповідайте покупцям просто в SellSnap, не відкриваючи OLX",
+          "bg": "Отговаряй на купувачите направо в SellSnap, без да отваряш OLX",
+          "kk": "Сатып алушыларға OLX-ті ашпай-ақ SellSnap ішінде жауап бер",
+          "pl": "Odpowiadaj kupującym prosto w SellSnap, bez otwierania OLX",
+          "pt": "Responda aos compradores diretamente no SellSnap, sem abrir o OLX",
+          "ro": "Răspunde cumpărătorilor chiar în SellSnap, fără să deschizi OLX"
+        },
+        "detail": {
+          "en": "Type your reply at the bottom of a conversation and tap Send. The reply goes to OLX from the account that owns the listing. If it does not go through, your text stays so you can retry.",
+          "uk": "Напишіть відповідь унизу розмови й торкніться «Надіслати». Відповідь піде на OLX від імені облікового запису, якому належить оголошення. Якщо її не вдасться надіслати, ваш текст залишиться, щоб ви могли спробувати ще раз.",
+          "ru": "Напишіть відповідь унизу розмови й торкніться «Надіслати». Відповідь піде на OLX від імені облікового запису, якому належить оголошення. Якщо її не вдасться надіслати, ваш текст залишиться, щоб ви могли спробувати ще раз.",
+          "bg": "Напиши отговора си най-долу в разговора и докосни „Изпрати“. Отговорът отива в OLX от акаунта, на който е обявата. Ако не мине, текстът ти остава и можеш да опиташ пак.",
+          "kk": "Жауабыңды әңгіменің төменгі жағына жазып, «Жіберу» түймесін бас. Жауап OLX-ке хабарландыру тиесілі аккаунттан кетеді. Жіберілмесе, мәтінің қалады, сондықтан қайталап көре аласың.",
+          "pl": "Wpisz odpowiedź na dole rozmowy i dotknij „Wyślij”. Odpowiedź trafia do OLX z konta, do którego należy ogłoszenie. Jeśli się nie wyśle, Twój tekst zostaje i możesz spróbować ponownie.",
+          "pt": "Escreva a resposta na parte inferior da conversa e toque em «Enviar». A resposta segue para o OLX a partir da conta a que pertence o anúncio. Se não for enviada, o seu texto fica guardado para tentar de novo.",
+          "ro": "Scrie răspunsul în partea de jos a conversației și atinge „Trimite”. Răspunsul ajunge pe OLX din contul căruia îi aparține anunțul. Dacă nu se trimite, textul tău rămâne ca să poți încerca din nou."
+        }
+      },
+      {
+        "id": "ai-reply-suggestions",
+        "icon": "magic",
+        "title": {
+          "en": "AI reply suggestions",
+          "uk": "Підказки відповідей від ШІ",
+          "ru": "Підказки відповідей від ШІ",
+          "bg": "AI предложения за отговори",
+          "kk": "AI жауап ұсыныстары",
+          "pl": "Podpowiedzi odpowiedzi od AI",
+          "pt": "Sugestões de resposta com IA",
+          "ro": "Sugestii de răspuns cu AI"
+        },
+        "summary": {
+          "en": "Tap Suggest replies and send a ready answer in one tap",
+          "uk": "Торкніться «Запропонувати відповіді» і надішліть готову відповідь одним дотиком",
+          "ru": "Торкніться «Запропонувати відповіді» і надішліть готову відповідь одним дотиком",
+          "bg": "Докосни „Предложи отговори“ и изпрати готов отговор с един допир",
+          "kk": "«Жауап ұсын» түймесін бас та, дайын жауапты бір түртіп жібер",
+          "pl": "Dotknij „Zaproponuj odpowiedzi” i wyślij gotową odpowiedź jednym dotknięciem",
+          "pt": "Toque em «Sugerir respostas» e envie uma resposta pronta com um toque",
+          "ro": "Atinge „Sugerează răspunsuri” și trimite un răspuns gata făcut dintr-o atingere"
+        },
+        "detail": {
+          "en": "The suggestions use your listing and the conversation. Tap one to send it. When an answer needs your check first, SellSnap puts it in the reply field so you can edit it.",
+          "uk": "Підказки враховують ваше оголошення та розмову. Торкніться однієї, щоб надіслати її. Якщо відповідь спершу потребує вашої перевірки, SellSnap вставить її в поле відповіді, і ви зможете її відредагувати.",
+          "ru": "Підказки враховують ваше оголошення та розмову. Торкніться однієї, щоб надіслати її. Якщо відповідь спершу потребує вашої перевірки, SellSnap вставить її в поле відповіді, і ви зможете її відредагувати.",
+          "bg": "Предложенията използват твоята обява и разговора. Докосни едно, за да го изпратиш. Когато отговорът първо се нуждае от твоята проверка, SellSnap го слага в полето за отговор и можеш да го редактираш.",
+          "kk": "Ұсыныстар хабарландыруыңды және әңгімені ескереді. Біреуін түртсең, ол жіберіледі. Жауапты алдымен тексеру керек болса, SellSnap оны жауап өрісіне салады, сонда өңдей аласың.",
+          "pl": "Podpowiedzi uwzględniają Twoje ogłoszenie i rozmowę. Dotknij jednej, żeby ją wysłać. Gdy odpowiedź wymaga najpierw Twojego sprawdzenia, SellSnap wstawia ją do pola odpowiedzi, żeby ją poprawić.",
+          "pt": "As sugestões usam o seu anúncio e a conversa. Toque numa para a enviar. Quando uma resposta precisa primeiro da sua verificação, o SellSnap coloca-a no campo de resposta para a poder editar.",
+          "ro": "Sugestiile folosesc anunțul tău și conversația. Atinge una ca să o trimiți. Când un răspuns are nevoie întâi de verificarea ta, SellSnap îl pune în câmpul de răspuns ca să-l poți edita."
+        }
+      },
+      {
+        "id": "scam-warning",
+        "icon": "improvement",
+        "title": {
+          "en": "Scam warnings",
+          "uk": "Попередження про шахраїв",
+          "ru": "Попередження про шахраїв",
+          "bg": "Предупреждения за измами",
+          "kk": "Алаяқтық туралы ескертулер",
+          "pl": "Ostrzeżenia przed oszustwami",
+          "pt": "Avisos de burla",
+          "ro": "Avertizări de înșelătorie"
+        },
+        "summary": {
+          "en": "Messages that look like a scam get a warning",
+          "uk": "Повідомлення, схожі на шахрайство, отримують попередження",
+          "ru": "Повідомлення, схожі на шахрайство, отримують попередження",
+          "bg": "Съобщения, които приличат на измама, получават предупреждение",
+          "kk": "Алаяқтыққа ұқсас хабарламаларға ескерту қойылады",
+          "pl": "Wiadomości wyglądające na oszustwo dostają ostrzeżenie",
+          "pt": "As mensagens que parecem burla recebem um aviso",
+          "ro": "Mesajele care par o înșelătorie primesc un avertisment"
+        },
+        "detail": {
+          "en": "SellSnap marks messages that ask for card codes, send you to Telegram, WhatsApp or Viber, or link to fake OLX pages. The check runs on your phone, and no message leaves it.",
+          "uk": "SellSnap позначає повідомлення, які просять коди з картки, відправляють вас у Telegram, WhatsApp чи Viber або містять посилання на фальшиві сторінки OLX. Перевірка відбувається на вашому телефоні, жодне повідомлення його не залишає.",
+          "ru": "SellSnap позначає повідомлення, які просять коди з картки, відправляють вас у Telegram, WhatsApp чи Viber або містять посилання на фальшиві сторінки OLX. Перевірка відбувається на вашому телефоні, жодне повідомлення його не залишає.",
+          "bg": "SellSnap маркира съобщения, които искат кодове от карта, те пращат в Telegram, WhatsApp или Viber или съдържат линк към фалшиви страници на OLX. Проверката се прави на телефона ти и никое съобщение не го напуска.",
+          "kk": "SellSnap карта кодтарын сұрайтын, сені Telegram, WhatsApp немесе Viber-ге жіберетін не жалған OLX беттеріне сілтейтін хабарламаларды белгілейді. Тексеру телефоныңда жүреді, ешбір хабарлама одан шықпайды.",
+          "pl": "SellSnap oznacza wiadomości, które proszą o kody z karty, kierują Cię do aplikacji Telegram, WhatsApp lub Viber albo zawierają link do fałszywych stron OLX. Sprawdzanie działa na Twoim telefonie i żadna wiadomość go nie opuszcza.",
+          "pt": "O SellSnap assinala mensagens que pedem códigos de cartão, enviam o utilizador para o Telegram, WhatsApp ou Viber, ou têm ligações para páginas falsas do OLX. A verificação é feita no seu telemóvel e nenhuma mensagem sai dele.",
+          "ro": "SellSnap marchează mesajele care cer coduri de card, te trimit pe Telegram, WhatsApp sau Viber ori conțin linkuri către pagini OLX false. Verificarea se face pe telefonul tău și niciun mesaj nu-l părăsește."
+        }
+      },
+      {
+        "id": "unread-on-my-ads",
+        "icon": "improvement",
+        "title": {
+          "en": "Unread messages on My Ads",
+          "uk": "Непрочитані повідомлення в «Мої оголошення»",
+          "ru": "Непрочитані повідомлення в «Мої оголошення»",
+          "bg": "Непрочетени съобщения в „Моите обяви“",
+          "kk": "Оқылмаған хабарламалар «Менің хабарландыруларым» ішінде",
+          "pl": "Nieprzeczytane wiadomości w „Moje ogłoszenia”",
+          "pt": "Mensagens por ler em «Os meus anúncios»",
+          "ro": "Mesaje necitite în „Anunțurile mele”"
+        },
+        "summary": {
+          "en": "Each listing in My Ads shows how many buyer messages you have not read",
+          "uk": "Кожне оголошення в розділі «Мої оголошення» показує, скільки повідомлень від покупців ви не прочитали",
+          "ru": "Кожне оголошення в розділі «Мої оголошення» показує, скільки повідомлень від покупців ви не прочитали",
+          "bg": "Всяка обява в „Моите обяви“ показва колко съобщения от купувачи са непрочетени",
+          "kk": "«Менің хабарландыруларым» ішіндегі әр хабарландыру сатып алушылардың қанша хабарламасы оқылмағанын көрсетеді",
+          "pl": "Każde ogłoszenie w „Moje ogłoszenia” pokazuje, ile wiadomości od kupujących jest nieprzeczytanych",
+          "pt": "Cada anúncio em «Os meus anúncios» mostra quantas mensagens de compradores ainda não leu",
+          "ro": "Fiecare anunț din „Anunțurile mele” arată câte mesaje de la cumpărători nu ai citit"
+        },
+        "detail": {
+          "en": "Tap the count to open your messages.",
+          "uk": "Торкніться лічильника, щоб відкрити повідомлення.",
+          "ru": "Торкніться лічильника, щоб відкрити повідомлення.",
+          "bg": "Докосни броя, за да отвориш съобщенията си.",
+          "kk": "Хабарламаларыңды ашу үшін санды түрт.",
+          "pl": "Dotknij licznika, żeby otworzyć wiadomości.",
+          "pt": "Toque no número para abrir as suas mensagens.",
+          "ro": "Atinge numărul ca să-ți deschizi mesajele."
+        }
+      },
+      {
+        "id": "price-floor-in-chat",
+        "icon": "improvement",
+        "title": {
+          "en": "Your lowest price in the chat",
+          "uk": "Ваша мінімальна ціна в чаті",
+          "ru": "Ваша мінімальна ціна в чаті",
+          "bg": "Най-ниската ти цена в чата",
+          "kk": "Чаттағы ең төмен бағаң",
+          "pl": "Twoja najniższa cena w czacie",
+          "pt": "O seu preço mínimo na conversa",
+          "ro": "Prețul tău minim în chat"
+        },
+        "summary": {
+          "en": "A conversation shows the lowest price you set, so you can bargain with confidence",
+          "uk": "Розмова показує мінімальну ціну, яку ви встановили, тож торгуватися можна впевнено",
+          "ru": "Розмова показує мінімальну ціну, яку ви встановили, тож торгуватися можна впевнено",
+          "bg": "Разговорът показва най-ниската цена за обявата, за да се пазариш уверено",
+          "kk": "Әңгімеде өзің қойған ең төмен баға көрінеді, сондықтан сенімді саудаласа аласың",
+          "pl": "Rozmowa pokazuje ustawioną przez Ciebie najniższą cenę, więc możesz targować się pewnie",
+          "pt": "A conversa mostra o preço mais baixo que definiu, para negociar com confiança",
+          "ro": "Conversația arată cel mai mic preț setat de tine, ca să negociezi cu încredere"
+        },
+        "detail": {
+          "en": "Only you see it. It appears for listings you published with SellSnap on this phone.",
+          "uk": "Її бачите лише ви. Вона з’являється для оголошень, опублікованих через SellSnap на цьому телефоні.",
+          "ru": "Її бачите лише ви. Вона з’являється для оголошень, опублікованих через SellSnap на цьому телефоні.",
+          "bg": "Само ти я виждаш. Показва се за обяви, публикувани със SellSnap на този телефон.",
+          "kk": "Оны тек сен көресің. Ол осы телефоннан SellSnap арқылы жарияланған хабарландыруларда шығады.",
+          "pl": "Widzisz ją tylko Ty. Pojawia się przy ogłoszeniach opublikowanych w SellSnap na tym telefonie.",
+          "pt": "Só o utilizador o vê. Aparece nos anúncios publicados com o SellSnap neste telemóvel.",
+          "ro": "Îl vezi doar tu. Apare pentru anunțurile publicate cu SellSnap pe acest telefon."
+        }
+      },
+      {
+        "id": "olx-rejection-reason",
+        "icon": "fix",
+        "title": {
+          "en": "See why OLX said no",
+          "uk": "Бачите, чому OLX відмовив",
+          "ru": "Бачите, чому OLX відмовив",
+          "bg": "Виж защо OLX е отказал",
+          "kk": "OLX неге бас тартқанын көр",
+          "pl": "Zobacz, dlaczego OLX odmówił",
+          "pt": "Veja porque é que o OLX recusou",
+          "ro": "Vezi de ce a refuzat OLX"
+        },
+        "summary": {
+          "en": "When OLX does not accept a listing, you see the reason OLX gave",
+          "uk": "Коли OLX не приймає оголошення, ви бачите причину, яку він назвав",
+          "ru": "Коли OLX не приймає оголошення, ви бачите причину, яку він назвав",
+          "bg": "Когато OLX не приеме обява, виждаш причината, посочена от OLX",
+          "kk": "OLX хабарландыруды қабылдамаса, OLX көрсеткен себепті көресің",
+          "pl": "Gdy OLX nie przyjmie ogłoszenia, widzisz powód podany przez OLX",
+          "pt": "Quando o OLX não aceita um anúncio, vê o motivo indicado pelo OLX",
+          "ro": "Când OLX nu acceptă un anunț, vezi motivul dat de OLX"
+        },
+        "detail": {
+          "en": "The description now needs at least 40 characters, the same as OLX asks, so you can fix it before you publish.",
+          "uk": "Опис тепер має містити щонайменше 40 символів, як того вимагає OLX, тож ви зможете виправити його до публікації.",
+          "ru": "Опис тепер має містити щонайменше 40 символів, як того вимагає OLX, тож ви зможете виправити його до публікації.",
+          "bg": "Описанието вече трябва да е поне 40 символа, както го изисква OLX, така че можеш да го поправиш преди публикуване.",
+          "kk": "Сипаттама енді кемінде 40 таңбадан тұруы керек, OLX сұрағандай, сондықтан жарияламас бұрын түзете аласың.",
+          "pl": "Opis musi mieć teraz co najmniej 40 znaków, tak jak wymaga OLX, więc możesz go poprawić przed publikacją.",
+          "pt": "A descrição passa a precisar de pelo menos 40 carateres, tal como o OLX exige, para a poder corrigir antes de publicar.",
+          "ro": "Descrierea trebuie acum să aibă cel puțin 40 de caractere, ca la OLX, ca să o poți corecta înainte să publici."
+        }
+      }
+    ]
+  },
+  {
     "version": "3.8",
     "date": "2026-11-02",
     "active": true,

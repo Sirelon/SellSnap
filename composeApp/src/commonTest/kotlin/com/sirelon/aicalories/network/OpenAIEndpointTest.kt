@@ -97,7 +97,7 @@ class OpenAIEndpointTest {
     }
 
     @Test
-    fun unauthorizedResponseIsNotRetriedWhenTheRefreshedTokenIsTheSame() = runTest {
+    fun unauthorizedResponseWithTheSameRefreshedTokenFailsAfterOneLibraryResend() = runTest {
         var requests = 0
         // A JSON body in OpenAI's error shape, as the proxy sends it: openai-kotlin maps it to
         // AuthenticationException. A bare 401 would surface as NoTransformationFoundException
@@ -117,7 +117,9 @@ class OpenAIEndpointTest {
 
         assertFailsWith<AuthenticationException> { openAI.response(request = minimalRequest()) }
 
-        assertEquals(1, requests)
+        // Our App Check plugin does not resend an unchanged token. The one resend is Ktor's Auth
+        // plugin: openai-kotlin 4.2.0 sets bearer `refreshTokens`, so every 401 goes out twice.
+        assertEquals(2, requests)
     }
 
     // A 500 is the cheapest way to get the request out without faking a full Response payload:

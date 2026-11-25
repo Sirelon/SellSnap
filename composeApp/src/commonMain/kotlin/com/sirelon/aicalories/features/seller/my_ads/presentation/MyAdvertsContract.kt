@@ -30,6 +30,10 @@ interface MyAdvertsContract {
         /** Gates the lazy first load on page selection - only the initially selected page loads
          * on screen entry, never all connected accounts at once. */
         val hasLoaded: Boolean = false,
+        /** Unread buyer messages per advert id on this account (SIR-162), from the first page of
+         * its threads. An advert with none is absent; empty until the threads load, and left as it
+         * was when a reload of them fails. */
+        val unreadByAdvert: Map<Long, Int> = emptyMap(),
     )
 
     /**
@@ -128,6 +132,8 @@ interface MyAdvertsContract {
         data class ReconnectClicked(val localIndex: Int) : Event
         data object ConnectOlxClicked : Event
         data object CreateListingClicked : Event
+        /** The unread marker on a row; [unreadCount] is what the marker showed. */
+        data class UnreadMarkerClicked(val unreadCount: Int) : Event
         data class AdvertClicked(val localIndex: Int, val advert: MyAdvertItem) : Event
 
         data object AdvertSheetDismissed : Event
@@ -152,6 +158,8 @@ interface MyAdvertsContract {
         data class ShowMessage(val message: String) : Effect
         data object ConnectOlx : Effect
         data object CreateListing : Effect
+        /** Opens the Messages tab; there is no per-listing filter there. */
+        data object OpenMessages : Effect
         /** Reuses Profile's existing reconnect route rather than a second auth entry point. */
         data class Reconnect(val localIndex: Int) : Effect
     }

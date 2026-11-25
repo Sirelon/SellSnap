@@ -8,6 +8,8 @@ import com.sirelon.sellsnap.features.media.upload.DraftPhoto
 import com.sirelon.sellsnap.features.media.upload.PersistedDraftPhoto
 import com.sirelon.sellsnap.features.seller.ad.Advertisement
 import com.sirelon.sellsnap.features.seller.ad.AdvertisementWithAttributes
+import com.sirelon.sellsnap.features.seller.ad.generate_ad.GenerateAdInputStore
+import com.sirelon.sellsnap.features.seller.ad.generate_ad.GenerateAdSavedState
 import com.sirelon.sellsnap.features.seller.auth.data.GuestModeStore
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountRecord
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountState
@@ -51,6 +53,7 @@ import kotlinx.serialization.json.Json
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Clock
 
@@ -59,7 +62,7 @@ class SellerAccountRepositoryTest {
     private val testJson = Json { ignoreUnknownKeys = true; isLenient = true; explicitNulls = false }
 
     @Test
-    fun `deleteSellSnapAccountData also drops the drafts`() = runBlocking {
+    fun `deleteSellSnapAccountData also drops the drafts and the New listing input`() = runBlocking {
         val accountStore = OlxAccountStore(InMemoryOlxKeyValueStore(), testJson)
         val engine = MockEngine { respond("{}", status = HttpStatusCode.OK, headers = jsonHeaders()) }
         val harness = harness(engine, accountStore)
@@ -84,11 +87,13 @@ class SellerAccountRepositoryTest {
             ),
         )
         assertEquals(1, harness.draftsRepository.drafts().first().size)
+        harness.generateAdInputStore.savedState = GenerateAdSavedState(prompt = "Nike Air Max 90, worn twice")
 
         try {
             harness.repository.deleteSellSnapAccountData()
 
             assertTrue(harness.draftsRepository.drafts().first().isEmpty())
+            assertNull(harness.generateAdInputStore.savedState)
         } finally {
             // deleteSellSnapAccountData resets the process-global country to the device default,
             // which other tests in this JVM read.
@@ -547,6 +552,7 @@ class SellerAccountRepositoryTest {
             countryStore = countryStore,
         )
         val draftsRepository = InMemoryDraftsRepository()
+        val generateAdInputStore = GenerateAdInputStore()
         val repository = SellerAccountRepository(
             authRepository = authRepository,
             olxApiClient = olxApiClient,
@@ -559,6 +565,7 @@ class SellerAccountRepositoryTest {
             draftMediaFileStore = FakeDraftMediaFileStore,
             advertOutcomeStore = AdvertOutcomeStore(InMemoryOlxKeyValueStore(), testJson),
             draftsRepository = draftsRepository,
+            generateAdInputStore = generateAdInputStore,
             analyticsConsentRepository = analyticsConsentRepository,
             errorParser = errorParser,
             analytics = analytics,
@@ -569,6 +576,7 @@ class SellerAccountRepositoryTest {
             olxApiClient = olxApiClient,
             analytics = analytics,
             draftsRepository = draftsRepository,
+            generateAdInputStore = generateAdInputStore,
             countryStore = countryStore,
         )
     }
@@ -579,6 +587,7 @@ class SellerAccountRepositoryTest {
         val olxApiClient: OlxApiClient,
         val analytics: FakeAnalytics,
         val draftsRepository: InMemoryDraftsRepository,
+        val generateAdInputStore: GenerateAdInputStore,
         val countryStore: OlxCountryStore,
     )
 

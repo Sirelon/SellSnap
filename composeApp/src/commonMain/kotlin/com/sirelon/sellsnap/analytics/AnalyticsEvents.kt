@@ -85,6 +85,14 @@ object AnalyticsEvents {
      * from one that landed clean.
      */
     const val AD_PUBLISH_SUCCEEDED = "ad_publish_succeeded"
+
+    /**
+     * A publish that did not end in a live advert. `account_index` is the account it was sent
+     * from. `reason` is `validation:<field>` for a field OLX refused, `network` when OLX never
+     * answered, an OLX auth code such as `invalid_token`, `unknown:http_<status>` for any other OLX
+     * answer (a `2xx` status there means OLX answered but the reply could not be read), or the
+     * exception class name for anything that never reached OLX.
+     */
     const val AD_PUBLISH_FAILED = "ad_publish_failed"
 
     /**
@@ -106,6 +114,14 @@ object AnalyticsEvents {
      * explanations for a seller who stops publishing without a single failed-publish event.
      */
     const val AD_PREVIEW_ATTRIBUTES_LOADED = "ad_preview_attributes_loaded"
+
+    /**
+     * SIR-187: the seller tapped Retry on the preview's failed-details card, logged once the
+     * reload ends. `result` is `success` (the details loaded and publishing can go on) or `failed`
+     * (the card shows again). The count of events is the count of taps that finished; a high
+     * `failed` share means a retry does not help and the failure is not a weak connection.
+     */
+    const val AD_PREVIEW_ATTRIBUTES_RETRY = "ad_preview_attributes_retry"
 
     // Multi-account (SIR-83). No event may carry an email, OLX user id, account name, or token -
     // only localIndex/counts, per PRD §11. First-connect lands through the same addAccount path as
@@ -185,6 +201,14 @@ object AnalyticsEvents {
      */
     const val USER_PROPERTY_CONNECTED_ACCOUNT_COUNT = "connected_account_count"
 
+    /**
+     * User property: which screen runs the OLX login on Android and iOS, `in_app` (WebView /
+     * WKWebView) or `system_browser` (Custom Tab / ASWebAuthenticationSession). Set when the app
+     * first reads the Firestore switch `config/olx_login` (OlxLoginModeRepository), so
+     * `auth_started` → `auth_completed` can be compared per mode.
+     */
+    const val USER_PROPERTY_OLX_LOGIN_MODE = "olx_login_mode"
+
     // Which button the seller pressed on the "close this listing?" sheet, as `choice`
     // (stay | leave | dismissed - swiped away or system back, which keeps editing like stay).
     // Leaving keeps the draft in Drafts. The sheet's own screen_view only says it
@@ -245,6 +269,21 @@ object AnalyticsEvents {
     const val NOTIFICATION_PROMPT_ANSWERED = "notification_prompt_answered"
 
     /**
+     * A Firestore announcement opened as the launch dialog. `announcement_id` is the Firestore
+     * document id, which the owner names. `gate` is the Boolean "the store or link button is the
+     * only exit" (non-dismissible with a link), which is how a version is forced to update:
+     * gate events per day count the sellers still on a blocked version.
+     */
+    const val ANNOUNCEMENT_SHOWN = "announcement_shown"
+
+    /**
+     * The announcement's link button was tapped. `announcement_id` as in [ANNOUNCEMENT_SHOWN];
+     * `link_type` is `store` (this platform's store page) or `url` (an https link). Against
+     * [ANNOUNCEMENT_SHOWN] with `gate` true, it says how many blocked sellers went to update.
+     */
+    const val ANNOUNCEMENT_LINK_TAPPED = "announcement_link_tapped"
+
+    /**
      * The seller was shown an error. Logged only through `reportShownError`, which also records the
      * Crashlytics non-fatal. `screen` is a snake_case screen code (`preview_ad`, `generate_ad`,
      * `my_adverts`, ...) and `reason` a stable code, optionally `kind:detail` - an OLX validation
@@ -253,7 +292,7 @@ object AnalyticsEvents {
      */
     const val ERROR_SHOWN = "error_shown"
 
-    // Messages (SIR-92, read-only buyer conversations). Counts are banded by
+    // Messages (SIR-92, buyer conversations). Counts are banded by
     // `MessagesAnalyticsBuckets.count` (0, 1, 2_5, 6_10, 11_25, 26_50, gt_50). No event carries
     // message text, a thread id, a buyer id, an advert id or a title. Failed loads are not here:
     // they are `error_shown` with `screen` `messages` or `conversation`. Screen views of both
@@ -292,8 +331,12 @@ object AnalyticsEvents {
      * list) or `two_pane` (beside it). `account_count` is the accounts connected in the country,
      * `is_active_account` (Boolean) whether the thread's account is the active one, `had_unread`
      * (Boolean) whether the row had unread messages and `listing_state` the advert's state:
-     * `deleted`, `unknown` or an OLX status code (`active`, `removed_by_user`, ...). It is the
-     * denominator for `messages_conversation_action`.
+     * `deleted`, `unknown` or an OLX status code (`active`, `removed_by_user`, ...).
+     * `has_price_floor` (Boolean) is whether this device kept a lowest price for the advert, the
+     * one the conversation header shows the seller. `floor_gap_bucket` is sent only with a floor
+     * and a published price: how far that price is above the floor, in percent of the floor
+     * (`0` at or below it, `1_10`, `11_25`, `26_50`, `gt_50`). No price or id leaves the device.
+     * It is the denominator for `messages_conversation_action`.
      */
     const val MESSAGES_CONVERSATION_OPENED = "messages_conversation_opened"
 
@@ -305,14 +348,107 @@ object AnalyticsEvents {
     const val MESSAGES_CONVERSATION_LOADED = "messages_conversation_loaded"
 
     /**
-     * The seller tapped an action in a conversation. `action` is `reply_on_olx` (the writing
-     * session is not in the app, so this is the demand for it), `open_listing` (the header) or
-     * `mark_as_read` (the top bar action, offered while the thread has unread messages). Also
+     * The seller tapped an action in a conversation. `action` is `reply_on_olx` (the top-bar
+     * link to OLX's own messages page, beside the in-app reply), `open_listing` (the header) or
+     * `mark_as_read` (the top bar action, offered while the thread has unread messages, and sent
+     * by itself once a reply is accepted on a thread that is still unread). Also
      * `listing_state` (as for `messages_conversation_opened`), `had_unread` (Boolean, the row had
      * unread messages when it was opened) and `seconds_since_open_bucket` (0_5, 6_30, 31_120,
      * gt_120) from opening the conversation to the tap. `mark_as_read` also carries `result`:
-     * `success` (OLX accepted the command) or `failed` (the seller saw an error, also logged as
-     * `error_shown`); the other actions have no `result`.
+     * `success` (OLX accepted the command) or `failed`, and `trigger`: `tap` (the seller's button;
+     * a failure is shown as a snackbar and also logged as `error_shown`) or `send` (the reply
+     * that was just accepted; a failure is shown to nobody and only recorded as a non-fatal).
+     * Count taps with `trigger = tap`; `send` events are not taps. The other actions have no
+     * `result` or `trigger`.
      */
     const val MESSAGES_CONVERSATION_ACTION = "messages_conversation_action"
+
+    /**
+     * A reply the seller sent from a conversation (SIR-95), logged when OLX answers. `source` is
+     * where the text came from: `typed`, `suggestion` (an AI suggestion sent with one tap, SIR-96)
+     * or `edited_suggestion` (a suggestion put into the field, then sent from it). With either
+     * suggestion source, `suggestion_index` is the row's position (0 = first); with
+     * `edited_suggestion`, `suggestion_edited` (Boolean) says whether the seller changed the text
+     * before sending. A Retry keeps the source of the reply it sends again. `result` is `success` (OLX accepted it) or `failed` (the bubble shows Retry; also
+     * `error_shown` with reason `send_failed:<cause>`, except for an account that needs a
+     * reconnect). `is_retry` (Boolean) is true for a Retry tap on a failed reply. `layout` is
+     * `single_pane` or `two_pane`, and `account_count` the accounts connected in the country, as
+     * for `messages_conversation_opened`. `had_scam_warning` (Boolean, SIR-176) is true when the
+     * conversation showed at least one scam warning at the moment of sending: compared with
+     * `messages_scam_warning_shown`, it says whether sellers still reply after a warning. No
+     * text, length or id.
+     */
+    const val MESSAGE_SENT = "message_sent"
+
+    /**
+     * A conversation showed the "Possible scam" warning on at least one buyer message (SIR-176).
+     * Logged once per opened conversation, at the first load that has a flagged message; polls
+     * and later flagged messages never log it again. `signals` is the codes of the signals that
+     * matched across the flagged messages, sorted and comma-joined: `card_request`,
+     * `fake_olx_delivery`, `messenger_link`, `olx_lookalike_link`, `short_link`.
+     * `flagged_count_bucket` is the number of flagged messages, banded by
+     * `MessagesAnalyticsBuckets.count`. It is the denominator for `had_scam_warning` on
+     * `message_sent`, and the sample for judging the rules: a high rate on ordinary threads means
+     * the rules are too loose. No text, no thread, advert or buyer id.
+     */
+    const val MESSAGES_SCAM_WARNING_SHOWN = "messages_scam_warning_shown"
+
+    // AI reply suggestions in a conversation (SIR-96). No event carries suggestion or buyer text,
+    // an id or a price.
+
+    /**
+     * The seller tapped "Suggest replies" and a model call starts; a tap that shows the
+     * suggestions already kept for the same buyer message calls nothing and logs nothing. Each
+     * one ends in `suggestions_shown` or `suggestions_failed`, except when a newer message
+     * arrives, or the seller sends a reply, before the answer: that answer is dropped unlogged. `layout` is `single_pane` or
+     * `two_pane`; `has_listing_text` (Boolean) is true when the advert's description or
+     * attributes reached the prompt (false for a deleted advert or a failed read: the title and
+     * the conversation only); `has_price_floor` (Boolean) is true when a usable floor was
+     * available: the seller's private lowest price exists and is below the asking price, so it
+     * went into the prompt and the price guard. False when none was kept, or when it is at or
+     * above the asking price (then the prompt holds the asking price and the price guard
+     * drops any reply below it).
+     */
+    const val SUGGESTIONS_REQUESTED = "suggestions_requested"
+
+    /**
+     * Suggestions appeared above the reply field. `count` (1-3) is how many; `latency_ms_bucket`
+     * is the time from the tap (`lt_1000`, `1000_2000`, `2000_4000`, `4000_8000`, `gt_8000`);
+     * `dropped_below_floor` is how many the price-floor guard removed; `needs_review_count` how
+     * many the model marked for review (they go into the field instead of being sent);
+     * `prompt_version` and `model` name the prompt and model that wrote them.
+     */
+    const val SUGGESTIONS_SHOWN = "suggestions_shown"
+
+    /**
+     * A suggestion request ended with nothing to show; the seller sees no error and the button
+     * comes back. `reason`: `timeout` (no answer within 15 s), `openai_<status>` (OpenAI or the
+     * proxy answered with an HTTP error, e.g. `openai_500`), `network` (no answer could be read),
+     * `parse` (the answer was not the expected JSON) or `empty` (no usable reply was left; then
+     * `dropped_below_floor` says how many the price-floor guard removed). `latency_ms_bucket` as
+     * for `suggestions_shown`. Also recorded as a Crashlytics non-fatal.
+     */
+    const val SUGGESTIONS_FAILED = "suggestions_failed"
+
+    /**
+     * The seller tapped a suggestion that was not sent but put into the reply field to review.
+     * `suggestion_index` is the row's position (0 = first); `reason` is always `needs_review`
+     * (the model marked it: delivery, payment, a meeting or contact details). Every other
+     * suggestion is shown in full and sent by the tap.
+     */
+    const val SUGGESTION_INSERTED = "suggestion_inserted"
+
+    /** The seller hid the suggestions with their close icon. `count` is how many were showing. */
+    const val SUGGESTIONS_DISMISSED = "suggestions_dismissed"
+
+    // My Ads (SIR-162).
+
+    /**
+     * The seller tapped the unread-messages marker on a My Ads row, which opens the Messages tab.
+     * `unread_bucket` is the unread total the marker showed, banded by
+     * `MessagesAnalyticsBuckets.count` (1, 2_5, 6_10, 11_25, 26_50, gt_50). Compared with
+     * `messages_opened` it answers whether the marker pulls sellers into their conversations. No
+     * advert id, title or message text.
+     */
+    const val MY_ADS_UNREAD_MARKER_TAPPED = "my_ads_unread_marker_tapped"
 }

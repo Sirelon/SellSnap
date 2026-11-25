@@ -21,10 +21,10 @@ class LocationRepository(
     private val locationStore: LocationStore,
     private val countryStore: OlxCountryStore,
 ) {
-    suspend fun getSavedLocation(): OlxLocation? = locationStore.read()
+    suspend fun getSavedLocation(): OlxLocation? = locationStore.read(countryStore.current.code)
 
     suspend fun saveLocation(location: OlxLocation) {
-        locationStore.write(location)
+        locationStore.write(countryStore.current.code, location)
     }
 
     suspend fun clearSavedLocation() {
@@ -45,7 +45,7 @@ class LocationRepository(
             longitude = deviceLocation.longitude,
         ).firstNotNullOfOrNull { it.toOlxLocation() }
 
-        firstValidLocation?.let { locationStore.write(it) }
+        firstValidLocation?.let { locationStore.write(countryStore.current.code, it) }
         return firstValidLocation
     }
 

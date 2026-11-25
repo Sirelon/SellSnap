@@ -538,7 +538,7 @@ private fun PublishSuccessScreenPreview() {
             data = PublishSuccessData(
                 url = "https://www.olx.ua/d/uk/obyavlenie/krosvki-nike-air-max-ID123456.html",
                 title = "Кросівки Nike Air Max 90, розмір 42",
-                priceFormatted = "₴ 1 850",
+                priceFormatted = "1 850 грн.",
                 primaryImageUrl = null,
                 totalElapsedMs = 92_000L,
                 accountName = "Олена Коваль",

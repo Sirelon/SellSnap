@@ -130,4 +130,18 @@ class AnnouncementMapperTest {
         assertNull(withLink("update")?.link)
         assertNull(response().toDomain("a", "en")?.link)
     }
+
+    @Test
+    fun `platforms are trimmed, lowercased and blank ones dropped`() {
+        val announcement = response(
+            rules = AnnouncementRulesResponse(platforms = listOf(" iOS ", "", "android")),
+        ).toDomain("gate", "en")
+
+        assertEquals(setOf("ios", "android"), announcement?.platforms)
+    }
+
+    @Test
+    fun `absent platforms is every platform`() {
+        assertEquals(emptySet(), response().toDomain("a", "en")?.platforms)
+    }
 }

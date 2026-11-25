@@ -131,7 +131,7 @@ private fun AdvertConfirmSheetPreview() {
                         status = AdvertStatus.Outdated,
                         url = "",
                         primaryImageUrl = null,
-                        priceFormatted = "₴ 1 800",
+                        priceFormatted = "1 800 грн.",
                         priceValue = 1800,
                         currencyCode = "UAH",
                         createdAt = "",

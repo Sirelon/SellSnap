@@ -97,8 +97,9 @@ class RootCategoryTaxonomyTest {
     }
 
     @Test
-    fun `country with no live categories support falls back to no exclusions and no icons`() {
-        assertEquals(emptySet<Int>(), excludedRootCategoryIds(OlxCountry.KZ))
-        assertNull(rootCategoryKind(OlxCountry.KZ, 37))
+    fun `kazakhstan excludes the same verticals and keeps root 3 as vehicles`() {
+        assertEquals(setOf(1, 3, 6, 7, 35, 3006), excludedRootCategoryIds(OlxCountry.KZ))
+        assertEquals(RootCategoryKind.ELECTRONICS, rootCategoryKind(OlxCountry.KZ, 37))
+        assertEquals(RootCategoryKind.SPARE_PARTS, rootCategoryKind(OlxCountry.KZ, 3252))
     }
 }

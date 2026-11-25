@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <meta name="referrer" content="no-referrer">
+  <title>SellSnap</title>
+  <link rel="icon" href="../assets/favicon.png" type="image/png">
+  <link rel="stylesheet" href="../assets/legal.css">
+  <style>
+    main { text-align: center; padding-top: 20vh; }
+    img { width: 72px; height: 72px; border-radius: 16px; }
+    .open {
+      display: inline-block;
+      margin-top: 24px;
+      padding: 14px 28px;
+      border-radius: 12px;
+      background: #d85f1f;
+      color: #fff;
+      font-weight: 600;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+<main>
+  <img src="../assets/app-icon.png" alt="SellSnap">
+  <p><a class="open" id="open" href="selolxai://olx-auth/callback">Open SellSnap</a></p>
+</main>
+<script>
+  // OLX accepts only HTTPS redirect URIs (developer.olx.<tld>/docs/faq, "How do I set or change
+  // the redirect URI"). OLX sends the seller here with ?code=&state= (or ?error=); this page hands
+  // the same query to the app's own callback scheme, which the app already handles.
+  var target = "selolxai://olx-auth/callback" + window.location.search;
+  document.getElementById("open").href = target;
+  // The release check (.maestro/olx_login_canary.yaml) sends state=canary-*: stay on this page so
+  // the test can see that OLX returned a code, instead of jumping into an installed app.
+  if (!/^canary/.test(new URLSearchParams(window.location.search).get("state") || "")) {
+    window.location.replace(target);
+  }
+</script>
+</body>
+</html>

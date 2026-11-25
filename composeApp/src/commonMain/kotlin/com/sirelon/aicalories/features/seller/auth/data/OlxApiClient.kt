@@ -197,7 +197,7 @@ class OlxApiClient(
      * PUT applies the same validation rules as create, so an edit can plausibly be rejected for
      * reasons the original publish passed (a category's attribute requirements having changed
      * since). Whether OLX also re-runs moderation on an edit is unverified - see
-     * `SPIKE-SIR-99-advert-edit-round-trip.md` risks (d) and (e).
+     * `research/SPIKE-SIR-99-advert-edit-round-trip.md` risks (d) and (e).
      *
      * The response body is deliberately not parsed. The status code is the whole result, and the
      * caller re-reads the row with [getAdvert] anyway - so parsing here would add a way for an
@@ -259,6 +259,33 @@ class OlxApiClient(
             bearerAuth(accessToken)
             contentType(ContentType.Application.Json)
             setBody(ThreadCommandRequest(command = command.wireValue))
+        }
+        response.ensureSuccess()
+    }
+
+    /**
+     * `POST threads/{id}/messages` with `{"text": ...}`: the account writes [text] into the
+     * thread. The status code is the whole result: the spec declares no response body, so the
+     * caller re-reads the thread to see the message.
+     *
+     * developer.olx.ua, swagger v2 `/threads/{threadId}/messages`, `post` "Post Message"
+     * (security `access_token`: `v2`, `write`); developer.olx.pl declares the same:
+     * ```
+     * description: Posts new message in a given thread. Field 'phone' is optional and depends on
+     *   the category - used in Jobs categories right now.
+     * requestBody: application/json: type: object, required: [text]
+     *   text: string, "Text of the message"
+     *   attachments: array of {url: string}
+     * responses: 200 "Status 200" (no content schema)
+     * ```
+     * Neither spec lists a refusal (an inactive or deleted listing, a length limit), so nothing
+     * is checked here: OLX's own error is what the seller sees.
+     */
+    internal suspend fun postThreadMessage(accessToken: String, threadId: Long, text: String) {
+        val response = httpClient.post("threads/$threadId/messages") {
+            bearerAuth(accessToken)
+            contentType(ContentType.Application.Json)
+            setBody(ThreadMessageRequest(text = text))
         }
         response.ensureSuccess()
     }
@@ -474,7 +501,7 @@ class OlxApiClient(
             json.decodeFromString(payload)
         } catch (exception: SerializationException) {
             throw OlxApiException(
-                OlxApiError.Unknown("Could not parse OLX response for $operation."),
+                OlxApiError.Unknown("Could not parse OLX response for $operation.", httpStatus = status.value),
             )
         }
     }

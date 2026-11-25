@@ -22,6 +22,7 @@ import io.ktor.client.HttpClient
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.core.qualifier.named
 import org.koin.dsl.bind
+import com.sirelon.sellsnap.features.seller.auth.data.olxLoginModeModule
 import org.koin.dsl.module
 
 val olxHttpClientQualifier = named("olxHttpClient")
@@ -29,6 +30,7 @@ val olxAuthorizedHttpClientQualifier = named("olxAuthorizedHttpClient")
 val olxUnauthenticatedApiClientQualifier = named("olxUnauthenticatedApiClient")
 
 val sellerAuthModule = module {
+    includes(olxLoginModeModule)
     single { OlxCountryStore(get()) }
     single<HttpClient>(qualifier = olxHttpClientQualifier) { createOlxHttpClient() }
     single { OlxRemoteErrorParser(get()) }

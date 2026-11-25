@@ -1,55 +1,192 @@
 package com.sirelon.sellsnap.features.seller.auth.presentation
 
-import android.net.Uri
-import androidx.browser.customtabs.CustomTabsIntent
+import android.annotation.SuppressLint
+import android.graphics.Bitmap
+import android.view.ViewGroup
+import android.webkit.CookieManager
+import android.webkit.WebResourceRequest
+import android.webkit.WebView
+import android.webkit.WebViewClient
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.ui.platform.LocalContext
-import androidx.lifecycle.compose.LifecycleResumeEffect
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import androidx.core.net.toUri
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAuthCallbackBridge
+import com.sirelon.sellsnap.designsystem.screens.LoadingOverlay
+import com.sirelon.sellsnap.features.seller.auth.data.OlxConfig
+import com.sirelon.sellsnap.features.seller.auth.data.OlxLoginModeRepository
+import org.koin.compose.koinInject
 
 /**
- * Force-relogin for add-account/reconnect (D5): a Custom Tabs *ephemeral* session shares no
- * cookies or storage with the browser, so OLX always serves a real login form - the direct
- * Android equivalent of iOS's `prefersEphemeralWebBrowserSession`, and TRD's preferred outcome
- * (keeps the system browser, no WebView, no security-posture sign-off needed).
- * https://developer.chrome.com/docs/android/custom-tabs/guide-ephemeral-tab
- *
- * Requires `androidx.browser:browser` 1.9.0+. No runtime support check: an unrecognised Custom
- * Tabs extra is simply ignored by providers that don't understand it, so a provider that doesn't
- * support ephemeral browsing just falls back to a normal tab on its own - nothing to branch on
- * here. If that happens, the seller may land back on the already-connected account, but
- * SellerAccountRepository.addAccount's dedupe now handles that gracefully (a precise "already
- * connected as X" message, never a duplicate entry).
- *
- * [onDismissed] fires when the seller comes back from the tab without finishing the login.
- * `launchUrl` reports nothing when the tab closes, so [OlxAuthReturnTracker] infers it from the
- * app resuming with no new OLX callback (SIR-123).
+ * Picks the OLX login screen from the Firestore switch `config/olx_login.systemBrowser`
+ * (OlxLoginModeRepository): a Custom Tab when on, otherwise the in-app WebView below. Until the
+ * switch is read, the in-app WebView is used.
  */
 @Composable
 actual fun rememberOlxAuthLauncher(
     forceReauth: Boolean,
     onDismissed: (OlxAuthDismissReason) -> Unit,
 ): (String) -> Unit {
-    val context = LocalContext.current
-    val tracker = remember { OlxAuthReturnTracker { OlxAuthCallbackBridge.publishedCount } }
+    val loginMode = koinInject<OlxLoginModeRepository>()
+    val systemBrowser by produceState(initialValue = false, loginMode) { value = loginMode.useSystemBrowser() }
+    val inApp = rememberInAppOlxAuthLauncher(forceReauth, onDismissed)
+    val browser = rememberSystemBrowserOlxAuthLauncher(forceReauth, onDismissed)
+    return remember(systemBrowser, inApp, browser) { if (systemBrowser) browser else inApp }
+}
+
+/**
+ * The OLX login in an in-app WebView instead of a Custom Tab.
+ *
+ * Why (SIR-195, `.claude/rules/olx-api.md`): a phone is sent to `m.olx.<tld>`, logs in there, and
+ * OLX's page jumps straight back to `www.olx.<tld>/oauth/authorize`. Arriving within about a
+ * second of the login, `/oauth/authorize` rejects the brand-new session, checks `login.olx.<tld>`
+ * silently, logs the seller out and shows the OLX home page. Five seconds later the same request
+ * succeeds and redirects to our `redirect_uri` with a code (Inferred: from tests on olx.ro,
+ * 2026-11-22; the cause on OLX's side is unknown). A Custom Tab cannot hold that jump, so the app
+ * owns the WebView: it delays the jump, retries if OLX still lands on its home page, and catches
+ * the HTTPS callback itself.
+ *
+ * [forceReauth] clears the WebView's cookies first, so OLX serves a real login form.
+ * [onDismissed] fires when the seller closes the screen without finishing.
+ */
+@Composable
+private fun rememberInAppOlxAuthLauncher(
+    forceReauth: Boolean,
+    onDismissed: (OlxAuthDismissReason) -> Unit,
+): (String) -> Unit {
+    var authUrl by remember { mutableStateOf<String?>(null) }
     val currentOnDismissed by rememberUpdatedState(onDismissed)
 
-    LifecycleResumeEffect(tracker) {
-        if (tracker.onResumed()) currentOnDismissed(OlxAuthDismissReason.UserCancelled)
-        onPauseOrDispose { }
+    authUrl?.let { url ->
+        OlxAuthWebViewDialog(
+            authorizeUrl = url,
+            onCallback = { callbackUrl ->
+                authUrl = null
+                OlxAuthCallbackBridge.publishCallback(callbackUrl)
+            },
+            onClose = {
+                authUrl = null
+                currentOnDismissed(OlxAuthDismissReason.UserCancelled)
+            },
+        )
     }
 
-    return remember(context, forceReauth, tracker) {
+    return remember(forceReauth) {
         { url: String ->
-            val intent = CustomTabsIntent.Builder()
-                .setShowTitle(true)
-                .setEphemeralBrowsingEnabled(forceReauth)
-                .build()
-            tracker.onLaunched()
-            intent.launchUrl(context, Uri.parse(url))
+            if (forceReauth) CookieManager.getInstance().removeAllCookies { authUrl = url } else authUrl = url
         }
+    }
+}
+
+@SuppressLint("SetJavaScriptEnabled")
+@Composable
+private fun OlxAuthWebViewDialog(
+    authorizeUrl: String,
+    onCallback: (String) -> Unit,
+    onClose: () -> Unit,
+) {
+    val currentOnCallback by rememberUpdatedState(onCallback)
+    var waiting by remember { mutableStateOf(false) }
+    Dialog(
+        onDismissRequest = onClose,
+        properties = DialogProperties(usePlatformDefaultWidth = false),
+    ) {
+        LoadingOverlay(isLoading = waiting) {
+            AndroidView(
+                modifier = Modifier.fillMaxSize(),
+                factory = { context ->
+                    WebView(context).apply {
+                        layoutParams = ViewGroup.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                        )
+                        settings.javaScriptEnabled = true
+                        settings.domStorageEnabled = true
+                        webViewClient = OlxAuthWebViewClient(
+                            authorizeUrl = authorizeUrl,
+                            onWaiting = { waiting = it },
+                            onCallback = { currentOnCallback(it) },
+                        )
+                        loadUrl(authorizeUrl)
+                    }
+                },
+            )
+        }
+    }
+}
+
+private const val AUTHORIZE_DELAY_MS = 5_000L
+private const val MAX_RETRIES = 2
+
+private class OlxAuthWebViewClient(
+    private val authorizeUrl: String,
+    private val onWaiting: (Boolean) -> Unit,
+    private val onCallback: (String) -> Unit,
+) : WebViewClient() {
+    private var done = false
+    private var retries = 0
+
+    override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
+        val url = request.url.toString()
+        if (interceptCallback(url)) return true
+        // OLX's own jump back to the partner page right after the login: hold it (see KDoc above).
+        if (request.isForMainFrame && !request.isRedirect && isAuthorize(url)) {
+            hold(view, url)
+            return true
+        }
+        return false
+    }
+
+    override fun onPageStarted(view: WebView, url: String, favicon: Bitmap?) {
+        if (interceptCallback(url)) view.stopLoading()
+    }
+
+    override fun onPageFinished(view: WebView, url: String) {
+        if (done || retries >= MAX_RETRIES || !isOlxHome(url)) return
+        retries++
+        hold(view, authorizeUrl)
+    }
+
+    /** Shows the spinner for [AUTHORIZE_DELAY_MS], then opens [url]; an OLX error page stays visible. */
+    private fun hold(view: WebView, url: String) {
+        onWaiting(true)
+        view.postDelayed({
+            if (!done) {
+                onWaiting(false)
+                view.loadUrl(url)
+            }
+        }, AUTHORIZE_DELAY_MS)
+    }
+
+    private fun isAuthorize(url: String): Boolean {
+        val uri = url.toUri()
+        return uri.host.orEmpty().startsWith("www.olx.") &&
+            uri.path.orEmpty().trimEnd('/').endsWith("/oauth/authorize")
+    }
+
+    private fun isOlxHome(url: String): Boolean {
+        val uri = url.toUri()
+        val host = uri.host.orEmpty()
+        return (host.startsWith("m.olx.") || host.startsWith("www.olx.")) &&
+            uri.path.orEmpty().trim('/').isEmpty()
+    }
+
+    private fun interceptCallback(url: String): Boolean {
+        if (done) return true
+        val isCallback = url.startsWith(OlxConfig.redirectUri) ||
+            url.startsWith("${OlxConfig.appCallbackScheme}://")
+        if (!isCallback) return false
+        done = true
+        onCallback(url)
+        return true
     }
 }

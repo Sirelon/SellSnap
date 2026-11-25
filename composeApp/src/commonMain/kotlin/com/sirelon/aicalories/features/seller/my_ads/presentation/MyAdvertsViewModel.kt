@@ -14,6 +14,8 @@ import com.sirelon.sellsnap.features.seller.auth.data._currentOlxCountry
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxApiError
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxApiException
 import com.sirelon.sellsnap.features.seller.auth.domain.shownErrorCause
+import com.sirelon.sellsnap.features.seller.messages.data.MessagesRepository
+import com.sirelon.sellsnap.features.seller.messages.domain.MessagesAnalyticsBuckets
 import com.sirelon.sellsnap.features.seller.my_ads.data.AccountNeedsReconnect
 import com.sirelon.sellsnap.features.seller.my_ads.data.AdvertDeactivatedNotDeleted
 import com.sirelon.sellsnap.features.seller.my_ads.data.AdvertLifecycleRepository
@@ -23,6 +25,7 @@ import com.sirelon.sellsnap.features.seller.my_ads.domain.AdvertAction
 import com.sirelon.sellsnap.features.seller.my_ads.domain.AdvertAnalyticsBuckets
 import com.sirelon.sellsnap.features.seller.my_ads.domain.AdvertState
 import com.sirelon.sellsnap.features.seller.my_ads.domain.state
+import com.sirelon.sellsnap.features.seller.my_ads.domain.unreadByAdvert
 import com.sirelon.sellsnap.features.seller.my_ads.domain.availableActions
 import com.sirelon.sellsnap.features.seller.my_ads.domain.isLive
 import com.sirelon.sellsnap.features.seller.my_ads.model.MyAdvertItem
@@ -50,6 +53,8 @@ import com.sirelon.sellsnap.generated.resources.advert_edit_load_failed
 import com.sirelon.sellsnap.generated.resources.my_ads_account_fallback_name
 import com.sirelon.sellsnap.generated.resources.my_ads_load_failed
 import com.sirelon.sellsnap.generated.resources.my_ads_load_failed_account
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -60,6 +65,7 @@ private const val PageSize = 50
 class MyAdvertsViewModel internal constructor(
     private val repository: MyAdvertsRepository,
     private val accountRepository: SellerAccountRepository,
+    private val messagesRepository: MessagesRepository,
     private val lifecycleRepository: AdvertLifecycleRepository,
     private val outcomeStore: AdvertOutcomeStore,
     private val analytics: Analytics,
@@ -96,6 +102,9 @@ class MyAdvertsViewModel internal constructor(
 
     private val pendingStatuses = mutableMapOf<Long, PendingStatus>()
 
+    /** The unread-markers read in flight, by account page; a new one cancels the old. */
+    private val unreadJobs = mutableMapOf<Int, Job>()
+
     init {
         // Every emission (initial + every add/reconnect/disconnect/switch) resyncs pages by
         // localIndex, never by list position - SIR-87 drops the switchEpoch staleness guard
@@ -116,6 +125,13 @@ class MyAdvertsViewModel internal constructor(
             is Event.ReconnectClicked -> postEffect(Effect.Reconnect(event.localIndex))
             Event.ConnectOlxClicked -> postEffect(Effect.ConnectOlx)
             Event.CreateListingClicked -> postEffect(Effect.CreateListing)
+            is Event.UnreadMarkerClicked -> {
+                analytics.logEvent(
+                    AnalyticsEvents.MY_ADS_UNREAD_MARKER_TAPPED,
+                    mapOf("unread_bucket" to MessagesAnalyticsBuckets.count(event.unreadCount)),
+                )
+                postEffect(Effect.OpenMessages)
+            }
             is Event.AdvertClicked -> openAdvertSheet(event.localIndex, event.advert)
 
             Event.AdvertSheetDismissed -> setState { it.copy(advertSheet = null) }
@@ -236,8 +252,30 @@ class MyAdvertsViewModel internal constructor(
                         }
                     }
                     refreshOpenSheetFrom(localIndex, refreshed)
+                    loadUnread(localIndex)
                 }
                 .onFailure { error -> handlePageFailure(localIndex, error, isLoadMore = false) }
+        }
+    }
+
+    /**
+     * The unread markers (SIR-162): the first page of this account's threads, summed per advert.
+     * Secondary to the list, so a failure shows nothing and reports nothing - the rows stay as they
+     * are. Runs on every page (re)load, which is also how a thread marked read in Messages clears
+     * its marker: leaving the tab recreates this screen.
+     */
+    private fun loadUnread(localIndex: Int) {
+        // One read per page: a slow older answer must not overwrite a newer one.
+        unreadJobs[localIndex]?.cancel()
+        unreadJobs[localIndex] = viewModelScope.launch {
+            val unread = try {
+                messagesRepository.loadThreads(localIndex).threads.unreadByAdvert()
+            } catch (error: CancellationException) {
+                throw error
+            } catch (_: Exception) {
+                return@launch
+            }
+            setState { it.updatePage(localIndex) { page -> page.copy(unreadByAdvert = unread) } }
         }
     }
 

@@ -13,7 +13,7 @@ import kotlinx.serialization.json.JsonObject
  * typed view: `PUT adverts/{id}` takes the whole advert with no patch semantics, so an edit has to
  * send back every field it is not changing, including ones this app does not model. The raw object
  * is the source those are read from; `toUpdateBody` reshapes it into the update schema, which is
- * not the same shape this response arrives in - see `SPIKE-SIR-99-advert-edit-round-trip.md`.
+ * not the same shape this response arrives in - see `research/SPIKE-SIR-99-advert-edit-round-trip.md`.
  */
 @Serializable
 internal class OlxAdvertDetailRootResponse(

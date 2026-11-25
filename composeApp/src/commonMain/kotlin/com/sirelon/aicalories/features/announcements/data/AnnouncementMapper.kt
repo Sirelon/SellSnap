@@ -3,6 +3,7 @@ package com.sirelon.sellsnap.features.announcements.data
 import com.sirelon.sellsnap.features.announcements.data.response.AnnouncementResponse
 import com.sirelon.sellsnap.features.announcements.model.Announcement
 import com.sirelon.sellsnap.features.whatsnew.data.FALLBACK_LANGUAGE_CODE
+import com.sirelon.sellsnap.platform.PlatformTargets
 import com.sirelon.sellsnap.platform.appLanguageCode
 
 private const val SHOW_MODE_EVERY_LAUNCH = "everyLaunch"
@@ -38,7 +39,25 @@ internal fun AnnouncementResponse.toDomain(id: String, languageCode: String): An
         userIds = rules?.userIds.orEmpty().toSet(),
         olxUserIds = rules?.olxUserIds.orEmpty().toSet(),
         priority = rules?.priority ?: 0,
+        // An unknown value such as a typo is kept, so it matches no device: the quieter reading.
+        platforms = rules?.platforms.orEmpty()
+            .map { it.trim().lowercase() }
+            .filter { it.isNotEmpty() }
+            .toSet(),
     )
+}
+
+internal const val ANNOUNCEMENT_PLATFORM_ANDROID = "android"
+internal const val ANNOUNCEMENT_PLATFORM_IOS = "ios"
+internal const val ANNOUNCEMENT_PLATFORM_WEB = "web"
+internal const val ANNOUNCEMENT_PLATFORM_DESKTOP = "desktop"
+
+/** This device's code for `rules.platforms`. */
+internal fun currentAnnouncementPlatform(): String = when {
+    PlatformTargets.isAndroid() -> ANNOUNCEMENT_PLATFORM_ANDROID
+    PlatformTargets.isIos() -> ANNOUNCEMENT_PLATFORM_IOS
+    PlatformTargets.isWeb() -> ANNOUNCEMENT_PLATFORM_WEB
+    else -> ANNOUNCEMENT_PLATFORM_DESKTOP
 }
 
 /** The `link` value that opens this platform's store page rather than a URL. */
@@ -77,9 +96,10 @@ internal fun compareVersions(a: String, b: String): Int? {
 
 /**
  * The one announcement to show on this launch, or null. An announcement is eligible when the app
- * version is inside its inclusive [minVersion, maxVersion] range, the device is targeted, and it
- * is not a `once` announcement already in [seenIds]. Highest priority wins; a tie goes to the
- * lowest id so the outcome never depends on Firestore's document order.
+ * version is inside its inclusive [minVersion, maxVersion] range, its `platforms` are empty or
+ * contain [platform], the device is targeted, and it is not a `once` announcement already in
+ * [seenIds]. Highest priority wins; a tie goes to the lowest id so the outcome never depends on
+ * Firestore's document order.
  *
  * Targeting: no `userIds` and no `olxUserIds` means everyone. Otherwise the device matches when
  * its [installationId] is in `userIds` OR any of its [olxUserIds] is in `olxUserIds`.
@@ -87,11 +107,13 @@ internal fun compareVersions(a: String, b: String): Int? {
 internal fun selectAnnouncement(
     announcements: List<Announcement>,
     appVersion: String,
+    platform: String,
     installationId: String?,
     olxUserIds: Set<Long>,
     seenIds: Set<String>,
 ): Announcement? = announcements
     .filter { it.isInVersionRange(appVersion) }
+    .filter { it.platforms.isEmpty() || platform in it.platforms }
     .filter { it.targets(installationId, olxUserIds) }
     .filterNot { it.showMode == Announcement.ShowMode.Once && it.id in seenIds }
     .sortedWith(compareByDescending<Announcement> { it.priority }.thenBy { it.id })

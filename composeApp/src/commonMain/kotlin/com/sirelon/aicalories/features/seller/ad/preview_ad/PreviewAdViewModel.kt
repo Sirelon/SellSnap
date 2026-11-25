@@ -67,6 +67,7 @@ import com.sirelon.sellsnap.generated.resources.error_category_suggestion_failed
 import com.sirelon.sellsnap.generated.resources.error_location_fetch_failed
 import com.sirelon.sellsnap.generated.resources.error_publish_account_mismatch
 import com.sirelon.sellsnap.generated.resources.error_publish_failed
+import com.sirelon.sellsnap.generated.resources.error_publish_rejected_by_olx
 import com.sirelon.sellsnap.generated.resources.error_publish_missing_category_or_location
 import com.sirelon.sellsnap.generated.resources.error_publish_missing_contact_name
 import com.sirelon.sellsnap.generated.resources.error_publish_needs_reconnect
@@ -108,8 +109,6 @@ import com.sirelon.sellsnap.features.media.isDefect
 import com.sirelon.sellsnap.features.media.messageRes
 import com.sirelon.sellsnap.generated.resources.error_polish_failed
 
-private const val TitleMinLength = 10
-private const val DescriptionMinLength = 30
 private const val PreviewAdSavedStateKey = "preview_ad_saved_state"
 private const val AnalyticsScreenCode = "preview_ad"
 
@@ -223,6 +222,8 @@ class PreviewAdViewModel internal constructor(
     // attributes itself, so the title it writes must not start a second suggestion.
     private var skipRestoredTitleSuggestion = initialCategoryId != null
     private var attributesLoadedLogged = false
+    private var attributesRetryPending = false
+    private var unresolvedCategoryId: Int? = null
 
     // SIR-122: a small undo stack for RemoveImage, most-recent removal last. Not part of the
     // saved state - dropped along with the rest of the ViewModel once the flow moves on, which is
@@ -272,9 +273,7 @@ class PreviewAdViewModel internal constructor(
             .launchIn(viewModelScope)
 
         viewModelScope.launch {
-            initialCategoryId?.let { id ->
-                categoriesRepository.getCategoryById(id)?.let { updateSelectedCategory(it) }
-            }
+            initialCategoryId?.let { restoreCategory(it) }
 
             val savedLocation = restoredSavedState.location ?: locationRepository.getSavedLocation()
             if (savedLocation != null) {
@@ -369,6 +368,7 @@ class PreviewAdViewModel internal constructor(
                             )
                         }
                         logAttributesLoaded(attributeItems)
+                        logAttributesRetryOutcome(result = "success")
                     }
                     .catch { error ->
                         reportShownError(reason = "attributes_load_failed", throwable = error)
@@ -378,6 +378,7 @@ class PreviewAdViewModel internal constructor(
                                 attributesLoadState = AttributesLoadState.Failed,
                             )
                         }
+                        logAttributesRetryOutcome(result = "failed")
                         postEffect(ShowMessage(getString(Res.string.error_attributes_load_failed)))
                     }
             }
@@ -453,6 +454,25 @@ class PreviewAdViewModel internal constructor(
             is PreviewAdEvent.LocationSelected -> setState { it.copy(location = event.location) }
 
             PreviewAdEvent.OnChangeCategoryClick -> postEffect(PreviewAdEffect.GoToGategoryPicker)
+
+            // The attribute pipeline re-runs on every emission of the same id: a SharedFlow does
+            // not drop a repeated value the way a StateFlow would.
+            PreviewAdEvent.RetryAttributes -> viewModelScope.launch {
+                attributesRetryPending = true
+                setState { it.copy(attributesLoadState = AttributesLoadState.Loading) }
+                val unresolved = unresolvedCategoryId
+                if (unresolved != null) {
+                    // A resolved category starts the attribute load, and its outcome logs the retry.
+                    if (!restoreCategory(unresolved)) {
+                        logAttributesRetryOutcome(result = "failed")
+                    } else if (currentState().selectedCategory == null) {
+                        attributesRetryPending = false
+                    }
+                    return@launch
+                }
+                val categoryId = currentState().selectedCategory?.id ?: return@launch
+                selectedCategoryId.emit(categoryId)
+            }
 
             Publish -> {
                 // OLX creates a new advert per POST - there is no idempotency key on
@@ -838,6 +858,14 @@ class PreviewAdViewModel internal constructor(
                     )
                 }
 
+                // OLX's own words tell the seller what to change; the generic message does not.
+                olxError is OlxApiError.ValidationError -> postEffect(
+                    PreviewAdEffect.PublishFailure(
+                        message = getString(Res.string.error_publish_rejected_by_olx, olxError.fieldDetail),
+                        untilDismissed = true,
+                    )
+                )
+
                 else -> postEffect(PreviewAdEffect.PublishFailure(getString(Res.string.error_publish_failed)))
             }
         }
@@ -969,6 +997,12 @@ class PreviewAdViewModel internal constructor(
         AdvertStatus.Active -> "active"
         AdvertStatus.Limited -> "limited"
         else -> "other"
+    }
+
+    private fun logAttributesRetryOutcome(result: String) {
+        if (!attributesRetryPending) return
+        attributesRetryPending = false
+        analytics.logEvent(AnalyticsEvents.AD_PREVIEW_ATTRIBUTES_RETRY, mapOf("result" to result))
     }
 
     /**
@@ -1293,7 +1327,30 @@ class PreviewAdViewModel internal constructor(
         setState { it.copy(changedFields = changed, changedFieldsRevision = it.changedFieldsRevision + 1) }
     }
 
+    /**
+     * A draft keeps only the category id; its name and path come from OLX's category list. With
+     * no network and no list loaded yet in this session, the lookup fails: the id is kept, and the
+     * details card shows its Retry, which looks the category up again before loading its details.
+     * Returns false when the lookup failed.
+     */
+    private suspend fun restoreCategory(id: Int): Boolean {
+        val category = try {
+            categoriesRepository.getCategoryById(id)
+        } catch (error: CancellationException) {
+            throw error
+        } catch (error: Exception) {
+            unresolvedCategoryId = id
+            reportShownError(reason = "category_restore_failed", throwable = error)
+            setState { it.copy(attributesLoadState = AttributesLoadState.Failed) }
+            return false
+        }
+        unresolvedCategoryId = null
+        category?.let { updateSelectedCategory(it) }
+        return true
+    }
+
     private suspend fun updateSelectedCategory(category: OlxCategory) {
+        unresolvedCategoryId = null
         // The category on screen with its attributes loaded: nothing to change, and reloading would
         // drop the values the seller has already picked.
         val current = currentState()
@@ -1387,7 +1444,7 @@ class PreviewAdViewModel internal constructor(
             title = title,
             description = description,
             price = state.price,
-            selectedCategoryId = state.selectedCategory?.id,
+            selectedCategoryId = state.selectedCategory?.id ?: unresolvedCategoryId,
             attributeValues = attributeValues,
             location = state.location,
             publishSuccessData = successData,

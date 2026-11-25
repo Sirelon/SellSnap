@@ -2,18 +2,17 @@ package com.sirelon.sellsnap.features.seller.categories.data
 
 import com.sirelon.sellsnap.features.seller.auth.data.OlxApiClient
 import com.sirelon.sellsnap.features.seller.auth.data.OlxCountryStore
+import com.sirelon.sellsnap.features.seller.auth.domain.OlxCountry
 import com.sirelon.sellsnap.features.seller.categories.domain.CategoriesMapper
 import com.sirelon.sellsnap.features.seller.categories.domain.OlxAttribute
 import com.sirelon.sellsnap.features.seller.categories.domain.OlxCategory
 import com.sirelon.sellsnap.features.seller.categories.domain.excludedRootCategoryIds
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.shareIn
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 /**
  * Thrown when OLX suggests a category for a listing that this app doesn't support publishing to
@@ -27,28 +26,23 @@ class UnsupportedOlxCategoryException(title: String) :
 class CategoriesRepository(
     private val olxApiClient: OlxApiClient,
     private val mapper: CategoriesMapper,
-    private val scope: CoroutineScope,
     private val countryStore: OlxCountryStore,
 ) {
 
-    // Errors are wrapped as Result so the sharing coroutine is never cancelled by a network failure.
-    // Callers unwrap with getOrThrow(), propagating the exception to their own collector/caller.
-    private fun newCategoriesCache(): SharedFlow<Result<List<OlxCategory>>> = flow {
-        emit(runCatching { loadSupportedCategories() })
-    }.shareIn(
-        scope = scope,
-        started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000),
-        replay = 1,
-    )
+    // The tree is per market: OlxConfig.apiBaseUrl follows the current country, and so do the
+    // excluded roots. A guest can change country mid-flow, and the saved country loads
+    // asynchronously at startup, so a tree is kept only for the country it was loaded for.
+    // Only a tree that loaded is kept: a failure goes to its caller and the next call loads again,
+    // and a fetch that fails offline never replaces a tree the seller is already picking from.
+    private var cachedTree: Pair<OlxCountry, List<OlxCategory>>? = null
+    private val loadMutex = Mutex()
 
-    private var categoriesCache = newCategoriesCache()
+    fun loadCategories(): Flow<List<OlxCategory>> = flow { emit(categoriesFor(countryStore.current)) }
 
-    // A failure is handed out once and then dropped, so the next call (a retry) loads again
-    // instead of replaying the cached failure.
-    fun loadCategories(): Flow<List<OlxCategory>> = flow {
-        val result = categoriesCache.first()
-        if (result.isFailure) categoriesCache = newCategoriesCache()
-        emit(result.getOrThrow())
+    // The mutex makes concurrent callers share one fetch instead of each starting their own.
+    private suspend fun categoriesFor(country: OlxCountry): List<OlxCategory> = loadMutex.withLock {
+        cachedTree?.takeIf { it.first == country }?.second
+            ?: loadSupportedCategories(country).also { cachedTree = country to it }
     }
 
     fun getRootCategories(): Flow<List<OlxCategory>> =
@@ -72,15 +66,15 @@ class CategoriesRepository(
         emit(category)
     }
 
-    private suspend fun loadSupportedCategories(): List<OlxCategory> {
+    private suspend fun loadSupportedCategories(country: OlxCountry): List<OlxCategory> {
         val result = olxApiClient.loadCategories()
         val data = result.mapNotNull(mapper::mapCategory)
 
-        return normalize(data)
+        return normalize(data, country)
     }
 
-    private fun normalize(data: List<OlxCategory>): List<OlxCategory> {
-        val notSupportedRootIds = excludedRootCategoryIds(countryStore.current)
+    private fun normalize(data: List<OlxCategory>, country: OlxCountry): List<OlxCategory> {
+        val notSupportedRootIds = excludedRootCategoryIds(country)
         val grouppedData = data.groupBy { it.parentId }.toMutableMap()
 
         val rootCategories = grouppedData[null].orEmpty()

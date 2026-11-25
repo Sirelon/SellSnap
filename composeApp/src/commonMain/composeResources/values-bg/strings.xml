@@ -61,7 +61,7 @@
     <string name="validation_all_valid">Изглежда страхотно — готов си ✨</string>
     <string name="validation_fields_remaining">%1$d за попълване</string>
     <string name="validation_error_title_too_short">Заглавието трябва да е поне 10 знака</string>
-    <string name="validation_error_desc_too_short">Описанието трябва да е поне 30 знака</string>
+    <string name="validation_error_desc_too_short">Описанието трябва да е поне 40 знака</string>
     <string name="validation_error_no_category">Избери категория</string>
     <string name="validation_error_no_location">Добави местоположение</string>
     <string name="validation_errors_more">…и още %1$d</string>
@@ -293,6 +293,7 @@
     <string name="photos_limit_kept_message">Запазихме първите %1$d снимки — това е максимумът за тази стъпка.</string>
     <string name="error_upload_file_failed">Не можах да кача една от снимките.</string>
     <string name="error_publish_failed">Публикуването не се получи. Опитай пак.</string>
+    <string name="error_publish_rejected_by_olx">OLX не прие обявата: %1$s</string>
     <string name="error_generate_ad_failed">Не можах да генерирам обявата. Опитай отново?</string>
     <string name="error_app_check_failed">Не успяхме да проверим тази инсталация. Обнови Google Play Services или инсталирай SellSnap от Google Play и опитай отново.</string>
     <string name="error_photo_unreadable">Не можах да разпозная артикула на снимките. Опитай пак.</string>
@@ -450,6 +451,10 @@
         <item quantity="one">Остава %1$d ден</item>
         <item quantity="other">Остават %1$d дни</item>
     </plurals>
+    <plurals name="my_ads_unread_messages">
+        <item quantity="one">%1$d непрочетено съобщение</item>
+        <item quantity="other">%1$d непрочетени съобщения</item>
+    </plurals>
     <string name="advert_extend_unavailable">Можеш да удължиш това само в OLX, не оттук.</string>
 
     <!-- Ad lifecycle — statistics -->
@@ -500,4 +505,11 @@
     </plurals>
     <string name="conversation_load_failed">Не успяхме да заредим този разговор.</string>
     <string name="conversation_reply_on_olx">Отговори в OLX</string>
+    <string name="conversation_reply_hint">Напиши отговор</string>
+    <string name="conversation_send">Изпрати</string>
+    <string name="conversation_message_sending">Изпращане…</string>
+    <string name="conversation_message_not_sent">Не е изпратено</string>
+    <string name="conversation_suggest_replies">Предложи отговори</string>
+    <string name="conversation_suggestions_dismiss">Скрий предложенията</string>
+    <string name="conversation_scam_warning">Възможна измама. OLX никога не те моли да потвърдиш продажба през линк или месинджър бот. Не споделяй данните на картата си.</string>
 </resources>

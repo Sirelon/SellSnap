@@ -45,12 +45,19 @@ fun Input(
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     keyboardActions: KeyboardActions = KeyboardActions.Default,
     visualTransformation: VisualTransformation = VisualTransformation.None,
+    /**
+     * iOS: the "Done" bar above the keyboard. Off for a field that has its own way to close the
+     * keyboard (a reply field in a list that dismisses on drag); it also leaves the field on the
+     * platform's default text input.
+     */
+    showKeyboardDoneBar: Boolean = true,
 ) {
     val dismissKeyboard = rememberKeyboardDismissAction()
-    val platformImeOptions = rememberPlatformImeOptions(
+    val doneBarOptions = rememberPlatformImeOptions(
         doneLabel = stringResource(Res.string.keyboard_done_action),
         onDone = dismissKeyboard,
     )
+    val platformImeOptions = if (showKeyboardDoneBar) doneBarOptions else null
     val resolvedKeyboardOptions = keyboardOptions.withKeyboardDismissDefaults(platformImeOptions)
     val resolvedKeyboardActions = if (keyboardActions == KeyboardActions.Default) {
         KeyboardActions(
@@ -151,14 +158,17 @@ fun TransparentInput(
     minCharacters: Int = -1,
     maxCharacters: Int = Int.MIN_VALUE,
     prefix: @Composable (() -> Unit)? = null,
+    suffix: @Composable (() -> Unit)? = null,
     isError: Boolean = false,
     readOnly: Boolean = false,
     inputTransformation: InputTransformation? = null,
     outputTransformation: OutputTransformation? = null,
 ) {
     val dismissKeyboard = rememberKeyboardDismissAction()
+    // No "Done" bar above the keyboard: the screens that host this field close the keyboard on
+    // a tap outside it or on scroll.
     val platformImeOptions = rememberPlatformImeOptions(
-        doneLabel = stringResource(Res.string.keyboard_done_action),
+        doneLabel = null,
         onDone = dismissKeyboard,
     )
     val resolvedKeyboardOptions = keyboardOptions.withKeyboardDismissDefaults(platformImeOptions)
@@ -207,6 +217,7 @@ fun TransparentInput(
         state = state,
         readOnly = readOnly,
         prefix = prefix,
+        suffix = suffix,
         keyboardOptions = resolvedKeyboardOptions,
         onKeyboardAction = keyboardActionHandler,
         lineLimits = lineLimits,

@@ -36,9 +36,6 @@ interface ProfileContract {
         // Mirrors SellerAccountRepository.canAddAccount(countryCode) (cap = 3, D4) - drives the
         // "Add OLX account" affordance's enabled/disabled + explanatory copy.
         val canAddAccount: Boolean = true,
-        // D9: which NeedsReconnect row currently has its inline "Reconnect <account>" action
-        // revealed. Selecting such a row never switches the active account - it only toggles this.
-        val expandedReconnectLocalIndex: Int? = null,
         /** SIR-127: the OLX market a guest's listings are written and priced for; null until read. */
         val country: OlxCountry? = null,
     ) {
@@ -54,7 +51,6 @@ interface ProfileContract {
 
         // SIR-83
         data class SetActiveAccountClicked(val localIndex: Int) : ProfileEvent
-        data class NeedsReconnectRowClicked(val localIndex: Int) : ProfileEvent
         data class ReconnectClicked(val localIndex: Int) : ProfileEvent
         data class CountrySelected(val country: OlxCountry) : ProfileEvent
 

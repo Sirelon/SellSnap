@@ -166,7 +166,7 @@ private fun PublishConfirmSheetPreview() {
                     imageUrls = emptyList(),
                     title = "Nike Air Max 90, size 42, worn 2 months",
                     categoryLabel = "Shoes / Sneakers",
-                    priceFormatted = "₴ 1,800",
+                    priceFormatted = "1 800 грн.",
                     onConfirm = {},
                     onDismiss = {},
                 )

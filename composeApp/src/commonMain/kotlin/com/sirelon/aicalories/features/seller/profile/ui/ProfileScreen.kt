@@ -275,10 +275,8 @@ private fun ProfileScreen(
                     accounts = state.accounts,
                     activeUser = state.user,
                     canAddAccount = state.canAddAccount,
-                    expandedReconnectLocalIndex = state.expandedReconnectLocalIndex,
                     onDisconnectSingleAccount = { onEvent(ProfileEvent.LogoutClicked) },
                     onSetActiveAccount = { onEvent(ProfileEvent.SetActiveAccountClicked(it)) },
-                    onToggleReconnectRow = { onEvent(ProfileEvent.NeedsReconnectRowClicked(it)) },
                     onReconnectAccount = { onEvent(ProfileEvent.ReconnectClicked(it)) },
                     onDisconnectAccount = onDisconnectRequested,
                     onAddAccountClick = onAddAccountRequested,
@@ -420,10 +418,8 @@ private fun AccountsSection(
     accounts: List<SellerAccountUiModel>,
     activeUser: OlxUser?,
     canAddAccount: Boolean,
-    expandedReconnectLocalIndex: Int?,
     onDisconnectSingleAccount: () -> Unit,
     onSetActiveAccount: (Int) -> Unit,
-    onToggleReconnectRow: (Int) -> Unit,
     onReconnectAccount: (Int) -> Unit,
     onDisconnectAccount: (Int) -> Unit,
     onAddAccountClick: () -> Unit,
@@ -445,9 +441,7 @@ private fun AccountsSection(
             }
             AccountsListCard(
                 accounts = accounts,
-                expandedReconnectLocalIndex = expandedReconnectLocalIndex,
                 onSetActiveAccount = onSetActiveAccount,
-                onToggleReconnectRow = onToggleReconnectRow,
                 onReconnectAccount = onReconnectAccount,
                 onDisconnectAccount = onDisconnectAccount,
             )
@@ -473,9 +467,7 @@ private fun AccountsSection(
 @Composable
 private fun AccountsListCard(
     accounts: List<SellerAccountUiModel>,
-    expandedReconnectLocalIndex: Int?,
     onSetActiveAccount: (Int) -> Unit,
-    onToggleReconnectRow: (Int) -> Unit,
     onReconnectAccount: (Int) -> Unit,
     onDisconnectAccount: (Int) -> Unit,
 ) {
@@ -484,9 +476,7 @@ private fun AccountsListCard(
             accounts.forEachIndexed { index, account ->
                 AccountRow(
                     account = account,
-                    isExpanded = expandedReconnectLocalIndex == account.localIndex,
                     onSetActiveAccount = { onSetActiveAccount(account.localIndex) },
-                    onToggleReconnectRow = { onToggleReconnectRow(account.localIndex) },
                     onReconnectAccount = { onReconnectAccount(account.localIndex) },
                     onDisconnectAccount = { onDisconnectAccount(account.localIndex) },
                 )
@@ -500,14 +490,13 @@ private fun AccountsListCard(
     }
 }
 
-/** One row in the multi-account list (PRD U1/D9). Tapping a `Needs reconnect` row toggles its
- * inline "Reconnect <account>" action in place (D9) - it never switches the active account. */
+/** One row in the accounts list (PRD U1). A `Needs reconnect` row always shows its
+ * "Reconnect <account>" button: a seller whose login expired must see the way back without
+ * guessing that the row is tappable. */
 @Composable
 private fun AccountRow(
     account: SellerAccountUiModel,
-    isExpanded: Boolean,
     onSetActiveAccount: () -> Unit,
-    onToggleReconnectRow: () -> Unit,
     onReconnectAccount: () -> Unit,
     onDisconnectAccount: () -> Unit,
 ) {
@@ -517,7 +506,6 @@ private fun AccountRow(
         Cell(
             modifier = Modifier.fillMaxWidth(),
             transparent = true,
-            onClick = if (account.needsReconnect) onToggleReconnectRow else null,
             leading = {
                 AppAvatar(
                     avatarUrl = account.avatarUrl,
@@ -587,7 +575,7 @@ private fun AccountRow(
                 )
             },
         )
-        if (isExpanded && account.needsReconnect) {
+        if (account.needsReconnect) {
             AppButton(
                 text = stringResource(Res.string.profile_reconnect_account_action, displayName),
                 onClick = onReconnectAccount,
@@ -595,7 +583,7 @@ private fun AccountRow(
                     .fillMaxWidth()
                     .padding(horizontal = AppDimens.Spacing.xl5)
                     .padding(bottom = AppDimens.Spacing.xl3),
-                style = AppButtonDefaults.secondary(),
+                style = AppButtonDefaults.primary(),
             )
         }
     }

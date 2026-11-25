@@ -101,12 +101,12 @@ class ProfileViewModel(
             is ProfileEvent.LocationSelected -> setState { it.copy(location = event.location) }
             ProfileEvent.RefreshClicked -> refresh()
             is ProfileEvent.SetActiveAccountClicked -> setActiveAccount(event.localIndex)
-            is ProfileEvent.NeedsReconnectRowClicked -> toggleReconnectRow(event.localIndex)
             is ProfileEvent.ReconnectClicked -> reconnect(event.localIndex)
             ProfileEvent.AddAccountConfirmed -> startAuthorization(forceReauth = true)
             is ProfileEvent.CountrySelected -> viewModelScope.launch {
                 olxCountryStore.save(event.country)
-                setState { it.copy(country = event.country) }
+                val location = accountRepository.savedLocation()
+                setState { it.copy(country = event.country, location = location) }
             }
         }
     }
@@ -125,11 +125,11 @@ class ProfileViewModel(
             val source = pendingAddAccountSource ?: entrySource ?: SOURCE_PROFILE_TAB
             when (val outcome = accountRepository.addAccount(callbackUrl, source = source)) {
                 is AddAccountOutcome.Added -> {
-                    setState { it.copy(isAuthenticating = false, expandedReconnectLocalIndex = null) }
+                    setState { it.copy(isAuthenticating = false) }
                 }
 
                 is AddAccountOutcome.ReconnectedDuplicate -> {
-                    setState { it.copy(isAuthenticating = false, expandedReconnectLocalIndex = null) }
+                    setState { it.copy(isAuthenticating = false) }
                     val accountName = outcome.account.profile?.name?.takeIf { it.isNotBlank() }
                         ?: getString(Res.string.profile_olx_account)
                     postEffect(
@@ -157,10 +157,7 @@ class ProfileViewModel(
                 profileResult to location
             }
                 .onSuccess { (profileResult, location) ->
-                    profileResult.onFailure { error ->
-                        reportShownError(reason = "profile_fetch_failed", throwable = error)
-                        showError(getString(Res.string.error_user_profile_fetch_failed))
-                    }
+                    profileResult.exceptionOrNull()?.let { onProfileFetchFailed(it) }
                     setState {
                         it.copy(
                             isLoading = false,
@@ -170,11 +167,22 @@ class ProfileViewModel(
                     }
                 }
                 .onFailure { error ->
-                    reportShownError(reason = "profile_fetch_failed", throwable = error)
-                    showError(getString(Res.string.error_user_profile_fetch_failed))
+                    onProfileFetchFailed(error)
                     setState { it.copy(isLoading = false) }
                 }
         }
+    }
+
+    /**
+     * An expired login (the active account is `NeedsReconnect`, either from before or marked by
+     * this very fetch) is not an error to show: its row already carries the "Reconnect" button,
+     * and "Couldn't load your profile" on top of it only hides the way back.
+     */
+    private suspend fun onProfileFetchFailed(error: Throwable) {
+        val active = accountRepository.activeAccountSnapshot(_currentOlxCountry.code)
+        if (active?.state == OlxAccountState.NeedsReconnect) return
+        reportShownError(reason = "profile_fetch_failed", throwable = error)
+        showError(getString(Res.string.error_user_profile_fetch_failed))
     }
 
     private fun startAuthorization(forceReauth: Boolean) {
@@ -197,18 +205,6 @@ class ProfileViewModel(
     private fun setActiveAccount(localIndex: Int) {
         viewModelScope.launch {
             accountRepository.setActiveAccount(countryCode = _currentOlxCountry.code, localIndex = localIndex)
-        }
-    }
-
-    private fun toggleReconnectRow(localIndex: Int) {
-        setState {
-            it.copy(
-                expandedReconnectLocalIndex = if (it.expandedReconnectLocalIndex == localIndex) {
-                    null
-                } else {
-                    localIndex
-                },
-            )
         }
     }
 

@@ -217,6 +217,54 @@ class MessagesApiTest {
         Unit
     }
 
+    @Test
+    fun `postThreadMessage posts the spec's text-only payload with the account's token`() = runBlocking {
+        // developer.olx.ua and developer.olx.pl swagger v2 `/threads/{threadId}/messages` `post`
+        // have no example payload: the schema is an object with a required `text` (string) and
+        // an optional `attachments` array this app does not send. So the body is the one key,
+        // and quotes and line breaks in it are JSON-escaped, not dropped.
+        var method: HttpMethod? = null
+        var path: String? = null
+        var authorization: String? = null
+        var contentType: String? = null
+        var body: String? = null
+        val engine = MockEngine { request ->
+            method = request.method
+            path = request.url.encodedPath
+            authorization = request.headers[HttpHeaders.Authorization]
+            contentType = request.body.contentType?.withoutParameters()?.toString()
+            body = (request.body as TextContent).text
+            // The spec's success: 200 with no declared body.
+            respond(content = "", status = HttpStatusCode.OK)
+        }
+
+        apiClient(engine).postThreadMessage("token", threadId = 5, text = "Placeholder \"reply\"\nsecond line")
+
+        assertEquals(HttpMethod.Post, method)
+        assertTrue(path!!.endsWith("/threads/5/messages"), "got $path")
+        assertEquals("Bearer token", authorization)
+        assertEquals("application/json", contentType)
+        assertEquals("""{"text":"Placeholder \"reply\"\nsecond line"}""", body)
+    }
+
+    @Test
+    fun `postThreadMessage turns OLX's refusal into a validation error carrying its words`() = runBlocking {
+        val engine = MockEngine {
+            respond(
+                content = """{"error":{"status":400,"title":"Invalid request","detail":"Data validation error occurred",""" +
+                    """"validation":[{"field":"text","title":"Placeholder refusal","detail":"Placeholder refusal"}]}}""",
+                status = HttpStatusCode.BadRequest,
+                headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
+            )
+        }
+
+        val failure = assertFailsWith<OlxApiException> {
+            apiClient(engine).postThreadMessage("token", threadId = 5, text = "Placeholder reply")
+        }
+        val error = assertIs<OlxApiError.ValidationError>(failure.error)
+        assertEquals("text", error.field)
+    }
+
     private fun io.ktor.client.engine.mock.MockRequestHandleScope.json(body: String) =
         respond(
             content = body,

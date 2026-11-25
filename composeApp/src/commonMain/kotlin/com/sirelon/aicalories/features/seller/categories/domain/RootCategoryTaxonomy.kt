@@ -138,6 +138,23 @@ internal val ROOT_CATEGORY_KINDS_BY_COUNTRY: Map<OlxCountry, Map<Int, RootCatego
         1625 to RootCategoryKind.SPARE_PARTS, // Авточасти, аксесоари - same concept as UA's kept Spare Parts root
         1609 to RootCategoryKind.ANTIQUES, // Антики и колекции
     ),
+    // Live `GET categories` on olx.kz, 2026-11-24. Most ids match Ukraine's, but 3 is vehicles
+    // here, not spare parts. Kazakhstan has no daily-rental root.
+    OlxCountry.KZ to mapOf(
+        1 to RootCategoryKind.REAL_ESTATE,
+        3 to RootCategoryKind.VEHICLES,
+        6 to RootCategoryKind.JOBS,
+        35 to RootCategoryKind.ANIMALS,
+        7 to RootCategoryKind.BUSINESS_SERVICES,
+        3006 to RootCategoryKind.RENTAL_LEASE, // Аренда и прокат товаров
+        37 to RootCategoryKind.ELECTRONICS,
+        891 to RootCategoryKind.FASHION,
+        36 to RootCategoryKind.BABY,
+        899 to RootCategoryKind.HOME_GARDEN,
+        903 to RootCategoryKind.SPORT_HOBBY,
+        3252 to RootCategoryKind.SPARE_PARTS, // Запчасти
+        2574 to RootCategoryKind.CONSTRUCTION, // Строительство и ремонт
+    ),
 )
 
 internal fun excludedRootCategoryIds(country: OlxCountry): Set<Int> =

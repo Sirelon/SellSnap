@@ -23,6 +23,7 @@ class OlxRemoteErrorParser(private val json: Json) {
                 else -> OlxApiException(
                     OlxApiError.Unknown(
                         "OLX request failed with HTTP ${status.value} ${status.description}; response body was empty.",
+                        httpStatus = status.value,
                     ),
                 )
             }
@@ -60,6 +61,7 @@ class OlxRemoteErrorParser(private val json: Json) {
                 else -> OlxApiException(
                     OlxApiError.Unknown(
                         oauthError.errorDescription ?: "OLX request failed with ${oauthError.error}.",
+                        httpStatus = status.value,
                     ),
                 )
             }
@@ -87,7 +89,7 @@ class OlxRemoteErrorParser(private val json: Json) {
             return when (status) {
                 HttpStatusCode.Unauthorized -> OlxApiException(OlxApiError.InvalidToken(detail))
                 HttpStatusCode.Forbidden -> OlxApiException(OlxApiError.InsufficientScope(detail))
-                else -> OlxApiException(OlxApiError.Unknown(detail))
+                else -> OlxApiException(OlxApiError.Unknown(detail, httpStatus = status.value))
             }
         }
 
@@ -98,7 +100,9 @@ class OlxRemoteErrorParser(private val json: Json) {
 
             HttpStatusCode.Forbidden -> OlxApiException(OlxApiError.InsufficientScope())
             HttpStatusCode.TooManyRequests -> OlxApiException(OlxApiError.RateLimited())
-            else -> OlxApiException(OlxApiError.Unknown("OLX request failed with HTTP ${status.value}."))
+            else -> OlxApiException(
+                OlxApiError.Unknown("OLX request failed with HTTP ${status.value}.", httpStatus = status.value),
+            )
         }
     }
 

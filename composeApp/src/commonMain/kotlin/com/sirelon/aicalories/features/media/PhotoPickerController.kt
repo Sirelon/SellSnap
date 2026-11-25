@@ -52,10 +52,12 @@ fun rememberPhotoPickerController(
 
     return remember(permissionController) {
         object : PhotoPickerController {
+            // No permission: Calf opens the system photo picker (PHPickerViewController on iOS,
+            // PickMultipleVisualMedia on Android), which needs none. Sources: Apple, "PHPicker"
+            // (developer.apple.com/documentation/photosui/phpickerviewcontroller); Android,
+            // "Photo picker" (developer.android.com/training/data-storage/shared/photo-picker).
             override fun pickFromGallery() {
-                permissionController.requestPermission {
-                    filePickerLauncher.launch()
-                }
+                filePickerLauncher.launch()
             }
 
             override fun captureWithCamera() {

@@ -104,6 +104,7 @@ import com.sirelon.sellsnap.designsystem.buttons.AppButton
 import com.sirelon.sellsnap.designsystem.buttons.AppButtonDefaults
 import com.sirelon.sellsnap.features.seller.ad.preview_ad.ui.GuestConnectPromptSheet
 import com.sirelon.sellsnap.designsystem.dismissKeyboardOnTapOutside
+import com.sirelon.sellsnap.designsystem.dismissKeyboardOnVerticalDrag
 import com.sirelon.sellsnap.designsystem.pager.ImagesCarousel
 import com.sirelon.sellsnap.designsystem.rememberKeyboardDismissAction
 import com.sirelon.sellsnap.designsystem.shimmer
@@ -122,6 +123,7 @@ import com.sirelon.sellsnap.features.seller.location.OlxLocation
 import com.sirelon.sellsnap.generated.resources.Res
 import com.sirelon.sellsnap.generated.resources.ad_attributes_label
 import com.sirelon.sellsnap.generated.resources.error_attributes_load_failed
+import com.sirelon.sellsnap.generated.resources.retry
 import com.sirelon.sellsnap.generated.resources.ad_category_label
 import com.sirelon.sellsnap.generated.resources.ad_description_label
 import com.sirelon.sellsnap.generated.resources.ad_location_label
@@ -193,12 +195,13 @@ import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
+import kotlin.math.floor
+import kotlin.math.log10
+import kotlin.math.pow
 import kotlin.math.roundToInt
 import kotlin.math.roundToLong
 import kotlin.time.Duration.Companion.milliseconds
 
-private const val TitleMinLength = 10
-private const val DescriptionMinLength = 30
 
 @Composable
 @OptIn(ExperimentalFoundationApi::class)
@@ -250,8 +253,8 @@ internal fun PreviewAdContentRoute(
     val titleText = viewModel.titleState.text
     val descText = viewModel.descriptionState.text
     val validationErrors = buildList {
-        if (titleText.length < 10) add(titleTooShortLabel)
-        if (descText.length < 30) add(descTooShortLabel)
+        if (titleText.trim().length < TitleMinLength) add(titleTooShortLabel)
+        if (descText.trim().length < DescriptionMinLength) add(descTooShortLabel)
         if (state.isSessionResolved && !state.isGuest) {
             if (state.selectedCategory == null) add(noCategoryLabel)
             if (state.location == null) add(noLocationLabel)
@@ -374,6 +377,7 @@ internal fun PreviewAdContentRoute(
         Column(
             modifier = Modifier
                 .testTag("preview_ad_scrollable_content")
+                .dismissKeyboardOnVerticalDrag(dismissKeyboard)
                 .verticalScroll(scrollState)
                 .padding(bottom = AppDimens.Spacing.xl3),
             verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.xl3)
@@ -886,7 +890,7 @@ private fun PreviewAdContent(
                     autoOpenAttributeModifier = autoOpenAttributeModifier,
                 )
             } else if (state.attributesLoadState == AttributesLoadState.Failed) {
-                AdAttributesErrorCard()
+                AdAttributesErrorCard(onRetry = { onEvent(PreviewAdEvent.RetryAttributes) })
             }
 
             AdLocationCard(
@@ -1066,8 +1070,12 @@ private fun AdPriceCard(
                         readOnly = readOnly,
                         inputTransformation = DigitOnlyInputTransformation,
                         outputTransformation = ThousandSeparatorOutputTransformation,
-                        prefix = {
-                            Text(text = currency.displayLabel(), style = textStyle)
+                        suffix = {
+                            Text(
+                                text = currency.displayLabel(),
+                                style = textStyle,
+                                modifier = Modifier.padding(start = AppDimens.Spacing.xs),
+                            )
                         },
                     )
                 }
@@ -1098,7 +1106,7 @@ private fun AdPriceCard(
                     value = price,
                     onValueChange = {
                         priceTextFieldState.setTextAndPlaceCursorAtEnd(
-                            it.fastRoundToInt().toString()
+                            snapToSliderStep(it, minPrice, maxPrice).toString()
                         )
                     },
                     valueRange = minPrice..maxPrice,
@@ -1121,6 +1129,22 @@ private fun AdPriceCard(
             )
         }
     }
+}
+
+/**
+ * Rounds a dragged price to a round step so the slider lands on 9 500, not 9 521. The step is the
+ * 1, 2 or 5 times a power of ten nearest to a fiftieth of the range: 100 for a 950–10 000 range.
+ */
+private fun snapToSliderStep(value: Float, minPrice: Float, maxPrice: Float): Int {
+    val rough = (maxPrice - minPrice) / 50f
+    if (rough < 1f) return value.fastRoundToInt()
+    val magnitude = 10f.pow(floor(log10(rough)))
+    val step = when {
+        rough / magnitude < 2f -> magnitude
+        rough / magnitude < 5f -> magnitude * 2
+        else -> magnitude * 5
+    }
+    return ((value / step).roundToInt() * step).coerceIn(minPrice, maxPrice).fastRoundToInt()
 }
 
 @Composable
@@ -1193,17 +1217,29 @@ private fun AdCategoryCard(
  * well have missed - the publish CTA reports the same error, and OLX would reject the advert.
  */
 @Composable
-private fun AdAttributesErrorCard(modifier: Modifier = Modifier) {
+private fun AdAttributesErrorCard(onRetry: () -> Unit, modifier: Modifier = Modifier) {
     PreviewSectionCard(
         label = stringResource(Res.string.ad_attributes_label),
         modifier = modifier,
     ) {
-        Text(
+        Column(
             modifier = Modifier.padding(horizontal = AppDimens.Spacing.xl3),
-            text = stringResource(Res.string.error_attributes_load_failed),
-            style = AppTheme.typography.caption,
-            color = AppTheme.colors.error,
-        )
+            verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.xl3),
+        ) {
+            Text(
+                text = stringResource(Res.string.error_attributes_load_failed),
+                style = AppTheme.typography.caption,
+                color = AppTheme.colors.error,
+            )
+            AppButton(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("preview_ad_attributes_retry"),
+                text = stringResource(Res.string.retry),
+                onClick = onRetry,
+                style = AppButtonDefaults.outline(),
+            )
+        }
     }
 }
 

@@ -1,6 +1,6 @@
 
 [versions]
-agp = "9.4.1"
+agp = "9.5.1"
 android-compileSdk = "37"
 android-compileSdkMinor = "1"
 android-minSdk = "24"
@@ -30,39 +30,39 @@ kotlinx-coroutines = "1.11.0"
 # https://github.com/Kotlin/kotlinx-datetime/releases
 kotlinx-datetime = "0.8.0"
 # https://github.com/Kotlin/kotlinx.serialization/releases
-kotlinx-serialization = "1.12.0"
+kotlinx-serialization = "1.13.0"
 # https://github.com/ktorio/ktor/releases
-ktor = "3.6.0"
-logback = "1.6.5"
+ktor = "3.6.1"
+logback = "1.6.6"
 # https://mvnrepository.com/artifact/org.jetbrains.compose.material3/material3
-material3 = "1.13.0-beta01"
+material3 = "1.13.0-beta02"
 # https://mvnrepository.com/artifact/org.jetbrains.compose.material3.adaptive/adaptive
 material3-adaptive = "1.4.0-alpha01"
 materialIconsExtended = "1.7.3"
 # https://developer.android.com/jetpack/androidx/releases/navigation3#1.1.2
-navigation3Runtime = "1.3.0-alpha03"
+navigation3Runtime = "1.3.0-alpha04"
 # https://developer.android.com/jetpack/androidx/releases/lifecycle
 lifecycleViewmodelNav3 = "2.11.0"
 # https://mvnrepository.com/artifact/org.jetbrains.androidx.navigation3/navigation3-ui
-navigation3Ui = "1.2.0-rc01"
+navigation3Ui = "1.2.0"
 # https://github.com/MohamedRejeb/Calf/releases
 calf = "0.14.0"
 # https://github.com/supabase-community/supabase-kt/releases
-supabase = "3.8.0"
+supabase = "3.9.0"
 # https://github.com/yshrsmz/BuildKonfig/releases
-buildKonfig = "0.23.0"
+buildKonfig = "0.24.0"
 # https://github.com/sqldelight/sqldelight/releases
 sqldelight = "2.4.1"
 
-compose = "1.13.0-alpha02"
+compose = "1.13.0-beta02"
 playServicesLocation = "21.4.0"
 # https://developer.android.com/guide/playcore/in-app-review
 playReview = "2.0.2"
 # https://github.com/GitLiveApp/firebase-kotlin-sdk/releases
-gitliveFirebase = "2.7.0"
-googleServices = "4.5.0"
+gitliveFirebase = "2.8.0"
+googleServices = "4.6.0"
 crashlyticsPlugin = "3.0.8"
-firebaseBom = "35.1.0"
+firebaseBom = "35.2.0"
 # https://github.com/googleapis/java-cloud-bom/releases
 googleCloudBom = "26.90.0"
 

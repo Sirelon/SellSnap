@@ -339,7 +339,7 @@ private fun AdvertActionsSheetPreview() {
                         status = AdvertStatus.Active,
                         url = "https://www.olx.ua/d/obyavlenie/x.html",
                         primaryImageUrl = null,
-                        priceFormatted = "₴ 1 800",
+                        priceFormatted = "1 800 грн.",
                         priceValue = 1800,
                         currencyCode = "UAH",
                         createdAt = "2026-08-20T10:00:00+03:00",

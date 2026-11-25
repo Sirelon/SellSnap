@@ -22,6 +22,7 @@ import com.sirelon.sellsnap.features.seller.auth.domain.OlxSessionState
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxTokens
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxUser
 import com.sirelon.sellsnap.features.seller.auth.domain.SellerSessionMode
+import com.sirelon.sellsnap.features.seller.ad.generate_ad.GenerateAdInputStore
 import com.sirelon.sellsnap.features.seller.drafts.DraftsRepository
 import com.sirelon.sellsnap.features.seller.auth.domain.analyticsReason
 import com.sirelon.sellsnap.features.seller.location.OlxLocation
@@ -56,6 +57,7 @@ class SellerAccountRepository internal constructor(
     private val draftMediaFileStore: DraftMediaFileStore,
     private val advertOutcomeStore: AdvertOutcomeStore,
     private val draftsRepository: DraftsRepository,
+    private val generateAdInputStore: GenerateAdInputStore,
     private val analyticsConsentRepository: AnalyticsConsentRepository,
     private val errorParser: OlxRemoteErrorParser,
     private val analytics: Analytics,
@@ -333,6 +335,7 @@ class SellerAccountRepository internal constructor(
         draftMediaFileStore.deleteAll()
         advertOutcomeStore.clearAll()
         draftsRepository.deleteAll()
+        generateAdInputStore.clear()
         olxCountryStore.clear()
         analyticsConsentRepository.resetConsent()
         analytics.setUserProperty(AnalyticsEvents.USER_PROPERTY_CONNECTED_ACCOUNT_COUNT, "0")

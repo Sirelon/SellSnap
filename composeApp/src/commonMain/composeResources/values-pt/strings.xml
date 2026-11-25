@@ -61,7 +61,7 @@
     <string name="validation_all_valid">Está ótimo — tudo pronto ✨</string>
     <string name="validation_fields_remaining">%1$d por preencher</string>
     <string name="validation_error_title_too_short">O título precisa de 10+ caracteres</string>
-    <string name="validation_error_desc_too_short">A descrição precisa de 30+ caracteres</string>
+    <string name="validation_error_desc_too_short">A descrição precisa de 40+ caracteres</string>
     <string name="validation_error_no_category">Escolha uma categoria</string>
     <string name="validation_error_no_location">Adicione uma localização</string>
     <string name="validation_errors_more">…e mais %1$d</string>
@@ -293,6 +293,7 @@
     <string name="photos_limit_kept_message">Mantivemos as primeiras %1$d fotos — esse é o máximo para esta etapa.</string>
     <string name="error_upload_file_failed">Não foi possível carregar uma das fotos.</string>
     <string name="error_publish_failed">A publicação não foi concluída. Tente novamente.</string>
+    <string name="error_publish_rejected_by_olx">A OLX não aceitou o anúncio: %1$s</string>
     <string name="error_generate_ad_failed">Não foi possível gerar o anúncio. Tentar novamente?</string>
     <string name="error_app_check_failed">Não foi possível verificar esta instalação. Atualize os serviços do Google Play ou instale o SellSnap a partir do Google Play e tente novamente.</string>
     <string name="error_photo_unreadable">Não conseguimos reconhecer o artigo nas suas fotos. Tente tirá-las de novo.</string>
@@ -450,6 +451,10 @@
         <item quantity="one">Falta %1$d dia</item>
         <item quantity="other">Faltam %1$d dias</item>
     </plurals>
+    <plurals name="my_ads_unread_messages">
+        <item quantity="one">%1$d mensagem não lida</item>
+        <item quantity="other">%1$d mensagens não lidas</item>
+    </plurals>
     <string name="advert_extend_unavailable">Só pode prolongar isto no OLX, não aqui.</string>
 
     <!-- Ad lifecycle — statistics -->
@@ -500,4 +505,11 @@
     </plurals>
     <string name="conversation_load_failed">Não foi possível carregar esta conversa.</string>
     <string name="conversation_reply_on_olx">Responder no OLX</string>
+    <string name="conversation_reply_hint">Escreva uma resposta</string>
+    <string name="conversation_send">Enviar</string>
+    <string name="conversation_message_sending">A enviar…</string>
+    <string name="conversation_message_not_sent">Não enviada</string>
+    <string name="conversation_suggest_replies">Sugerir respostas</string>
+    <string name="conversation_suggestions_dismiss">Ocultar sugestões</string>
+    <string name="conversation_scam_warning">Possível burla. O OLX nunca pede para confirmar uma venda através de um link ou de um bot de mensagens. Não partilhe os dados do cartão.</string>
 </resources>

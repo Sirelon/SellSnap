@@ -4,6 +4,7 @@ import com.sirelon.sellsnap.analytics.AnalyticsEvents
 import com.sirelon.sellsnap.features.common.presentation.awaitEffect
 import com.sirelon.sellsnap.features.seller.ad.publish_success.AdvertStatus
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountState
+import com.sirelon.sellsnap.features.seller.messages.domain.MessagesAnalyticsBuckets
 import com.sirelon.sellsnap.features.seller.messages.presentation.MessagesContract.Effect
 import com.sirelon.sellsnap.features.seller.messages.presentation.MessagesContract.Event
 import io.ktor.client.engine.mock.MockEngine
@@ -953,6 +954,7 @@ class MessagesViewModelTest {
 
         viewModel.onEvent(Event.ThreadClicked(1, unreadActive, isTwoPane = true))
         viewModel.onEvent(Event.ThreadClicked(2, deleted))
+        runCurrent()
 
         assertEquals(
             listOf(
@@ -962,6 +964,7 @@ class MessagesViewModelTest {
                     "is_active_account" to true,
                     "had_unread" to true,
                     "listing_state" to "active",
+                    "has_price_floor" to false,
                 ),
                 mapOf<String, Any>(
                     "layout" to "single_pane",
@@ -969,6 +972,7 @@ class MessagesViewModelTest {
                     "is_active_account" to false,
                     "had_unread" to false,
                     "listing_state" to "deleted",
+                    "has_price_floor" to false,
                 ),
             ),
             harness.analytics.messageEvents(AnalyticsEvents.MESSAGES_CONVERSATION_OPENED),
@@ -976,6 +980,44 @@ class MessagesViewModelTest {
         assertTrue(viewModel.effects.awaitEffect<Effect.OpenThread>().hadUnread)
         assertFalse(viewModel.effects.awaitEffect<Effect.OpenThread>().hadUnread)
         viewModel.onEvent(Event.Hidden)
+    }
+
+    @Test
+    fun `opening a row with a kept floor logs the flag and the banded gap, never a price`() = runTest(testDispatcher) {
+        val engine = mockEngine(testDispatcher) {
+            addHandler { request ->
+                if (request.url.encodedPath.endsWith("/threads")) {
+                    respond(threadsJson(threadJson(1, 10)), HttpStatusCode.OK, jsonHeaders())
+                } else {
+                    respond(advertsJson(10), HttpStatusCode.OK, jsonHeaders())
+                }
+            }
+        }
+        val (viewModel, harness) = viewModel(engine, listOf(testAccount(1)), activeIndex = 1)
+        // 1000 against a floor of 800 is 25 percent above it.
+        harness.outcomeStore.recordPublished(10, 1000, 800, 1100, publishedPrice = 1000, currency = "UAH")
+        viewModel.onEvent(Event.Shown)
+        runCurrent()
+
+        viewModel.onEvent(Event.ThreadClicked(1, viewModel.state.value.page.threads.single()))
+        runCurrent()
+
+        val logged = harness.analytics.messageEvents(AnalyticsEvents.MESSAGES_CONVERSATION_OPENED).single()
+        assertEquals(true, logged["has_price_floor"])
+        assertEquals("11_25", logged["floor_gap_bucket"])
+        viewModel.onEvent(Event.Hidden)
+    }
+
+    @Test
+    fun `floor gap bands`() {
+        assertEquals("0", MessagesAnalyticsBuckets.floorGap(800, 800))
+        assertEquals("0", MessagesAnalyticsBuckets.floorGap(800, 700))
+        assertEquals("1_10", MessagesAnalyticsBuckets.floorGap(1000, 1100))
+        assertEquals("11_25", MessagesAnalyticsBuckets.floorGap(1000, 1110))
+        assertEquals("26_50", MessagesAnalyticsBuckets.floorGap(1000, 1500))
+        assertEquals("gt_50", MessagesAnalyticsBuckets.floorGap(1000, 1510))
+        assertNull(MessagesAnalyticsBuckets.floorGap(1000, null))
+        assertNull(MessagesAnalyticsBuckets.floorGap(0, 1000))
     }
 
     @Test
@@ -1059,6 +1101,7 @@ class MessagesViewModelTest {
         val viewModel = MessagesViewModel(
             repository = harness.messagesRepository,
             myAdvertsRepository = harness.myAdvertsRepository,
+            outcomeStore = harness.outcomeStore,
             accountRepository = harness.accountRepository,
             analytics = harness.analytics,
         )

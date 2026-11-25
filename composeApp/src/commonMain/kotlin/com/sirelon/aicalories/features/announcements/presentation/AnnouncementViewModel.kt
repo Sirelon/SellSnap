@@ -2,10 +2,13 @@ package com.sirelon.sellsnap.features.announcements.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sirelon.sellsnap.analytics.Analytics
+import com.sirelon.sellsnap.analytics.AnalyticsEvents
 import com.sirelon.sellsnap.config.AppConfig
 import com.sirelon.sellsnap.features.announcements.data.ANNOUNCEMENT_LINK_STORE
 import com.sirelon.sellsnap.features.announcements.data.AnnouncementsRepository
 import com.sirelon.sellsnap.features.announcements.data.AnnouncementsStore
+import com.sirelon.sellsnap.features.announcements.data.currentAnnouncementPlatform
 import com.sirelon.sellsnap.features.announcements.data.selectAnnouncement
 import com.sirelon.sellsnap.features.announcements.model.Announcement
 import com.sirelon.sellsnap.features.review.ReviewPromptCoordinator
@@ -30,6 +33,7 @@ internal class AnnouncementViewModel(
     private val store: AnnouncementsStore,
     private val olxAccountStore: OlxAccountStore,
     private val reviewPromptCoordinator: ReviewPromptCoordinator,
+    private val analytics: Analytics,
 ) : ViewModel() {
 
     private class Loaded(val announcements: List<Announcement>, val installationId: String?)
@@ -76,6 +80,7 @@ internal class AnnouncementViewModel(
         val announcement = selectAnnouncement(
             announcements = data.announcements,
             appVersion = AppConfig.appVersionName,
+            platform = currentAnnouncementPlatform(),
             installationId = data.installationId,
             olxUserIds = olxUserIds,
             seenIds = seenIds,
@@ -89,6 +94,13 @@ internal class AnnouncementViewModel(
         // announcement on launch is not also asked to rate the app. See ReviewPromptGate.
         reviewPromptCoordinator.announcementShownThisSession = true
         _state.update { it.copy(announcement = announcement) }
+        analytics.logEvent(
+            AnalyticsEvents.ANNOUNCEMENT_SHOWN,
+            mapOf(
+                "announcement_id" to announcement.id,
+                "gate" to (announcement.link != null && !announcement.dismissible),
+            ),
+        )
         return true
     }
 
@@ -98,6 +110,15 @@ internal class AnnouncementViewModel(
 
     /** The dialog stays up: a gate must still be there when the seller comes back from the store. */
     fun openLink(link: String) {
+        _state.value.announcement?.let { announcement ->
+            analytics.logEvent(
+                AnalyticsEvents.ANNOUNCEMENT_LINK_TAPPED,
+                mapOf(
+                    "announcement_id" to announcement.id,
+                    "link_type" to if (link == ANNOUNCEMENT_LINK_STORE) "store" else "url",
+                ),
+            )
+        }
         openUrl(if (link == ANNOUNCEMENT_LINK_STORE) storePageUrl() else link)
     }
 

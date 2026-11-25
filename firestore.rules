@@ -13,6 +13,13 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // App switches read on launch (OlxLoginModeRepository: config/olx_login.systemBrowser).
+    // World-readable, written by the owner from the console only.
+    match /config/{document=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+
     // Ad-generation diagnostic logging (AdGenerationLogRepository). 3.2+ nests documents under
     // the Firebase installation ID rather than an OLX account, since guest-mode attempts never
     // have one: ad_generations/{installationId}/attempts/{document}. 3.1 and older - still active
