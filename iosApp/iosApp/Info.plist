@@ -28,6 +28,16 @@
 				<string>selolxai</string>
 			</array>
 		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>CFBundleURLName</key>
+			<string>com.sirelon.sellsnap.app</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>sellsnap</string>
+			</array>
+		</dict>
 	</array>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>

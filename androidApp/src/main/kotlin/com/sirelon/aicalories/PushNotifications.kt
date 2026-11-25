@@ -27,7 +27,11 @@ fun createPushChannel(context: Context, name: String) {
     )
 }
 
-/** `store` opens this app's Play listing, an `https://` value opens as given, anything else is ignored. */
+/**
+ * `store` opens this app's Play listing, an `https://` value opens as given, anything else is
+ * ignored. An in-app `sellsnap://` link never reaches here: MainActivity hands it to
+ * AppDeepLinkBridge first.
+ */
 fun resolvePushLink(raw: String?): String? = when {
     raw == null -> null
     raw == "store" -> PLAY_STORE_URL

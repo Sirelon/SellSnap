@@ -1,0 +1,54 @@
+{
+  "active": true,
+  "content": {
+    "title": {
+      "en": "Post your listings in one tap",
+      "uk": "Публікуйте оголошення в один дотик",
+      "ru": "Публікуйте оголошення в один дотик",
+      "bg": "Публикувай обявите си с едно докосване",
+      "kk": "Хабарландыруларды бір түртумен жарияла",
+      "pl": "Publikuj ogłoszenia jednym dotknięciem",
+      "pt": "Publique os seus anúncios com um toque",
+      "ro": "Publică anunțurile cu o singură atingere"
+    },
+    "body": {
+      "en": "Connect your OLX account in your profile, and SellSnap publishes every listing for you. No copying, no retyping.",
+      "uk": "Підключіть акаунт OLX у своєму профілі, і SellSnap публікуватиме кожне оголошення за вас. Без копіювання й повторного введення.",
+      "ru": "Підключіть акаунт OLX у своєму профілі, і SellSnap публікуватиме кожне оголошення за вас. Без копіювання й повторного введення.",
+      "bg": "Свържи профила си в OLX от своя профил и SellSnap ще публикува всяка обява вместо теб. Без копиране и повторно писане.",
+      "kk": "Профиліңде OLX аккаунтын қос, сонда SellSnap әр хабарландыруды сен үшін жариялайды. Көшірусіз, қайта терусіз.",
+      "pl": "Połącz konto OLX w swoim profilu, a SellSnap opublikuje za Ciebie każde ogłoszenie. Bez kopiowania i przepisywania.",
+      "pt": "Ligue a sua conta OLX no seu perfil e o SellSnap publica cada anúncio por si. Sem copiar, sem voltar a escrever.",
+      "ro": "Conectează contul OLX din profilul tău, iar SellSnap publică fiecare anunț în locul tău. Fără copiere, fără rescriere."
+    }
+  },
+  "rules": {
+    "dismissible": true,
+    "showMode": "once",
+    "platforms": [
+      "android",
+      "ios"
+    ],
+    "userIds": [
+      "eqbBucySBUftjkaupjA_jn",
+      "f2C4JKG9QgeXDlSkS0ixjq",
+      "ddulpICVTramKGXhC_cGgP",
+      "f9jZy_bJTQ6enitXl5Z_fK",
+      "eJG0UlokTvS2QeqHNKKTVr",
+      "e9B5XQx0RRqp9A-H2vLEZh",
+      "d4ADC1dKmElPljIgYxkEAK",
+      "edUYCSW60Uq-n8Vh-5Rlkg",
+      "ceRgtiwCZkt6r2W9-jDQWp",
+      "d2QDW52HDEyOlAez5njzG9",
+      "fWrTdM05QXyNyIAC_fPvpF",
+      "f7xneSPa40KGjmcGDvvFdf",
+      "c00Uc7BX2EMLm6FUs-Gp-X",
+      "fRVx7jC2Hkv0g_wgsKuJNj",
+      "fXsSfgf6_kUMiOuOi0FFQx",
+      "euy8Ra0AFUn3oy2eHWwbtp",
+      "fJlEo41PTsqgGA71Dn3JqX",
+      "dMuhom1f-Er1hzfpzKVdAI"
+    ],
+    "priority": 10
+  }
+}

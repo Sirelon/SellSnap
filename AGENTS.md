@@ -217,6 +217,10 @@ build and checks every pending ticket in one pass.
   - `features/seller/auth/`
 - Change Android deep link behavior:
   - `androidApp/.../MainActivity.kt`
+- Add or change an in-app `sellsnap://` link (announcement buttons, push `link`, OS links):
+  - `navigation/AppDeepLink.kt` (the screens and `AppDeepLinkBridge`)
+  - `startup/AppNavigationViewModel.kt` (when a queued link opens)
+  - `scripts/publish-announcement.mjs` (`IN_APP_PATHS`)
 - Change web callback behavior:
   - `composeApp/src/wasmJsMain/.../main.kt`
 - Change ad publish behavior / publish button state machine:

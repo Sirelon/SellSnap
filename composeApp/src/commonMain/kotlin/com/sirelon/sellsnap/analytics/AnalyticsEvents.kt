@@ -284,16 +284,29 @@ object AnalyticsEvents {
      * A Firestore announcement opened as the launch dialog. `announcement_id` is the Firestore
      * document id, which the owner names. `gate` is the Boolean "the store or link button is the
      * only exit" (non-dismissible with a link), which is how a version is forced to update:
-     * gate events per day count the sellers still on a blocked version.
+     * gate events per day count the sellers still on a blocked version. `link_type` is the
+     * button's kind: `store`, `url`, `in_app`, or `none` when the dialog has no button;
+     * `destination` is sent only for `in_app`, as in [DEEP_LINK_OPENED].
      */
     const val ANNOUNCEMENT_SHOWN = "announcement_shown"
 
     /**
      * The announcement's link button was tapped. `announcement_id` as in [ANNOUNCEMENT_SHOWN];
-     * `link_type` is `store` (this platform's store page) or `url` (an https link). Against
-     * [ANNOUNCEMENT_SHOWN] with `gate` true, it says how many blocked sellers went to update.
+     * `link_type` is `store` (this platform's store page), `url` (an https link) or `in_app` (a
+     * screen of the app); `destination` is sent only for `in_app`, as in [DEEP_LINK_OPENED].
+     * Against [ANNOUNCEMENT_SHOWN] with `gate` true, it says how many blocked sellers went to
+     * update.
      */
     const val ANNOUNCEMENT_LINK_TAPPED = "announcement_link_tapped"
+
+    /**
+     * An in-app `sellsnap://` link opened its screen. `destination` is `account` | `my_ads` |
+     * `messages` | `generate`. `source` is `announcement` (a dialog button), `push` (a
+     * notification tap) or `external` (the OS handed the link to the app). A link that arrives
+     * during onboarding or on the landing screen fires this only when the seller reaches the main
+     * flow and it opens.
+     */
+    const val DEEP_LINK_OPENED = "deep_link_opened"
 
     /**
      * The seller was shown an error. Logged only through `reportShownError`, which also records the

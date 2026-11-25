@@ -1,6 +1,7 @@
 package com.sirelon.sellsnap.features.announcements.data
 
 import com.sirelon.sellsnap.features.announcements.model.Announcement
+import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountState
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -14,6 +15,7 @@ private fun announcement(
     olxUserIds: Set<Long> = emptySet(),
     priority: Int = 0,
     platforms: Set<String> = emptySet(),
+    olxConnections: Set<String> = emptySet(),
 ) = Announcement(
     id = id,
     title = "Title",
@@ -27,6 +29,7 @@ private fun announcement(
     olxUserIds = olxUserIds,
     priority = priority,
     platforms = platforms,
+    olxConnections = olxConnections,
 )
 
 private fun select(
@@ -35,6 +38,7 @@ private fun select(
     platform: String = "android",
     installationId: String? = "fid-1",
     olxUserIds: Set<Long> = emptySet(),
+    olxConnections: Set<String> = setOf(OLX_CONNECTION_NONE),
     seenIds: Set<String> = emptySet(),
 ) = selectAnnouncement(
     announcements = announcements.toList(),
@@ -42,6 +46,7 @@ private fun select(
     platform = platform,
     installationId = installationId,
     olxUserIds = olxUserIds,
+    olxConnections = olxConnections,
     seenIds = seenIds,
 )?.id
 
@@ -133,6 +138,45 @@ class AnnouncementFilterTest {
         assertEquals("a", select(targeted, installationId = "fid-1", olxUserIds = emptySet()))
         assertEquals("a", select(targeted, installationId = "other", olxUserIds = setOf(42L)))
         assertNull(select(targeted, installationId = "other", olxUserIds = setOf(7L)))
+    }
+
+    @Test
+    fun `no olx connection rule is every device`() {
+        assertEquals("a", select(announcement(), olxConnections = setOf(OLX_CONNECTION_CONNECTED)))
+    }
+
+    @Test
+    fun `an olx connection rule matches any state the device has`() {
+        val guests = announcement(olxConnections = setOf(OLX_CONNECTION_NONE, OLX_CONNECTION_EXPIRED))
+
+        assertEquals("a", select(guests, olxConnections = setOf(OLX_CONNECTION_NONE)))
+        assertEquals("a", select(guests, olxConnections = setOf(OLX_CONNECTION_CONNECTED, OLX_CONNECTION_EXPIRED)))
+        assertNull(select(guests, olxConnections = setOf(OLX_CONNECTION_CONNECTED)))
+    }
+
+    @Test
+    fun `an unknown olx connection value matches no device`() {
+        assertNull(select(announcement(olxConnections = setOf("guest")), olxConnections = setOf(OLX_CONNECTION_NONE)))
+    }
+
+    @Test
+    fun `olx connection rule and installation targeting must both match`() {
+        val targeted = announcement(userIds = setOf("fid-1"), olxConnections = setOf(OLX_CONNECTION_NONE))
+
+        assertEquals("a", select(targeted, installationId = "fid-1", olxConnections = setOf(OLX_CONNECTION_NONE)))
+        assertNull(select(targeted, installationId = "fid-1", olxConnections = setOf(OLX_CONNECTION_CONNECTED)))
+        assertNull(select(targeted, installationId = "fid-2", olxConnections = setOf(OLX_CONNECTION_NONE)))
+    }
+
+    @Test
+    fun `a device's olx connection states come from all its accounts`() {
+        assertEquals(setOf(OLX_CONNECTION_NONE), olxConnectionsOf(emptyList()))
+        assertEquals(setOf(OLX_CONNECTION_CONNECTED), olxConnectionsOf(listOf(OlxAccountState.Usable)))
+        assertEquals(setOf(OLX_CONNECTION_EXPIRED), olxConnectionsOf(listOf(OlxAccountState.NeedsReconnect)))
+        assertEquals(
+            setOf(OLX_CONNECTION_CONNECTED, OLX_CONNECTION_EXPIRED),
+            olxConnectionsOf(listOf(OlxAccountState.Usable, OlxAccountState.NeedsReconnect)),
+        )
     }
 
     @Test

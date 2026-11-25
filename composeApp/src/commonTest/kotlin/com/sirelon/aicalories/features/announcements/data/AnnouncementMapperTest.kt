@@ -118,7 +118,7 @@ class AnnouncementMapperTest {
     }
 
     @Test
-    fun `a link is kept only as the store keyword or an https url`() {
+    fun `a link is kept only as the store keyword, an https url or a known in-app link`() {
         fun withLink(link: String) = AnnouncementResponse(
             active = true,
             content = AnnouncementContentResponse(title = mapOf("en" to "Title"), link = link),
@@ -129,6 +129,40 @@ class AnnouncementMapperTest {
         assertNull(withLink("http://sellsnap.app/x")?.link)
         assertNull(withLink("update")?.link)
         assertNull(response().toDomain("a", "en")?.link)
+        assertEquals("sellsnap://account", withLink(" SellSnap://Account/ ")?.link)
+        assertNull(withLink("sellsnap://unknown-screen")?.link)
+    }
+
+    @Test
+    fun `the button text uses the device language and falls back to english`() {
+        fun withButton(languageCode: String) = AnnouncementResponse(
+            active = true,
+            content = AnnouncementContentResponse(
+                title = mapOf("en" to "Title"),
+                link = "sellsnap://account",
+                buttonText = mapOf("en" to "Connect OLX", "uk" to "Підключити OLX"),
+            ),
+        ).toDomain("a", languageCode)
+
+        assertEquals("Підключити OLX", withButton("uk")?.buttonText)
+        assertEquals("Connect OLX", withButton("pl")?.buttonText)
+        assertNull(response().toDomain("a", "en")?.buttonText)
+    }
+
+    @Test
+    fun `olx connection values are trimmed, lowercased and blank ones dropped`() {
+        val announcement = response(
+            rules = AnnouncementRulesResponse(olxConnection = listOf(" None ", "", "expired")),
+        ).toDomain("reminder", "en")
+
+        assertEquals(setOf("none", "expired"), announcement?.olxConnections)
+    }
+
+    @Test
+    fun `the link type tells store, url and in-app apart`() {
+        assertEquals("store", announcementLinkType("store"))
+        assertEquals("url", announcementLinkType("https://sellsnap.app"))
+        assertEquals("in_app", announcementLinkType("sellsnap://my-ads"))
     }
 
     @Test

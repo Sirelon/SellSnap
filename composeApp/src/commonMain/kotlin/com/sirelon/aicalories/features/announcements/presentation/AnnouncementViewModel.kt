@@ -8,11 +8,15 @@ import com.sirelon.sellsnap.config.AppConfig
 import com.sirelon.sellsnap.features.announcements.data.ANNOUNCEMENT_LINK_STORE
 import com.sirelon.sellsnap.features.announcements.data.AnnouncementsRepository
 import com.sirelon.sellsnap.features.announcements.data.AnnouncementsStore
+import com.sirelon.sellsnap.features.announcements.data.announcementLinkType
 import com.sirelon.sellsnap.features.announcements.data.currentAnnouncementPlatform
+import com.sirelon.sellsnap.features.announcements.data.olxConnectionsOf
 import com.sirelon.sellsnap.features.announcements.data.selectAnnouncement
 import com.sirelon.sellsnap.features.announcements.model.Announcement
 import com.sirelon.sellsnap.features.review.ReviewPromptCoordinator
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountStore
+import com.sirelon.sellsnap.navigation.AppDeepLink
+import com.sirelon.sellsnap.navigation.AppDeepLinkBridge
 import com.sirelon.sellsnap.platform.openUrl
 import com.sirelon.sellsnap.platform.storePageUrl
 import kotlinx.coroutines.CompletableDeferred
@@ -74,15 +78,16 @@ internal class AnnouncementViewModel(
         val seenIds = runCatching {
             data.announcements.filter { store.isSeen(it.id) }.map { it.id }.toSet()
         }.getOrDefault(emptySet())
-        val olxUserIds = runCatching {
-            olxAccountStore.readRaw()?.accounts.orEmpty().mapNotNull { it.olxUserId }.toSet()
-        }.getOrDefault(emptySet())
+        // Unreadable storage reads as "no accounts": the device then matches `olxConnection`
+        // "none" only, and no `olxUserIds`.
+        val accounts = runCatching { olxAccountStore.readRaw()?.accounts.orEmpty() }.getOrDefault(emptyList())
         val announcement = selectAnnouncement(
             announcements = data.announcements,
             appVersion = AppConfig.appVersionName,
             platform = currentAnnouncementPlatform(),
             installationId = data.installationId,
-            olxUserIds = olxUserIds,
+            olxUserIds = accounts.mapNotNull { it.olxUserId }.toSet(),
+            olxConnections = olxConnectionsOf(accounts.map { it.state }),
             seenIds = seenIds,
         ) ?: return false
 
@@ -99,7 +104,7 @@ internal class AnnouncementViewModel(
             mapOf(
                 "announcement_id" to announcement.id,
                 "gate" to (announcement.link != null && !announcement.dismissible),
-            ),
+            ) + linkParams(announcement.link),
         )
         return true
     }
@@ -108,18 +113,27 @@ internal class AnnouncementViewModel(
         _state.update { it.copy(announcement = null) }
     }
 
-    /** The dialog stays up: a gate must still be there when the seller comes back from the store. */
+    /**
+     * An in-app link closes the dialog and opens its screen. Any other link keeps the dialog up: a
+     * gate must still be there when the seller comes back from the store.
+     */
     fun openLink(link: String) {
         _state.value.announcement?.let { announcement ->
             analytics.logEvent(
                 AnalyticsEvents.ANNOUNCEMENT_LINK_TAPPED,
-                mapOf(
-                    "announcement_id" to announcement.id,
-                    "link_type" to if (link == ANNOUNCEMENT_LINK_STORE) "store" else "url",
-                ),
+                mapOf("announcement_id" to announcement.id) + linkParams(link),
             )
         }
-        openUrl(if (link == ANNOUNCEMENT_LINK_STORE) storePageUrl() else link)
+        if (AppDeepLinkBridge.publish(link, AppDeepLinkBridge.SOURCE_ANNOUNCEMENT)) {
+            dismiss()
+        } else {
+            openUrl(if (link == ANNOUNCEMENT_LINK_STORE) storePageUrl() else link)
+        }
+    }
+
+    private fun linkParams(link: String?): Map<String, Any> = buildMap {
+        put("link_type", link?.let(::announcementLinkType) ?: "none")
+        AppDeepLink.parse(link)?.let { put("destination", it.analyticsCode) }
     }
 
     private companion object {

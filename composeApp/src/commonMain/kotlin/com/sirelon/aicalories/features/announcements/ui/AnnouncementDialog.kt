@@ -122,7 +122,7 @@ fun AnnouncementDialog(
                 if (link != null) {
                     AppButton(
                         modifier = Modifier.fillMaxWidth(),
-                        text = stringResource(
+                        text = announcement.buttonText ?: stringResource(
                             if (link == ANNOUNCEMENT_LINK_STORE) {
                                 Res.string.announcement_open_store
                             } else {
