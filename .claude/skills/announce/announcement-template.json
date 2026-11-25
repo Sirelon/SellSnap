@@ -21,14 +21,25 @@
       "pt": "BODY_PT",
       "ro": "BODY_RO"
     },
-    "link": "store"
+    "link": "sellsnap://account",
+    "buttonText": {
+      "en": "BUTTON_EN",
+      "uk": "BUTTON_UK",
+      "ru": "BUTTON_UK",
+      "bg": "BUTTON_BG",
+      "kk": "BUTTON_KK",
+      "pl": "BUTTON_PL",
+      "pt": "BUTTON_PT",
+      "ro": "BUTTON_RO"
+    }
   },
   "rules": {
     "dismissible": true,
     "showMode": "once",
-    "minVersion": "4.1",
-    "maxVersion": "4.1",
+    "minVersion": "4.2",
+    "maxVersion": "4.2",
     "platforms": ["android", "ios"],
+    "olxConnection": ["none"],
     "userIds": ["FIREBASE_INSTALLATION_ID"],
     "olxUserIds": [123456789],
     "priority": 10

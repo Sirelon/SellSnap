@@ -23,10 +23,12 @@ internal class AnnouncementContentResponse(
     @SerialName("title") val title: Map<String, String>? = null,
     @SerialName("body") val body: Map<String, String>? = null,
     @SerialName("imageUrl") val imageUrl: String? = null,
-    // "store" for this platform's store page, or an https URL. Adds a button to the dialog; with
-    // `rules.dismissible = false` that button is the only way out, which is how a broken version
-    // range is gated (see AnnouncementDialog).
+    // "store" for this platform's store page, an https URL, or an in-app `sellsnap://` link (see
+    // AppDeepLink). Adds a button to the dialog; with `rules.dismissible = false` that button is
+    // the only way out, which is how a broken version range is gated (see AnnouncementDialog).
     @SerialName("link") val link: String? = null,
+    // The link button's label, keyed by language code like `title`. Absent: a generic label.
+    @SerialName("buttonText") val buttonText: Map<String, String>? = null,
 )
 
 // `minVersion` and `maxVersion` are typed String on purpose: "3.10" typed as a number in the
@@ -44,4 +46,8 @@ internal class AnnouncementRulesResponse(
     // "android", "ios", "web", "desktop". Absent or empty means every platform. A store gate
     // names one platform, because each store approves a new build on its own day.
     @SerialName("platforms") val platforms: List<String>? = null,
+    // "none", "expired", "connected": the OLX connection states the device must have one of.
+    // Absent or empty means every device. Apps before 4.2 ignore it and show the document to
+    // everyone, so a document using it carries `minVersion` "4.2" or later.
+    @SerialName("olxConnection") val olxConnection: List<String>? = null,
 )

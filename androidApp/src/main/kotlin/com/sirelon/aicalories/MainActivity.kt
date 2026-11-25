@@ -28,6 +28,7 @@ import com.sirelon.sellsnap.features.seller.auth.data.OlxAuthCallbackBridge
 import com.sirelon.sellsnap.features.seller.auth.presentation.SellerAuthContract
 import com.sirelon.sellsnap.features.seller.auth.presentation.SellerLandingScreen
 import com.sirelon.sellsnap.features.seller.drafts.data.initAndroidDatabase
+import com.sirelon.sellsnap.navigation.AppDeepLinkBridge
 import com.sirelon.sellsnap.network.prefetchAndroidAppCheckToken
 import com.sirelon.sellsnap.generated.resources.Res
 import com.sirelon.sellsnap.generated.resources.notification_channel_updates
@@ -58,7 +59,10 @@ class MainActivity : ComponentActivity() {
         publishOlxCallback(intent)
         publishSharedImages(intent)
         // A recreated activity (rotation, process restore) re-delivers the original launch intent.
-        if (savedInstanceState == null) openPushLink(intent)
+        if (savedInstanceState == null) {
+            openPushLink(intent)
+            openAppDeepLink(intent)
+        }
 
         setContent {
             // Expose Compose testTags as Android resource-ids so Maestro can target them.
@@ -77,6 +81,7 @@ class MainActivity : ComponentActivity() {
         publishOlxCallback(intent)
         publishSharedImages(intent)
         openPushLink(intent)
+        openAppDeepLink(intent)
     }
 
     private fun openPushLink(intent: Intent?) {
@@ -85,7 +90,16 @@ class MainActivity : ComponentActivity() {
         val link = intent.getStringExtra(PUSH_LINK_KEY) ?: return
         // Consume the extra so the same push is not opened again by a later re-delivery.
         intent.removeExtra(PUSH_LINK_KEY)
+        if (AppDeepLinkBridge.publish(link, AppDeepLinkBridge.SOURCE_PUSH)) return
         resolvePushLink(link)?.let { url -> openPushUrl(this, url) }
+    }
+
+    private fun openAppDeepLink(intent: Intent?) {
+        intent ?: return
+        if (intent.flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY != 0) return
+        val link = intent.dataString ?: return
+        // Consumed like the push extra, so a later re-delivery does not open the screen again.
+        if (AppDeepLinkBridge.publish(link, AppDeepLinkBridge.SOURCE_EXTERNAL)) intent.data = null
     }
 
     private fun publishOlxCallback(intent: Intent?) {

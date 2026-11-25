@@ -30,8 +30,9 @@ private func publishPendingSharedImages() {
     }
 }
 
-// A push carries an optional `link` data key: "store" opens this app's App Store page, an
-// https:// value opens as given, anything else (or nothing) just opens the app. No in-app routes.
+// A push carries an optional `link` data key: a `sellsnap://` link opens that screen in the app
+// (AppDeepLinkBridge), "store" opens this app's App Store page, an https:// value opens as given,
+// anything else (or nothing) just opens the app.
 private let appStoreUrl = "https://apps.apple.com/app/id6776001373"
 
 private func pushLinkUrl(from userInfo: [AnyHashable: Any]) -> URL? {
@@ -131,9 +132,13 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         didReceive response: UNNotificationResponse,
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
+        let userInfo = response.notification.request.content.userInfo
         if response.notification.request.identifier == sharedImagesNotificationIdentifier {
             publishPendingSharedImages()
-        } else if let url = pushLinkUrl(from: response.notification.request.content.userInfo) {
+        } else if let link = userInfo["link"] as? String,
+                  AppDeepLinkBridge.shared.publish(link: link, source: AppDeepLinkBridge.shared.SOURCE_PUSH) {
+            // Opened by AppNavigationViewModel, on a cold start once startup routing is done.
+        } else if let url = pushLinkUrl(from: userInfo) {
             DispatchQueue.main.async {
                 UIApplication.shared.open(url)
             }
@@ -151,7 +156,10 @@ struct iOSApp: App {
         WindowGroup {
             ContentView()
                 .onOpenURL { url in
-                    OlxAuthCallbackBridge.shared.publishCallback(url: url.absoluteString)
+                    let link = url.absoluteString
+                    if !AppDeepLinkBridge.shared.publish(link: link, source: AppDeepLinkBridge.shared.SOURCE_EXTERNAL) {
+                        OlxAuthCallbackBridge.shared.publishCallback(url: link)
+                    }
                 }
                 .onChange(of: scenePhase) { _, newPhase in
                     if newPhase == .active {

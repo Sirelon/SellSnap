@@ -15,6 +15,22 @@ const PROJECT_ID = "sellsnap-6e85c";
 const LANGUAGE_CODES = ["en", "uk", "ru", "bg", "kk", "pl", "pt", "ro"];
 const PLATFORMS = new Set(["android", "ios", "web", "desktop"]);
 const VERSION = /^\d+(\.\d+)*$/;
+// The paths of AppDeepLink.kt: `sellsnap://<path>` opens that screen.
+const IN_APP_PATHS = new Set(["account", "my-ads", "messages", "generate"]);
+const OLX_CONNECTIONS = new Set(["none", "expired", "connected"]);
+// The first app version that knows in-app links and rules.olxConnection (SIR-202). Older apps
+// drop the button, and ignore olxConnection so they show the dialog to everyone.
+const IN_APP_MIN_VERSION = "4.2";
+
+function compareVersions(a, b) {
+  const left = a.split(".").map(Number);
+  const right = b.split(".").map(Number);
+  for (let i = 0; i < Math.max(left.length, right.length); i++) {
+    const diff = (left[i] ?? 0) - (right[i] ?? 0);
+    if (diff !== 0) return diff;
+  }
+  return 0;
+}
 
 const file = process.argv.slice(2).find((arg) => !arg.startsWith("--"));
 const dryRun = process.argv.includes("--dry-run");
@@ -56,12 +72,30 @@ for (const platform of rules.platforms ?? []) {
   if (!PLATFORMS.has(platform)) errors.push(`rules.platforms: unknown "${platform}"`);
 }
 if (!content.title?.en) errors.push("content.title.en is missing");
-for (const field of ["title", "body"]) {
+const inAppLink = typeof content.link === "string" && content.link.startsWith("sellsnap://");
+if (content.link !== undefined && content.link !== "store" && !content.link?.startsWith?.("https://") && !inAppLink) {
+  errors.push(`content.link must be "store", an https:// URL or sellsnap://<screen>, got ${JSON.stringify(content.link)}`);
+}
+if (inAppLink && !IN_APP_PATHS.has(content.link.slice("sellsnap://".length))) {
+  errors.push(`content.link: unknown screen in "${content.link}"; known: ${[...IN_APP_PATHS].join(", ")}`);
+}
+if (inAppLink && !content.buttonText?.en) errors.push("an in-app link needs content.buttonText.en");
+if ("olxConnection" in rules && !Array.isArray(rules.olxConnection)) {
+  errors.push("rules.olxConnection must be a list, for example [\"none\"]");
+}
+for (const state of Array.isArray(rules.olxConnection) ? rules.olxConnection : []) {
+  if (!OLX_CONNECTIONS.has(state)) errors.push(`rules.olxConnection: unknown "${state}"`);
+}
+const needsNewApp = inAppLink || (Array.isArray(rules.olxConnection) && rules.olxConnection.length > 0);
+if (needsNewApp && !(VERSION.test(rules.minVersion ?? "") && compareVersions(rules.minVersion, IN_APP_MIN_VERSION) >= 0)) {
+  errors.push(`an in-app link or rules.olxConnection needs rules.minVersion "${IN_APP_MIN_VERSION}" or later`);
+}
+for (const field of ["title", "body", "buttonText"]) {
   for (const lang of LANGUAGE_CODES) {
     if (content[field] && !content[field][lang]) warnings.push(`content.${field}.${lang} is missing (English shows)`);
   }
 }
-if (content.title?.uk !== content.title?.ru || content.body?.uk !== content.body?.ru) {
+if (["title", "body", "buttonText"].some((field) => content[field]?.uk !== content[field]?.ru)) {
   errors.push("`ru` must be a copy of `uk` (AGENTS.md: no russian)");
 }
 const isGate = doc.active && content.link === "store" && rules.dismissible === false;
@@ -73,6 +107,8 @@ console.log(`announcements/${id}${isGate ? "  [GATE]" : ""}`);
 console.log(`  active: ${doc.active}`);
 console.log(`  versions: ${rules.minVersion ?? "any"} .. ${rules.maxVersion ?? "any"}`);
 console.log(`  platforms: ${(rules.platforms ?? []).join(", ") || "all"}`);
+console.log(`  olxConnection: ${[].concat(rules.olxConnection ?? []).join(", ") || "any"}`);
+console.log(`  link: ${content.link ?? "-"}${content.buttonText?.en ? ` (button: ${content.buttonText.en})` : ""}`);
 console.log(`  title.en: ${content.title?.en}`);
 console.log(`  body.en: ${content.body?.en ?? "-"}`);
 for (const w of warnings) console.log(`  ! ${w}`);
