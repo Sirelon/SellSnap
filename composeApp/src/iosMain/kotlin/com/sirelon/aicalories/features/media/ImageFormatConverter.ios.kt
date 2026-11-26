@@ -24,7 +24,8 @@ import platform.UIKit.UIRectFill
 
 actual fun imageFormatConverter(): ImageFormatConverter = IosImageFormatConverter()
 
-private const val JPEG_QUALITY = 0.8
+/** Upload quality; see [MAX_UPLOAD_IMAGE_LONG_SIDE_PX] for the bench behind it. */
+private const val JPEG_QUALITY = 0.75
 
 private class IosImageFormatConverter : ImageFormatConverter {
 

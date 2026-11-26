@@ -64,5 +64,13 @@
   "detail": "high",
   "maxOutputTokens": 4000,
   "promptAppend": "Names printed on the item: read every legible word on the item itself, on its label or tag, and on the box or packaging shown with it. A brand, model name or part number printed there is a visible fact: put it in the title exactly as printed. Reading a name off the box does not make the box part of the offer.\nExact model: name it only when it is printed, or when a distinctive design visible in the photos fits one model and no other (for a phone, the camera layout together with the body colour). Many products have close lookalikes, and a general resemblance is not enough: when more than one model fits what is visible, give the brand or product line and stop there. A wrong model is worse than no model."
+ },
+ "terra-none-1600": {
+  "model": "gpt-6.1-terra",
+  "effort": "none",
+  "detail": "high",
+  "maxOutputTokens": 4000,
+  "uploadLongSide": 1600,
+  "uploadQuality": 80
  }
 }

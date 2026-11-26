@@ -84,6 +84,27 @@ shorter and add Nova Poshta delivery") filled brand, size and colour correctly a
 Every answer is in `scripts/model-bench/.cache/runs.jsonl` on the machine that ran the bench; the
 configs are in `scripts/model-bench/configs.json`.
 
+## Upload size
+
+Run 2026-11-26, SIR-174: the production setup (`terra-none`, prompt v8) on the same photos at
+1600 px / JPEG 80 (`terra-none-1600`) and at the app's 1280 px / JPEG 75, 90 calls, $0.148.
+
+| Upload | Wrong items | Refusals held | Wrong details | Bonus | On modal price | Within ±10% | Median input tokens | $/call | Median s |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1280 px, q75 | 0 | 2/2 | 0 | 10 | 15/25 | 0/5 | 3106 | 0.00144 | 3.4 |
+| 1600 px, q80 | 0 | 2/2 | 0 | 10 | 19/25 | 1/5 | 3946 | 0.00184 | 3.5 |
+
+- Both sizes name the same item on every photo, and the close-up part numbers (#3 Denso
+  PS 98100-A50, #4 Magneti Marelli, #11 Figo Havuc W30) are read at both. Bonus points differ on
+  two items and cancel out: 1600 px named Air Max Dn (#56), 1280 px named the Chevrolet Tacuma
+  (#33). One run per item, so this is noise.
+- The bench photos are about 40% fewer bytes at 1280/q75 (sum of the 25 files).
+- gpt-6.1-terra bills a 1600 px photo for more tokens than a 1280 px one, so the larger photo
+  is not cut down to the same size before the model reads it. Inferred: from the input tokens
+  in the table.
+- Price stability is worse at 1280 in this run (15/25 against 19/25), within the spread of the
+  exact repeats above (18 vs 20, 21 vs 19) and of the earlier v8 run at 1280 (16/25).
+
 ## Method
 
 - **Photos:** 25 real seller photos from Firebase Storage, listed with their answer key in
@@ -93,7 +114,7 @@ configs are in `scripts/model-bench/configs.json`.
   #41 a four-photo collage; both are real seller uploads.
 - **Call:** the production prompt read from `OpenAIClient.kt`, market Ukraine, no seller note,
   one photo per call, resized like the app (EXIF orientation applied, 1280 px long side, JPEG
-  quality 75, the SIR-174 upload size), the production user message.
+  quality 75; a config may set `uploadLongSide` and `uploadQuality`), the production user message.
 - **Scoring:** each item has regexes over the lowercased Ukrainian title and description:
   `must` (item type), `wrong` (a wrong item), `wrongDetail` (a wrong model or part number),
   `bonus` (specificity), `maxPrice`. A call with no `must` match is read by eye; the one such
@@ -106,5 +127,5 @@ configs are in `scripts/model-bench/configs.json`.
 ## What the bench does not cover
 
 Several photos per listing, seller notes, markets other than Ukraine, regeneration (which chains
-onto the previous answer and may hold the price steadier), the attribute fill, the listing polish,
-and the 1600 px q80 photos the app sends until SIR-174 ships.
+onto the previous answer and may hold the price steadier), the attribute fill and the listing
+polish.
