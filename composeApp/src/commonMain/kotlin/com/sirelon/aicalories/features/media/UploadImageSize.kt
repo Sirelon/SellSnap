@@ -3,12 +3,13 @@ package com.sirelon.sellsnap.features.media
 import kotlin.math.roundToInt
 
 /**
- * OpenAI's "high" image detail mode scales an image down so its short side is 768px before the
- * model ever sees it (platform.openai.com/docs/guides/vision, "Calculating costs"). Capping the
- * long side at this value before upload keeps strictly more detail than OpenAI itself uses, while
- * cutting upload size and generation latency for the seller.
+ * Long side of every photo the app uploads, together with JPEG quality 75 in the platform
+ * converters. The listing model reads 1280 px photos as well as 1600 px ones: in the SIR-174 bench
+ * (`research/MODEL-BENCH-listing-generation.md`, "Upload size") both sizes named the same item on
+ * all 25 photos, part numbers included, while 1280 px at quality 75 is about 40% fewer bytes to
+ * upload and 21% fewer input tokens.
  */
-const val MAX_UPLOAD_IMAGE_LONG_SIDE_PX = 1600
+const val MAX_UPLOAD_IMAGE_LONG_SIDE_PX = 1280
 
 data class ImageSize(val width: Int, val height: Int)
 
