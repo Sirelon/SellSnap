@@ -96,10 +96,13 @@ class AppNavigationViewModel(
         // An in-app link waits until the seller is in the main flow: on onboarding, consent or the
         // landing screen it stays queued and opens once they get past it. Opening one works like a
         // tab tap - the stack becomes that tab alone; an unfinished listing stays in Drafts.
+        // The stack is read here, outside snapshotFlow: its first read creates it, and creating
+        // state inside snapshotFlow's read-only snapshot crashed the app on launch.
+        val stack = backStack
         combine(
             AppDeepLinkBridge.pending,
             startupRouted,
-            snapshotFlow { backStack.firstOrNull()?.isSellerFlowEntry == true },
+            snapshotFlow { stack.firstOrNull()?.isSellerFlowEntry == true },
         ) { pending, routed, inSellerFlow -> pending.takeIf { routed && inSellerFlow } }
             .filterNotNull()
             .onEach { openPendingDeepLink() }
