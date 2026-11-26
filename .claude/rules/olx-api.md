@@ -12,7 +12,10 @@ paths:
 Every market has its own portal — `developer.olx.pl`, `.ua`, `.pt`, `.ro`, `.bg`, `.kz` — and
 they are not equally complete. These six are the only markets with partner-API access
 (`developer.olx.kz/docs/faq`, country table, 2026-11-26). olx.uz runs the same API, but
-`developer.olx.uz` has no portal, so an app cannot be registered there. olx.com.br has its own
+`developer.olx.uz` has no portal, so an app cannot be registered there. Its token endpoint
+knows our six apps' client ids but answers `invalid_client` / "Client is not active" for each
+(a made-up id gets "The client credentials are invalid"), so uz access is a switch on OLX's
+side that only OLX can turn on (2026-11-26). olx.com.br has its own
 separate API (`developers.olx.com.br`, SIR-204). olx.ba gives API access only to its PIK shops. PL omits the advert-status definitions and lists 4 of the 11
 `Advert.status` values; UA and PT define all 11. Reading one portal and assuming it speaks for
 the rest is how this app shipped two wrong status meanings.
