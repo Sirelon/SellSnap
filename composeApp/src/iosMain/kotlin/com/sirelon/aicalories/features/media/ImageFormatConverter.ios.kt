@@ -17,6 +17,7 @@ import platform.Foundation.create
 import platform.Foundation.writeToURL
 import platform.UIKit.UIColor
 import platform.UIKit.UIGraphicsImageRenderer
+import platform.UIKit.UIGraphicsImageRendererFormat
 import platform.UIKit.UIImage
 import platform.UIKit.UIImageJPEGRepresentation
 import platform.UIKit.UIRectFill
@@ -47,8 +48,14 @@ private class IosImageFormatConverter : ImageFormatConverter {
             // both resizes and bakes in the correct upright orientation in one pass. JPEG has no
             // alpha channel, so a white fill first keeps a transparent PNG/WEBP source from
             // encoding as black where it used to be transparent.
+            //
+            // The renderer's default format draws at the main screen's scale, so on a 3x iPhone a
+            // 1600-point canvas became a 4800-pixel JPEG of ~6 MB: OLX refused it ("max 5 MB") and
+            // OpenAI timed out downloading it (SIR-205). Scale 1 makes points equal pixels.
+            val format = UIGraphicsImageRendererFormat.defaultFormat().apply { scale = 1.0 }
             val renderer = UIGraphicsImageRenderer(
                 size = CGSizeMake(targetSize.width.toDouble(), targetSize.height.toDouble()),
+                format = format,
             )
             val resizedImage = renderer.imageWithActions { _ ->
                 UIColor.whiteColor.setFill()
