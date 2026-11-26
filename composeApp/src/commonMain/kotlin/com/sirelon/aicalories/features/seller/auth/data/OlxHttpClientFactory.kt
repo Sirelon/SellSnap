@@ -190,6 +190,7 @@ private fun commonOlxHttpClientConfig(): HttpClientConfig<*>.() -> Unit = {
     expectSuccess = false
     defaultRequest {
         url(OlxConfig.apiBaseUrl)
+        OlxConfig.apiLanguage?.let { header(HttpHeaders.AcceptLanguage, it) }
     }
 }
 

@@ -47,6 +47,21 @@ data class OlxCountry(
     }
 
     /** BCP-47 tag of [language] for the speech recognizer (SIR-85); null listens in the device language. */
+    /**
+     * The language OLX answers in, sent as `Accept-Language` on every partner API request: category
+     * names, attribute labels and their values. developer.olx.ua swagger v2, "Language": "In
+     * multilingual countries switching between languages is supported by sending header
+     * Accept-Language: xx".
+     *
+     * Live `GET /languages` on 2026-11-26: kz offers `ru` (default) and `kk`, ua offers `uk`
+     * (default) and `ru`, and pl, ro, bg and pt offer one language each. Kazakhstan asks for
+     * Kazakh because its default is russian, and SellSnap shows no russian (AGENTS.md,
+     * Localization). With `kk`, categories, attributes, values and category suggestions all came
+     * back in Kazakh. Every other market already gets its own language by default.
+     */
+    val apiLanguage: String?
+        get() = if (code == "kz") "kk" else null
+
     val speechLanguageTag: String?
         get() = when (code) {
             "pt" -> "pt-PT"

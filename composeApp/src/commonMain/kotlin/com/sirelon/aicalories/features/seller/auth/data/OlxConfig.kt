@@ -25,6 +25,9 @@ object OlxConfig {
     val apiBaseUrl: String
         get() = _currentOlxCountry.apiBaseUrl
 
+    val apiLanguage: String?
+        get() = _currentOlxCountry.apiLanguage
+
     /**
      * The `redirect_uri` sent to OLX: an HTTPS page (`docs/olx-callback/`) that forwards OLX's
      * `code` and `state` to [appCallbackScheme]. OLX accepts only HTTPS redirect URIs

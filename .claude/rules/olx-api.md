@@ -20,8 +20,12 @@ the rest is how this app shipped two wrong status meanings.
   one other portal for the same endpoint and compare. Where a difference exists, it belongs in
   code as a per-country capability — `OlxCountry.supportsExtendCommand` is the pattern — never as
   a single global assumption. A feature that works in Poland may be refused in Romania.
-- The only market difference found so far is the `extend` command, which the specs annotate as
-  unavailable in UA and PT. That is one data point, not a guarantee that the rest is uniform.
+- Known market differences: the `extend` command, which the specs annotate as unavailable in UA
+  and PT; and the response language. OLX answers in the market's default language unless the
+  request sends `Accept-Language` (swagger v2, "Language"). `GET /languages` (2026-11-26): kz
+  offers `ru` (default) and `kk`, ua offers `uk` (default) and `ru`, the other markets one
+  language each. `OlxCountry.apiLanguage` sends `kk` for kz, so category names, attributes and
+  values come in Kazakh, never russian. Two data points, not a guarantee that the rest is uniform.
 - **Read the yaml itself.** It is at `https://developer.olx.<tld>/swagger/v2/partner_api.yaml`,
   nested `$ref` files resolve against the same path, and plain `curl` gets a CloudFront 403.
   `curl https://r.jina.ai/<url>` returns the whole file - about 145 KB - and from there the schema

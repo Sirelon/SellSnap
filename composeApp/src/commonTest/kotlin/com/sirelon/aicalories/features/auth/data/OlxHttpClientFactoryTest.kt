@@ -8,6 +8,7 @@ import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountsRecord
 import com.sirelon.sellsnap.features.seller.auth.data.OlxCountryStore
 import com.sirelon.sellsnap.features.seller.auth.data.OlxCredentialsProvider
 import com.sirelon.sellsnap.features.seller.auth.data.OlxRemoteErrorParser
+import com.sirelon.sellsnap.features.seller.auth.data._currentOlxCountry
 import com.sirelon.sellsnap.features.seller.auth.data.createOlxAuthorizedHttpClient
 import com.sirelon.sellsnap.features.seller.auth.data.createOlxHttpClient
 import com.sirelon.sellsnap.features.seller.auth.domain.OlxApiException
@@ -179,6 +180,31 @@ class OlxHttpClientFactoryTest {
         assertEquals(untouchedAccount, record.accounts.find { it.localIndex == 1 })
         val refreshedActive = record.accounts.find { it.localIndex == 2 }!!
         assertEquals(OlxAccountState.NeedsReconnect, refreshedActive.state)
+    }
+
+    @Test
+    fun `Kazakhstan asks OLX for Kazakh, other markets send no language`() = runBlocking {
+        val sentLanguages = mutableListOf<String?>()
+        val engine = MockEngine { request ->
+            sentLanguages += request.headers[HttpHeaders.AcceptLanguage]
+            respond(
+                content = "{}",
+                status = HttpStatusCode.OK,
+                headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
+            )
+        }
+        val client = createOlxHttpClient(engine)
+        val previousCountry = _currentOlxCountry
+        try {
+            _currentOlxCountry = OlxCountry.KZ
+            client.get("categories")
+            _currentOlxCountry = OlxCountry.UA
+            client.get("categories")
+        } finally {
+            _currentOlxCountry = previousCountry
+        }
+
+        assertEquals(listOf("kk", null), sentLanguages)
     }
 
     private fun sampleTokens(accessToken: String, refreshToken: String = "refresh-token") = OlxTokens(
