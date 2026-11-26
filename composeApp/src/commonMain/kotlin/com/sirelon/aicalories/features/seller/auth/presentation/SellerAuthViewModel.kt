@@ -88,8 +88,16 @@ class SellerAuthViewModel(
                 }
             }
 
+            // The seller's own tap, so it does not break the never-relaunch-automatically rule.
+            SellerAuthContract.SellerAuthEvent.LoginClosedRetryChosen -> {
+                setState { it.copy(showLoginClosedSheet = false) }
+                logLoginClosedChoice("try_again")
+                viewModelScope.launch { startAuthorization() }
+            }
+
             SellerAuthContract.SellerAuthEvent.LoginClosedGuestChosen -> {
                 setState { it.copy(showLoginClosedSheet = false) }
+                logLoginClosedChoice("guest")
                 viewModelScope.launch {
                     analytics.setUserProperty(AnalyticsEvents.USER_PROPERTY_CONNECTED_ACCOUNT_COUNT, "0")
                     authRepository.enterGuestMode(showConnectLaterHint = true)
@@ -99,6 +107,7 @@ class SellerAuthViewModel(
 
             SellerAuthContract.SellerAuthEvent.LoginClosedSheetDismissed -> {
                 setState { it.copy(showLoginClosedSheet = false) }
+                logLoginClosedChoice("not_now")
             }
         }
     }
@@ -163,6 +172,13 @@ class SellerAuthViewModel(
 
     private fun authParams(reason: String): Map<String, Any> =
         mapOf("reason" to reason, "country" to olxCountryStore.current.code)
+
+    private fun logLoginClosedChoice(choice: String) {
+        analytics.logEvent(
+            AnalyticsEvents.OLX_LOGIN_CLOSED_CHOICE,
+            mapOf("choice" to choice, "country" to olxCountryStore.current.code),
+        )
+    }
 
     private fun abandonDuration(): Map<String, Any> =
         authStartedAt?.let { mapOf("duration_ms" to it.elapsedNow().inWholeMilliseconds) }.orEmpty()

@@ -147,6 +147,7 @@ kotlin {
             implementation(libs.androidx.activity.compose)
             implementation(libs.androidx.core.ktx)
             implementation(libs.androidx.exifinterface)
+            implementation(libs.androidx.webkit)
             implementation(libs.koin.android)
             implementation(libs.sqldelight.android.driver)
             implementation(libs.ktor.client.okhttp)

@@ -28,6 +28,26 @@ object AnalyticsEvents {
      */
     const val AUTH_ABANDONED = "auth_abandoned"
 
+    /**
+     * The in-app OLX login web view (Android WebView, iOS WKWebView) closed, in every flow: first
+     * connect, add account and reconnect. `outcome` is `callback` (OLX sent the seller back with a
+     * result, which `auth_completed` or `auth_failed` follows) or `closed` (the seller closed it,
+     * which `auth_abandoned` follows). `page` is where the seller was (OlxLoginPage): `login` (OLX's
+     * sign-in pages), `consent` (OLX's permission page), `olx_home` (OLX left the seller on its
+     * home page), `waiting` (the app's spinner while it holds the request to OLX) or `loading`
+     * (no page had opened). `waits` (Int) is how often the app held or repeated that request,
+     * `country` the OLX market. SIR-203: answers where sellers stop and whether the wait helps.
+     */
+    const val OLX_LOGIN_WEB_VIEW_ENDED = "olx_login_web_view_ended"
+
+    /**
+     * The seller answered the sheet shown after closing the OLX login in the first-connect flow
+     * (OlxLoginClosedSheet). `choice` is `try_again` (opens the login again), `guest` or `not_now`
+     * (the button, a swipe or back: the seller stays on the country picker). `country` is the
+     * OLX market.
+     */
+    const val OLX_LOGIN_CLOSED_CHOICE = "olx_login_closed_choice"
+
     const val ONBOARDING_COMPLETED = "onboarding_completed"
 
     // `generation_id` - a random UUID minted per generation, also the draft's key (SIR-133) - is
