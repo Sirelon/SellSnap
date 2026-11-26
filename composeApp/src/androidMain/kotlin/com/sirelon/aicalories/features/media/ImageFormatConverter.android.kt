@@ -18,7 +18,8 @@ import kotlin.uuid.Uuid
 
 actual fun imageFormatConverter(): ImageFormatConverter = AndroidImageFormatConverter()
 
-private const val JPEG_QUALITY_PERCENT = 80
+/** Upload quality; see [MAX_UPLOAD_IMAGE_LONG_SIDE_PX] for the bench behind it. */
+private const val JPEG_QUALITY_PERCENT = 75
 
 private class AndroidImageFormatConverter : ImageFormatConverter {
 

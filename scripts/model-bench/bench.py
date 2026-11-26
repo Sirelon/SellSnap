@@ -24,7 +24,8 @@ CLIENT = os.path.join(ROOT, 'composeApp/src/commonMain/kotlin/com/sirelon/aicalo
 MANIFEST = json.load(open(os.path.join(HERE, 'manifest.json')))
 CONFIGS = json.load(open(os.path.join(HERE, 'configs.json')))
 COUNTRY = MANIFEST['country']
-# The app uploads 1280 px on the long side at JPEG quality 75 (SIR-174).
+# The app uploads 1280 px on the long side at JPEG quality 75 (SIR-174). A config may set
+# `uploadLongSide` and `uploadQuality` to bench another upload size.
 UPLOAD_LONG_SIDE, UPLOAD_QUALITY = 1280, 75
 # $ per 1M tokens: input, cached input, output. Source: https://developers.openai.com/api/docs/pricing (2026-11-24).
 PRICE = {'gpt-4.1': (2.0, 0.5, 8.0), 'gpt-6-luna': (0.10, 0.01, 0.50),
@@ -54,25 +55,35 @@ def fingerprint(cfg, instructions):
     return hashlib.sha1((json.dumps(cfg, sort_keys=True) + instructions).encode()).hexdigest()[:10]
 
 
-def photo_path(item_id):
-    return os.path.join(PHOTOS, '%03d.jpg' % item_id)
+def upload_size(cfg):
+    return cfg.get('uploadLongSide', UPLOAD_LONG_SIDE), cfg.get('uploadQuality', UPLOAD_QUALITY)
+
+
+def photo_path(item_id, size=(UPLOAD_LONG_SIDE, UPLOAD_QUALITY)):
+    if size == (UPLOAD_LONG_SIDE, UPLOAD_QUALITY):
+        return os.path.join(PHOTOS, '%03d.jpg' % item_id)
+    return os.path.join(PHOTOS, '%dq%d' % size, '%03d.jpg' % item_id)
 
 
 def fetch():
     from PIL import Image, ImageOps
     os.makedirs(os.path.join(PHOTOS, 'orig'), exist_ok=True)
+    sizes = sorted({(UPLOAD_LONG_SIDE, UPLOAD_QUALITY)} | {upload_size(c) for c in CONFIGS.values()})
     for item in MANIFEST['items']:
         orig = os.path.join(PHOTOS, 'orig', '%03d' % item['id'])
         if not os.path.exists(orig):
             subprocess.run(['gsutil', '-q', 'cp', item['gs'], orig], check=True)
-        # Same steps as the app: EXIF orientation baked in, long side capped, never upscaled.
-        im = ImageOps.exif_transpose(Image.open(orig)).convert('RGB')
-        w, h = im.size
-        if max(w, h) > UPLOAD_LONG_SIDE:
-            s = UPLOAD_LONG_SIDE / max(w, h)
-            im = im.resize((max(1, round(w * s)), max(1, round(h * s))), Image.BILINEAR, reducing_gap=2.0)
-        im.save(photo_path(item['id']), 'JPEG', quality=UPLOAD_QUALITY)
-        print('%03d %dx%d' % (item['id'], *im.size))
+        for long_side, quality in sizes:
+            # Same steps as the app: EXIF orientation baked in, long side capped, never upscaled.
+            im = ImageOps.exif_transpose(Image.open(orig)).convert('RGB')
+            w, h = im.size
+            if max(w, h) > long_side:
+                s = long_side / max(w, h)
+                im = im.resize((max(1, round(w * s)), max(1, round(h * s))), Image.BILINEAR, reducing_gap=2.0)
+            path = photo_path(item['id'], (long_side, quality))
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+            im.save(path, 'JPEG', quality=quality)
+            print('%03d %dx%d q%d %d KB' % (item['id'], *im.size, quality, os.path.getsize(path) // 1024))
 
 
 def api_key():
@@ -85,7 +96,7 @@ def api_key():
 def call(name, item_id, key):
     cfg = CONFIGS[name]
     instructions, version = instructions_for(cfg)
-    b64 = base64.b64encode(open(photo_path(item_id), 'rb').read()).decode()
+    b64 = base64.b64encode(open(photo_path(item_id, upload_size(cfg)), 'rb').read()).decode()
     body = {'model': cfg['model'], 'instructions': instructions, 'store': False,
             'max_output_tokens': cfg.get('maxOutputTokens', 1000),
             'input': [{'role': 'user', 'content': [
@@ -128,7 +139,8 @@ def load_runs(name):
 
 def run(names):
     key = api_key()
-    missing = [i['id'] for i in MANIFEST['items'] if not os.path.exists(photo_path(i['id']))]
+    missing = [i['id'] for n in names for i in MANIFEST['items']
+               if not os.path.exists(photo_path(i['id'], upload_size(CONFIGS[n])))]
     if missing:
         sys.exit('photos missing, run `bench.py fetch` first: %s' % missing)
     stab = MANIFEST['stability']
