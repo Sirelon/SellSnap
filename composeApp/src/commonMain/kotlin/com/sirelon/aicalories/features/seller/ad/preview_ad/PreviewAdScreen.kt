@@ -12,6 +12,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
@@ -33,6 +35,7 @@ import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
@@ -89,8 +92,11 @@ import com.sirelon.sellsnap.designsystem.AppCard
 import com.sirelon.sellsnap.analytics.Analytics
 import com.sirelon.sellsnap.analytics.AnalyticsEvents
 import com.sirelon.sellsnap.designsystem.AppDimens
+import com.sirelon.sellsnap.designsystem.centeredContentWidth
+import com.sirelon.sellsnap.designsystem.centeredTwoPaneWidth
 import com.sirelon.sellsnap.designsystem.AppScaffold
 import com.sirelon.sellsnap.designsystem.AppTheme
+import com.sirelon.sellsnap.designsystem.isExpandedWidthWindow
 import com.sirelon.sellsnap.designsystem.performErrorFeedback
 import com.sirelon.sellsnap.designsystem.performSuccessFeedback
 import com.sirelon.sellsnap.designsystem.DigitOnlyInputTransformation
@@ -301,183 +307,247 @@ internal fun PreviewAdContentRoute(
         }
     }
 
+    // Landscape tablets and desktop: the photos stay on the left while the seller edits the
+    // fields on the right, with Publish under them. Narrower windows keep the one centred column.
+    val isTwoPane = isExpandedWidthWindow()
+    val publishBar: @Composable (Modifier) -> Unit = { barModifier ->
+        Column(
+            modifier = barModifier
+                .imePadding()
+                .navigationBarsPadding()
+                .padding(horizontal = AppDimens.Spacing.xl3)
+                .padding(bottom = AppDimens.Spacing.m),
+            verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.m),
+        ) {
+            if (state.isSessionResolved && state.isGuest) {
+                GuestModeBanner()
+                AppButton(
+                    modifier = Modifier.fillMaxWidth(),
+                    style = AppButtonDefaults.primary(),
+                    text = stringResource(Res.string.guest_connect_olx_cta),
+                    onClick = {
+                        dismissKeyboard()
+                        onConnectOlxClick("preview_cta")
+                    },
+                )
+            } else if (state.isSessionResolved && state.isUpdatingListing) {
+                // A regeneration or a polish is about to change what would be posted.
+                AppButton(
+                    modifier = Modifier.fillMaxWidth().testTag("preview_ad_publish_button"),
+                    text = stringResource(Res.string.publish_updating_listing),
+                    enabled = false,
+                    onClick = {},
+                )
+            } else if (state.isSessionResolved) {
+                AppButton(
+                    modifier = Modifier.fillMaxWidth().testTag("preview_ad_publish_button"),
+                    style = if (isValid) AppButtonDefaults.success() else AppButtonDefaults.primary(),
+                    text = if (isValid) {
+                        stringResource(Res.string.publish_on_olx)
+                    } else {
+                        stringResource(Res.string.publish_errors, validationErrors.size)
+                    },
+                    trailingIcon = painterResource(Res.drawable.ic_arrow_right),
+                    onClick = {
+                        if (!isValid && !screenshotMode) {
+                            hapticFeedback.performErrorFeedback()
+                            showErrors = true
+                            val attributeCode = firstInvalidAttributeCode
+                            if (attributeCode != null) {
+                                autoOpenAttributeCode = attributeCode
+                                autoOpenAttributeRequest += 1
+                            } else {
+                                coroutineScope.launch { scrollState.animateScrollTo(0) }
+                            }
+                        } else {
+                            hapticFeedback.performSuccessFeedback()
+                            dismissKeyboard()
+                            onPublishConfirmationRequested()
+                        }
+                    },
+                )
+            }
+        }
+    }
+    val fields: @Composable ColumnScope.() -> Unit = {
+        // 0 means no generation ran in this flow (reopened from Recent, or a process-death
+        // restore); formatFriendlyElapsedTime would floor it to "1 second".
+        if (state.generationElapsedMs > 0) {
+            ReadyBanner(
+                elapsedMs = state.generationElapsedMs,
+                modifier = Modifier.padding(horizontal = AppDimens.Spacing.xl3),
+            )
+        }
+
+        // SIR-83 U6: this is a normal scrollable card, not pinned to the bottom bar - a
+        // dynamically-shown row inside AppScaffold's bottomBar changes the bar's height
+        // after first layout, which Material3's Scaffold does not always re-settle against
+        // the scrollable content's bottom padding, so the row could visually overlap the
+        // card above it. Matches the design mock's placement (accounts.jsx/screens3.jsx),
+        // which renders it as page content right below the "ready in" banner, not fixed.
+        if (state.isSessionResolved && !state.isGuest) {
+            val targetAccount = state.targetAccount
+            if (state.showTargetAccountRow && targetAccount != null) {
+                PublishTargetAccountRow(
+                    account = targetAccount,
+                    onClick = {
+                        dismissKeyboard()
+                        onTargetAccountRowClick()
+                    },
+                    modifier = Modifier.padding(horizontal = AppDimens.Spacing.xl3),
+                )
+            }
+        }
+
+        AnimatedVisibility(
+            visible = showErrors && !isValid,
+            enter = fadeIn() + expandVertically(),
+            exit = fadeOut() + shrinkVertically(),
+        ) {
+            ValidationBanner(
+                errors = validationErrors,
+                modifier = Modifier.padding(horizontal = AppDimens.Spacing.xl3),
+            )
+        }
+
+        PreviewAdContent(
+            onEvent = viewModel::onEvent,
+            onConnectOlxClick = onConnectOlxClick,
+            state = state,
+            titleState = viewModel.titleState,
+            descriptionState = viewModel.descriptionState,
+            descriptionDictationLanguageTag = viewModel.descriptionDictationLanguageTag,
+            onLocationClick = if (state.isSessionResolved && !state.isGuest) {
+                {
+                    dismissKeyboard()
+                    onChangeLocationClick()
+                }
+            } else {
+                null
+            },
+            autoOpenAttributeCode = autoOpenAttributeCode,
+            autoOpenAttributeRequest = autoOpenAttributeRequest,
+            autoOpenAttributeModifier = Modifier.bringIntoViewRequester(invalidAttributeBringIntoViewRequester),
+        )
+        if (state.isSessionResolved && !state.isGuest) {
+            ValidationStatusCard(
+                modifier = Modifier
+                    .padding(horizontal = AppDimens.Spacing.xl3)
+                    .testTag("preview_ad_validation_status"),
+                isValid = isValid,
+                errorCount = validationErrors.size,
+            )
+        }
+    }
+    val backButton: @Composable (Modifier) -> Unit = { buttonModifier ->
+        IconButton(
+            onClick = {
+                dismissKeyboard()
+                onBack()
+            },
+            modifier = buttonModifier
+                .size(AppDimens.Size.xl11)
+                .background(Color.Black.copy(alpha = 0.35f), CircleShape)
+                .testTag("preview_ad_back_button"),
+        ) {
+            Icon(
+                painter = painterResource(Res.drawable.ic_arrow_left),
+                contentDescription = stringResource(Res.string.back),
+                tint = Color.White,
+            )
+        }
+    }
+
     AppScaffold(
         modifier = Modifier
             .fillMaxSize()
             .testTag("preview_ad_screen")
             .dismissKeyboardOnTapOutside(dismissKeyboard),
-        contentWindowInsets = WindowInsets.safeDrawing.exclude(WindowInsets.statusBars),
+        // One column draws its photo behind the status bar; two panes keep both below it.
+        contentWindowInsets = if (isTwoPane) {
+            WindowInsets.safeDrawing
+        } else {
+            WindowInsets.safeDrawing.exclude(WindowInsets.statusBars)
+        },
         snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .imePadding()
-                    .navigationBarsPadding()
-                    .padding(horizontal = AppDimens.Spacing.xl3)
-                    .padding(bottom = AppDimens.Spacing.m),
-                verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.m),
-            ) {
-                if (state.isSessionResolved && state.isGuest) {
-                    GuestModeBanner()
-                    AppButton(
-                        modifier = Modifier.fillMaxWidth(),
-                        style = AppButtonDefaults.primary(),
-                        text = stringResource(Res.string.guest_connect_olx_cta),
-                        onClick = {
-                            dismissKeyboard()
-                            onConnectOlxClick("preview_cta")
-                        },
-                    )
-                } else if (state.isSessionResolved && state.isUpdatingListing) {
-                    // A regeneration or a polish is about to change what would be posted.
-                    AppButton(
-                        modifier = Modifier.fillMaxWidth().testTag("preview_ad_publish_button"),
-                        text = stringResource(Res.string.publish_updating_listing),
-                        enabled = false,
-                        onClick = {},
-                    )
-                } else if (state.isSessionResolved) {
-                    AppButton(
-                        modifier = Modifier.fillMaxWidth().testTag("preview_ad_publish_button"),
-                        style = if (isValid) AppButtonDefaults.success() else AppButtonDefaults.primary(),
-                        text = if (isValid) {
-                            stringResource(Res.string.publish_on_olx)
-                        } else {
-                            stringResource(Res.string.publish_errors, validationErrors.size)
-                        },
-                        trailingIcon = painterResource(Res.drawable.ic_arrow_right),
-                        onClick = {
-                            if (!isValid && !screenshotMode) {
-                                hapticFeedback.performErrorFeedback()
-                                showErrors = true
-                                val attributeCode = firstInvalidAttributeCode
-                                if (attributeCode != null) {
-                                    autoOpenAttributeCode = attributeCode
-                                    autoOpenAttributeRequest += 1
-                                } else {
-                                    coroutineScope.launch { scrollState.animateScrollTo(0) }
-                                }
-                            } else {
-                                hapticFeedback.performSuccessFeedback()
-                                dismissKeyboard()
-                                onPublishConfirmationRequested()
-                            }
-                        },
-                    )
-                }
-            }
+            if (!isTwoPane) publishBar(Modifier.centeredContentWidth())
         },
     ) { paddingValues ->
-        Box(
-            modifier = Modifier
-                .padding(paddingValues)
-                .consumeWindowInsets(paddingValues),
-        ) {
-        Column(
-            modifier = Modifier
-                .testTag("preview_ad_scrollable_content")
-                .dismissKeyboardOnVerticalDrag(dismissKeyboard)
-                .verticalScroll(scrollState)
-                .padding(bottom = AppDimens.Spacing.xl3),
-            verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.xl3)
-        ) {
-            ImagesCarousel(
-                images = state.images,
-                onImageClick = {
-                    dismissKeyboard()
-                    showImagesPreview(state.images, it)
-                },
-            )
-
-            // 0 means no generation ran in this flow (reopened from Recent, or a process-death
-            // restore); formatFriendlyElapsedTime would floor it to "1 second".
-            if (state.generationElapsedMs > 0) {
-                ReadyBanner(
-                    elapsedMs = state.generationElapsedMs,
-                    modifier = Modifier.padding(horizontal = AppDimens.Spacing.xl3),
-                )
-            }
-
-            // SIR-83 U6: this is a normal scrollable card, not pinned to the bottom bar - a
-            // dynamically-shown row inside AppScaffold's bottomBar changes the bar's height
-            // after first layout, which Material3's Scaffold does not always re-settle against
-            // the scrollable content's bottom padding, so the row could visually overlap the
-            // card above it. Matches the design mock's placement (accounts.jsx/screens3.jsx),
-            // which renders it as page content right below the "ready in" banner, not fixed.
-            if (state.isSessionResolved && !state.isGuest) {
-                val targetAccount = state.targetAccount
-                if (state.showTargetAccountRow && targetAccount != null) {
-                    PublishTargetAccountRow(
-                        account = targetAccount,
-                        onClick = {
+        if (isTwoPane) {
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .consumeWindowInsets(paddingValues)
+                    .centeredTwoPaneWidth(),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .padding(AppDimens.Spacing.xl3),
+                ) {
+                    // The modifier's size wins over the carousel's phone height.
+                    ImagesCarousel(
+                        images = state.images,
+                        onImageClick = {
                             dismissKeyboard()
-                            onTargetAccountRowClick()
+                            showImagesPreview(state.images, it)
                         },
-                        modifier = Modifier.padding(horizontal = AppDimens.Spacing.xl3),
+                        shape = RoundedCornerShape(AppDimens.BorderRadius.xl9),
+                        modifier = Modifier.fillMaxSize(),
                     )
+                    backButton(Modifier.align(Alignment.TopStart).padding(AppDimens.Spacing.xl3))
+                }
+                Column(modifier = Modifier.weight(1f).fillMaxHeight()) {
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .testTag("preview_ad_scrollable_content")
+                            .dismissKeyboardOnVerticalDrag(dismissKeyboard)
+                            .verticalScroll(scrollState)
+                            .padding(vertical = AppDimens.Spacing.xl3),
+                        verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.xl3),
+                        content = fields,
+                    )
+                    publishBar(Modifier.fillMaxWidth())
                 }
             }
-
-            AnimatedVisibility(
-                visible = showErrors && !isValid,
-                enter = fadeIn() + expandVertically(),
-                exit = fadeOut() + shrinkVertically(),
-            ) {
-                ValidationBanner(
-                    errors = validationErrors,
-                    modifier = Modifier.padding(horizontal = AppDimens.Spacing.xl3),
-                )
-            }
-
-            PreviewAdContent(
-                onEvent = viewModel::onEvent,
-                onConnectOlxClick = onConnectOlxClick,
-                state = state,
-                titleState = viewModel.titleState,
-                descriptionState = viewModel.descriptionState,
-                descriptionDictationLanguageTag = viewModel.descriptionDictationLanguageTag,
-                onLocationClick = if (state.isSessionResolved && !state.isGuest) {
-                    {
-                        dismissKeyboard()
-                        onChangeLocationClick()
-                    }
-                } else {
-                    null
-                },
-                autoOpenAttributeCode = autoOpenAttributeCode,
-                autoOpenAttributeRequest = autoOpenAttributeRequest,
-                autoOpenAttributeModifier = Modifier.bringIntoViewRequester(invalidAttributeBringIntoViewRequester),
-            )
-            if (state.isSessionResolved && !state.isGuest) {
-                ValidationStatusCard(
-                    modifier = Modifier
-                        .padding(horizontal = AppDimens.Spacing.xl3)
-                        .testTag("preview_ad_validation_status"),
-                    isValid = isValid,
-                    errorCount = validationErrors.size,
-                )
-            }
-        }
-
-            IconButton(
-                onClick = {
-                    dismissKeyboard()
-                    onBack()
-                },
+        } else {
+            Box(
                 modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .systemBarsPadding()
-                    .padding(AppDimens.Spacing.xl3)
-                    .size(AppDimens.Size.xl11)
-                    .background(Color.Black.copy(alpha = 0.35f), CircleShape)
-                    .testTag("preview_ad_back_button"),
+                    .padding(paddingValues)
+                    .consumeWindowInsets(paddingValues),
             ) {
-                Icon(
-                    painter = painterResource(Res.drawable.ic_arrow_left),
-                    contentDescription = stringResource(Res.string.back),
-                    tint = Color.White,
-                )
+                Column(
+                    modifier = Modifier
+                        .testTag("preview_ad_scrollable_content")
+                        .dismissKeyboardOnVerticalDrag(dismissKeyboard)
+                        .verticalScroll(scrollState)
+                        .centeredContentWidth()
+                        .padding(bottom = AppDimens.Spacing.xl3),
+                    verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.xl3)
+                ) {
+                    ImagesCarousel(
+                        images = state.images,
+                        onImageClick = {
+                            dismissKeyboard()
+                            showImagesPreview(state.images, it)
+                        },
+                    )
+                    fields()
+                }
+
+                // Over the photo's corner, which moves inward once the column is centred.
+                Box(modifier = Modifier.align(Alignment.TopCenter).centeredContentWidth()) {
+                    backButton(
+                        Modifier
+                            .align(Alignment.TopStart)
+                            .systemBarsPadding()
+                            .padding(AppDimens.Spacing.xl3),
+                    )
+                }
             }
         }
     }

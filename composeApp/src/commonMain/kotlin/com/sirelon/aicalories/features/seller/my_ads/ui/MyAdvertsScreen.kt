@@ -1,9 +1,12 @@
 package com.sirelon.sellsnap.features.seller.my_ads.ui
 
+import com.sirelon.sellsnap.designsystem.centeredContentWidth
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.consumeWindowInsets
@@ -49,6 +52,7 @@ import com.sirelon.sellsnap.designsystem.AppCard
 import com.sirelon.sellsnap.designsystem.AppDimens
 import com.sirelon.sellsnap.designsystem.AppScaffold
 import com.sirelon.sellsnap.designsystem.AppTheme
+import com.sirelon.sellsnap.designsystem.centeredListPadding
 import com.sirelon.sellsnap.designsystem.ErrorPill
 import com.sirelon.sellsnap.designsystem.ObserveAsEvents
 import com.sirelon.sellsnap.designsystem.Pill
@@ -157,16 +161,15 @@ private fun MyAdvertsScreen(
     ) { padding ->
         when {
             state.requiresOlxConnection -> {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(padding)
-                        .consumeWindowInsets(padding)
-                        .padding(horizontal = AppDimens.Spacing.xl3),
-                    verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.xl4),
-                ) {
-                    item { MyAdsHeader(accountName = null) }
-                    item { ConnectionRequiredCard(onConnect = { onEvent(Event.ConnectOlxClicked) }) }
+                BoxWithConstraints(modifier = Modifier.fillMaxSize().consumeWindowInsets(padding)) {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = centeredListPadding(base = padding, padding = AppDimens.Spacing.xl3),
+                        verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.xl4),
+                    ) {
+                        item { MyAdsHeader(accountName = null) }
+                        item { ConnectionRequiredCard(onConnect = { onEvent(Event.ConnectOlxClicked) }) }
+                    }
                 }
             }
 
@@ -318,7 +321,7 @@ private fun AccountTabRow(
     onPageSelected: (Int) -> Unit,
 ) {
     val selectedTabIndex = pages.indexOfFirst { it.localIndex == selectedLocalIndex }.coerceAtLeast(0)
-    PrimaryTabRow(selectedTabIndex = selectedTabIndex) {
+    PrimaryTabRow(selectedTabIndex = selectedTabIndex, modifier = Modifier.centeredContentWidth()) {
         pages.forEachIndexed { index, page ->
             Tab(
                 selected = index == selectedTabIndex,
@@ -375,69 +378,70 @@ private fun AccountPageContent(
         onRefresh = { onEvent(Event.RefreshClicked(page.localIndex)) },
         modifier = Modifier.fillMaxSize(),
     ) {
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = AppDimens.Spacing.xl3),
-            verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.xl4),
-        ) {
-            item {
-                MyAdsHeader(accountName = page.accountName)
-            }
-
-            when {
-                page.needsReconnect -> item {
-                    ReconnectRequiredCard(
-                        accountName = page.accountName,
-                        onReconnect = { onEvent(Event.ReconnectClicked(page.localIndex)) },
-                    )
+        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = centeredListPadding(base = PaddingValues(), padding = AppDimens.Spacing.xl3),
+                verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.xl4),
+            ) {
+                item {
+                    MyAdsHeader(accountName = page.accountName)
                 }
 
-                page.adverts.isEmpty() && !page.isLoading && page.errorMessage == null -> item {
-                    EmptyAdsCard(
-                        accountName = page.accountName,
-                        onCreateListing = { onEvent(Event.CreateListingClicked) },
-                    )
-                }
-
-                else -> {
-                    items(
-                        items = page.adverts,
-                        key = { it.id },
-                    ) { advert ->
-                        AdvertCard(
-                            advert = advert,
-                            unreadCount = page.unreadByAdvert[advert.id] ?: 0,
-                            onClick = { onEvent(Event.AdvertClicked(page.localIndex, advert)) },
-                            onUnreadClick = { count -> onEvent(Event.UnreadMarkerClicked(count)) },
+                when {
+                    page.needsReconnect -> item {
+                        ReconnectRequiredCard(
+                            accountName = page.accountName,
+                            onReconnect = { onEvent(Event.ReconnectClicked(page.localIndex)) },
                         )
                     }
 
-                    if (page.canLoadMore) {
-                        item {
-                            AppButton(
-                                modifier = Modifier.fillMaxWidth(),
-                                text = stringResource(Res.string.my_ads_load_more),
-                                onClick = { onEvent(Event.LoadMoreClicked(page.localIndex)) },
-                                enabled = !page.isLoadingMore,
-                                style = AppButtonDefaults.outline(),
+                    page.adverts.isEmpty() && !page.isLoading && page.errorMessage == null -> item {
+                        EmptyAdsCard(
+                            accountName = page.accountName,
+                            onCreateListing = { onEvent(Event.CreateListingClicked) },
+                        )
+                    }
+
+                    else -> {
+                        items(
+                            items = page.adverts,
+                            key = { it.id },
+                        ) { advert ->
+                            AdvertCard(
+                                advert = advert,
+                                unreadCount = page.unreadByAdvert[advert.id] ?: 0,
+                                onClick = { onEvent(Event.AdvertClicked(page.localIndex, advert)) },
+                                onUnreadClick = { count -> onEvent(Event.UnreadMarkerClicked(count)) },
                             )
+                        }
+
+                        if (page.canLoadMore) {
+                            item {
+                                AppButton(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    text = stringResource(Res.string.my_ads_load_more),
+                                    onClick = { onEvent(Event.LoadMoreClicked(page.localIndex)) },
+                                    enabled = !page.isLoadingMore,
+                                    style = AppButtonDefaults.outline(),
+                                )
+                            }
                         }
                     }
                 }
-            }
 
-            page.errorMessage?.let { message ->
-                item {
-                    ErrorCard(
-                        message = message,
-                        onRetry = { onEvent(Event.RefreshClicked(page.localIndex)) },
-                    )
+                page.errorMessage?.let { message ->
+                    item {
+                        ErrorCard(
+                            message = message,
+                            onRetry = { onEvent(Event.RefreshClicked(page.localIndex)) },
+                        )
+                    }
                 }
-            }
 
-            item {
-                Spacer(modifier = Modifier.height(AppDimens.Spacing.xl3))
+                item {
+                    Spacer(modifier = Modifier.height(AppDimens.Spacing.xl3))
+                }
             }
         }
 

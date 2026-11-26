@@ -33,6 +33,7 @@ import com.sirelon.sellsnap.designsystem.AppScaffold
 import com.sirelon.sellsnap.designsystem.AppTheme
 import com.sirelon.sellsnap.designsystem.AppThemeMode
 import com.sirelon.sellsnap.designsystem.Cell
+import com.sirelon.sellsnap.designsystem.centeredContentWidth
 import com.sirelon.sellsnap.designsystem.ObserveAsEvents
 import com.sirelon.sellsnap.features.seller.settings.presentation.SettingsContract.SettingsEffect
 import com.sirelon.sellsnap.features.seller.settings.presentation.SettingsContract.SettingsEvent
@@ -137,6 +138,7 @@ private fun SettingsScreen(
                 .padding(padding)
                 .consumeWindowInsets(padding)
                 .verticalScroll(rememberScrollState())
+                .centeredContentWidth()
                 .padding(AppDimens.Spacing.xl3),
             verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.xl4),
         ) {

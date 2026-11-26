@@ -2,6 +2,7 @@ package com.sirelon.sellsnap.features.seller.drafts.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -28,6 +29,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sirelon.sellsnap.designsystem.AppDimens
 import com.sirelon.sellsnap.designsystem.AppScaffold
 import com.sirelon.sellsnap.designsystem.AppTheme
+import com.sirelon.sellsnap.designsystem.centeredListPadding
 import com.sirelon.sellsnap.designsystem.ObserveAsEvents
 import com.sirelon.sellsnap.features.seller.ad.AdvertisementWithAttributes
 import com.sirelon.sellsnap.features.seller.drafts.presentation.DraftsContract
@@ -109,22 +111,22 @@ fun DraftsScreenRoute(
                 )
             }
         } else {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .testTag("drafts_list")
-                    .consumeWindowInsets(padding),
-                contentPadding = padding,
-                verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.xl4),
-            ) {
-                items(drafts, key = { it.id }) { draft ->
-                    DraftCard(
-                        draft = draft,
-                        currency = state.currency,
-                        onOpen = { viewModel.onEvent(DraftsContract.DraftsEvent.Open(draft)) },
-                        onRemove = { viewModel.onEvent(DraftsContract.DraftsEvent.Remove(draft)) },
-                        modifier = Modifier.padding(horizontal = AppDimens.Spacing.xl3),
-                    )
+            BoxWithConstraints(modifier = Modifier.fillMaxSize().consumeWindowInsets(padding)) {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .testTag("drafts_list"),
+                    contentPadding = centeredListPadding(base = padding, padding = AppDimens.Spacing.xl3),
+                    verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.xl4),
+                ) {
+                    items(drafts, key = { it.id }) { draft ->
+                        DraftCard(
+                            draft = draft,
+                            currency = state.currency,
+                            onOpen = { viewModel.onEvent(DraftsContract.DraftsEvent.Open(draft)) },
+                            onRemove = { viewModel.onEvent(DraftsContract.DraftsEvent.Remove(draft)) },
+                        )
+                    }
                 }
             }
         }

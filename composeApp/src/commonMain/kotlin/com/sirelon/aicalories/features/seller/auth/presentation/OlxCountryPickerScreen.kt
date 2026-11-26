@@ -39,6 +39,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sirelon.sellsnap.designsystem.AppDimens
 import com.sirelon.sellsnap.designsystem.AppScaffold
 import com.sirelon.sellsnap.designsystem.AppTheme
+import com.sirelon.sellsnap.designsystem.centeredContentWidth
 import com.sirelon.sellsnap.designsystem.ObserveAsEvents
 import com.sirelon.sellsnap.designsystem.buttons.AppButton
 import com.sirelon.sellsnap.designsystem.buttons.AppButtonDefaults
@@ -149,10 +150,12 @@ private fun OlxCountryPickerScreen(
 
             // Header
             Column(
-                modifier = Modifier.padding(
-                    horizontal = AppDimens.Spacing.xl6,
-                    vertical = AppDimens.Spacing.xl3,
-                ),
+                modifier = Modifier
+                    .centeredContentWidth()
+                    .padding(
+                        horizontal = AppDimens.Spacing.xl6,
+                        vertical = AppDimens.Spacing.xl3,
+                    ),
                 verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.m),
             ) {
                 Text(
@@ -172,6 +175,7 @@ private fun OlxCountryPickerScreen(
             LazyColumn(
                 modifier = Modifier
                     .weight(1f)
+                    .centeredContentWidth()
                     .padding(horizontal = AppDimens.Spacing.xl5)
                     .clip(RoundedCornerShape(AppDimens.BorderRadius.xl3))
                     .border(
@@ -201,6 +205,7 @@ private fun OlxCountryPickerScreen(
                     color = AppTheme.colors.error,
                     style = AppTheme.typography.label,
                     modifier = Modifier
+                        .centeredContentWidth()
                         .padding(horizontal = AppDimens.Spacing.xl6)
                         .padding(top = AppDimens.Spacing.xl3),
                 )
@@ -211,7 +216,7 @@ private fun OlxCountryPickerScreen(
                 text = stringResource(Res.string.olx_country_picker_continue) + " · ${selected.domain}",
                 onClick = { onConfirm(selected) },
                 modifier = Modifier
-                    .fillMaxWidth()
+                    .centeredContentWidth()
                     .padding(horizontal = AppDimens.Spacing.xl5)
                     .padding(top = AppDimens.Spacing.xl3, bottom = AppDimens.Spacing.xl10)
                     .testTag("country_picker_continue_button"),

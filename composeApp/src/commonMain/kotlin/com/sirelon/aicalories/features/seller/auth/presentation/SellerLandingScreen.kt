@@ -40,6 +40,7 @@ import com.sirelon.sellsnap.designsystem.AppDimens
 import com.sirelon.sellsnap.designsystem.AppDivider
 import com.sirelon.sellsnap.designsystem.AppScaffold
 import com.sirelon.sellsnap.designsystem.AppTheme
+import com.sirelon.sellsnap.designsystem.centeredContentWidth
 import com.sirelon.sellsnap.designsystem.IconWithBackground
 import com.sirelon.sellsnap.designsystem.ObserveAsEvents
 import com.sirelon.sellsnap.designsystem.buttons.AppButton
@@ -114,6 +115,7 @@ fun SellerLandingScreen(
                 .consumeWindowInsets(padding)
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
+                .centeredContentWidth()
                 .padding(AppDimens.Spacing.xl6)
                 .padding(top = AppDimens.Spacing.xl10),
             horizontalAlignment = Alignment.CenterHorizontally,

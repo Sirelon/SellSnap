@@ -54,6 +54,7 @@ import com.sirelon.sellsnap.designsystem.AppCard
 import com.sirelon.sellsnap.designsystem.AppDimens
 import com.sirelon.sellsnap.designsystem.AppScaffold
 import com.sirelon.sellsnap.designsystem.AppTheme
+import com.sirelon.sellsnap.designsystem.centeredContentWidth
 import com.sirelon.sellsnap.designsystem.performSuccessFeedback
 import com.sirelon.sellsnap.designsystem.buttons.AppButton
 import com.sirelon.sellsnap.designsystem.buttons.AppButtonDefaults
@@ -112,8 +113,9 @@ fun PublishSuccessScreen(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .navigationBarsPadding()
                     .background(AppTheme.colors.background)
+                    .navigationBarsPadding()
+                    .centeredContentWidth()
                     .padding(horizontal = AppDimens.Spacing.xl3)
                     .padding(bottom = AppDimens.Spacing.m, top = AppDimens.Spacing.m),
                 verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.m),
@@ -146,6 +148,7 @@ fun PublishSuccessScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState())
+                    .centeredContentWidth()
                     .padding(horizontal = AppDimens.Spacing.xl3)
                     .padding(top = AppDimens.Spacing.xl8, bottom = AppDimens.Spacing.xl8),
                 horizontalAlignment = Alignment.CenterHorizontally,

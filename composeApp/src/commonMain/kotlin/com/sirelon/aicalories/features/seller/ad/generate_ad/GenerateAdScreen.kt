@@ -4,7 +4,10 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
@@ -17,6 +20,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -51,8 +55,12 @@ import com.mohamedrejeb.calf.picker.FilePickerSelectionMode
 import com.sirelon.sellsnap.designsystem.AppCard
 import com.sirelon.sellsnap.designsystem.AppDimens
 import com.sirelon.sellsnap.designsystem.AppTheme
+import com.sirelon.sellsnap.designsystem.centeredContentWidth
+import com.sirelon.sellsnap.designsystem.centeredListPadding
+import com.sirelon.sellsnap.designsystem.centeredTwoPaneWidth
 import com.sirelon.sellsnap.designsystem.IconWithBackground
 import com.sirelon.sellsnap.designsystem.Input
+import com.sirelon.sellsnap.designsystem.isExpandedWidthWindow
 import com.sirelon.sellsnap.designsystem.ObserveAsEvents
 import com.sirelon.sellsnap.designsystem.buttons.AppButton
 import com.sirelon.sellsnap.designsystem.buttons.AppButtonDefaults
@@ -226,6 +234,43 @@ private fun GenerateAdScreenContent(
 ) {
     val dismissKeyboard = rememberKeyboardDismissAction()
 
+    // Landscape tablets and desktop: photos on the left, draft, tips and prompt on the right,
+    // the CTA under the right pane. Narrower windows keep the one centred column.
+    val isTwoPane = isExpandedWidthWindow()
+    val ctaBar: @Composable (Modifier, PaddingValues) -> Unit = { barModifier, barPadding ->
+        Box(
+            modifier = barModifier
+                .imePadding()
+                .navigationBarsPadding()
+                .padding(barPadding),
+        ) {
+            MagicCtaBar(
+                hasPhotos = state.uploads.isNotEmpty(),
+                canSubmit = state.canSubmit,
+                onSubmitClick = onSubmitClick,
+                onAddPhotoClick = onTakePhotoClick,
+            )
+        }
+    }
+    val photoItems: LazyListScope.() -> Unit = {
+        photoItems(
+            state = state,
+            onTakePhotoClick = onTakePhotoClick,
+            onUploadClick = onUploadClick,
+            onRemovePhoto = onRemovePhoto,
+            onReconnect = onReconnect,
+        )
+    }
+    val promptItems: LazyListScope.() -> Unit = {
+        promptItems(
+            state = state,
+            hintSpeechToText = hintSpeechToText,
+            onPromptChanged = onPromptChanged,
+            onOpenDraft = onOpenDraft,
+            onSeeAllDrafts = onSeeAllDrafts,
+        )
+    }
+
     Scaffold(
         modifier = modifier
             .fillMaxSize()
@@ -233,100 +278,137 @@ private fun GenerateAdScreenContent(
         contentWindowInsets = WindowInsets.safeDrawing,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .imePadding()
-                    .navigationBarsPadding()
-                    .padding(AppDimens.Spacing.xl3),
-            ) {
-                MagicCtaBar(
-                    hasPhotos = state.uploads.isNotEmpty(),
-                    canSubmit = state.canSubmit,
-                    onSubmitClick = onSubmitClick,
-                    onAddPhotoClick = onTakePhotoClick,
-                )
-            }
+            if (!isTwoPane) ctaBar(Modifier.centeredContentWidth(), PaddingValues(AppDimens.Spacing.xl3))
         }
     ) { padding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .testTag("generate_ad_screen")
-                .consumeWindowInsets(padding)
-                .padding(horizontal = AppDimens.Spacing.xl3),
-            contentPadding = padding,
-            verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.xl6)
-        ) {
-            item {
-                SellerHeader()
-            }
-            item {
-                PageTitle()
-            }
-
-            if (state.showGuestConnectHint) {
-                item {
-                    GuestConnectHintCard()
-                }
-            }
-
-            state.reconnectAccountName?.let { accountName ->
-                item {
-                    ReconnectCard(accountName = accountName, onReconnect = onReconnect)
-                }
-            }
-
-            state.errorMessage?.let { errorMessage ->
-                item {
-                    ErrorMessageCard(message = errorMessage)
-                }
-            }
-
-            item {
-                PhotosGrid(
-                    files = state.uploads,
-                    onAddPhoto = onTakePhotoClick,
-                    onRemovePhoto = onRemovePhoto,
-                    interactionEnabled = !state.isLoading,
+        if (isTwoPane) {
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .testTag("generate_ad_screen")
+                    .padding(padding)
+                    .consumeWindowInsets(padding)
+                    .centeredTwoPaneWidth()
+                    .padding(horizontal = AppDimens.Spacing.xl3),
+                horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing.xl6),
+            ) {
+                LazyColumn(
+                    modifier = Modifier.weight(1f).fillMaxHeight(),
+                    contentPadding = PaddingValues(vertical = AppDimens.Spacing.xl3),
+                    verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.xl6),
+                    content = photoItems,
                 )
-            }
-            if (state.uploads.size < MAX_PHOTOS) {
-                item {
-                    Box {
-                        CameraGalleryPicker(
-                            onCameraClick = onTakePhotoClick,
-                            onGalleryClick = onUploadClick,
-                            enabled = !state.isLoading,
-                        )
-                    }
-                }
-            }
-
-            if (state.latestDraft != null) {
-                item {
-                    DraftsSection(
-                        latestDraft = state.latestDraft,
-                        currency = state.draftsCurrency,
-                        onOpen = onOpenDraft,
-                        onSeeAll = onSeeAllDrafts,
+                Column(modifier = Modifier.weight(1f).fillMaxHeight()) {
+                    LazyColumn(
+                        modifier = Modifier.weight(1f),
+                        contentPadding = PaddingValues(vertical = AppDimens.Spacing.xl3),
+                        verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.xl6),
+                        content = promptItems,
                     )
+                    // The scaffold's padding already lifts the pane above the keyboard and the
+                    // navigation bar, so the bar's own inset padding adds nothing here.
+                    ctaBar(Modifier.fillMaxWidth(), PaddingValues(vertical = AppDimens.Spacing.xl3))
                 }
             }
-
-            item {
-                TipsSection()
+        } else {
+            BoxWithConstraints(modifier = Modifier.fillMaxSize().consumeWindowInsets(padding)) {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .testTag("generate_ad_screen"),
+                    contentPadding = centeredListPadding(base = padding, padding = AppDimens.Spacing.xl3),
+                    verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.xl6)
+                ) {
+                    photoItems()
+                    promptItems()
+                }
             }
-            item {
-                PromptSection(
-                    value = state.prompt,
+        }
+    }
+}
+
+private fun LazyListScope.photoItems(
+    state: GenerateAdContract.GenerateAdState,
+    onTakePhotoClick: () -> Unit,
+    onUploadClick: () -> Unit,
+    onRemovePhoto: (KmpFile) -> Unit,
+    onReconnect: () -> Unit,
+) {
+    item {
+        SellerHeader()
+    }
+    item {
+        PageTitle()
+    }
+
+    if (state.showGuestConnectHint) {
+        item {
+            GuestConnectHintCard()
+        }
+    }
+
+    state.reconnectAccountName?.let { accountName ->
+        item {
+            ReconnectCard(accountName = accountName, onReconnect = onReconnect)
+        }
+    }
+
+    state.errorMessage?.let { errorMessage ->
+        item {
+            ErrorMessageCard(message = errorMessage)
+        }
+    }
+
+    item {
+        PhotosGrid(
+            files = state.uploads,
+            onAddPhoto = onTakePhotoClick,
+            onRemovePhoto = onRemovePhoto,
+            interactionEnabled = !state.isLoading,
+        )
+    }
+    if (state.uploads.size < MAX_PHOTOS) {
+        item {
+            Box {
+                CameraGalleryPicker(
+                    onCameraClick = onTakePhotoClick,
+                    onGalleryClick = onUploadClick,
                     enabled = !state.isLoading,
-                    speechToText = hintSpeechToText,
-                    onValueChange = onPromptChanged,
-                    modifier = Modifier.testTag("generate_ad_prompt"),
                 )
             }
         }
+    }
+}
+
+private fun LazyListScope.promptItems(
+    state: GenerateAdContract.GenerateAdState,
+    hintSpeechToText: SpeechToText?,
+    onPromptChanged: (String) -> Unit,
+    onOpenDraft: (Draft) -> Unit,
+    onSeeAllDrafts: () -> Unit,
+) {
+    if (state.latestDraft != null) {
+        item {
+            DraftsSection(
+                latestDraft = state.latestDraft,
+                currency = state.draftsCurrency,
+                onOpen = onOpenDraft,
+                onSeeAll = onSeeAllDrafts,
+            )
+        }
+    }
+
+    item {
+        TipsSection()
+    }
+    item {
+        PromptSection(
+            value = state.prompt,
+            enabled = !state.isLoading,
+            speechToText = hintSpeechToText,
+            onValueChange = onPromptChanged,
+            modifier = Modifier.testTag("generate_ad_prompt"),
+        )
     }
 }
 
