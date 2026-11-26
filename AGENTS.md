@@ -141,6 +141,10 @@ build and checks every pending ticket in one pass.
 - Business logic lives in view models or domain services. Composables and navigation render and route.
 - Every view model extends `BaseViewModel<State, Event, Effect>` (`features/common/presentation/BaseViewModel.kt`) with its contract in `*Contract.kt`. A feature is some of `data/`, `di/`, `presentation/`, `ui/`, `model/`.
 - Repair a crash or a missing DI binding where it starts; a null check that hides it is a second bug.
+- Before writing a parser, matcher or other mechanism, check whether a library already in the
+  build provides it: search its docs (the matching skill, Context7, the Google dev MCP tools) and
+  its package list. Deep links were first hand-parsed although `navigation3-runtime` ships
+  `UriDeepLinkMatcher`.
 - For Android or Google APIs and libraries (Compose, AndroidX, Material, Play services, Firebase), look them up with the Google dev MCP tools.
 
 ## Navigation
@@ -218,7 +222,7 @@ build and checks every pending ticket in one pass.
 - Change Android deep link behavior:
   - `androidApp/.../MainActivity.kt`
 - Add or change an in-app `sellsnap://` link (announcement buttons, push `link`, OS links):
-  - `navigation/AppDeepLink.kt` (the screens and `AppDeepLinkBridge`)
+  - `navigation/AppDeepLink.kt` (the routes, matched by Navigation 3's `UriDeepLinkMatcher`, and `AppDeepLinkBridge`)
   - `startup/AppNavigationViewModel.kt` (when a queued link opens)
   - `scripts/publish-announcement.mjs` (`IN_APP_PATHS`)
 - Change web callback behavior:

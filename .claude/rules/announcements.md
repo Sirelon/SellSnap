@@ -8,7 +8,7 @@ paths:
 - Launch dialog fed by the Firestore `announcements` collection (one doc = content + rules,
   filtered on device; schema in `AnnouncementResponse`). Publish with
   `scripts/publish-announcement.mjs` (the `announce` skill). `content.link` adds a button: `store` opens the platform store page,
-  an https URL opens the browser, and an in-app link (`sellsnap://account`, see `AppDeepLink`)
+  an https URL opens the browser, and an in-app link (`sellsnap://account`, routes in `navigation/AppDeepLink.kt`)
   closes the dialog and opens that screen. `content.buttonText` (per language, like `title`)
   labels the button. A doc with `rules.dismissible: false` plus a link has no
   other exit, so `maxVersion` + `showMode: everyLaunch` + `link: store` gates a version range

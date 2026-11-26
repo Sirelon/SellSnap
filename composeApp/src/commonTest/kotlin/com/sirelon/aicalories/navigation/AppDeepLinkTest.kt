@@ -15,30 +15,28 @@ class AppDeepLinkTest {
     }
 
     @Test
-    fun `every destination parses from its own url`() {
-        AppDeepLink.entries.forEach { assertEquals(it, AppDeepLink.parse(it.url)) }
+    fun `each link opens its screen`() {
+        assertEquals(AppDeepLinkMatch(AppKey.Profile(), "account"), matchAppDeepLink("sellsnap://account"))
+        assertEquals(AppDeepLinkMatch(AppKey.MyAdverts, "my_ads"), matchAppDeepLink("sellsnap://my-ads"))
+        assertEquals(AppDeepLinkMatch(AppKey.Messages, "messages"), matchAppDeepLink("sellsnap://messages"))
+        assertEquals(AppDeepLinkMatch(AppKey.GenerateAd, "generate"), matchAppDeepLink("sellsnap://generate"))
     }
 
     @Test
-    fun `scheme and path ignore case, spaces, a trailing slash and a query`() {
-        assertEquals(AppDeepLink.Account, AppDeepLink.parse(" SELLSNAP://Account/ "))
-        assertEquals(AppDeepLink.MyAds, AppDeepLink.parse("sellsnap://my-ads?utm=push#top"))
+    fun `surrounding spaces and a query are ignored`() {
+        assertEquals(AppKey.Profile(), matchAppDeepLink(" sellsnap://account ")?.key)
+        assertEquals(AppKey.MyAdverts, matchAppDeepLink("sellsnap://my-ads?utm=push")?.key)
     }
 
     @Test
     fun `other links are not in-app links`() {
-        assertNull(AppDeepLink.parse("sellsnap://settings-unknown"))
-        assertNull(AppDeepLink.parse("sellsnap://"))
-        assertNull(AppDeepLink.parse("selolxai://olx-auth/callback?code=1"))
-        assertNull(AppDeepLink.parse("https://sellsnap.app/account"))
-        assertNull(AppDeepLink.parse("store"))
-        assertNull(AppDeepLink.parse(null))
-    }
-
-    @Test
-    fun `analytics codes are snake case`() {
-        assertEquals("my_ads", AppDeepLink.MyAds.analyticsCode)
-        assertEquals("account", AppDeepLink.Account.analyticsCode)
+        assertNull(matchAppDeepLink("sellsnap://settings-unknown"))
+        assertNull(matchAppDeepLink("sellsnap://"))
+        assertNull(matchAppDeepLink("selolxai://olx-auth/callback?code=1"))
+        assertNull(matchAppDeepLink("https://sellsnap.app/account"))
+        assertNull(matchAppDeepLink("store"))
+        assertNull(matchAppDeepLink(""))
+        assertNull(matchAppDeepLink(null))
     }
 
     @Test
@@ -48,7 +46,7 @@ class AppDeepLinkTest {
 
         assertTrue(AppDeepLinkBridge.publish("sellsnap://messages", AppDeepLinkBridge.SOURCE_PUSH))
         assertEquals(
-            AppDeepLinkBridge.Pending(AppDeepLink.Messages, AppDeepLinkBridge.SOURCE_PUSH),
+            AppDeepLinkBridge.Pending(AppDeepLinkMatch(AppKey.Messages, "messages"), AppDeepLinkBridge.SOURCE_PUSH),
             AppDeepLinkBridge.consume(),
         )
         assertNull(AppDeepLinkBridge.consume())

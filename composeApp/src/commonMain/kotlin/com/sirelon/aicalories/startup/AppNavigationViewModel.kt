@@ -108,13 +108,13 @@ class AppNavigationViewModel(
 
     private fun openPendingDeepLink() {
         val pending = AppDeepLinkBridge.consume() ?: return
-        val destination = pending.link.destination
+        val destination = pending.match.key
         if (backStack.size != 1 || backStack.firstOrNull() != destination) {
             replaceWith(destination)
         }
         analytics.logEvent(
             AnalyticsEvents.DEEP_LINK_OPENED,
-            mapOf("destination" to pending.link.analyticsCode, "source" to pending.source),
+            mapOf("destination" to pending.match.analyticsCode, "source" to pending.source),
         )
     }
 

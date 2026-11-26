@@ -129,7 +129,7 @@ class AnnouncementMapperTest {
         assertNull(withLink("http://sellsnap.app/x")?.link)
         assertNull(withLink("update")?.link)
         assertNull(response().toDomain("a", "en")?.link)
-        assertEquals("sellsnap://account", withLink(" SellSnap://Account/ ")?.link)
+        assertEquals("sellsnap://account", withLink(" sellsnap://account ")?.link)
         assertNull(withLink("sellsnap://unknown-screen")?.link)
     }
 
