@@ -65,28 +65,39 @@ the rest is how this app shipped two wrong status meanings.
   to `selolxai://olx-auth/callback` (`OlxConfig.appCallbackScheme`), which the app catches. It
   must be registered under "Your apps" on every market's developer portal; a market without it
   rejects the login.
-- **On phones the login runs in an in-app web view, because OLX rejects a login that is too
-  fresh (SIR-195, olx.ro, 2026-11-22).** A phone is always sent from `www.olx.<tld>` to
-  `m.olx.<tld>` (no URL or path avoids it), signs in on `auth.olx.<tld>`, and OLX's page jumps
-  straight back to `/oauth/authorize`. Within about a second of the login that request checks
-  `login.olx.<tld>` silently, gets `login_required`, logs the seller out and shows the OLX home
-  page. Five seconds later the same request redirects to `redirect_uri` with a code. A Custom
-  Tab or `ASWebAuthenticationSession` cannot hold that jump, so `OlxExternalAuthLauncher.android.kt`
-  and `.ios.kt` own a WebView/WKWebView: they delay OLX's jump by 5 s, retry up to twice if OLX
-  still lands on its home page, and catch the HTTPS callback directly. Desktop browsers do not
-  hit this. The browser login is kept beside it, behind the Firestore switch
-  `config/olx_login.systemBrowser` (`OlxLoginModeRepository`, default `false`): turn it on once
-  `.maestro/olx_login_canary.yaml`, run each release, passes again.
+- **On phones the login runs in an in-app web view that presents itself as a desktop browser
+  (SIR-195, SIR-203).** A phone browser is sent from `www.olx.<tld>` to `m.olx.<tld>`, whose
+  sign-in returns to `m.olx.<tld>/callback/` and then jumps to `www.olx.<tld>/oauth/authorize`.
+  Within seconds of the sign-in that `www` request does not see the new session and shows the OLX
+  home page (olx.ro 2026-11-22; Inferred for olx.kz on iOS, 2026-11-26); a few seconds later the same request
+  redirects to `redirect_uri` with a code. A desktop browser never leaves `www`:
+  `www.olx.<tld>/account/` sends it to `login.olx.<tld>` (kz) or `auth.olx.<tld>` (ro, pl, pt,
+  bg; ua uses `auth.olx.pl`), and the sign-in returns to `www.olx.<tld>/d/callback/` (traced on
+  all six markets up to the sign-in page, 2026-11-26). The sign-in pages are responsive and still
+  fit a phone. `OlxExternalAuthLauncher.android.kt` and `.ios.kt` therefore send a desktop user
+  agent, still delay any post-sign-in jump to `/oauth/authorize` by 5 s, ask OLX again up to twice
+  when it shows its home page (`OlxLoginPage`), and catch the HTTPS callback directly.
+  `olx_login_web_view_ended` reports where a seller closed the login.
+- **OLX picks the mobile site from the `Sec-CH-UA-Mobile` client hint, not only from the user
+  agent.** Android WebView sends `?1` even with a desktop user agent string, and OLX answered
+  `www.olx.kz/account/` with a 302 to `m.olx.kz`. The Android launcher also sets
+  `UserAgentMetadata` (androidx.webkit) with `mobile = false`. WebKit on iOS sends no client hints.
+- The browser login (Custom Tab, `ASWebAuthenticationSession`) is kept beside the web view, behind
+  the Firestore switch `config/olx_login.systemBrowser` (`OlxLoginModeRepository`, default
+  `false`): turn it on once `.maestro/olx_login_canary.yaml`, run each release, passes again.
 - **Per market, in-app login on Android (2026-11-22):** ro connects. pt reaches OLX's
   redirect check and stops at "The redirect URI provided is missing or does not match" until the
   HTTPS URI is on the pt portal. bg: `/oauth/authorize` checks `login.olx.bg` silently, and that
   page itself says the login moved to the home page, so the partner login cannot finish there; an
-  OLX fix, not an app fix. pl still serves OLX's older single-page login and was not verified. ua:
-  not tested (separate credentials). kz (2026-11-24, SIR-197): `/oauth/authorize` sends the
-  phone to the older single-page form on `www.olx.kz/account/` (ids `username`, `password`,
-  `Login`). Maestro typing into it got OLX's anti-bot page "Доступ временно ограничен" right
-  after submit, before any password check, so a KZ login is checked by a person typing. To trace a login, make the WebView debuggable and attach to its DevTools socket
-  (`adb shell cat /proc/net/unix | grep webview_devtools_remote`, then `adb forward`).
+  OLX fix, not an app fix. pl and ua were not verified. kz: a phone typing into OLX's form with
+  Maestro got OLX's anti-bot page "Доступ временно ограничен" right after submit (2026-11-24), so
+  a KZ login is checked by a person typing.
+- To trace a login on Android: the debug WebView is debuggable, so forward its DevTools socket
+  (`adb shell cat /proc/net/unix | grep webview_devtools_remote`, then
+  `adb forward tcp:9222 localabstract:webview_devtools_remote_<pid>`) and read the Chrome
+  DevTools Protocol from `localhost:9222`: `Network.requestWillBeSent` (type `Document`) and
+  `Page.frameNavigated` give every page of the login, `Network.requestWillBeSentExtraInfo` the
+  headers actually sent. Node 22's built-in `WebSocket` is enough; no package needed.
 - Android — `MainActivity.publishOlxCallback(intent)` reads `intent.data` and forwards the URL to `OlxAuthCallbackBridge.publishCallback(url)`. The intent filter must match the configured scheme; verify `androidApp/.../AndroidManifest.xml` whenever the scheme changes.
 - Web (Wasm) — `composeApp/src/wasmJsMain/.../main.kt` checks `window.location` for `code=` / `error=` query parameters before mounting Compose, then calls `OlxAuthCallbackBridge.publishCallback`.
 - The bridge is a global object (`OlxAuthCallbackBridge`); listeners are collected from both the seller landing and seller profile flows.

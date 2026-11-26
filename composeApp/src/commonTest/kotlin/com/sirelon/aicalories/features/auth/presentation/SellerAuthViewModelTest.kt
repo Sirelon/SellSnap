@@ -140,6 +140,21 @@ class SellerAuthViewModelTest {
         }
 
     @Test
+    fun `try again on the login-closed sheet opens the OLX login again`() = runTest(testDispatcher) {
+        val harness = harness(engine = MockEngine { error("No HTTP call expected.") })
+
+        harness.viewModel.onEvent(SellerAuthContract.SellerAuthEvent.OlxAuthDismissed(OlxAuthDismissReason.UserCancelled))
+        harness.viewModel.onEvent(SellerAuthContract.SellerAuthEvent.LoginClosedRetryChosen)
+        harness.viewModel.effects.awaitEffect<SellerAuthContract.SellerAuthEffect.LaunchOlxAuthFlow>()
+
+        assertFalse(harness.viewModel.state.value.showLoginClosedSheet)
+        assertEquals(SellerSessionMode.Unauthenticated, harness.authRepository.currentSession().mode)
+        val params = harness.analytics.events.single { it.first == AnalyticsEvents.OLX_LOGIN_CLOSED_CHOICE }.second
+        assertEquals("try_again", params["choice"])
+        assertTrue(harness.analytics.events.any { it.first == AnalyticsEvents.AUTH_STARTED })
+    }
+
+    @Test
     fun `dismissing the login-closed sheet stays put, not in guest mode`() = runTest(testDispatcher) {
         val harness = harness(engine = MockEngine { error("No HTTP call expected.") })
 

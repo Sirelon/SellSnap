@@ -20,16 +20,18 @@ import com.sirelon.sellsnap.generated.resources.continue_as_guest
 import com.sirelon.sellsnap.generated.resources.guest_description
 import com.sirelon.sellsnap.generated.resources.not_now
 import com.sirelon.sellsnap.generated.resources.olx_login_closed_title
+import com.sirelon.sellsnap.generated.resources.profile_auth_failed_retry
 import org.jetbrains.compose.resources.stringResource
 
 /**
- * Shown after the seller closes the OLX login (SIR-123): offers guest mode instead of switching to
- * it silently. Same sheet setup as `BottomSheetSceneStrategy` and the same layout as
+ * Shown after the seller closes the OLX login (SIR-123): offers the login again first (SIR-203),
+ * then guest mode instead of switching to it silently. Same sheet setup as `BottomSheetSceneStrategy` and the same layout as
  * `PreviewBackInfoSheet`. Swiping it away counts as "Not now".
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OlxLoginClosedSheet(
+    onTryAgain: () -> Unit,
     onContinueAsGuest: () -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -55,6 +57,11 @@ fun OlxLoginClosedSheet(
                 text = stringResource(Res.string.guest_description),
                 style = AppTheme.typography.body,
                 color = AppTheme.colors.onSurfaceMuted,
+            )
+            AppButton(
+                modifier = Modifier.fillMaxWidth().testTag("olx_login_closed_try_again"),
+                text = stringResource(Res.string.profile_auth_failed_retry),
+                onClick = onTryAgain,
             )
             AppButton(
                 modifier = Modifier.fillMaxWidth().testTag("olx_login_closed_continue_as_guest"),

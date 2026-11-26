@@ -103,6 +103,9 @@ fun OlxCountryPickerScreenRoute(
 
     if (state.showLoginClosedSheet) {
         OlxLoginClosedSheet(
+            onTryAgain = {
+                viewModel.onEvent(SellerAuthContract.SellerAuthEvent.LoginClosedRetryChosen)
+            },
             onContinueAsGuest = {
                 viewModel.onEvent(SellerAuthContract.SellerAuthEvent.LoginClosedGuestChosen)
             },
