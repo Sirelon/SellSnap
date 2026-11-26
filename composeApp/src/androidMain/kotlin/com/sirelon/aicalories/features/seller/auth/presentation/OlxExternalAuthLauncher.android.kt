@@ -39,7 +39,11 @@ actual fun rememberOlxAuthLauncher(
     val loginMode = koinInject<OlxLoginModeRepository>()
     val systemBrowser by produceState(initialValue = false, loginMode) { value = loginMode.useSystemBrowser() }
     val inApp = rememberInAppOlxAuthLauncher(forceReauth, onDismissed)
-    val browser = rememberSystemBrowserOlxAuthLauncher(forceReauth, onDismissed)
+    val browser = rememberSystemBrowserOlxAuthLauncher(
+        forceReauth = forceReauth,
+        onDismissed = onDismissed,
+        onNoBrowser = inApp,
+    )
     return remember(systemBrowser, inApp, browser) { if (systemBrowser) browser else inApp }
 }
 

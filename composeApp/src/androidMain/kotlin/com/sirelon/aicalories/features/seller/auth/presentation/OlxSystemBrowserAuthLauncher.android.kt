@@ -1,5 +1,6 @@
 package com.sirelon.sellsnap.features.seller.auth.presentation
 
+import android.content.ActivityNotFoundException
 import android.net.Uri
 import androidx.browser.customtabs.CustomTabsIntent
 import androidx.compose.runtime.Composable
@@ -30,15 +31,20 @@ import com.sirelon.sellsnap.features.seller.auth.data.OlxAuthCallbackBridge
  * [onDismissed] fires when the seller comes back from the tab without finishing the login.
  * `launchUrl` reports nothing when the tab closes, so [OlxAuthReturnTracker] infers it from the
  * app resuming with no new OLX callback (SIR-123).
+ *
+ * [onNoBrowser] opens the login another way when the device has no app that can show a web page:
+ * `launchUrl` then throws ActivityNotFoundException, which crashed the app (SIR-206).
  */
 @Composable
 internal fun rememberSystemBrowserOlxAuthLauncher(
     forceReauth: Boolean,
     onDismissed: (OlxAuthDismissReason) -> Unit,
+    onNoBrowser: (String) -> Unit,
 ): (String) -> Unit {
     val context = LocalContext.current
     val tracker = remember { OlxAuthReturnTracker { OlxAuthCallbackBridge.publishedCount } }
     val currentOnDismissed by rememberUpdatedState(onDismissed)
+    val currentOnNoBrowser by rememberUpdatedState(onNoBrowser)
 
     LifecycleResumeEffect(tracker) {
         if (tracker.onResumed()) currentOnDismissed(OlxAuthDismissReason.UserCancelled)
@@ -51,8 +57,12 @@ internal fun rememberSystemBrowserOlxAuthLauncher(
                 .setShowTitle(true)
                 .setEphemeralBrowsingEnabled(forceReauth)
                 .build()
-            tracker.onLaunched()
-            intent.launchUrl(context, Uri.parse(url))
+            try {
+                intent.launchUrl(context, Uri.parse(url))
+                tracker.onLaunched()
+            } catch (_: ActivityNotFoundException) {
+                currentOnNoBrowser(url)
+            }
         }
     }
 }
