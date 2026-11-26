@@ -25,6 +25,7 @@
     <string name="guest_connect_prompt_body">Ви скопіювали 3 оголошення. Підключіть акаунт OLX, і SellSnap опублікує їх за вас.</string>
     <string name="guest_connect_prompt_connect">Підключити OLX</string>
     <string name="generate_ad_guest_connect_hint">Ви зараз у гостьовому режимі — підключіть OLX будь-коли в Профілі, щоб публікувати в один тап.</string>
+    <string name="generate_ad_reconnect_hint">Термін дії вашого входу в OLX минув. Створювати оголошення можна й далі — підключіть OLX знову, щоб їх опублікувати.</string>
     <string name="continue_with_olx">Продовжити з OLX</string>
     <string name="terms_privacy_prefix">Продовжуючи, ви приймаєте наші </string>
     <string name="terms_of_service">Умови обслуговування</string>

@@ -78,7 +78,7 @@ sealed interface AppKey : NavKey, AnalyticsScreen {
     /**
      * [reason] is shown as a banner. [source] is analytics only - where the seller came from, on
      * the add-account events: `preview_cta` | `preview_prompt` | `publish_contact` |
-     * `publish_reconnect` | `my_ads_reconnect`; null is the Profile tab itself.
+     * `publish_reconnect` | `my_ads_reconnect` | `generate_reconnect`; null is the Profile tab itself.
      */
     @Serializable
     data class Profile(val reason: String? = null, val source: String? = null) : AppKey {

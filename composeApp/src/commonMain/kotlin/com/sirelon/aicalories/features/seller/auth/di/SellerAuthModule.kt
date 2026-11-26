@@ -13,6 +13,7 @@ import com.sirelon.sellsnap.features.seller.auth.data.OlxRedirectHandler
 import com.sirelon.sellsnap.features.seller.auth.data.OlxRemoteErrorParser
 import com.sirelon.sellsnap.features.seller.auth.data.OlxTokenStore
 import com.sirelon.sellsnap.features.seller.auth.data.OlxCountryStore
+import com.sirelon.sellsnap.features.seller.auth.data.createOlxAppHttpClient
 import com.sirelon.sellsnap.features.seller.auth.data.createOlxAuthorizedHttpClient
 import com.sirelon.sellsnap.features.seller.auth.data.createOlxHttpClient
 import com.sirelon.sellsnap.features.seller.auth.presentation.SellerAuthViewModel
@@ -28,6 +29,7 @@ import org.koin.dsl.module
 val olxHttpClientQualifier = named("olxHttpClient")
 val olxAuthorizedHttpClientQualifier = named("olxAuthorizedHttpClient")
 val olxUnauthenticatedApiClientQualifier = named("olxUnauthenticatedApiClient")
+val olxAppApiClientQualifier = named("olxAppApiClient")
 
 val sellerAuthModule = module {
     includes(olxLoginModeModule)
@@ -69,6 +71,18 @@ val sellerAuthModule = module {
     // authorized client's account-store-backed bearer provider.
     single<OlxApiClient>(qualifier = olxUnauthenticatedApiClientQualifier) {
         OlxApiClient(httpClient = get(olxHttpClientQualifier), json = get(), errorParser = get())
+    }
+    // The app's own client_credentials token, for catalog reads when no seller token works (SIR-201).
+    single<OlxApiClient>(qualifier = olxAppApiClientQualifier) {
+        OlxApiClient(
+            httpClient = createOlxAppHttpClient(
+                authRefreshClient = get(olxHttpClientQualifier),
+                credentialsProvider = get(),
+                errorParser = get(),
+            ),
+            json = get(),
+            errorParser = get(),
+        )
     }
     single { CurrencyRepository(olxApiClient = get(), countryStore = get()) }
     viewModelOf(::SellerAuthViewModel)

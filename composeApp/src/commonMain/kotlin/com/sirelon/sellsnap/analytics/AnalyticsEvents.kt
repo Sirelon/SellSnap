@@ -130,13 +130,25 @@ object AnalyticsEvents {
     // funnel in one family; summing both double-counts first-connect. `source` on the add
     // events says where the attempt began: `landing` (first connect), `profile` (the tab),
     // `preview_cta`, `preview_prompt` (the guest nudge sheet), `publish_contact`,
-    // `publish_reconnect`, `my_ads_reconnect` - see AppKey.Profile.
+    // `publish_reconnect`, `my_ads_reconnect`, `generate_reconnect` - see AppKey.Profile.
     const val ACCOUNT_SWITCHED = "account_switched"
     const val ACCOUNT_ADD_STARTED = "account_add_started"
     const val ACCOUNT_ADD_COMPLETED = "account_add_completed"
     const val ACCOUNT_ADD_FAILED = "account_add_failed"
     const val ACCOUNT_DISCONNECTED = "account_disconnected"
     const val ACCOUNT_TOKEN_EXPIRED_UNUSED = "account_token_expired_unused"
+
+    /**
+     * SIR-201: an offer to reconnect the active account, whose OLX connection expired, was shown.
+     * `source`: `generate` - the card on the generate screen, once per screen instance; `publish` -
+     * the snackbar after a publish the expired connection refused, each time. The funnel goes on
+     * with [RECONNECT_PROMPT_TAPPED], then account_add_started/completed with `source`
+     * `generate_reconnect` or `publish_reconnect`.
+     */
+    const val RECONNECT_PROMPT_SHOWN = "reconnect_prompt_shown"
+
+    /** SIR-201: the seller tapped the offer [RECONNECT_PROMPT_SHOWN] counts; same `source`. Opens Profile. */
+    const val RECONNECT_PROMPT_TAPPED = "reconnect_prompt_tapped"
 
     // Fired by PreviewAdViewModel.publishAdvert() when the token about to be used does not
     // belong to the account named on the preview row (D6/A5) - the primary defence for G4
