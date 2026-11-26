@@ -24,7 +24,7 @@ internal class AnnouncementContentResponse(
     @SerialName("body") val body: Map<String, String>? = null,
     @SerialName("imageUrl") val imageUrl: String? = null,
     // "store" for this platform's store page, an https URL, or an in-app `sellsnap://` link (see
-    // AppDeepLink). Adds a button to the dialog; with `rules.dismissible = false` that button is
+    // matchAppDeepLink). Adds a button to the dialog; with `rules.dismissible = false` that button is
     // the only way out, which is how a broken version range is gated (see AnnouncementDialog).
     @SerialName("link") val link: String? = null,
     // The link button's label, keyed by language code like `title`. Absent: a generic label.

@@ -88,7 +88,7 @@
                     android:pathPrefix="/callback"
                     android:scheme="selolxai" />
             </intent-filter>
-            <!-- In-app links, sellsnap://<screen>; AppDeepLink lists the screens. -->
+            <!-- In-app links, sellsnap://<screen>; navigation/AppDeepLink.kt lists the screens. -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
 

@@ -3,7 +3,7 @@ package com.sirelon.sellsnap.features.announcements.data
 import com.sirelon.sellsnap.features.announcements.data.response.AnnouncementResponse
 import com.sirelon.sellsnap.features.announcements.model.Announcement
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountState
-import com.sirelon.sellsnap.navigation.AppDeepLink
+import com.sirelon.sellsnap.navigation.matchAppDeepLink
 import com.sirelon.sellsnap.features.whatsnew.data.FALLBACK_LANGUAGE_CODE
 import com.sirelon.sellsnap.platform.PlatformTargets
 import com.sirelon.sellsnap.platform.appLanguageCode
@@ -94,7 +94,7 @@ internal fun olxConnectionsOf(accountStates: List<OlxAccountState>): Set<String>
 /** The `link_type` analytics value of a normalized link: `store`, `in_app` or `url`. */
 internal fun announcementLinkType(link: String): String = when {
     link == ANNOUNCEMENT_LINK_STORE -> "store"
-    AppDeepLink.parse(link) != null -> "in_app"
+    matchAppDeepLink(link) != null -> "in_app"
     else -> "url"
 }
 
@@ -102,8 +102,9 @@ internal fun announcementLinkType(link: String): String = when {
 // dropped rather than opened: a typo in the console must not hand the browser a bare word.
 private fun String?.normalizedLink(): String? {
     val link = this?.trim() ?: return null
-    if (link == ANNOUNCEMENT_LINK_STORE || link.startsWith("https://")) return link
-    return AppDeepLink.parse(link)?.url
+    return link.takeIf {
+        it == ANNOUNCEMENT_LINK_STORE || it.startsWith("https://") || matchAppDeepLink(it) != null
+    }
 }
 
 // Falls back to English when a translation is missing rather than dropping the announcement -

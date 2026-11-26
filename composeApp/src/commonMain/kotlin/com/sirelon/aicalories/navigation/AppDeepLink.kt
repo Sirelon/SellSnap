@@ -1,46 +1,45 @@
 package com.sirelon.sellsnap.navigation
 
+import androidx.navigation3.runtime.deeplink.DeepLinkRequest
+import androidx.navigation3.runtime.deeplink.DeepLinkUri
+import androidx.navigation3.runtime.deeplink.UriDeepLinkMatcher
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.getAndUpdate
+import kotlinx.serialization.KSerializer
+
+private const val APP_DEEP_LINK_SCHEME = "sellsnap"
+
+/** One `sellsnap://<path>` link and the [AppKey] it opens, matched by Navigation 3. */
+private class AppDeepLinkRoute<T : AppKey>(val path: String, serializer: KSerializer<T>) {
+    val matcher = UriDeepLinkMatcher(DeepLinkUri("$APP_DEEP_LINK_SCHEME://$path"), serializer)
+}
+
+// The screens a `sellsnap://` link opens, from an announcement button, a push `link` data key or
+// the OS (Android intent filter, iOS URL scheme). A new screen is one more route; a route with
+// `{argument}` placeholders fills the key's fields. Keep scripts/publish-announcement.mjs
+// IN_APP_PATHS in step.
+private val appDeepLinkRoutes = listOf(
+    // The Profile tab, where a seller connects or reconnects OLX.
+    AppDeepLinkRoute("account", AppKey.Profile.serializer()),
+    AppDeepLinkRoute("my-ads", AppKey.MyAdverts.serializer()),
+    AppDeepLinkRoute("messages", AppKey.Messages.serializer()),
+    AppDeepLinkRoute("generate", AppKey.GenerateAd.serializer()),
+)
+
+/** A link that matched a route: the screen to open and the `destination` analytics value. */
+data class AppDeepLinkMatch(val key: AppKey, val analyticsCode: String)
 
 /**
- * A screen inside the app that a `sellsnap://<path>` link opens. The same link works from an
- * announcement button, a push `link` data key and the OS (Android intent filter, iOS URL scheme).
- * A new destination is one more entry here; [parse] needs no change.
+ * The screen `sellsnap://my-ads` opens, or null for any other link, including an unknown or
+ * malformed one, so an app never guesses at a destination it does not have.
  */
-enum class AppDeepLink(val path: String, val destination: AppKey) {
-    /** The Profile tab, where a seller connects or reconnects OLX. */
-    Account("account", AppKey.Profile()),
-    MyAds("my-ads", AppKey.MyAdverts),
-    Messages("messages", AppKey.Messages),
-    GenerateListing("generate", AppKey.GenerateAd),
-    ;
-
-    val url: String get() = "$SCHEME://$path"
-
-    /** The `destination` analytics value. */
-    val analyticsCode: String get() = path.replace('-', '_')
-
-    companion object {
-        const val SCHEME = "sellsnap"
-
-        /**
-         * `sellsnap://my-ads` -> [MyAds]. Scheme and path are case-insensitive; a trailing slash,
-         * query or fragment is ignored. Null for any other link, including an unknown path, so an
-         * older app never guesses at a destination it does not have.
-         */
-        fun parse(link: String?): AppDeepLink? {
-            val trimmed = link?.trim() ?: return null
-            val prefix = "$SCHEME://"
-            if (!trimmed.startsWith(prefix, ignoreCase = true)) return null
-            val path = trimmed.substring(prefix.length)
-                .substringBefore('?')
-                .substringBefore('#')
-                .trimEnd('/')
-                .lowercase()
-            return entries.firstOrNull { it.path == path }
+fun matchAppDeepLink(link: String?): AppDeepLinkMatch? {
+    val request = runCatching { DeepLinkRequest(link?.trim() ?: return null) }.getOrNull() ?: return null
+    return appDeepLinkRoutes.firstNotNullOfOrNull { route ->
+        runCatching { route.matcher.match(request) }.getOrNull()?.let { result ->
+            AppDeepLinkMatch(key = result.key, analyticsCode = route.path.replace('-', '_'))
         }
     }
 }
@@ -57,7 +56,7 @@ object AppDeepLinkBridge {
     const val SOURCE_PUSH = "push"
     const val SOURCE_EXTERNAL = "external"
 
-    data class Pending(val link: AppDeepLink, val source: String)
+    data class Pending(val match: AppDeepLinkMatch, val source: String)
 
     private val pendingLink = MutableStateFlow<Pending?>(null)
 
@@ -68,8 +67,8 @@ object AppDeepLinkBridge {
      * so the caller can handle it as before. [source] is one of the `SOURCE_*` values.
      */
     fun publish(link: String, source: String): Boolean {
-        val deepLink = AppDeepLink.parse(link) ?: return false
-        pendingLink.value = Pending(deepLink, source)
+        val match = matchAppDeepLink(link) ?: return false
+        pendingLink.value = Pending(match, source)
         return true
     }
 

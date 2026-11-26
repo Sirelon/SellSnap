@@ -15,8 +15,8 @@ import com.sirelon.sellsnap.features.announcements.data.selectAnnouncement
 import com.sirelon.sellsnap.features.announcements.model.Announcement
 import com.sirelon.sellsnap.features.review.ReviewPromptCoordinator
 import com.sirelon.sellsnap.features.seller.auth.data.OlxAccountStore
-import com.sirelon.sellsnap.navigation.AppDeepLink
 import com.sirelon.sellsnap.navigation.AppDeepLinkBridge
+import com.sirelon.sellsnap.navigation.matchAppDeepLink
 import com.sirelon.sellsnap.platform.openUrl
 import com.sirelon.sellsnap.platform.storePageUrl
 import kotlinx.coroutines.CompletableDeferred
@@ -133,7 +133,7 @@ internal class AnnouncementViewModel(
 
     private fun linkParams(link: String?): Map<String, Any> = buildMap {
         put("link_type", link?.let(::announcementLinkType) ?: "none")
-        AppDeepLink.parse(link)?.let { put("destination", it.analyticsCode) }
+        matchAppDeepLink(link)?.let { put("destination", it.analyticsCode) }
     }
 
     private companion object {
