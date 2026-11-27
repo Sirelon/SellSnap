@@ -2,7 +2,7 @@
 
 Copy-paste text for every listing field. The app ships 8 in-app languages, but this doc
 only has 7 sections — russian shares Ukrainian's in-app UI and has no separate store
-listing (see the "No russian store listing" note below). Written for SellSnap 4.1 (build 24).
+listing (see the "No russian store listing" note below). Written for SellSnap 4.2 (build 25).
 
 The per-language **What's New** blocks below match what's pushed to the stores automatically from `.claude/tmp/release-metadata/` (gitignored, regenerated fresh each release): Android reads `android/<locale>/changelogs/<version_code>.txt`, iOS reads `ios/<locale>/release_notes.txt` (App Store) and the same file feeds TestFlight's localized build info. The `sellsnap-release` skill regenerates both those files and this section on every release.
 
@@ -74,13 +74,14 @@ From snap to live on OLX in about a minute. Download SellSnap and turn your clut
 SellSnap is an independent app and is not affiliated with or endorsed by OLX. Publishing requires an OLX account.
 ```
 
-**What's New (v4.1):**
+**What's New (v4.2):**
 
 ```
-SellSnap 4.1 — Even better listings
+SellSnap 4.2 — Smoother and more reliable
 
-• We improved what matters most: SellSnap recognizes your items better and writes even better listings. Try it, you'll feel the difference
-• New country: SellSnap now works in Kazakhstan. Publish your listings on OLX.kz
+• Your listings come out more reliably: photos upload faster, and SellSnap turns them into a listing without a hitch
+• Signing in to OLX is smoother and finishes in one go
+• If your OLX connection runs out, you can keep creating listings and reconnect with one tap
 ```
 
 ---
@@ -129,13 +130,14 @@ SellSnap підтримує OLX в Україні, Польщі, Румунії,
 SellSnap — незалежний застосунок, не афілійований з OLX. Для публікації потрібен акаунт OLX.
 ```
 
-**What's New (v4.1):**
+**What's New (v4.2):**
 
 ```
-SellSnap 4.1 — ще кращі оголошення
+SellSnap 4.2 — плавніше і надійніше
 
-• Ми покращили головне: SellSnap краще розпізнає речі на фото і пише ще кращі оголошення. Спробуйте — ви відчуєте різницю
-• Нова країна: SellSnap тепер працює в Казахстані. Публікуйте оголошення на OLX.kz
+• Оголошення створюються надійніше: фото завантажуються швидше, і SellSnap без збоїв перетворює їх на оголошення
+• Вхід в OLX став простішим і завершується з першого разу
+• Якщо зʼєднання з OLX завершилося, ви можете далі створювати оголошення і підключитися знову одним дотиком
 ```
 
 ---
@@ -184,13 +186,14 @@ Od zdjęcia do ogłoszenia na OLX w około minutę. Pobierz SellSnap i zamień n
 SellSnap to niezależna aplikacja, niepowiązana z OLX. Do publikacji wymagane jest konto OLX.
 ```
 
-**What's New (v4.1):**
+**What's New (v4.2):**
 
 ```
-SellSnap 4.1 — jeszcze lepsze ogłoszenia
+SellSnap 4.2 — płynniej i pewniej
 
-• Ulepszyliśmy to, co najważniejsze: SellSnap lepiej rozpoznaje rzeczy na zdjęciach i pisze jeszcze lepsze ogłoszenia. Wypróbuj, poczujesz różnicę
-• Nowy kraj: SellSnap działa teraz w Kazachstanie. Publikuj ogłoszenia na OLX.kz
+• Ogłoszenia powstają pewniej: zdjęcia wysyłają się szybciej, a SellSnap bez zakłóceń zamienia je w ogłoszenie
+• Logowanie do OLX jest prostsze i kończy się za pierwszym razem
+• Gdy połączenie z OLX wygaśnie, możesz dalej tworzyć ogłoszenia i połączyć się ponownie jednym dotknięciem
 ```
 
 ---
@@ -239,13 +242,14 @@ De la poză la anunț publicat pe OLX în aproximativ un minut. Descarcă SellSn
 SellSnap este o aplicație independentă, neafiliată cu OLX. Publicarea necesită un cont OLX.
 ```
 
-**What's New (v4.1):**
+**What's New (v4.2):**
 
 ```
-SellSnap 4.1 — anunțuri și mai bune
+SellSnap 4.2 — mai fluent și mai sigur
 
-• Am îmbunătățit ce contează cel mai mult: SellSnap recunoaște mai bine obiectele din poze și scrie anunțuri și mai bune. Încearcă și vei simți diferența
-• Țară nouă: SellSnap funcționează acum în Kazahstan. Publică anunțuri pe OLX.kz
+• Anunțurile ies mai sigur: pozele se încarcă mai repede, iar SellSnap le transformă în anunț fără probleme
+• Conectarea la OLX e mai simplă și reușește din prima
+• Dacă legătura cu OLX expiră, poți crea în continuare anunțuri și te reconectezi cu o singură atingere
 ```
 
 ---
@@ -294,13 +298,14 @@ SellSnap поддържа OLX в България, Украйна, Полша, �
 SellSnap е независимо приложение и не е свързано с OLX. За публикуване е необходим акаунт в OLX.
 ```
 
-**What's New (v4.1):**
+**What's New (v4.2):**
 
 ```
-SellSnap 4.1 — още по-добри обяви
+SellSnap 4.2 — по-гладко и по-надеждно
 
-• Подобрихме най-важното: SellSnap по-добре разпознава вещите на снимките и пише още по-добри обяви. Опитайте и ще усетите разликата
-• Нова държава: SellSnap вече работи в Казахстан. Публикувайте обяви в OLX.kz
+• Обявите се създават по-надеждно: снимките се качват по-бързо и SellSnap ги превръща в обява без засечки
+• Влизането в OLX е по-лесно и става от първия път
+• Ако връзката с OLX изтече, можете да продължите да създавате обяви и да се свържете отново с едно докосване
 ```
 
 ---
@@ -349,13 +354,14 @@ Da foto ao anúncio publicado no OLX em cerca de um minuto. Descarregue o SellSn
 O SellSnap é uma aplicação independente, sem qualquer afiliação com o OLX. Para publicar é necessária uma conta OLX.
 ```
 
-**What's New (v4.1):**
+**What's New (v4.2):**
 
 ```
-SellSnap 4.1 — anúncios ainda melhores
+SellSnap 4.2 — mais fluido e mais fiável
 
-• Melhorámos o essencial: o SellSnap reconhece melhor os artigos nas fotos e escreve anúncios ainda melhores. Experimente e vai notar a diferença
-• Novo país: o SellSnap já funciona no Cazaquistão. Publique os seus anúncios no OLX.kz
+• Os seus anúncios saem com mais fiabilidade: as fotos carregam mais depressa e o SellSnap transforma-as num anúncio sem falhas
+• Entrar no OLX ficou mais simples e conclui-se à primeira
+• Se a ligação ao OLX expirar, pode continuar a criar anúncios e voltar a ligar com um toque
 ```
 
 ---
@@ -402,11 +408,12 @@ OLX аккаунтыңыз жоқ па? Қонақ режимін пайдала
 SellSnap — OLX-пен байланысы жоқ тәуелсіз қосымша. Жариялау үшін OLX аккаунты қажет.
 ```
 
-**What's New (v4.1):**
+**What's New (v4.2):**
 
 ```
-SellSnap 4.1 — бұрынғыдан да жақсы хабарландырулар
+SellSnap 4.2 — жатығырақ әрі сенімдірек
 
-• Ең бастысын жақсарттық: SellSnap фотодағы заттарды жақсырақ таниды және бұрынғыдан да жақсы хабарландырулар жазады. Байқап көріңіз — айырмашылықты сезесіз
-• Жаңа ел: SellSnap енді Қазақстанда жұмыс істейді. Хабарландыруларды OLX.kz-ке жариялаңыз
+• Хабарландырулар сенімдірек жасалады: фотолар жылдамырақ жүктеледі, ал SellSnap оларды кідіріссіз хабарландыруға айналдырады
+• OLX-ке кіру оңайлады және бірінші реттен аяқталады
+• OLX-пен байланыс мерзімі бітсе, хабарландырулар жасауды жалғастырып, бір түртумен қайта қосыла аласыз
 ```
