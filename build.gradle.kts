@@ -64,3 +64,12 @@ plugins.withType<WasmYarnPlugin> {
         resolution("ws", "8.21.0")
     }
 }
+
+// Test JVMs run headless. A test that touches AWT (Compose Desktop, skiko, ImageIO) otherwise
+// registers the Gradle worker as a GUI app on macOS, and a "GradleWorkerMain" icon flashes in
+// the Dock on every test run.
+subprojects {
+    tasks.withType<Test>().configureEach {
+        systemProperty("java.awt.headless", "true")
+    }
+}
