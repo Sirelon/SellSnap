@@ -57,5 +57,12 @@ reflect the app's actual experience; no store-performance, price or Play-program
 
 ## Console state (2026-11-28)
 
-- App Store: 4.2 was WAITING_FOR_REVIEW, so screenshots were locked. en-US had no screenshots.
-- Play: no en-US listing; kk had no screenshots; the service account can open and commit listing edits.
+Waiting for upload:
+- App Store, every set (iPhone 6.9", iPad 13", all five languages): 4.2 was WAITING_FOR_REVIEW, so
+  they go into the next editable version (`sellsnap-release` step 7). en-US had no screenshots before.
+- App Store iPhone Duo sets: by hand in App Store Connect (no API type).
+- Play tablet sets: held until the release with the wide-window layouts (PR #355) is live, so the
+  images match the installed app. Upload with `--slots=sevenInchScreenshots,tenInchScreenshots`.
+
+Done: Play phone sets (8 per listing) uploaded 2026-11-28 for uk, pl-PL, ro, bg, pt-PT, kk.
+Play has no en-US listing. The service account can open and commit listing edits.

@@ -182,8 +182,13 @@ When step 6 printed the in-review warning, run this later instead, once that ver
 string: a version in review rejects placements (409 `waitingForReview`). Making or replacing a banner belongs to the
 `store-banners` skill. Reference: "App Store banners".
 
+Then the store screenshots: the new App Store draft is the only place they can change, so upload the sets the
+`sellsnap-screenshots` skill lists as waiting ("Console state" in its `reference.md`), and regenerate them first
+when screens they show changed since. Run its steps 2 to 7.
+
 Done when: the script exits 0 with `OK` or `HAVE` for each locale and banner type that has a source, or the deferral
-to the released version is noted for the report.
+to the released version is noted for the report; and the waiting screenshot sets are uploaded or the reason they
+still wait is in the report.
 
 ## 8. Publish the in-app What's New
 
