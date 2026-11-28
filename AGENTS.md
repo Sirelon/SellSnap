@@ -61,6 +61,9 @@ anything above that does not apply.
 - On a checkout of `main` itself, commit and push to `main` once the change compiles. Create a
   branch or a PR there only when the owner asks.
 - Name a new branch `feature/SIR-XX-short-description` or `bugfix/SIR-XX-short-description`.
+- Other sessions commit to this checkout too. Before you rewrite local unpushed commits (a soft
+  reset to squash WIP), list them with `git log origin/main..HEAD --format='%h %ad %s'` and keep
+  every commit that is not yours: one reset once dropped the owner's own commit from `main`.
 - The owner merges every PR. Open it, report it, and leave it open; never run `gh pr merge`.
 - Leave the worktree and its Conductor workspace in place after the merge; the owner archives them.
 - Commit subject: one imperative sentence that says what changed, with no ticket prefix. When the
