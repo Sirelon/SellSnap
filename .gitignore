@@ -83,3 +83,9 @@ firebase-debug.*.log
 
 # Model bench: seller photos and raw answers (scripts/model-bench)
 /scripts/model-bench/.cache/
+
+# Store screenshots: rendered and composited on demand (sellsnap-screenshots skill), not tracked.
+/store/captures/
+/store/assets/app-store/
+/store/assets/play-store/phone/
+/store/assets/play-store/tablet/

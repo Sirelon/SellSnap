@@ -1074,7 +1074,7 @@ private fun isTopLevelTransition(
 ): Boolean = initial.entries.first().metadata[TopLevelTransitionKey] == true &&
     target.entries.first().metadata[TopLevelTransitionKey] == true
 
-private enum class SellerRootTab(
+internal enum class SellerRootTab(
     val destination: AppKey,
     val icon: DrawableResource?,
     val label: StringResource,

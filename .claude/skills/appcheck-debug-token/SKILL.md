@@ -5,7 +5,7 @@ description: >-
   emulator or iOS simulator, so the OpenAI proxy stops answering 401 and listing generation
   works. Reads the token from logcat or the simulator log, registers it through the App Check
   API, and verifies it. Use when the user says "register the debug token", "App Check 401",
-  "generation fails on the emulator/simulator", when a Maestro screenshot run fails at
+  "generation fails on the emulator/simulator", when a Maestro run fails at
   generation, or after any app-data wipe (uninstall, `clearState`) on a dev device.
 ---
 
@@ -17,8 +17,8 @@ logs it once. The `openai` Cloud Function rejects App Check tokens minted from a
 debug token, so every new install on an emulator or simulator needs one registration.
 
 The token lives in app data: an uninstall, a `pm clear`, or a Maestro `clearState` makes a new
-one. Eight `.maestro` flows clear state, so a screenshot run on a fresh device needs this skill
-first, and again after each wipe.
+one. `.maestro` flows that clear state need this skill first on a fresh device, and again after
+each wipe.
 
 Everything below goes through `scripts/appcheck_debug_token.py` (gcloud auth; run from
 anywhere). Never type the exchange URL into zsh by hand: `$APP_ID:exchangeDebugToken` is parsed
@@ -53,7 +53,7 @@ built without these files.
 
 ## iOS
 
-1. Run a Debug build on the simulator (Xcode, or the `sellsnap-screenshots` kit).
+1. Run a Debug build on the simulator (Xcode, or the `install-mobile-app` skill).
 2. `… ios-token --udid <udid>` greps the simulator log for "App Check Debug Token". If it finds
    nothing, read the line from the Xcode console; it is printed once per install.
 3. `… register --app ios --token <uuid> --name "<simulator> (<machine>)"`.

@@ -1,96 +1,117 @@
 ---
 name: sellsnap-screenshots
-description: Capture raw, localized screenshots of SellSnap screens with Maestro on the iOS simulator, the iPad simulator and the Android emulator, per country, light and dark. The output is the input of the `app-store-screenshots` skill. Use for "take screenshots of <screen>", "capture the auth screen for all countries", "re-capture the iPad set", "screenshots for a new country".
+description: >-
+  Make SellSnap store screenshots end to end: render app screens headless from demo data (no device,
+  no login), frame and caption them, check every caption against its screen, upload to App Store
+  Connect and Google Play. Use for the full set, one screen ("redo the messages screenshot"), a new
+  caption or language, a new device slot, or "upload the screenshots".
 ---
 
-# SellSnap screenshots
+# SellSnap store screenshots
 
-Output: `store/captures/<device>/<country>/<screen>_<theme>.png`.
-Devices: `iphone`, `ipad` (landscape), `android-phone`, `android-tablet` (landscape).
-Countries: `ua pt pl ro bg`. Themes: `light dark`.
-The `app-store-screenshots` skill composites these files into store assets.
-Quirks, the login hand-off in detail and troubleshooting: [reference.md](reference.md).
+Four stages, each one command. Any stage runs alone, for one scene, device or language.
 
-## Screens and scripts
-
-| Screen | Files per country and theme | Needs |
+| Stage | Command (repo root) | Writes |
 | --- | --- | --- |
-| `auth` | `auth` | nothing: no login, no `screenshotMode` |
-| `generate_ad` | `generate_ad_top`, `generate_ad_bottom` | login, `screenshotMode` |
-| `result` | `analysing_start`, `analysing_progress` (iPhone light only), `result_top`, `result_bottom`, `result_publish_dialog` | login, `screenshotMode`, App Check token, two real OpenAI generations per country |
+| Render | `STORE_RENDER=1 ./gradlew :composeApp:jvmTest --tests '*StoreScenesTest*' --rerun -q` | `store/captures/<device>/<lang>/<scene>_<theme>.png` |
+| Compose | `node store/tools/generate-store-screenshots.mjs --sheet` | `store/assets/<store>/<target>/<lang>/NN-<id>.jpg`, `store/previews/` |
+| Review | your eyes on the contact sheets | fixes in scenes, demo data or captions |
+| Upload | `LANG=en_US.UTF-8 ruby store/tools/upload-screenshots.rb app-store\|play [--apply] [--lang=uk]` | the store consoles |
 
-Scripts, run from the repo root:
+Narrow the render with comma lists: `STORE_RENDER_SCENES`, `STORE_RENDER_DEVICES`, `STORE_RENDER_LANGS`,
+`STORE_RENDER_THEMES`. Narrow the compositor with `--target`, `--lang`, `--scene`.
 
-- `auth`: `maestro-auth-screenshots-ios.sh` (iPad: pass `UDID`, `PLATFORM=ipad`, `ORIENTATION=landscape`), `maestro-auth-screenshots-android.sh` (tablet: `PLATFORM=android-tablet`).
-- `generate_ad`: `maestro-generate-ad-screenshots-{ios,ipad,android}.sh`.
-- `result`: `maestro-generate-ad-result-screenshots-{ios,ipad,android}.sh`.
-- Every script takes `COUNTRIES="bg pl"` for a partial run. A screen with no script needs a new flow: see reference.md.
+Files:
+
+| Path | Role |
+| --- | --- |
+| `composeApp/src/jvmTest/.../storerender/StoreRender.kt` | devices, languages, the renderer, demo-photo loading |
+| `storerender/StoreScenes.kt` | the scene registry (`storeScenes`) and the test; one scene = one real screen with demo state |
+| `storerender/PreviewScenes.kt`, `SellerScenes.kt` | scene groups; `StoreDemo.kt` and `SellerDemo.kt` hold per-language demo content |
+| `storerender/StoreChrome.kt` | `AppChrome`: the app's tab navigation (bottom bar on phones, rail on tablets) around a top-level screen |
+| `composeApp/src/jvmTest/resources/store-demo/` | demo photos and their `LICENSES.md` |
+| `store/tools/scenes.json` | **the manifest**: which scene, theme and caption fills each store slot, with a `why` |
+| `store/copy/copy.json` | captions per language, keyed by caption name |
+| `store/tools/generate-store-screenshots.mjs` | targets (sizes, frames, store languages) and the HTML layout |
+| `store/tools/upload-screenshots.rb` | App Store Connect + Google Play upload, dry run by default |
+
+Store rules, sizes, slot types and console state: [reference.md](reference.md). Read it before you change
+a size, add a slot or upload.
 
 ## Steps
 
-### 1. Scope the run
+### 1. Scope
 
-Name the screens, the devices and the countries. List what exists: `ls store/captures/<device>/<country>`.
-Done when the request reads "screen × device × countries" and each cell maps to a script above.
+Name the scenes, devices and languages, and whether captions change. A caption is truthful only for
+the screen under it: a new screen needs a caption, a changed screen needs its caption re-read.
+Done when the request reads "scenes × devices × languages, captions changed or not".
 
-### 2. Boot one device per platform
+### 2. Render
 
-- **Boot only one iOS simulator.** Maestro starts one driver per device. The drivers contend for one port. Hierarchy and screenshot calls then silently return the other device's data.
-- Get the UDID from `xcrun simctl list devices` and pass `UDID=<udid>`. The default UDIDs inside the scripts do not exist on this machine.
-- iPhone captures are 1206x2622. iPad captures come from an iPad Pro 13-inch (M5). Check the pixel size with `xcrun simctl io <udid> screenshot`.
-- **Android runs need API 33+.** Per-country language uses `cmd locale set-app-locales`, which does not exist below 33. The scripts refuse to start. Pass `DEVICE=<serial>` when more than one device is attached.
+Run the render for the scope. A new scene is a `StoreScene` in a group file: the real screen composable
+with demo state, never a view model (Adding a scene, below).
+Done when every PNG of the scope exists and is newer than your last code change.
 
-Done when `xcrun simctl list devices booted` lists at most one simulator, and an Android target answers `adb -s <serial> shell getprop ro.build.version.sdk` with 33 or more.
+### 3. Look at every capture
 
-### 3. Prepare the app (`generate_ad` and `result` only)
+Downscale (`magick in.png -resize 600x out.png`) and open each capture of the scope, light and dark.
+Each one shows real photos (a grey box means a photo name is missing in `store-demo/`), no spinner or
+shimmer, nothing cut or overlapping, the right language and the market's currency.
+Done when every capture of the scope passes, or its defect is written down with the cause.
 
-1. **`screenshotMode` is committed as `false`.** Set it to `true` in `composeApp/src/commonMain/kotlin/com/sirelon/aicalories/features/seller/ad/ScreenshotMode.kt`. It seeds the three bundled photos and bypasses the publish confirmation. `scripts/ship.sh` refuses to release while it is `true`.
-2. Rebuild and reinstall on the target: `IOS_TARGET=<udid> run-ios`, `ANDROID_SERIAL=<serial> run-android`. The scripts read the source file only, so they cannot detect "flipped but not rebuilt".
-3. `result` only: **a debug build without a registered App Check token cannot generate listings.** With the fixed per-machine tokens (`local.properties` and `iosApp/Configuration/AppCheckDebugToken.local.xcconfig`) this is a one-time setup. Without them every `clearState` mints a new token, and the `appcheck-debug-token` skill must run before the flow.
+### 4. Captions
 
-Done when `grep -n "screenshotMode = true"` matches the file and the install finished after that edit.
+A new or reworded caption is a sentence the owner approves before translation (AGENTS.md rule 6): post
+`key → English / Ukrainian`, wait, then translate all store languages (en uk pl ro bg pt kk) in one
+`localize` run on `store/copy/copy.json`. Ukrainian captions say «ШІ», as the app does. A caption sells
+the saved effort ("Your listing writes itself"), never waiting. Reuse an existing caption when it is
+true of the screen: it is already approved and translated.
+Done when every `copy` key in `scenes.json` exists in every store language of `copy.json`.
 
-### 4. Brief the owner and hand off the login
+### 5. Compose
 
-Every script that logs in costs the owner one OLX login per country. Dark mode reuses the session. The full matrix is 35 logins, so run only the cells from step 1.
+Edit `scenes.json` (order = store order; the first three show in App Store search), then run the
+compositor. It stops a language with a missing capture and flags two slots with the same capture.
+Done when it exits 0 with no `Problems` line.
 
-- **The owner types the OLX password** in the simulator or emulator. The agent never types it, never reads it into chat, and never retries a failed login. One failed login: stop and report. Repeated attempts got the RO account banned.
-- Scripts with `read -rp` (iPad `result`, every Android script) must run in the owner's own terminal, because a background task cannot answer the prompt. The iPhone scripts need no stdin: the flow waits up to 5 minutes for the home screen. Run those in the background and tell the owner when the form opens.
-- iPad `generate_ad` does not log in. It reuses the session on the iPad, so run iPad `result` first or log in by hand.
-- Before each country, tell the owner what he will see and what to do. Usually he types nothing, because the OLX web session survives `clearState`.
+### 6. Review, one language first
 
-Done when the owner knows the script, the countries, and where he types the password.
+Open `store/previews/<target>-uk.jpg` (Ukrainian: the language the owner reads) and judge every image
+against its caption: the caption is true of what the screen shows (a "Pending" status under "your
+listing is live" is a lie), the headline fits in two lines, nothing overlaps the device, the status bar
+reads well. Fix and re-run until the whole Ukrainian set is right. Then open the sheets of the longest
+languages (kk, ro, pt, bg) for wrapping and overflow.
+Done when every image of every target passes in uk, and the long languages have no clipped caption.
 
-### 5. Probe one country
+### 7. Upload
 
-Run the script with `COUNTRIES=<one country>`. The scripts continue to the next country after a failure. A broken flow then burns every login before you can react.
-Done when every file of that country exists (step 7 lists them) and one opened screenshot shows that country's language.
+Dry run first; it prints every set it would replace. App Store writes only into an editable version
+(not in review, not on sale): when the latest is locked, the upload waits for the next version, which
+`sellsnap-release` creates. iPhone Duo images have no API slot: the owner drags
+`store/assets/app-store/iphone-duo-*/<lang>/` into App Store Connect by hand. Play `--apply` commits the
+edit, which publishes the listing change at once: the owner's request to upload is the approval.
+Done when the dry run matches the plan and `--apply` reports every set replaced, or the blocker is
+reported with what the owner must do.
 
-### 6. Run the remaining countries
+## Adding a scene
 
-Run the script without `COUNTRIES`, or with the remaining ones. Read the final `Failed:` line. Re-run each failed country alone.
-Done when the script exits 0, or every failed country has been re-run once and reported.
-
-### 7. Verify the output
-
-A green exit does not prove a good capture. Flows use `optional: true`, so a bad capture can pass.
-
-```bash
-cd store/captures/<device>
-ls <cc> | grep -cE 'analysing|result'                     # 9 on iphone, 8 elsewhere
-md5 -q <cc>/*.png | sort | uniq -d                        # no output: no two files identical
-md5 -q */result_top_light.png | sort | uniq -d            # no output: no two countries identical
-ls -l */result_top_*.png                                   # above 1 MB: photo loaded; about 300 KB: blank gradient
-```
-
-Open one screenshot per country and read the language. A whole set once shipped in Polish with every step green.
-Done when the counts match, both `uniq -d` runs print nothing, and one screenshot per country is in the right language.
-
-### 8. Restore and hand off
-
-1. Set `screenshotMode` back to `false`. Done when `git diff --stat -- <ScreenshotMode.kt path>` prints nothing. Never commit `true`.
-2. `auth` on iPad: run `scripts/normalize-ipad-screenshots.sh`. The other iPad scripts run it themselves.
-3. `auth` feeds the store set as `auth.png`, without a theme. The flow writes `auth_light.png` and `auth_dark.png`. Copy the wanted one to `auth.png`.
-4. Name the changed folders to the owner. Commit only when he asks.
-
-Done when the file is `false`, the iPad files are landscape, and the owner has the folder list.
+- Render the screen's stateless composable (`...Content`, `...Screen`). When it is `private`, make it
+  `internal`; when the stateless one does not exist, extract it from the `...Route` mechanically. Those
+  are the only app-code changes a scene may need.
+- The harness wraps every scene in `AppTheme`, `LocalInspectionMode = true` (Coil then loads through
+  the demo handler synchronously, looping effects stop) and a status-bar / home-bar strip, because the
+  JVM has no window insets. Photos: `demoPhoto("bike")` for URLs, `demoFile(name)` for picked files.
+- A top-level tab screen (New listing, My Ads, Messages) sits inside `AppChrome(tab)` with
+  `fullBleedBottom = true`, as the app shows it with its navigation. Pushed screens (preview,
+  published, a phone conversation) have none. Wide windows show Messages as list + conversation
+  side by side (`messages_two_pane`), mirroring `ListDetailSceneStrategy` in `App.kt`.
+- A composable that calls `koinInject()` (e.g. `CopyPill` wants `Analytics`) needs a Koin app around
+  the scene with a silent fake; `PreviewScenes.kt` has one.
+- Content taller than the frame cannot scroll in a still: pre-scroll with a passed `ScrollState`, or
+  scale the scene through `LocalDensity` (as `published` does) and say so in its `why`.
+- Demo content: every person fictional (placeholder seller `ScreenshotPlaceholderAccount`), each
+  language natural for its market (Kazakh for kk, never russian), prices in the market currency
+  (`StoreLang.country`) at a realistic used price. A listing's title names what its photo shows (a
+  compact Pentax is never titled as a Canon DSLR). A new photo is CC0 / public domain, looks like a
+  seller's own photo, and gets a row in `store-demo/LICENSES.md`.
+- Gradle: one task at a time; at most two agents build at once (AGENTS.md).

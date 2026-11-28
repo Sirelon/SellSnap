@@ -33,6 +33,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -249,6 +250,42 @@ internal fun PreviewAdContentRoute(
         AutoDetectLocation(viewModel::onEvent, locationPermissionController)
     }
 
+    PreviewAdScreenContent(
+        state = state,
+        titleState = viewModel.titleState,
+        descriptionState = viewModel.descriptionState,
+        descriptionDictationLanguageTag = viewModel.descriptionDictationLanguageTag,
+        onEvent = viewModel::onEvent,
+        snackbarHostState = snackbarHostState,
+        onBack = onBack,
+        onChangeLocationClick = onChangeLocationClick,
+        onConnectOlxClick = onConnectOlxClick,
+        onPublishConfirmationRequested = onPublishConfirmationRequested,
+        onTargetAccountRowClick = onTargetAccountRowClick,
+        showImagesPreview = showImagesPreview,
+    )
+}
+
+/** The screen without its view model: everything it draws comes in as [state] and the text states. */
+@Composable
+@OptIn(ExperimentalFoundationApi::class)
+internal fun PreviewAdScreenContent(
+    state: PreviewAdContract.PreviewAdState,
+    titleState: TextFieldState,
+    descriptionState: TextFieldState,
+    descriptionDictationLanguageTag: String?,
+    onEvent: (PreviewAdEvent) -> Unit,
+    snackbarHostState: SnackbarHostState,
+    onBack: () -> Unit,
+    onChangeLocationClick: () -> Unit,
+    onConnectOlxClick: (source: String) -> Unit,
+    onPublishConfirmationRequested: () -> Unit,
+    onTargetAccountRowClick: () -> Unit,
+    showImagesPreview: (List<String>, Int) -> Unit,
+    scrollState: ScrollState = rememberScrollState(),
+    showBackButton: Boolean = true,
+) {
+
     val titleTooShortLabel = stringResource(Res.string.validation_error_title_too_short)
     val descTooShortLabel = stringResource(Res.string.validation_error_desc_too_short)
     val noCategoryLabel = stringResource(Res.string.validation_error_no_category)
@@ -256,8 +293,8 @@ internal fun PreviewAdContentRoute(
     val attributesLoadFailedLabel = stringResource(Res.string.error_attributes_load_failed)
 
     // @Composable reads of TextFieldState.text trigger recomposition on change.
-    val titleText = viewModel.titleState.text
-    val descText = viewModel.descriptionState.text
+    val titleText = titleState.text
+    val descText = descriptionState.text
     val validationErrors = buildList {
         if (titleText.trim().length < TitleMinLength) add(titleTooShortLabel)
         if (descText.trim().length < DescriptionMinLength) add(descTooShortLabel)
@@ -293,7 +330,6 @@ internal fun PreviewAdContentRoute(
     var showErrors by remember { mutableStateOf(false) }
     var autoOpenAttributeCode by remember { mutableStateOf<String?>(null) }
     var autoOpenAttributeRequest by remember { mutableStateOf(0) }
-    val scrollState = rememberScrollState()
     val coroutineScope = rememberCoroutineScope()
     val invalidAttributeBringIntoViewRequester = remember { BringIntoViewRequester() }
     // Compose 1.13.0-alpha crashes on iOS when a focused text field leaves composition
@@ -411,12 +447,12 @@ internal fun PreviewAdContentRoute(
         }
 
         PreviewAdContent(
-            onEvent = viewModel::onEvent,
+            onEvent = onEvent,
             onConnectOlxClick = onConnectOlxClick,
             state = state,
-            titleState = viewModel.titleState,
-            descriptionState = viewModel.descriptionState,
-            descriptionDictationLanguageTag = viewModel.descriptionDictationLanguageTag,
+            titleState = titleState,
+            descriptionState = descriptionState,
+            descriptionDictationLanguageTag = descriptionDictationLanguageTag,
             onLocationClick = if (state.isSessionResolved && !state.isGuest) {
                 {
                     dismissKeyboard()
@@ -498,7 +534,7 @@ internal fun PreviewAdContentRoute(
                         shape = RoundedCornerShape(AppDimens.BorderRadius.xl9),
                         modifier = Modifier.fillMaxSize(),
                     )
-                    backButton(Modifier.align(Alignment.TopStart).padding(AppDimens.Spacing.xl3))
+                    if (showBackButton) backButton(Modifier.align(Alignment.TopStart).padding(AppDimens.Spacing.xl3))
                 }
                 Column(modifier = Modifier.weight(1f).fillMaxHeight()) {
                     Column(
@@ -541,7 +577,7 @@ internal fun PreviewAdContentRoute(
 
                 // Over the photo's corner, which moves inward once the column is centred.
                 Box(modifier = Modifier.align(Alignment.TopCenter).centeredContentWidth()) {
-                    backButton(
+                    if (showBackButton) backButton(
                         Modifier
                             .align(Alignment.TopStart)
                             .systemBarsPadding()

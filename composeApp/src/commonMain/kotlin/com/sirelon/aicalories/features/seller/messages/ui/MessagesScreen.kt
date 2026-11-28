@@ -131,7 +131,7 @@ fun MessagesScreenRoute(
 }
 
 @Composable
-private fun MessagesScreen(
+internal fun MessagesScreen(
     state: MessagesContract.State,
     selectedThreadId: Long?,
     onEvent: (Event) -> Unit,

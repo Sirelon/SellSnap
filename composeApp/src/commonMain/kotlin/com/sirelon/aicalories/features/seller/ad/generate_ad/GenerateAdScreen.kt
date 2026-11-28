@@ -218,7 +218,7 @@ fun GenerateAdScreen(
 }
 
 @Composable
-private fun GenerateAdScreenContent(
+internal fun GenerateAdScreenContent(
     state: GenerateAdContract.GenerateAdState,
     hintSpeechToText: SpeechToText?,
     snackbarHostState: SnackbarHostState,

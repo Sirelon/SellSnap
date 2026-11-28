@@ -168,7 +168,7 @@ fun ConversationScreenRoute(
 }
 
 @Composable
-private fun ConversationScreen(
+internal fun ConversationScreen(
     state: ConversationContract.State,
     snackbarHostState: SnackbarHostState,
     onBack: () -> Unit,
