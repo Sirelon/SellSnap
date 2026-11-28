@@ -20,7 +20,8 @@ baseline a new run is compared with.
    JPEG per manifest item. The photos are seller pictures: they stay in the gitignored `.cache/`.
 2. **Define the configs.** Each config in `scripts/model-bench/configs.json` names a model and
    any of `effort`, `detail`, `temperature`, `maxOutputTokens`, `promptAppend` (text added after
-   the production prompt). A new model also needs its prices in `PRICE` in `bench.py`, quoted from
+   the production prompt), `uploadLongSide` and `uploadQuality` (the photo size to send instead
+   of the app's; `fetch` builds every size a config names). A new model also needs its prices in `PRICE` in `bench.py`, quoted from
    the OpenAI pricing page with the date. Done when every config you want to compare is in the file.
 3. **Quote the cost, then run.** A gpt-6.1-terra config costs $0.0006-0.0025 per call and a run
    is 45 calls (25 photos plus 4 repeats on 5 stability items). Stay under $2 without asking the owner;

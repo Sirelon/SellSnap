@@ -20,10 +20,16 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.net.toUri
-import com.sirelon.sellsnap.features.seller.auth.data.OlxAuthCallbackBridge
+import androidx.webkit.UserAgentMetadata
+import androidx.webkit.WebSettingsCompat
+import androidx.webkit.WebViewFeature
+import com.sirelon.sellsnap.analytics.Analytics
+import com.sirelon.sellsnap.analytics.AnalyticsEvents
 import com.sirelon.sellsnap.designsystem.screens.LoadingOverlay
+import com.sirelon.sellsnap.features.seller.auth.data.OlxAuthCallbackBridge
 import com.sirelon.sellsnap.features.seller.auth.data.OlxConfig
 import com.sirelon.sellsnap.features.seller.auth.data.OlxLoginModeRepository
+import com.sirelon.sellsnap.features.seller.auth.data._currentOlxCountry
 import org.koin.compose.koinInject
 
 /**
@@ -56,8 +62,10 @@ actual fun rememberOlxAuthLauncher(
  * silently, logs the seller out and shows the OLX home page. Five seconds later the same request
  * succeeds and redirects to our `redirect_uri` with a code (Inferred: from tests on olx.ro,
  * 2026-11-22; the cause on OLX's side is unknown). A Custom Tab cannot hold that jump, so the app
- * owns the WebView: it delays the jump, retries if OLX still lands on its home page, and catches
- * the HTTPS callback itself.
+ * owns the WebView. It sends a desktop user agent, which keeps the whole login on `www` and avoids
+ * the `m.olx` jump ([desktopUserAgent], SIR-203). It still delays any jump to `/oauth/authorize`
+ * that follows the sign-in, asks OLX again if it lands on its home page, and catches the HTTPS
+ * callback itself.
  *
  * [forceReauth] clears the WebView's cookies first, so OLX serves a real login form.
  * [onDismissed] fires when the seller closes the screen without finishing.
@@ -69,16 +77,19 @@ private fun rememberInAppOlxAuthLauncher(
 ): (String) -> Unit {
     var authUrl by remember { mutableStateOf<String?>(null) }
     val currentOnDismissed by rememberUpdatedState(onDismissed)
+    val analytics = koinInject<Analytics>()
 
     authUrl?.let { url ->
         OlxAuthWebViewDialog(
             authorizeUrl = url,
-            onCallback = { callbackUrl ->
+            onCallback = { callbackUrl, client ->
                 authUrl = null
+                client.logEnded(analytics, outcome = "callback")
                 OlxAuthCallbackBridge.publishCallback(callbackUrl)
             },
-            onClose = {
+            onClose = { client ->
                 authUrl = null
+                client.logEnded(analytics, outcome = "closed")
                 currentOnDismissed(OlxAuthDismissReason.UserCancelled)
             },
         )
@@ -95,13 +106,20 @@ private fun rememberInAppOlxAuthLauncher(
 @Composable
 private fun OlxAuthWebViewDialog(
     authorizeUrl: String,
-    onCallback: (String) -> Unit,
-    onClose: () -> Unit,
+    onCallback: (String, OlxAuthWebViewClient) -> Unit,
+    onClose: (OlxAuthWebViewClient) -> Unit,
 ) {
     val currentOnCallback by rememberUpdatedState(onCallback)
     var waiting by remember { mutableStateOf(false) }
+    val client = remember(authorizeUrl) {
+        OlxAuthWebViewClient(
+            authorizeUrl = authorizeUrl,
+            onWaiting = { waiting = it },
+            onCallback = { url, self -> currentOnCallback(url, self) },
+        )
+    }
     Dialog(
-        onDismissRequest = onClose,
+        onDismissRequest = { onClose(client) },
         properties = DialogProperties(usePlatformDefaultWidth = false),
     ) {
         LoadingOverlay(isLoading = waiting) {
@@ -115,11 +133,20 @@ private fun OlxAuthWebViewDialog(
                         )
                         settings.javaScriptEnabled = true
                         settings.domStorageEnabled = true
-                        webViewClient = OlxAuthWebViewClient(
-                            authorizeUrl = authorizeUrl,
-                            onWaiting = { waiting = it },
-                            onCallback = { currentOnCallback(it) },
-                        )
+                        settings.userAgentString = desktopUserAgent(settings.userAgentString)
+                        // OLX picks its mobile site from the `Sec-CH-UA-Mobile` client hint, not
+                        // only from the user agent: a desktop agent alone still got a 302 to
+                        // `m.olx.kz` (traced 2026-11-26).
+                        if (WebViewFeature.isFeatureSupported(WebViewFeature.USER_AGENT_METADATA)) {
+                            WebSettingsCompat.setUserAgentMetadata(
+                                settings,
+                                UserAgentMetadata.Builder(WebSettingsCompat.getUserAgentMetadata(settings))
+                                    .setMobile(false)
+                                    .setPlatform("Linux")
+                                    .build(),
+                            )
+                        }
+                        webViewClient = client
                         loadUrl(authorizeUrl)
                     }
                 },
@@ -134,16 +161,35 @@ private const val MAX_RETRIES = 2
 private class OlxAuthWebViewClient(
     private val authorizeUrl: String,
     private val onWaiting: (Boolean) -> Unit,
-    private val onCallback: (String) -> Unit,
+    private val onCallback: (String, OlxAuthWebViewClient) -> Unit,
 ) : WebViewClient() {
     private var done = false
     private var retries = 0
+    private var waiting = false
+
+    /** How often the app held or repeated the request to `/oauth/authorize`. */
+    private var waits = 0
+
+    /** The page the seller was on, or null before the first one opened. */
+    private var page: OlxLoginPage? = null
+
+    fun logEnded(analytics: Analytics, outcome: String) {
+        analytics.logEvent(
+            AnalyticsEvents.OLX_LOGIN_WEB_VIEW_ENDED,
+            mapOf(
+                "outcome" to outcome,
+                "page" to if (waiting) "waiting" else page?.analyticsValue ?: "loading",
+                "waits" to waits,
+                "country" to _currentOlxCountry.code,
+            ),
+        )
+    }
 
     override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
         val url = request.url.toString()
         if (interceptCallback(url)) return true
         // OLX's own jump back to the partner page right after the login: hold it (see KDoc above).
-        if (request.isForMainFrame && !request.isRedirect && isAuthorize(url)) {
+        if (request.isForMainFrame && !request.isRedirect && pageOf(url) == OlxLoginPage.Authorize) {
             hold(view, url)
             return true
         }
@@ -154,34 +200,35 @@ private class OlxAuthWebViewClient(
         if (interceptCallback(url)) view.stopLoading()
     }
 
-    override fun onPageFinished(view: WebView, url: String) {
-        if (done || retries >= MAX_RETRIES || !isOlxHome(url)) return
+    /** Also runs for in-page navigations, which OLX's newer site uses to show its home page. */
+    override fun doUpdateVisitedHistory(view: WebView, url: String, isReload: Boolean) {
+        if (done) return
+        page = pageOf(url)
+        if (page != OlxLoginPage.OlxHome || waiting || retries >= MAX_RETRIES) return
         retries++
         hold(view, authorizeUrl)
     }
 
     /** Shows the spinner for [AUTHORIZE_DELAY_MS], then opens [url]; an OLX error page stays visible. */
     private fun hold(view: WebView, url: String) {
-        onWaiting(true)
+        waits++
+        setWaiting(true)
         view.postDelayed({
             if (!done) {
-                onWaiting(false)
+                setWaiting(false)
                 view.loadUrl(url)
             }
         }, AUTHORIZE_DELAY_MS)
     }
 
-    private fun isAuthorize(url: String): Boolean {
-        val uri = url.toUri()
-        return uri.host.orEmpty().startsWith("www.olx.") &&
-            uri.path.orEmpty().trimEnd('/').endsWith("/oauth/authorize")
+    private fun setWaiting(value: Boolean) {
+        waiting = value
+        onWaiting(value)
     }
 
-    private fun isOlxHome(url: String): Boolean {
+    private fun pageOf(url: String): OlxLoginPage {
         val uri = url.toUri()
-        val host = uri.host.orEmpty()
-        return (host.startsWith("m.olx.") || host.startsWith("www.olx.")) &&
-            uri.path.orEmpty().trim('/').isEmpty()
+        return OlxLoginPage.of(host = uri.host.orEmpty(), path = uri.path.orEmpty())
     }
 
     private fun interceptCallback(url: String): Boolean {
@@ -190,7 +237,7 @@ private class OlxAuthWebViewClient(
             url.startsWith("${OlxConfig.appCallbackScheme}://")
         if (!isCallback) return false
         done = true
-        onCallback(url)
+        onCallback(url, this)
         return true
     }
 }

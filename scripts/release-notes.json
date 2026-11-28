@@ -1,5 +1,84 @@
 [
   {
+    "version": "4.2",
+    "date": "2026-11-27",
+    "active": true,
+    "changes": [
+      {
+        "id": "reliable-listings",
+        "icon": "upload",
+        "title": {
+          "en": "Faster, more reliable listings",
+          "uk": "Швидші та надійніші оголошення",
+          "ru": "Швидші та надійніші оголошення",
+          "bg": "По-бързи и по-надеждни обяви",
+          "kk": "Жылдамырақ әрі сенімдірек хабарландырулар",
+          "pl": "Szybsze i pewniejsze ogłoszenia",
+          "pt": "Anúncios mais rápidos e fiáveis",
+          "ro": "Anunțuri mai rapide și mai sigure"
+        },
+        "summary": {
+          "en": "Your photos upload faster, and SellSnap turns them into a listing without a hitch",
+          "uk": "Фото завантажуються швидше, і SellSnap без збоїв перетворює їх на оголошення",
+          "ru": "Фото завантажуються швидше, і SellSnap без збоїв перетворює їх на оголошення",
+          "bg": "Снимките ти се качват по-бързо и SellSnap ги превръща в обява без засечки",
+          "kk": "Фотоларың жылдамырақ жүктеледі, ал SellSnap оларды кідіріссіз хабарландыруға айналдырады",
+          "pl": "Twoje zdjęcia wysyłają się szybciej, a SellSnap bez zakłóceń zamienia je w ogłoszenie",
+          "pt": "As suas fotos carregam mais depressa e o SellSnap transforma-as num anúncio sem falhas",
+          "ro": "Pozele tale se încarcă mai repede, iar SellSnap le transformă în anunț fără probleme"
+        }
+      },
+      {
+        "id": "smoother-olx-login",
+        "icon": "improvement",
+        "title": {
+          "en": "Smoother OLX sign-in",
+          "uk": "Простіший вхід в OLX",
+          "ru": "Простіший вхід в OLX",
+          "bg": "По-лесно влизане в OLX",
+          "kk": "OLX-ке кіру оңайырақ",
+          "pl": "Prostsze logowanie do OLX",
+          "pt": "Início de sessão no OLX mais simples",
+          "ro": "Conectare la OLX mai simplă"
+        },
+        "summary": {
+          "en": "Signing in to OLX is simpler and finishes in one go",
+          "uk": "Вхід в OLX став простішим і завершується з першого разу",
+          "ru": "Вхід в OLX став простішим і завершується з першого разу",
+          "bg": "Влизането в OLX е по-лесно и става от първия път",
+          "kk": "OLX-ке кіру оңайлады және бірінші реттен аяқталады",
+          "pl": "Logowanie do OLX jest prostsze i kończy się za pierwszym razem",
+          "pt": "Entrar no OLX ficou mais simples e conclui-se à primeira",
+          "ro": "Conectarea la OLX e mai simplă și reușește din prima"
+        }
+      },
+      {
+        "id": "keep-listing-when-expired",
+        "icon": "fix",
+        "title": {
+          "en": "Keep creating listings",
+          "uk": "Створюйте оголошення без перерв",
+          "ru": "Створюйте оголошення без перерв",
+          "bg": "Създавай обяви без прекъсване",
+          "kk": "Хабарландыру жасай бер",
+          "pl": "Twórz ogłoszenia dalej",
+          "pt": "Continue a criar anúncios",
+          "ro": "Continuă să creezi anunțuri"
+        },
+        "summary": {
+          "en": "If your OLX connection runs out, you can still create listings. Tap Reconnect to sign in again",
+          "uk": "Якщо зʼєднання з OLX завершилося, ви й далі можете створювати оголошення. Натисніть «Підключити знову», щоб увійти ще раз",
+          "ru": "Якщо зʼєднання з OLX завершилося, ви й далі можете створювати оголошення. Натисніть «Підключити знову», щоб увійти ще раз",
+          "bg": "Ако връзката с OLX изтече, пак можеш да създаваш обяви. Натисни „Свържи отново“, за да влезеш пак",
+          "kk": "OLX-пен байланыс мерзімі бітсе де, хабарландырулар жасауды жалғастыра аласың. Қайта кіру үшін «Қайта қосу» түймесін бас",
+          "pl": "Gdy połączenie z OLX wygaśnie, nadal możesz tworzyć ogłoszenia. Stuknij „Połącz ponownie”, by zalogować się jeszcze raz",
+          "pt": "Se a ligação ao OLX expirar, pode continuar a criar anúncios. Toque em Reconectar para iniciar sessão novamente",
+          "ro": "Dacă legătura cu OLX expiră, poți crea în continuare anunțuri. Apasă Reconectează ca să te conectezi din nou"
+        }
+      }
+    ]
+  },
+  {
     "version": "4.1",
     "date": "2026-11-25",
     "active": true,

@@ -8,7 +8,7 @@ class UploadImageSizeTest {
     @Test
     fun `a landscape photo above the limit is clamped on its long side`() {
         assertEquals(
-            ImageSize(width = 1600, height = 1200),
+            ImageSize(width = 1280, height = 960),
             downscaledImageSize(originalWidth = 4032, originalHeight = 3024),
         )
     }
@@ -16,7 +16,7 @@ class UploadImageSizeTest {
     @Test
     fun `a portrait photo above the limit is clamped on its long side`() {
         assertEquals(
-            ImageSize(width = 1200, height = 1600),
+            ImageSize(width = 960, height = 1280),
             downscaledImageSize(originalWidth = 3024, originalHeight = 4032),
         )
     }
@@ -32,15 +32,15 @@ class UploadImageSizeTest {
     @Test
     fun `a photo exactly at the limit is returned unchanged`() {
         assertEquals(
-            ImageSize(width = 1600, height = 900),
-            downscaledImageSize(originalWidth = 1600, originalHeight = 900),
+            ImageSize(width = 1280, height = 720),
+            downscaledImageSize(originalWidth = 1280, originalHeight = 720),
         )
     }
 
     @Test
     fun `a square photo above the limit is clamped to a square`() {
         assertEquals(
-            ImageSize(width = 1600, height = 1600),
+            ImageSize(width = 1280, height = 1280),
             downscaledImageSize(originalWidth = 2000, originalHeight = 2000),
         )
     }
