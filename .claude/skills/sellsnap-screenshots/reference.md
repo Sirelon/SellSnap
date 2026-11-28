@@ -13,7 +13,8 @@ Checked 2026-11-28 on the official pages below. Re-open them before changing a s
 | `play-store/phone` | 1440x2560 | `phoneScreenshots` | `android-phone` 1080x2400 @2.625 |
 | `play-store/tablet` | 2560x1440 | `sevenInchScreenshots` and `tenInchScreenshots` | `android-tablet` 2560x1600 @2x |
 
-Store languages: App Store en-US, uk, pl, ro, pt-PT (no bg, no kk). Play uk, pl-PL, ro, bg, pt-PT, kk.
+Store languages: App Store en-US, uk, pl, ro, pt-PT (no bg, no kk). Play en-US, uk (default), pl-PL, ro,
+bg, pt-PT, kk; only uk carries its own icon, the others fall back to it.
 
 ## Apple
 
@@ -64,5 +65,6 @@ Waiting for upload:
 - Play tablet sets: held until the release with the wide-window layouts (PR #355) is live, so the
   images match the installed app. Upload with `--slots=sevenInchScreenshots,tenInchScreenshots`.
 
-Done: Play phone sets (8 per listing) uploaded 2026-11-28 for uk, pl-PL, ro, bg, pt-PT, kk.
-Play has no en-US listing. The service account can open and commit listing edits.
+Done: Play phone sets (8 per listing) uploaded 2026-11-28 for en-US, uk, pl-PL, ro, bg, pt-PT, kk;
+the en-US listing (title, descriptions from `store/copy/store-listing.md`, feature graphic) was
+created the same day. The service account can open and commit listing edits.
