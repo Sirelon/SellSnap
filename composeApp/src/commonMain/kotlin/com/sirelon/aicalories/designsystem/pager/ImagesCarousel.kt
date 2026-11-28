@@ -19,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
@@ -40,16 +41,21 @@ private val PhotoCarouselShape = RoundedCornerShape(
     bottomEnd = AppDimens.BorderRadius.xl9,
 )
 
+/**
+ * The listing's photos, one page each. Phone-shaped by default: full width, [AppDimens.Size.xl25]
+ * tall and rounded only at the bottom, under the status bar. A size set on [modifier] wins.
+ */
 @Composable
 fun ImagesCarousel(
     images: List<String>,
     onImageClick: (Int) -> Unit,
     modifier: Modifier = Modifier,
+    shape: Shape = PhotoCarouselShape,
 ) {
     val containerModifier = modifier
         .fillMaxWidth()
         .height(AppDimens.Size.xl25)
-        .clip(PhotoCarouselShape)
+        .clip(shape)
         .background(AppTheme.colors.surfaceLow)
 
     if (images.isEmpty()) {

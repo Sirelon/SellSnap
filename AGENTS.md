@@ -178,6 +178,12 @@ build and checks every pending ticket in one pass.
 - Reusable templates already exist in `designsystem/templates/`.
 - Avoid reaching for raw Material APIs first when an app component/token already exists.
 - Use the custom icons (`ic_*.xml` in `composeResources/drawable/`) when one fits, before a Material icon.
+- Wide windows (`designsystem/ContentWidth.kt`): a single-column screen caps its content at
+  600dp and centres it, with `Modifier.centeredContentWidth()` after the scroll modifier, or
+  `centeredListPadding` for a lazy list, so the scroll area still reaches the window edges. A
+  screen with two distinct parts (New listing, Preview) puts them side by side when
+  `isExpandedWidthWindow()` is true. Related destinations use Navigation 3 scenes instead
+  (Messages is the reference).
 
 ## Localization
 - New user-facing strings go in `composeApp/src/commonMain/composeResources/values/strings.xml` (English base). Interpolate with `stringResource(id, arg)`; never `String.format`.

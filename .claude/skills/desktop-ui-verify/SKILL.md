@@ -41,6 +41,11 @@ The loop:
    relaunches the process and keeps the build mode, but the original `hotRunJvm` Gradle
    invocation exits — the app itself stays connected.
 7. **Stop the app when done:** `kill` the `pid=` value from `composeApp/build/run/jvmMain/jvmMain.pid`.
+   Killing it can leave half-written classes in `composeApp/build/classes/kotlin/jvm`: the next
+   `jvmTest` then fails hundreds of tests with `NoClassDefFoundError`. Delete that folder and rerun.
+8. **After `restart`, edits no longer reload**, even though `status` still reports
+   `buildContinuous: true`: the `hotRunJvm --auto` invocation has exited. Run
+   `./gradlew :composeApp:compileKotlinJvm` and `restart` again, or relaunch `hotRunJvm --auto`.
 
 What it does and does not cover:
 

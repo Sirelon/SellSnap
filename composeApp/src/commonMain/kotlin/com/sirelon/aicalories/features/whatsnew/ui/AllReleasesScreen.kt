@@ -1,6 +1,7 @@
 package com.sirelon.sellsnap.features.whatsnew.ui
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.consumeWindowInsets
@@ -27,6 +28,7 @@ import com.sirelon.sellsnap.designsystem.AppDimens
 import com.sirelon.sellsnap.designsystem.AppScaffold
 import com.sirelon.sellsnap.designsystem.AppTheme
 import com.sirelon.sellsnap.designsystem.Cell
+import com.sirelon.sellsnap.designsystem.centeredListPadding
 import com.sirelon.sellsnap.designsystem.IconWithBackground
 import com.sirelon.sellsnap.designsystem.Pill
 import com.sirelon.sellsnap.designsystem.screens.EmptyScreen
@@ -80,19 +82,18 @@ fun AllReleasesScreenRoute(
                         .consumeWindowInsets(padding),
                 )
             } else {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .consumeWindowInsets(padding),
-                    contentPadding = padding,
-                    verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.xl4),
-                ) {
-                    items(state.releases) { release ->
-                        ReleaseCard(
-                            release = release,
-                            isInstalled = release.version == AppConfig.appVersionName,
-                            modifier = Modifier.padding(horizontal = AppDimens.Spacing.xl3),
-                        )
+                BoxWithConstraints(modifier = Modifier.fillMaxSize().consumeWindowInsets(padding)) {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = centeredListPadding(base = padding, padding = AppDimens.Spacing.xl3),
+                        verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.xl4),
+                    ) {
+                        items(state.releases) { release ->
+                            ReleaseCard(
+                                release = release,
+                                isInstalled = release.version == AppConfig.appVersionName,
+                            )
+                        }
                     }
                 }
             }

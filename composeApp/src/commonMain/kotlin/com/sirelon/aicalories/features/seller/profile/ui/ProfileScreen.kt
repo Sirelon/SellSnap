@@ -48,6 +48,7 @@ import com.sirelon.sellsnap.designsystem.AppDimens
 import com.sirelon.sellsnap.designsystem.AppScaffold
 import com.sirelon.sellsnap.designsystem.AppTheme
 import com.sirelon.sellsnap.designsystem.Cell
+import com.sirelon.sellsnap.designsystem.centeredContentWidth
 import com.sirelon.sellsnap.designsystem.ErrorPill
 import com.sirelon.sellsnap.designsystem.ObserveAsEvents
 import com.sirelon.sellsnap.designsystem.Pill
@@ -248,6 +249,7 @@ private fun ProfileScreen(
                 .padding(padding)
                 .consumeWindowInsets(padding)
                 .verticalScroll(rememberScrollState())
+                .centeredContentWidth()
                 .padding(AppDimens.Spacing.xl3),
             verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.xl4),
         ) {

@@ -38,6 +38,9 @@ object AppDimens {
         val xl23: Dp = 240.dp
         val xl24: Dp = 300.dp
         val xl25: Dp = 360.dp
+
+        /** Widest a single column of content gets; see [centeredContentWidth]. */
+        val xl26: Dp = 600.dp
     }
 
     object Spacing {

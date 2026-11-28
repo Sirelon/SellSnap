@@ -19,6 +19,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.sirelon.sellsnap.designsystem.AppDimens
 import com.sirelon.sellsnap.designsystem.AppScaffold
 import com.sirelon.sellsnap.designsystem.AppTheme
+import com.sirelon.sellsnap.designsystem.centeredContentWidth
 import com.sirelon.sellsnap.designsystem.buttons.AppButton
 import com.sirelon.sellsnap.designsystem.buttons.AppButtonDefaults
 import com.sirelon.sellsnap.designsystem.templates.TermsAndPrivacy
@@ -48,7 +49,7 @@ fun ConsentScreen(
         bottomBar = {
             Column(
                 modifier = Modifier
-                    .fillMaxWidth()
+                    .centeredContentWidth()
                     .padding(AppDimens.Spacing.xl3)
                     .navigationBarsPadding(),
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -82,6 +83,7 @@ fun ConsentScreen(
                 .padding(paddingValues)
                 .consumeWindowInsets(paddingValues)
                 .verticalScroll(rememberScrollState())
+                .centeredContentWidth()
                 .padding(horizontal = AppDimens.Spacing.xl3, vertical = AppDimens.Spacing.xl5),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.xl3),
