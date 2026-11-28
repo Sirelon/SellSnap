@@ -154,7 +154,6 @@
     <string name="my_ads_connect_description">Аккаунтты қосқаннан кейін жарияланған OLX хабарландыруларың осында пайда болады.</string>
     <string name="my_ads_connect_action">OLX-ті қосу</string>
     <string name="my_ads_load_more">Тағы жүктеу</string>
-    <string name="my_ads_created_at">Жасалған</string>
     <string name="label_value_format">%1$s: %2$s</string>
     <string name="my_ads_untitled">Атаусыз OLX хабарландыруы</string>
     <string name="my_ads_price_not_set">Баға қойылмаған</string>

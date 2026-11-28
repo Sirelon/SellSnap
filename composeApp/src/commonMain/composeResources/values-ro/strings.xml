@@ -154,7 +154,6 @@
     <string name="my_ads_connect_description">Anunțurile tale OLX publicate vor apărea aici după ce conectezi un cont.</string>
     <string name="my_ads_connect_action">Conectează OLX</string>
     <string name="my_ads_load_more">Încarcă mai multe</string>
-    <string name="my_ads_created_at">Creat</string>
     <string name="label_value_format">%1$s: %2$s</string>
     <string name="my_ads_untitled">Anunț OLX fără titlu</string>
     <string name="my_ads_price_not_set">Prețul nu este setat</string>

@@ -156,7 +156,6 @@
     <string name="my_ads_connect_description">Your published OLX listings will appear here after you connect an account.</string>
     <string name="my_ads_connect_action">Connect OLX</string>
     <string name="my_ads_load_more">Load more</string>
-    <string name="my_ads_created_at">Created</string>
     <string name="label_value_format">%1$s: %2$s</string>
     <string name="my_ads_untitled">Untitled OLX ad</string>
     <string name="my_ads_price_not_set">Price not set</string>

@@ -151,7 +151,6 @@
     <string name="my_ads_connect_description">Опубліковані оголошення OLX з'являться тут після підключення акаунта.</string>
     <string name="my_ads_connect_action">Підключити OLX</string>
     <string name="my_ads_load_more">Завантажити ще</string>
-    <string name="my_ads_created_at">Створено</string>
     <string name="label_value_format">%1$s: %2$s</string>
     <string name="my_ads_untitled">Оголошення OLX без назви</string>
     <string name="my_ads_price_not_set">Ціну не вказано</string>

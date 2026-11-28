@@ -154,7 +154,6 @@
     <string name="my_ads_connect_description">Публикуваните ти OLX обяви ще се появят тук, след като свържеш акаунт.</string>
     <string name="my_ads_connect_action">Свържи OLX</string>
     <string name="my_ads_load_more">Зареди още</string>
-    <string name="my_ads_created_at">Създадена</string>
     <string name="label_value_format">%1$s: %2$s</string>
     <string name="my_ads_untitled">OLX обява без заглавие</string>
     <string name="my_ads_price_not_set">Цената не е зададена</string>

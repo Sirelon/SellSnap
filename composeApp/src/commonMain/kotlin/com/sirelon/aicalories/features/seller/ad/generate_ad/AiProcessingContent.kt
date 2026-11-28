@@ -192,9 +192,10 @@ private fun AiProcessingContent(
             text = stringResource(Res.string.cancel),
             onClick = onCancelClick,
             style = AppButtonDefaults.ghostDestructive(),
+            // widthIn before fillMaxWidth: the other order lets the full width win on tablets.
             modifier = Modifier
-                .fillMaxWidth()
                 .widthIn(max = AppDimens.Size.xl24)
+                .fillMaxWidth()
                 .padding(vertical = AppDimens.Spacing.xl3)
                 // On the control, not the screen (.claude/rules/edge-to-edge.md), so the steps
                 // above still scroll edge to edge.
@@ -235,8 +236,8 @@ private fun AiProcessingDetails(
             steps = steps,
             completedSteps = completedSteps,
             modifier = Modifier
-                .fillMaxWidth()
-                .widthIn(max = AppDimens.Size.xl24),
+                .widthIn(max = AppDimens.Size.xl24)
+                .fillMaxWidth(),
         )
 
         Spacer(modifier = Modifier.height(AppDimens.Spacing.xl3))
@@ -244,8 +245,8 @@ private fun AiProcessingDetails(
         ProcessingTipCard(
             tips = tips,
             modifier = Modifier
-                .fillMaxWidth()
-                .widthIn(max = AppDimens.Size.xl24),
+                .widthIn(max = AppDimens.Size.xl24)
+                .fillMaxWidth(),
         )
     }
 }

@@ -67,7 +67,6 @@ import com.sirelon.sellsnap.features.seller.my_ads.presentation.MyAdvertsContrac
 import com.sirelon.sellsnap.features.seller.my_ads.presentation.MyAdvertsViewModel
 import com.sirelon.sellsnap.generated.resources.Res
 import com.sirelon.sellsnap.generated.resources.account_needs_reconnect_badge
-import com.sirelon.sellsnap.generated.resources.ic_arrow_right
 import com.sirelon.sellsnap.generated.resources.ic_message_circle
 import com.sirelon.sellsnap.generated.resources.my_ads_unread_messages
 import com.sirelon.sellsnap.generated.resources.ic_camera
@@ -76,13 +75,11 @@ import com.sirelon.sellsnap.generated.resources.ic_circle_alert
 import com.sirelon.sellsnap.generated.resources.ic_refresh_cw
 import com.sirelon.sellsnap.generated.resources.ic_tag
 import com.sirelon.sellsnap.generated.resources.ic_wifi_off
-import com.sirelon.sellsnap.generated.resources.label_value_format
 import com.sirelon.sellsnap.generated.resources.my_ads_account_fallback_name
 import com.sirelon.sellsnap.generated.resources.my_ads_connect_action
 import com.sirelon.sellsnap.generated.resources.my_ads_connect_description
 import com.sirelon.sellsnap.generated.resources.my_ads_connect_title
 import com.sirelon.sellsnap.generated.resources.my_ads_create_listing
-import com.sirelon.sellsnap.generated.resources.my_ads_created_at
 import com.sirelon.sellsnap.generated.resources.my_ads_empty_description_account
 import com.sirelon.sellsnap.generated.resources.my_ads_empty_title
 import com.sirelon.sellsnap.generated.resources.my_ads_header_subtitle_account
@@ -133,7 +130,7 @@ fun MyAdvertsScreenRoute(
 }
 
 @Composable
-private fun MyAdvertsScreen(
+internal fun MyAdvertsScreen(
     state: MyAdvertsContract.State,
     snackbarHostState: SnackbarHostState,
     onEvent: (Event) -> Unit,
@@ -597,12 +594,14 @@ private fun AdvertCard(
         modifier = Modifier.fillMaxWidth().testTag("my_ads_advert_card"),
         onClick = onClick,
     ) {
+        // The whole card opens the listing's actions, so the title gets the full width beside the
+        // photo: price and status share one line, days left and unread messages the next.
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(AppDimens.Spacing.xl4),
-            horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing.xl4),
-            verticalAlignment = Alignment.CenterVertically,
+                .padding(AppDimens.Spacing.xl3),
+            horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing.xl3),
+            verticalAlignment = Alignment.Top,
         ) {
             AdvertThumbnail(advert.primaryImageUrl)
 
@@ -610,59 +609,52 @@ private fun AdvertCard(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing.s),
             ) {
+                Text(
+                    text = advert.title.takeIf { it.isNotBlank() }
+                        ?: stringResource(Res.string.my_ads_untitled),
+                    style = AppTheme.typography.subTitle,
+                    color = AppTheme.colors.onSurface,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing.m),
-                    verticalAlignment = Alignment.Top,
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = advert.title.takeIf { it.isNotBlank() }
-                            ?: stringResource(Res.string.my_ads_untitled),
+                        text = advert.priceFormatted.takeIf { it.isNotBlank() }
+                            ?: stringResource(Res.string.my_ads_price_not_set),
                         modifier = Modifier.weight(1f),
-                        style = AppTheme.typography.title,
-                        color = AppTheme.colors.onSurface,
-                        maxLines = 2,
+                        style = AppTheme.typography.body,
+                        color = AppTheme.colors.primary,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
                     StatusChip(status = advert.status)
                 }
 
-                if (unreadCount > 0) {
-                    val description = pluralStringResource(Res.plurals.my_ads_unread_messages, unreadCount, unreadCount)
-                    Pill(
-                        text = unreadCount.toString(),
-                        iconResource = Res.drawable.ic_message_circle,
-                        color = AppTheme.colors.primary,
-                        onClick = { onUnreadClick(unreadCount) },
-                        modifier = Modifier
-                            .testTag("my_ads_unread_marker")
-                            .semantics { contentDescription = description },
-                    )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing.m),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    AdvertExpiryLine(validTo = advert.validTo)
+                    if (unreadCount > 0) {
+                        val description = pluralStringResource(Res.plurals.my_ads_unread_messages, unreadCount, unreadCount)
+                        Pill(
+                            text = unreadCount.toString(),
+                            iconResource = Res.drawable.ic_message_circle,
+                            color = AppTheme.colors.primary,
+                            onClick = { onUnreadClick(unreadCount) },
+                            modifier = Modifier
+                                .testTag("my_ads_unread_marker")
+                                .semantics { contentDescription = description },
+                        )
+                    }
                 }
-
-                Text(
-                    text = advert.priceFormatted.takeIf { it.isNotBlank() }
-                        ?: stringResource(Res.string.my_ads_price_not_set),
-                    style = AppTheme.typography.body,
-                    color = AppTheme.colors.primary,
-                    fontWeight = FontWeight.SemiBold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-
-                DateLine(
-                    label = stringResource(Res.string.my_ads_created_at),
-                    value = advert.createdAt,
-                )
-                AdvertExpiryLine(validTo = advert.validTo)
             }
-
-            Icon(
-                painter = painterResource(Res.drawable.ic_arrow_right),
-                contentDescription = null,
-                tint = AppTheme.colors.onSurfaceSoft,
-                modifier = Modifier.size(AppDimens.Size.xl5),
-            )
         }
     }
 }
@@ -671,7 +663,7 @@ private fun AdvertCard(
 private fun AdvertThumbnail(imageUrl: String?) {
     Box(
         modifier = Modifier
-            .size(AppDimens.Size.xl17)
+            .size(AppDimens.Size.xl15)
             .clip(RoundedCornerShape(AppDimens.BorderRadius.xl2))
             .background(AppTheme.colors.surfaceHigh),
         contentAlignment = Alignment.Center,
@@ -690,19 +682,6 @@ private fun AdvertThumbnail(imageUrl: String?) {
             )
         }
     }
-}
-
-@Composable
-private fun DateLine(label: String, value: String) {
-    if (value.isBlank()) return
-
-    Text(
-        text = stringResource(Res.string.label_value_format, label, value),
-        style = AppTheme.typography.caption,
-        color = AppTheme.colors.onSurfaceMuted,
-        maxLines = 1,
-        overflow = TextOverflow.Ellipsis,
-    )
 }
 
 @Composable

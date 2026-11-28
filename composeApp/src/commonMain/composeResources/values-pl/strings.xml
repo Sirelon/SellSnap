@@ -154,7 +154,6 @@
     <string name="my_ads_connect_description">Twoje opublikowane ogłoszenia OLX pojawią się tutaj po połączeniu konta.</string>
     <string name="my_ads_connect_action">Połącz OLX</string>
     <string name="my_ads_load_more">Załaduj więcej</string>
-    <string name="my_ads_created_at">Utworzono</string>
     <string name="label_value_format">%1$s: %2$s</string>
     <string name="my_ads_untitled">Ogłoszenie OLX bez tytułu</string>
     <string name="my_ads_price_not_set">Cena nie ustawiona</string>
